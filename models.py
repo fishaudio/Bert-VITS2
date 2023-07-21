@@ -12,7 +12,6 @@ import monotonic_align
 from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 
-from GST import GST
 from commons import init_weights, get_padding
 from text import symbols, num_tones, num_languages
 
@@ -402,7 +401,7 @@ class ReferenceEncoder(nn.Module):
     outputs --- [N, ref_enc_gru_size]
     '''
 
-    def __init__(self, spec_channels):
+    def __init__(self, spec_channels, gin_channels=0):
 
         super().__init__()
         self.spec_channels = spec_channels
@@ -421,6 +420,7 @@ class ReferenceEncoder(nn.Module):
         self.gru = nn.GRU(input_size=ref_enc_filters[-1] * out_channels,
                           hidden_size=256 // 2,
                           batch_first=True)
+        self.proj = nn.Linear(128, gin_channels)
 
     def forward(self, inputs, mask=None):
         N = inputs.size(0)
@@ -438,7 +438,7 @@ class ReferenceEncoder(nn.Module):
         self.gru.flatten_parameters()
         memory, out = self.gru(out)  # out --- [1, N, 128]
 
-        return out.squeeze(0)
+        return self.proj(out.squeeze(0))
 
     def calculate_channels(self, L, kernel_size, stride, pad, n_convs):
         for i in range(n_convs):
@@ -515,7 +515,7 @@ class SynthesizerTrn(nn.Module):
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
         else:
-            self.ref_enc = ReferenceEncoder()
+            self.ref_enc = ReferenceEncoder(spec_channels)
 
     def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert):
 
