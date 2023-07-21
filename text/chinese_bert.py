@@ -1,15 +1,10 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-import os
-
-os.environ['ALL_PROXY']='socks5://127.0.0.1:7890'
-os.environ['HTTPS_PROXY']='http://127.0.0.1:7890'
-os.environ['HTTP_PROXY']='http://127.0.0.1:7890'
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-tokenizer = AutoTokenizer.from_pretrained("hfl/chinese-roberta-wwm-ext-large")
-model = AutoModelForMaskedLM.from_pretrained("hfl/chinese-roberta-wwm-ext-large").to(device)
+tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
+model = AutoModelForMaskedLM.from_pretrained("./bert/chinese-roberta-wwm-ext-large").to(device)
 
 def get_bert_feature(text, word2ph):
     with torch.no_grad():
