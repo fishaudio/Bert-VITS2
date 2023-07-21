@@ -22,7 +22,7 @@ def clean_text_bert(text, language):
     return phones, tones, bert
 
 def text_to_sequence(text, language):
-    _, _, phones, tones = clean_text(text, language)
+    norm_text, phones, tones, word2ph = clean_text(text, language)
     return cleaned_text_to_sequence(phones, tones, language)
 
 if __name__ == '__main__':

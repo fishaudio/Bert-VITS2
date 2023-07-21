@@ -19,8 +19,10 @@ def cleaned_text_to_sequence(cleaned_text, tones, language):
 
 def get_bert(norm_text, word2ph, language):
   from chinese_bert import get_bert_feature as zh_bert
+  from english_bert_mock import get_bert_feature as en_bert
   lang_bert_func_map = {
-    'ZH': zh_bert
+    'ZH': zh_bert,
+    'EN': en_bert
   }
   bert = lang_bert_func_map[language](norm_text, word2ph)
   return bert
