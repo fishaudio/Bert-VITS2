@@ -172,7 +172,7 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, tone, language, bert):
-        x = (self.emb(x)+ self.tone_emb(tone)+ self.language_emb(language) +self.bert_proj(bert)) * math.sqrt(self.hidden_channels)  # [b, t, h]
+        x = (self.emb(x)+ self.tone_emb(tone)+ self.language_emb(language)+self.bert_proj(bert).transpose(1,2)) * math.sqrt(self.hidden_channels)  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
 

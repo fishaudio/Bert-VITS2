@@ -8,7 +8,7 @@ import torch.utils.data
 import commons 
 from mel_processing import spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence, cleaned_text_to_sequence_bert, get_bert
+from text import cleaned_text_to_sequence, get_bert
 
 """Multi speaker version"""
 class TextAudioSpeakerLoader(torch.utils.data.Dataset):
@@ -66,7 +66,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         # separate filename, speaker_id and text
         audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
 
-        bert, phones, tone, language = self.get_text(text, word2ph, phones, tone, language)
+        bert, phones, tone, language = self.get_text(text, word2ph, phones, tone, language,audiopath)
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
@@ -90,15 +90,33 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             torch.save(spec, spec_filename)
         return spec, audio_norm
 
-    def get_text(self,text, word2ph,phone, tone, language_str):
+    def get_text(self,text, word2ph,phone, tone, language_str, wav_path):
+        # print(text, word2ph,phone, tone, language_str)
+        pold = phone
+        w2pho = [i for i in word2ph]
+        word2ph = [i for i in word2ph]
         phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+        pold2 = phone
+
         if self.add_blank:
+            p1 = len(phone)
             phone = commons.intersperse(phone, 0)
+            p2 = len(phone)
+            t1 = len(tone)
             tone = commons.intersperse(tone, 0)
+            t2 = len(tone)
             language = commons.intersperse(language, 0)
-            for i in range(1,len(word2ph)):
-                word2ph[i] += 1
-        bert = get_bert(text, word2ph, language_str)
+            for i in range(len(word2ph)):
+                word2ph[i] = word2ph[i] * 2
+            word2ph[0] += 1
+        bert_path = wav_path.replace(".wav", ".bert.pt")
+        try:
+            bert = torch.load(bert_path)
+            assert bert.shape[-1] == len(phone)
+        except:
+            bert = get_bert(text, word2ph, language_str)
+        assert bert.shape[-1] == len(phone), (bert.shape, len(phone), sum(word2ph), p1, p2, t1, t2, pold, pold2,word2ph, text,w2pho)
+        torch.save(bert, bert_path)
         phone = torch.LongTensor(phone)
         tone = torch.LongTensor(tone)
         language = torch.LongTensor(language)
