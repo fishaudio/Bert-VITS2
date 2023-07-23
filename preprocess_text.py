@@ -10,7 +10,7 @@ transcription_path = 'filelists/aishell.list'
 train_path = 'filelists/train.list'
 val_path = 'filelists/val.list'
 config_path = "configs/config.json"
-val_per_spk = 2
+val_per_spk = 4
 max_val_total = 8
 
 if 1 in stage:

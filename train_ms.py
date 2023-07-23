@@ -279,7 +279,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert = bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
-            for use_sdp in [False, True]:
+            for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(x, x_lengths, speakers, tone, language, bert, y=spec, max_len=1000, sdp_ratio=0.0 if not use_sdp else 1.0)
                 y_hat_lengths = mask.sum([1, 2]).long() * hps.data.hop_length
 

@@ -515,7 +515,7 @@ class SynthesizerTrn(nn.Module):
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
         else:
-            self.ref_enc = ReferenceEncoder(spec_channels)
+            self.ref_enc = ReferenceEncoder(spec_channels, gin_channels)
 
     def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert):
 
