@@ -72,7 +72,7 @@ def run(rank, n_gpus, hps):
         rank=rank,
         shuffle=True)
     collate_fn = TextAudioSpeakerCollate()
-    train_loader = DataLoader(train_dataset, num_workers=4, shuffle=False, pin_memory=True,
+    train_loader = DataLoader(train_dataset, num_workers=20, shuffle=False, pin_memory=True,
                               collate_fn=collate_fn, batch_sampler=train_sampler, persistent_workers=True)
     if rank == 0:
         eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
@@ -107,7 +107,7 @@ def run(rank, n_gpus, hps):
     net_g = DDP(net_g, device_ids=[rank])
     net_d = DDP(net_d, device_ids=[rank])
 
-    pretrain_dir = "logs/esd"
+    pretrain_dir = None
     if pretrain_dir is None:
         _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g,
                                                    optim_g, False)
@@ -120,8 +120,6 @@ def run(rank, n_gpus, hps):
                                                    optim_g, True)
         _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(pretrain_dir, "D_*.pth"), net_d,
                                                    optim_d, True)
-        epoch_str = 1
-        global_step = 0
 
 
 
