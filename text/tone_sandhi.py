@@ -82,13 +82,13 @@ class ToneSandhi():
             } and word not in self.must_not_neural_tone_words:
                 finals[j] = finals[j][:-1] + "5"
         ge_idx = word.find("个")
-        if len(word) >= 1 and word[-1] in "吧呢哈啊呐噻嘛吖嗨呐哦哒额滴哩哟喽啰耶喔诶":
+        if len(word) >= 1 and word[-1] in "吧呢啊呐噻嘛吖嗨呐哦哒额滴哩哟喽啰耶喔诶":
             finals[-1] = finals[-1][:-1] + "5"
         elif len(word) >= 1 and word[-1] in "的地得":
             finals[-1] = finals[-1][:-1] + "5"
         # e.g. 走了, 看着, 去过
-        elif len(word) == 1 and word in "了着过" and pos in {"ul", "uz", "ug"}:
-            finals[-1] = finals[-1][:-1] + "5"
+        # elif len(word) == 1 and word in "了着过" and pos in {"ul", "uz", "ug"}:
+        #     finals[-1] = finals[-1][:-1] + "5"
         elif len(word) > 1 and word[-1] in "们子" and pos in {
                 "r", "n"
         } and word not in self.must_not_neural_tone_words:

@@ -8,7 +8,7 @@ import torch.utils.data
 import commons
 from mel_processing import spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence, get_bert
+from text import cleaned_text_to_sequence
 
 """Multi speaker version"""
 
@@ -113,14 +113,14 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 word2ph[i] = word2ph[i] * 2
             word2ph[0] += 1
         bert_path = wav_path.replace(".wav", ".bert.pt")
-        try:
-            bert = torch.load(bert_path)
-            assert bert.shape[-1] == len(phone)
-        except:
-            bert = get_bert(text, word2ph, language_str)
-            torch.save(bert, bert_path)
-            print(bert.shape[-1], bert_path, text, pold)
-            assert bert.shape[-1] == len(phone)
+        # try:
+        bert = torch.load(bert_path)
+        assert bert.shape[-1] == len(phone)
+        # except:
+        #     bert = get_bert(text, word2ph, language_str)
+        #     torch.save(bert, bert_path)
+        #     print(bert.shape[-1], bert_path, text, pold)
+        #     assert bert.shape[-1] == len(phone)
 
         assert bert.shape[-1] == len(phone), (
         bert.shape, len(phone), sum(word2ph), p1, p2, t1, t2, pold, pold2, word2ph, text, w2pho)
