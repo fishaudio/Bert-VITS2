@@ -35,6 +35,10 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 
 torch.backends.cudnn.benchmark = True
+torch.backends.cuda.matmul.allow_tf32 = True
+# The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
+torch.backends.cudnn.allow_tf32 = True
+torch.set_float32_matmul_precision('medium')
 global_step = 0
 
 
@@ -109,12 +113,17 @@ def run(rank, n_gpus, hps):
 
     pretrain_dir = None
     if pretrain_dir is None:
-        _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g,
-                                                   optim_g, False)
-        _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d,
-                                                   optim_d, False)
-        epoch_str = max(epoch_str, 1)
-        global_step = (epoch_str - 1) * len(train_loader)
+        try:
+            _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g,
+                                                   optim_g, skip_optimizer)
+            _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d,
+                                                   optim_d, skip_optimizer)
+            epoch_str = max(epoch_str, 1)
+            global_step = (epoch_str - 1) * len(train_loader)
+        except Exception:
+            print("load old checkpoint failed...")
+            epoch_str = 1
+            global_step = 0
     else:
         _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(pretrain_dir, "G_*.pth"), net_g,
                                                    optim_g, True)
@@ -269,7 +278,6 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     print("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert) in enumerate(eval_loader):
-            print(111)
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             y, y_lengths = y.cuda(), y_lengths.cuda()
