@@ -43,6 +43,6 @@ def process_line(line):
 with open(hps.data.training_files) as f:
     lines = f.readlines()
 
-with Pool() as pool:
+with Pool(processes=12) as pool: #A100 suitable config,if coom,please decrease the processess number.
     for _ in tqdm(pool.imap_unordered(process_line, lines)):
         pass
