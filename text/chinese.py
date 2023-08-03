@@ -66,7 +66,7 @@ def g2p(text):
     sentences = [i for i in re.split(pattern, text) if i.strip()!='']
     phones, tones, word2ph = _g2p(sentences)
     assert sum(word2ph) == len(phones)
-    assert len(word2ph) == len(text)
+    assert len(word2ph) == len(text) #Sometimes it will crash,you can add a try-catch.
     phones = ['_'] + phones + ["_"]
     tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
