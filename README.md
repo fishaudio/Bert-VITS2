@@ -7,3 +7,4 @@ Then resample all audio to 44100Hz,generate filelists.
 Please read the code in preprocess_text.py to generate the specified format filelist.  
 Run preprocess_text.py  
 Run spec_gen.py  
+Run train_ms.py(Only multi speaker training is supported)  
