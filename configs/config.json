@@ -11,7 +11,7 @@
     ],
     "eps": 1e-09,
     "batch_size": 32,
-    "fp16_run": true,
+    "fp16_run": false,
     "lr_decay": 0.999875,
     "segment_size": 16384,
     "init_lr_ratio": 1,
@@ -213,7 +213,7 @@
       "标贝": 176
     }
   },
-  "model": {
+"model": {
     "inter_channels": 192,
     "hidden_channels": 192,
     "filter_channels": 768,
@@ -247,7 +247,8 @@
     "upsample_rates": [
       8,
       8,
-      4,
+      2,
+      2,
       2
     ],
     "upsample_initial_channel": 512,
@@ -255,7 +256,8 @@
       16,
       16,
       8,
-      4
+      2,
+      2
     ],
     "n_layers_q": 3,
     "use_spectral_norm": false,
