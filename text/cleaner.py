@@ -24,3 +24,4 @@ def text_to_sequence(text, language):
     return cleaned_text_to_sequence(phones, tones, language)
 
 if __name__ == '__main__':
+    pass
