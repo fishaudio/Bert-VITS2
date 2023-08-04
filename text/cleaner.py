@@ -24,7 +24,3 @@ def text_to_sequence(text, language):
     return cleaned_text_to_sequence(phones, tones, language)
 
 if __name__ == '__main__':
-    #print(text_to_sequence("你好，啊啊啊额、还是到付红四方。", 'ZH'))
-    #print(text_to_sequence("hello", 'EN'))
-
-
