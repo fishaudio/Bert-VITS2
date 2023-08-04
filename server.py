@@ -16,7 +16,6 @@ import commons
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
-from text import text_to_sequence
 from text import cleaned_text_to_sequence,_symbol_to_id, get_bert
 from text.cleaner import clean_text
 from scipy.io import wavfile
