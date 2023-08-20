@@ -19,7 +19,7 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
   return acts
 
 class Encoder(nn.Module):
-  def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., window_size=4, isflow = True, **kwargs):
+   def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., window_size=4, isflow = True, **kwargs):
     super().__init__()
     self.hidden_channels = hidden_channels
     self.filter_channels = filter_channels
@@ -43,10 +43,9 @@ class Encoder(nn.Module):
       self.norm_layers_1.append(LayerNorm(hidden_channels))
       self.ffn_layers.append(FFN(hidden_channels, hidden_channels, filter_channels, kernel_size, p_dropout=p_dropout))
       self.norm_layers_2.append(LayerNorm(hidden_channels))
-
-  def forward(self, x, x_mask, g=None):
-   if g is not None:
-      g = self.cond_layer(g)
+   def forward(self, x, x_mask, g=None):
+       if g is not None:
+           g = self.cond_layer(g)
     attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
     x = x * x_mask
     for i in range(self.n_layers):
