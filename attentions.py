@@ -44,10 +44,10 @@ class Encoder(nn.Module):
     self.p_dropout = p_dropout
     self.window_size = window_size
     if isflow:
-      cond_layer = torch.nn.Conv1d(kwargs["gin_channels"], 2*hidden_channels*n_layers, 1)
+      cond_layer = torch.nn.Conv1d(256, 2*hidden_channels*n_layers, 1)
       self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
       self.cond_layer = weight_norm(cond_layer, name='weight')
-      self.gin_channels = kwargs["gin_channels"]
+      self.gin_channels = 256
     self.drop = nn.Dropout(p_dropout)
     self.attn_layers = nn.ModuleList()
     self.norm_layers_1 = nn.ModuleList()
