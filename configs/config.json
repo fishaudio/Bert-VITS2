@@ -285,6 +285,7 @@
     }
   },
   "model": {
+    "use_mel_posterior_encoder": true,
     "inter_channels": 192,
     "hidden_channels": 192,
     "filter_channels": 768,
