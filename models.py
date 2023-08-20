@@ -512,6 +512,7 @@ class SynthesizerTrn(nn.Module):
                  use_sdp=True,
                  n_flow_layer = 4,
                  n_layers_trans_flow = 3,
+                 flow_share_parameter = False,
                  use_transformer_flow = True,
                  **kwargs):
 
@@ -551,7 +552,7 @@ class SynthesizerTrn(nn.Module):
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16,
                                       gin_channels=gin_channels)
         if use_transformer_flow:
-            self.flow = TransformerCouplingBlock(inter_channels, hidden_channels, filter_channels, n_heads, n_layers_trans_flow, 5, p_dropout, n_flow_layer, gin_channels=gin_channels)
+            self.flow = TransformerCouplingBlock(inter_channels, hidden_channels, filter_channels, n_heads, n_layers_trans_flow, 5, p_dropout, n_flow_layer, gin_channels=gin_channels,share_parameter= flow_share_parameter)
         else:
             self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, n_flow_layer, gin_channels=gin_channels)
         self.sdp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
