@@ -29,6 +29,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         self.win_length = hparams.win_length
         self.sampling_rate = hparams.sampling_rate
         self.spk_map = hparams.spk2id
+        self.hparams = hparams
 
         self.use_mel_spec_posterior = getattr(hparams, "use_mel_posterior_encoder", False)
         if self.use_mel_spec_posterior:
