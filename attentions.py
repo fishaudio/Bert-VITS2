@@ -31,7 +31,7 @@ class Encoder(nn.Module):
     if isflow:
       cond_layer = torch.nn.Conv1d(kwargs["gin_channels"], 2*hidden_channels*n_layers, 1)
       self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
-      self.cond_layer = weight_norm_modules(cond_layer, name='weight')
+      self.cond_layer = weight_norm(cond_layer, name='weight')
       self.gin_channels = kwargs["gin_channels"]
     self.drop = nn.Dropout(p_dropout)
     self.attn_layers = nn.ModuleList()
