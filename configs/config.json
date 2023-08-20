@@ -31,7 +31,7 @@
     "mel_fmin": 0.0,
     "mel_fmax": null,
     "add_blank": true,
-    "n_speakers": 680,
+    "n_speakers": 256,
     "cleaned_text": true,
     "spk2id": {
       "丹恒": 0,
