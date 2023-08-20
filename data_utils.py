@@ -83,12 +83,28 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
-        try:
+        if self.use_mel_spec_posterior:
+            spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
+        if os.path.exists(spec_filename):
             spec = torch.load(spec_filename)
-        except:
-            spec = spectrogram_torch(audio_norm, self.filter_length,
-                                     self.sampling_rate, self.hop_length, self.win_length,
-                                     center=False)
+        else:
+            if self.use_mel_spec_posterior:
+                ''' TODO : (need verification) 
+                if linear spec exists convert to 
+                mel from existing linear spec (uncomment below lines) '''
+                if os.path.exists(filename.replace(".wav", ".spec.pt")):
+                     #spec, n_fft, num_mels, sampling_rate, fmin, fmax
+                     spec = spec_to_mel_torch(
+                     torch.load(filename.replace(".wav", ".spec.pt")), 
+                     self.filter_length, self.n_mel_channels, self.sampling_rate,
+                     self.hparams.mel_fmin, self.hparams.mel_fmax)
+                spec = mel_spectrogram_torch(audio_norm, self.filter_length,
+                    self.n_mel_channels, self.sampling_rate, self.hop_length,
+                    self.win_length, self.hparams.mel_fmin, self.hparams.mel_fmax, center=False)
+            else:
+                spec = spectrogram_torch(audio_norm, self.filter_length,
+                    self.sampling_rate, self.hop_length, self.win_length,
+                    center=False)
             spec = torch.squeeze(spec, 0)
             torch.save(spec, spec_filename)
         return spec, audio_norm
