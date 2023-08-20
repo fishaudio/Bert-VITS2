@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 import commons
 import modules
-
+from torch.nn.utils import weight_norm, remove_weight_norm
 class LayerNorm(nn.Module):
   def __init__(self, channels, eps=1e-5):
     super().__init__()
