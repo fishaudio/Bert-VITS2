@@ -9,9 +9,17 @@ import commons
 import modules
 from modules import LayerNorm
    
+@torch.jit.script
+def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
+  n_channels_int = n_channels[0]
+  in_act = input_a + input_b
+  t_act = torch.tanh(in_act[:, :n_channels_int, :])
+  s_act = torch.sigmoid(in_act[:, n_channels_int:, :])
+  acts = t_act * s_act
+  return acts
 
 class Encoder(nn.Module):
-  def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., window_size=4, **kwargs):
+  def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., window_size=4, isflow = True, **kwargs):
     super().__init__()
     self.hidden_channels = hidden_channels
     self.filter_channels = filter_channels
@@ -20,7 +28,11 @@ class Encoder(nn.Module):
     self.kernel_size = kernel_size
     self.p_dropout = p_dropout
     self.window_size = window_size
-
+    if isflow:
+      cond_layer = torch.nn.Conv1d(kwargs["gin_channels"], 2*hidden_channels*n_layers, 1)
+      self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
+      self.cond_layer = weight_norm_modules(cond_layer, name='weight')
+      self.gin_channels = kwargs["gin_channels"]
     self.drop = nn.Dropout(p_dropout)
     self.attn_layers = nn.ModuleList()
     self.norm_layers_1 = nn.ModuleList()
@@ -32,10 +44,20 @@ class Encoder(nn.Module):
       self.ffn_layers.append(FFN(hidden_channels, hidden_channels, filter_channels, kernel_size, p_dropout=p_dropout))
       self.norm_layers_2.append(LayerNorm(hidden_channels))
 
-  def forward(self, x, x_mask):
+  def forward(self, x, x_mask, g=None):
+   if g is not None:
+      g = self.cond_layer(g)
     attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
     x = x * x_mask
     for i in range(self.n_layers):
+      if g is not None:
+        x = self.cond_pre(x)
+        cond_offset = i * 2 * self.hidden_channels
+        g_l = g[:,cond_offset:cond_offset+2*self.hidden_channels,:]
+        x = fused_add_tanh_sigmoid_multiply(
+          x,
+          g_l,
+          torch.IntTensor([self.hidden_channels]))
       y = self.attn_layers[i](x, x, attn_mask)
       y = self.drop(y)
       x = self.norm_layers_1[i](x + y)
