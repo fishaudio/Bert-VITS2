@@ -36,7 +36,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False
     new_state_dict = {}
     for k, v in state_dict.items():
         try:
-            # assert "dec" in k or "disc" in k
+            #assert "emb_g" not in k
             # print("load", k)
             new_state_dict[k] = saved_state_dict[k]
             assert saved_state_dict[k].shape == v.shape, (saved_state_dict[k].shape, v.shape)
