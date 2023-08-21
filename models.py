@@ -182,7 +182,8 @@ class TextEncoder(nn.Module):
                  n_heads,
                  n_layers,
                  kernel_size,
-                 p_dropout):
+                 p_dropout,
+                 gin_channels=0):
         super().__init__()
         self.n_vocab = n_vocab
         self.out_channels = out_channels
@@ -192,7 +193,7 @@ class TextEncoder(nn.Module):
         self.n_layers = n_layers
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
-
+        self.gin_channels = gin_channels
         self.emb = nn.Embedding(len(symbols), hidden_channels)
         nn.init.normal_(self.emb.weight, 0.0, hidden_channels ** -0.5)
         self.tone_emb = nn.Embedding(num_tones, hidden_channels)
@@ -207,7 +208,8 @@ class TextEncoder(nn.Module):
             n_heads,
             n_layers,
             kernel_size,
-            p_dropout)
+            p_dropout,
+            gin_channels=self.gin_channels)
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, tone, language, bert):
