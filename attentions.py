@@ -48,6 +48,14 @@ class Encoder(nn.Module):
       self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
       self.cond_layer = weight_norm(cond_layer, name='weight')
       self.gin_channels = 256
+    if 'gin_channels' in kwargs:
+      self.gin_channels = kwargs['gin_channels']
+      if self.gin_channels != 0:
+        self.spk_emb_linear = nn.Linear(self.gin_channels, self.hidden_channels)
+        # vits2 says 3rd block, so idx is 2 by default
+        self.cond_layer_idx = kwargs['cond_layer_idx'] if 'cond_layer_idx' in kwargs else 2
+        print(self.gin_channels, self.cond_layer_idx)
+        assert self.cond_layer_idx < self.n_layers, 'cond_layer_idx should be less than n_layers'
     self.drop = nn.Dropout(p_dropout)
     self.attn_layers = nn.ModuleList()
     self.norm_layers_1 = nn.ModuleList()
