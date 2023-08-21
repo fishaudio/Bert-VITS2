@@ -536,12 +536,14 @@ class SynthesizerTrn(nn.Module):
         self.n_speakers = n_speakers
         self.gin_channels = gin_channels
         self.n_layers_trans_flow = n_layers_trans_flow
-
+        self.use_spk_conditioned_encoder = kwargs.get("use_spk_conditioned_encoder", True)
         self.use_sdp = use_sdp
         self.use_noise_scaled_mas = kwargs.get("use_noise_scaled_mas", False)
         self.mas_noise_scale_initial = kwargs.get("mas_noise_scale_initial", 0.01)
         self.noise_scale_delta = kwargs.get("noise_scale_delta", 2e-6)
         self.current_mas_noise_scale = self.mas_noise_scale_initial
+        if self.use_spk_conditioned_encoder and gin_channels > 0:
+            self.enc_gin_channels = gin_channels
         self.enc_p = TextEncoder(n_vocab,
                                  inter_channels,
                                  hidden_channels,
@@ -549,7 +551,8 @@ class SynthesizerTrn(nn.Module):
                                  n_heads,
                                  n_layers,
                                  kernel_size,
-                                 p_dropout)
+                                 p_dropout,
+                                 gin_channels=self.enc_gin_channels)
         self.dec = Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates,
                              upsample_initial_channel, upsample_kernel_sizes, gin_channels=gin_channels)
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16,
@@ -560,7 +563,7 @@ class SynthesizerTrn(nn.Module):
             self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, n_flow_layer, gin_channels=gin_channels)
         self.sdp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
         self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
-
+        
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
         else:
