@@ -48,6 +48,7 @@ class Encoder(nn.Module):
       self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
       self.cond_layer = weight_norm(cond_layer, name='weight')
       self.gin_channels = 256
+    self.cond_layer_idx = self.n_layers
     if 'gin_channels' in kwargs:
       self.gin_channels = kwargs['gin_channels']
       if self.gin_channels != 0:
@@ -72,14 +73,11 @@ class Encoder(nn.Module):
     attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
     x = x * x_mask
     for i in range(self.n_layers):
-      if g is not None:
-        x = self.cond_pre(x)
-        cond_offset = i * 2 * self.hidden_channels
-        g_l = g[:,cond_offset:cond_offset+2*self.hidden_channels,:]
-        x = fused_add_tanh_sigmoid_multiply(
-          x,
-          g_l,
-          torch.IntTensor([self.hidden_channels]))
+      if i == self.cond_layer_idx and g is not None:
+        g = self.spk_emb_linear(g.transpose(1, 2))
+        g = g.transpose(1, 2)
+        x = x + g
+        x = x * x_mask
       y = self.attn_layers[i](x, x, attn_mask)
       y = self.drop(y)
       x = self.norm_layers_1[i](x + y)
