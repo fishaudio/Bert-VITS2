@@ -133,13 +133,13 @@ def run(rank, n_gpus, hps):
     if pretrain_dir is None:
         try:
             _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g,
-                                                   optim_g, skip_optimizer)
+                                                   optim_g, skip_optimizer=True)
             _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d,
-                                                   optim_d, skip_optimizer)
+                                                   optim_d, skip_optimizer=True)
             epoch_str = max(epoch_str, 1)
             global_step = (epoch_str - 1) * len(train_loader)
-        except Exception:
-            print("load old checkpoint failed...")
+        except Exception as e:
+            print(e)
             epoch_str = 1
             global_step = 0
     else:
