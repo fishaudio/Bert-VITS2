@@ -24,7 +24,7 @@ if 1 in stage:
                                                      " ".join([str(i) for i in tones]),
                                                      " ".join([str(i) for i in word2ph])))
             except:
-                print("err!", text)
+                print("err!", utt)
 
 if 2 in stage:
     spk_utt_map = defaultdict(list)
