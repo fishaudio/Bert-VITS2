@@ -92,14 +92,19 @@ def run(rank, n_gpus, hps):
     else:
         print("Using normal MAS for VITS1")
         use_noise_scaled_mas = False
+    if "use_spk_conditioned_encoder" in hps.model.keys() and hps.model.use_spk_conditioned_encoder == True:
+        if hps.data.n_speakers == 0:
+            raise ValueError("n_speakers must be > 0 when using spk conditioned encoder to train multi-speaker model")
+        use_spk_conditioned_encoder = True
+    else:
+        print("Using normal encoder for VITS1")
+        use_spk_conditioned_encoder = False
 
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
         n_speakers=hps.data.n_speakers,
-        use_spk_conditioned_encoder=use_spk_conditioned_encoder,
-        use_noise_scaled_mas=use_noise_scaled_mas,
         mas_noise_scale_initial = mas_noise_scale_initial,
         noise_scale_delta = noise_scale_delta,
         **hps.model).cuda(rank)
