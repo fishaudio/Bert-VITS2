@@ -4,7 +4,7 @@ from random import shuffle
 import tqdm
 from text.cleaner import clean_text
 from collections import defaultdict
-stage = [2,3]
+stage = [1,2,3]
 
 transcription_path = 'filelists/genshin.txt'
 train_path = 'filelists/train.list'
