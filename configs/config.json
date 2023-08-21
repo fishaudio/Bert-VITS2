@@ -286,6 +286,8 @@
     }
   },
   "model": {
+    "use_spk_conditioned_encoder": true,
+    "use_noise_scaled_mas": true,
     "use_mel_posterior_encoder": false,
     "inter_channels": 192,
     "hidden_channels": 192,
