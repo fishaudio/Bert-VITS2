@@ -84,12 +84,24 @@ def run(rank, n_gpus, hps):
         eval_loader = DataLoader(eval_dataset, num_workers=0, shuffle=False,
                                  batch_size=1, pin_memory=True,
                                  drop_last=False, collate_fn=collate_fn)
+    if "use_noise_scaled_mas" in hps.model.keys() and hps.model.use_noise_scaled_mas == True:
+        print("Using noise scaled MAS for VITS2")
+        use_noise_scaled_mas = True
+        mas_noise_scale_initial = 0.01
+        noise_scale_delta = 2e-6
+    else:
+        print("Using normal MAS for VITS1")
+        use_noise_scaled_mas = False
 
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
         n_speakers=hps.data.n_speakers,
+        use_spk_conditioned_encoder=use_spk_conditioned_encoder,
+        use_noise_scaled_mas=use_noise_scaled_mas,
+        mas_noise_scale_initial = mas_noise_scale_initial,
+        noise_scale_delta = noise_scale_delta,
         **hps.model).cuda(rank)
 
     freeze_enc = getattr(hps.model, "freeze_enc", False)
@@ -163,6 +175,9 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
     net_g.train()
     net_d.train()
     for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert) in tqdm(enumerate(train_loader)):
+        if net_g.use_noise_scaled_mas:
+            current_mas_noise_scale = net_g.mas_noise_scale_initial - net_g.noise_scale_delta * global_step
+            net_g.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
         x, x_lengths = x.cuda(rank, non_blocking=True), x_lengths.cuda(rank, non_blocking=True)
         spec, spec_lengths = spec.cuda(rank, non_blocking=True), spec_lengths.cuda(rank, non_blocking=True)
         y, y_lengths = y.cuda(rank, non_blocking=True), y_lengths.cuda(rank, non_blocking=True)
