@@ -587,7 +587,7 @@ class SynthesizerTrn(nn.Module):
             neg_cent4 = torch.sum(-0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim=True)  # [b, 1, t_s]
             neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
             if self.use_noise_scaled_mas:
-               epsilon = torch.sum(logs_p, dim=1).exp() * torch.randn_like(neg_cent) * self.current_mas_noise_scale
+               epsilon = torch.std(neg_cent) * torch.randn_like(neg_cent) * self.current_mas_noise_scale
                neg_cent = neg_cent + epsilon
 
             attn_mask = torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
