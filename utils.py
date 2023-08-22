@@ -22,7 +22,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False
     learning_rate = checkpoint_dict['learning_rate']
     if optimizer is not None and not skip_optimizer and checkpoint_dict['optimizer'] is not None:
         optimizer.load_state_dict(checkpoint_dict['optimizer'])
-    else:
+    elif optimizer is None and not skip_optimizer:
         new_opt_dict = optimizer.state_dict()
         new_opt_dict_params = new_opt_dict['param_groups'][0]['params']
         new_opt_dict['param_groups'] = checkpoint_dict['optimizer']['param_groups']
