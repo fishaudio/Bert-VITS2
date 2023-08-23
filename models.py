@@ -280,12 +280,12 @@ class TextEncoder(nn.Module):
             gin_channels=self.gin_channels)
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x, x_lengths, tone, language, bert):
+    def forward(self, x, x_lengths, tone, language, bert, g=None):
         x = (self.emb(x)+ self.tone_emb(tone)+ self.language_emb(language)+self.bert_proj(bert).transpose(1,2)) * math.sqrt(self.hidden_channels)  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
 
-        x = self.encoder(x * x_mask, x_mask)
+        x = self.encoder(x * x_mask, x_mask, g=g)
         stats = self.proj(x) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
@@ -640,13 +640,11 @@ class SynthesizerTrn(nn.Module):
             self.ref_enc = ReferenceEncoder(spec_channels, gin_channels)
 
     def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert):
-
-        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1,2)).unsqueeze(-1)
-
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert,g=g)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
@@ -686,13 +684,13 @@ class SynthesizerTrn(nn.Module):
         return o, l_length, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q), (x, logw, logw_)
       
     def infer(self, x, x_lengths, sid, tone, language, bert, noise_scale=.667, length_scale=1, noise_scale_w=0.8, max_len=None, sdp_ratio=0,y=None):
-        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert)
+        #x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert)
         # g = self.gst(y)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1,2)).unsqueeze(-1)
-
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert,g=g)
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (sdp_ratio) + self.dp(x, x_mask, g=g) * (1 - sdp_ratio)
         w = torch.exp(logw) * x_mask * length_scale
         w_ceil = torch.ceil(w)
