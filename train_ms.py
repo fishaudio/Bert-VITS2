@@ -146,6 +146,8 @@ def run(rank, n_gpus, hps):
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps)
+    else:
+        optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[rank],find_unused_parameters=True)
     net_d = DDP(net_d, device_ids=[rank],find_unused_parameters=True)
 
@@ -174,7 +176,10 @@ def run(rank, n_gpus, hps):
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
-
+    if net_dur_disc is not None:
+        scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
+    else:
+        scheduler_dur_disc = None
     scaler = GradScaler(enabled=hps.train.fp16_run)
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
