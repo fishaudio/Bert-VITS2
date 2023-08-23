@@ -244,7 +244,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
-                y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw, logw_.detach())
+                y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach())
                 with autocast(enabled=False):
                  # TODO: I think need to mean using the mask, but for now, just mean all
                     loss_dur_disc, losses_dur_disc_r, losses_dur_disc_g = discriminator_loss(y_dur_hat_r, y_dur_hat_g)
@@ -303,9 +303,10 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                 scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
                 scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
                 if net_dur_disc is not None:
-                    scalar_dict.update({f"loss/dur_disc_r/{losses_dur_disc_r}"})
-                    scalar_dict.update({f"loss/dur_disc_g/{losses_dur_disc_g}"})
-                    scalar_dict.update({f"loss/dur_gen/{loss_dur_gen}"})
+                    scalar_dict.update({"loss/dur_disc_r"  f"{losses_dur_disc_r}"})
+                    scalar_dict.update({"loss/dur_disc_g" : f"{losses_dur_disc_g}"})
+                    scalar_dict.update({"loss/dur_gen" : f"{loss_dur_gen}"})
+          
                 image_dict = {
                     "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
                     "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()),
