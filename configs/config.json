@@ -289,6 +289,7 @@
     "use_spk_conditioned_encoder": true,
     "use_noise_scaled_mas": true,
     "use_mel_posterior_encoder": false,
+    "use_duration_discriminator": true,
     "inter_channels": 192,
     "hidden_channels": 192,
     "filter_channels": 768,
