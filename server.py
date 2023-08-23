@@ -79,7 +79,7 @@ net_g = SynthesizerTrn(
     **hps.model).to(dev)
 _ = net_g.eval()
 
-_ = utils.load_checkpoint("logs/all_in_one/G_521000.pth", net_g, None,skip_optimizer=True)
+_ = utils.load_checkpoint("logs/G_649000.pth", net_g, None,skip_optimizer=True)
 
 @app.route("/",methods=['GET','POST'])
 def main():
