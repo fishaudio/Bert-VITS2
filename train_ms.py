@@ -8,6 +8,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 #from torch.utils.tensorboard import SummaryWriter
+import wandb
 from wandb.tensorboard import WandbSummaryWriter as SummaryWriter
 import torch.multiprocessing as mp
 import torch.distributed as dist
@@ -63,6 +64,7 @@ def run(rank, n_gpus, hps):
         logger = utils.get_logger(hps.model_dir)
         logger.info(hps)
         utils.check_git_hash(hps.model_dir)
+        wandb.init(project="Bert-VITS2", config=hps, sync_tensorboard=True)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
 
