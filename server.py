@@ -111,7 +111,7 @@ def main():
         torch.cuda.empty_cache()
         if fmt == "mp3":
             process = (
-	        ffmpeg
+	    ffmpeg
             .input("pipe:", format='wav', channel_layout="mono")
             .output("pipe:", format='mp3', audio_bitrate="320k")
             .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True, cmd=ffmpeg_path)
