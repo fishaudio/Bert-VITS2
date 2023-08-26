@@ -152,6 +152,8 @@ def run(rank, n_gpus, hps):
         optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[rank],find_unused_parameters=True)
     net_d = DDP(net_d, device_ids=[rank],find_unused_parameters=True)
+    if net_dur_disc is not None:
+        net_dur_disc = DDP(net_dur_disc, device_ids=[rank], find_unused_parameters=True)
 
     pretrain_dir = None
     if pretrain_dir is None:
