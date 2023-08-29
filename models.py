@@ -665,6 +665,8 @@ class SynthesizerTrn(nn.Module):
             attn = monotonic_align.maximum_path(neg_cent, attn_mask.squeeze(1)).unsqueeze(1).detach()
 
         w = attn.sum(2)
+        # 反量化
+        w -= torch.rand_like(w)
 
         l_length_sdp = self.sdp(x, x_mask, w, g=g)
         l_length_sdp = l_length_sdp / torch.sum(x_mask)
