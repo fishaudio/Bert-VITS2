@@ -38,25 +38,24 @@ if 2 in stage:
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
-    #
-    # train_list = []
-    # val_list = []
-    #
-    # for spk, utts in spk_utt_map.items():
-    #     shuffle(utts)
-    #     val_list+=utts[:val_per_spk]
-    #     train_list+=utts[val_per_spk:]
-    # if len(val_list) > max_val_total:
-    #     train_list+=val_list[max_val_total:]
-    #     val_list = val_list[:max_val_total]
-    #
-    # with open( train_path,"w", encoding='utf-8') as f:
-    #     for line in train_list:
-    #         f.write(line)
-    #
-    # with open(val_path, "w", encoding='utf-8') as f:
-    #     for line in val_list:
-    #         f.write(line)
+    train_list = []
+    val_list = []
+    
+    for spk, utts in spk_utt_map.items():
+        shuffle(utts)
+        val_list+=utts[:val_per_spk]
+        train_list+=utts[val_per_spk:]
+    if len(val_list) > max_val_total:
+        train_list+=val_list[max_val_total:]
+        val_list = val_list[:max_val_total]
+    
+    with open( train_path,"w", encoding='utf-8') as f:
+        for line in train_list:
+            f.write(line)
+    
+    with open(val_path, "w", encoding='utf-8') as f:
+        for line in val_list:
+            f.write(line)
 
 if 3 in stage:
     assert 2 in stage
