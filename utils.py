@@ -206,7 +206,7 @@ def clean_checkpoints(path_to_models='logs/44k/', n_ckpts_to_keep=2, sort_by_tim
 
 def get_hparams_from_dir(model_dir):
     config_save_path = os.path.join(model_dir, "config.json")
-    with open(config_save_path, "r") as f:
+    with open(config_save_path, "r", encoding='utf-8') as f:
         data = f.read()
     config = json.loads(data)
 
