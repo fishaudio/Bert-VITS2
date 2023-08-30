@@ -669,8 +669,6 @@ class SynthesizerTrn(nn.Module):
         l_length_sdp = self.sdp(x, x_mask, w, g=g)
         l_length_sdp = l_length_sdp / torch.sum(x_mask)
         
-        # 反量化
-        w -= torch.rand_like(w)
 
         logw_ = torch.log(w + 1e-6) * x_mask
         logw = self.dp(x, x_mask, g=g)
