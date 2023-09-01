@@ -59,7 +59,7 @@ if 2 in stage:
 
 if 3 in stage:
     assert 2 in stage
-    config = json.load(open(config_path))
+    config = json.load(open(config_path, encoding='utf-8'))
     config["data"]['spk2id'] = spk_id_map
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
