@@ -39,7 +39,7 @@ def process_line(line):
         assert bert.shape[-1] == len(phone)
         torch.save(bert, bert_path)
 
-with open(hps.data.training_files) as f:
+with open(hps.data.training_files, encoding='utf-8') as f:
     lines = f.readlines()
 
 with Pool(processes=12) as pool: #A100 suitable config,if coom,please decrease the processess number.
