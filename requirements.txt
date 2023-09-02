@@ -1,4 +1,3 @@
-Cython
 librosa==0.9.1
 matplotlib
 numpy
@@ -15,3 +14,4 @@ transformers
 pypinyin
 cn2an
 gradio
+av
