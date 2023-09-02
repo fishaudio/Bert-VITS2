@@ -1,27 +1,14 @@
 from flask import Flask, request, Response
 from io import BytesIO
-import ffmpeg
-import base64
-import os
-import sys
-import json
-import math
 import torch
-from torch import nn
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
 
-import time
 import commons
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
-from text import cleaned_text_to_sequence,_symbol_to_id, get_bert
+from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 from scipy.io import wavfile
-
-# Get ffmpeg path
-ffmpeg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg")
 
 # Flask Init
 app = Flask(__name__)
@@ -98,24 +85,23 @@ def main():
             fmt = request.args.get("format", "wav")
             if None in (speaker, text):
                 return "Missing Parameter"
-            if fmt not in ("mp3", "wav"):
+            if fmt not in ("mp3", "wav", "ogg"):
                 return "Invalid Format"
         except:
             return "Invalid Parameter"
 
-
         with torch.no_grad():
             audio = infer(text, sdp_ratio=sdp_ratio, noise_scale=noise, noise_scale_w=noisew, length_scale=length, sid=speaker)
-        wav = BytesIO()
-        wavfile.write(wav, hps.data.sampling_rate, audio)
-        torch.cuda.empty_cache()
-        if fmt == "mp3":
-            process = (
-	    ffmpeg
-            .input("pipe:", format='wav', channel_layout="mono")
-            .output("pipe:", format='mp3', audio_bitrate="320k")
-            .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True, cmd=ffmpeg_path)
-        )
-            out, _ = process.communicate(input=wav.read())
-            return Response(out, mimetype="audio/mpeg")
-        return Response(wav.read(), mimetype="audio/wav")
+
+        with BytesIO() as wav:
+            wavfile.write(wav, hps.data.sampling_rate, audio)
+            torch.cuda.empty_cache()
+            if fmt == "wav":
+                return Response(wav.getvalue(), mimetype="audio/wav")
+            wav.seek(0, 0)
+            with BytesIO() as ofp:
+                utils.wav2(wav, ofp, fmt)
+                return Response(
+                    ofp.getvalue(),
+                    mimetype="audio/mpeg" if fmt == "mp3" else "audio/ogg"
+                )
