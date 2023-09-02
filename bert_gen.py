@@ -42,12 +42,12 @@ def process_line(line):
 
 if __name__ == '__main__':
     lines = []
-    with open(hps.data.training_files) as f:
+    with open(hps.data.training_files, encoding='utf-8' ) as f:
         lines.extend(f.readlines())
 
-    with open(hps.data.validation_files) as f:
+    with open(hps.data.validation_files, encoding='utf-8' ) as f:
         lines.extend(f.readlines())
 
-    with Pool(processes=12) as pool: #A100 suitable config,if coom,please decrease the processess number.
+    with Pool(processes=12) as pool: #A100 40GB suitable config,if coom,please decrease the processess number.
         for _ in tqdm(pool.imap_unordered(process_line, lines)):
             pass
