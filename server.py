@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 from io import BytesIO
 import torch
+from av import open as avopen
 
 import commons
 import utils
@@ -54,6 +55,21 @@ def replace_punctuation(text, i=2):
         text = text.replace(char, char * i)
     return text
 
+def wav2(i, o, format):
+    inp = avopen(i, 'rb')
+    out = avopen(o, 'wb', format=format)
+    if format == "ogg": format = "libvorbis"
+
+    ostream = out.add_stream(format)
+
+    for frame in inp.decode(audio=0):
+        for p in ostream.encode(frame): out.mux(p)
+
+    for p in ostream.encode(None): out.mux(p)
+
+    out.close()
+    inp.close()
+
 # Load Generator
 hps = utils.get_hparams_from_file("./configs/config.json")
 
@@ -100,7 +116,7 @@ def main():
                 return Response(wav.getvalue(), mimetype="audio/wav")
             wav.seek(0, 0)
             with BytesIO() as ofp:
-                utils.wav2(wav, ofp, fmt)
+                wav2(wav, ofp, fmt)
                 return Response(
                     ofp.getvalue(),
                     mimetype="audio/mpeg" if fmt == "mp3" else "audio/ogg"
