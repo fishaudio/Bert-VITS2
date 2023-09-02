@@ -2,6 +2,7 @@ Cython
 librosa==0.9.1
 matplotlib
 numpy
+numba
 phonemizer
 scipy
 tensorboard
