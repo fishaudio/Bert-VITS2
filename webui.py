@@ -103,7 +103,7 @@ if __name__ == "__main__":
         **hps.model).to(device)
     _ = net_g.eval()
 
-    _ = utils.load_checkpoint(args.model, net_g, None,skip_optimizer=True)
+    _ = utils.load_checkpoint(args.model, net_g, None, skip_optimizer=True)
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
