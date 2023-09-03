@@ -3,6 +3,17 @@ import sys, os
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
+import logging
+
+logging.getLogger("numba").setLevel(logging.WARNING)
+logging.getLogger("markdown_it").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
+
+logging.basicConfig(level=logging.INFO, format="| %(name)s | %(levelname)s | %(message)s")
+
+logger = logging.getLogger(__name__)
+
 import torch
 import argparse
 import commons
@@ -67,8 +78,12 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model", default="./logs/as/G_8000.pth", help="path of your model")
     parser.add_argument("-c", "--config", default="./configs/config.json", help="path of your config file")
     parser.add_argument("--share", default=False, help="make link public")
+    parser.add_argument("-d", "--debug", action="store_true", help="enable DEBUG-LEVEL log")
 
     args = parser.parse_args()
+    if args.debug:
+        logger.info("Enable DEBUG-LEVEL log")
+        logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(args.config)
 
     device = (
@@ -92,8 +107,7 @@ if __name__ == "__main__":
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    app = gr.Blocks()
-    with app:
+    with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
                 text = gr.TextArea(label="Text", placeholder="Input Text Here",
