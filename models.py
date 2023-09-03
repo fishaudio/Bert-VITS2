@@ -15,8 +15,6 @@ from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from commons import init_weights, get_padding
 from text import symbols, num_tones, num_languages
 class DurationDiscriminator(nn.Module): #vits2
-  # TODO : not using "spk conditioning" for now according to the paper.
-  # Can be a better discriminator if we use it.
   def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0):
     super().__init__()
 
@@ -34,11 +32,11 @@ class DurationDiscriminator(nn.Module): #vits2
     self.dur_proj = nn.Conv1d(1, filter_channels, 1)
 
     self.pre_out_conv_1 = nn.Conv1d(2*filter_channels, filter_channels, kernel_size, padding=kernel_size//2)
-    self.pre_out_norm_1 = modules.LayerNorm(filter_channels)
+    #self.pre_out_norm_1 = modules.LayerNorm(filter_channels)
     self.pre_out_conv_2 = nn.Conv1d(filter_channels, filter_channels, kernel_size, padding=kernel_size//2)
-    self.pre_out_norm_2 = modules.LayerNorm(filter_channels)
+    #self.pre_out_norm_2 = modules.LayerNorm(filter_channels)
 
-    # if gin_channels != 0:
+    #if gin_channels != 0:
     #   self.cond = nn.Conv1d(gin_channels, in_channels, 1)
 
     self.output_layer = nn.Sequential(
@@ -64,7 +62,7 @@ class DurationDiscriminator(nn.Module): #vits2
 
   def forward(self, x, x_mask, dur_r, dur_hat, g=None):
     x = torch.detach(x)
-    # if g is not None:
+    #if g is not None:
     #   g = torch.detach(g)
     #   x = x + self.cond(g)
     x = self.conv_1(x * x_mask)

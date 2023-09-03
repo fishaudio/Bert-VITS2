@@ -1,11 +1,11 @@
 import torch
 from torch.utils.data import DataLoader
-
+from multiprocessing import Pool
 import commons
 import utils
 from data_utils import TextAudioSpeakerLoader, TextAudioSpeakerCollate
 from tqdm import tqdm
-from multiprocessing import Pool
+import warnings
 
 from text import cleaned_text_to_sequence, get_bert
 
@@ -40,14 +40,14 @@ def process_line(line):
         torch.save(bert, bert_path)
 
 
-lines = []
-with open(hps.data.training_files) as f:
-    lines.extend(f.readlines())
+if __name__ == '__main__':
+    lines = []
+    with open(hps.data.training_files, encoding='utf-8' ) as f:
+        lines.extend(f.readlines())
 
-with open(hps.data.validation_files) as f:
-    lines.extend(f.readlines())
+    with open(hps.data.validation_files, encoding='utf-8' ) as f:
+        lines.extend(f.readlines())
 
-
-with Pool(processes=12) as pool: #A100 suitable config,if coom,please decrease the processess number.
-    for _ in tqdm(pool.imap_unordered(process_line, lines)):
-        pass
+    with Pool(processes=12) as pool: #A100 40GB suitable config,if coom,please decrease the processess number.
+        for _ in tqdm(pool.imap_unordered(process_line, lines)):
+            pass

@@ -78,7 +78,8 @@ def run(rank, n_gpus, hps):
         shuffle=True)
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(train_dataset, num_workers=24, shuffle=False, pin_memory=True,
-                              collate_fn=collate_fn, batch_sampler=train_sampler, persistent_workers=True,prefetch_factor=4)
+                              collate_fn=collate_fn, batch_sampler=train_sampler,
+                              persistent_workers=True,prefetch_factor=4)  #256G Memory suitable loader.
     if rank == 0:
         eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
         eval_loader = DataLoader(eval_dataset, num_workers=0, shuffle=False,
@@ -146,8 +147,8 @@ def run(rank, n_gpus, hps):
         eps=hps.train.eps)
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[rank],find_unused_parameters=True)
-    net_d = DDP(net_d, device_ids=[rank],find_unused_parameters=True)
+    net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
+    net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
     if net_dur_disc is not None:
         net_dur_disc = DDP(net_dur_disc, device_ids=[rank], find_unused_parameters=True)
 
