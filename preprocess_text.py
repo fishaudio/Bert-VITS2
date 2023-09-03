@@ -23,8 +23,8 @@ if 1 in stage:
                 f.write('{}|{}|{}|{}|{}|{}|{}\n'.format(utt, spk, language, norm_text, ' '.join(phones),
                                                      " ".join([str(i) for i in tones]),
                                                      " ".join([str(i) for i in word2ph])))
-            except:
-                print("err!", utt)
+            except Exception as error :
+                print("err!", utt, error)
 
 if 2 in stage:
     spk_utt_map = defaultdict(list)
