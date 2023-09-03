@@ -15,6 +15,9 @@ import gradio as gr
 import webbrowser
 
 
+net_g = None
+
+
 def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -27,6 +30,7 @@ def get_text(text, language_str, hps):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
     bert = get_bert(norm_text, word2ph, language_str)
+    del word2ph
 
     assert bert.shape[-1] == len(phone)
 
@@ -37,16 +41,19 @@ def get_text(text, language_str, hps):
     return bert, phone, tone, language
 
 def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid):
-    bert, phones, tones, lang_ids = get_text(text, "ZH", hps,)
+    global net_g
+    bert, phones, tones, lang_ids = get_text(text, "ZH", hps)
     with torch.no_grad():
         x_tst=phones.to(device).unsqueeze(0)
         tones=tones.to(device).unsqueeze(0)
         lang_ids=lang_ids.to(device).unsqueeze(0)
         bert = bert.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
+        del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
-        audio = net_g.infer(x_tst, x_tst_lengths, speakers, tones, lang_ids,bert, sdp_ratio=sdp_ratio
+        audio = net_g.infer(x_tst, x_tst_lengths, speakers, tones, lang_ids, bert, sdp_ratio=sdp_ratio
                            , noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale)[0][0,0].data.cpu().float().numpy()
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
         return audio
 
 def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale):
