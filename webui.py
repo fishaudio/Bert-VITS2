@@ -8,6 +8,10 @@ from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 import gradio as gr
 import webbrowser
+import sys, os
+
+if sys.platform == "darwin":
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
@@ -58,7 +62,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     hps = utils.get_hparams_from_file(args.config)
 
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = (
+        "cuda:0"
+        if torch.cuda.is_available()
+        else (
+            "mps"
+            if sys.platform == "darwin" and torch.backends.mps.is_available()
+            else "cpu"
+        )
+    )
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
