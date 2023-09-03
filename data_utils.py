@@ -4,7 +4,7 @@ import random
 import numpy as np
 import torch
 import torch.utils.data
-
+import tqdm
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch, spec_to_mel_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
@@ -56,7 +56,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audiopaths_sid_text_new = []
         lengths = []
         skipped = 0
-        for _id, spk, language, text, phones, tone, word2ph in self.audiopaths_sid_text:
+        print(Init dataset...)
+        for _id, spk, language, text, phones, tone, word2ph in tqdm(self.audiopaths_sid_text):
             audiopath = f'{_id}'
             if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
                 phones = phones.split(" ")
