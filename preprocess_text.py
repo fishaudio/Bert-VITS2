@@ -18,7 +18,6 @@ if 1 in stage:
         for line in tqdm.tqdm(open(transcription_path, encoding='utf-8').readlines()):
             try:
                 utt, spk, language, text = line.strip().split('|')
-                #language = "ZH"
                 norm_text, phones, tones, word2ph = clean_text(text, language)
                 f.write('{}|{}|{}|{}|{}|{}|{}\n'.format(utt, spk, language, norm_text, ' '.join(phones),
                                                      " ".join([str(i) for i in tones]),
