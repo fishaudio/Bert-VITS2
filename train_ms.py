@@ -42,7 +42,7 @@ torch.backends.cudnn.allow_tf32 = True  # If encontered training problem,please 
 torch.set_float32_matmul_precision('medium')
 torch.backends.cuda.sdp_kernel("flash")
 torch.backends.cuda.enable_flash_sdp(True)
-torch.backends.cuda.enable_mem_efficient_sdp(True)
+torch.backends.cuda.enable_mem_efficient_sdp(True)  # Not avaliable if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
@@ -165,7 +165,7 @@ def run(rank, n_gpus, hps):
             
         epoch_str = max(epoch_str, 1)
         global_step = (epoch_str - 1) * len(train_loader)
-        except Exception as e:
+    except Exception as e:
             print(e)
             epoch_str = 1
             global_step = 0
