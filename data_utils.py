@@ -89,9 +89,9 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         spec_filename = filename.replace(".wav", ".spec.pt")
         if self.use_mel_spec_posterior:
             spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
-        if os.path.exists(spec_filename):
+        try:
             spec = torch.load(spec_filename)
-        else:
+        except:
             if self.use_mel_spec_posterior:
                 # if os.path.exists(filename.replace(".wav", ".spec.pt")):
                 #     # spec, n_fft, num_mels, sampling_rate, fmin, fmax
