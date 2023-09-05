@@ -2,16 +2,6 @@ import torch
 import sys
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
-device = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        else (
-            "mps"
-            if sys.platform == "darwin" and torch.backends.mps.is_available()
-            else "cpu"
-        )
-    )
-
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
 
 def get_bert_feature(text, word2ph, device):
