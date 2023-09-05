@@ -73,7 +73,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         # separate filename, speaker_id and text
         audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
 
-        bert, phones, tone, language = self.get_text(text, word2ph, phones, tone, language, audiopath)
+        bert, ja_bert, phones, tone, language = self.get_text(text, word2ph, phones, tone, language, audiopath)
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
@@ -105,19 +105,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         return spec, audio_norm
 
     def get_text(self, text, word2ph, phone, tone, language_str, wav_path):
-        pold = phone
-        w2pho = [i for i in word2ph]
-        word2ph = [i for i in word2ph]
         phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-        pold2 = phone
-
         if self.add_blank:
-            p1 = len(phone)
             phone = commons.intersperse(phone, 0)
-            p2 = len(phone)
-            t1 = len(tone)
             tone = commons.intersperse(tone, 0)
-            t2 = len(tone)
             language = commons.intersperse(language, 0)
             for i in range(len(word2ph)):
                 word2ph[i] = word2ph[i] * 2
@@ -129,8 +120,17 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         except:
             bert = get_bert(text, word2ph, language_str)
             torch.save(bert, bert_path)
-            assert bert.shape[-1] == len(phone)
+            assert bert.shape[-1] == len(phone), phone
 
+        if language_str=='ZH':
+            zh_bert = bert
+            ja_bert = torch.zeros(768, len(phone))
+        elif language_str=="JA":
+            ja_bert = bert
+            zh_bert = torch.zeros(1024, len(phone))
+        else:
+            zh_bert = torch.zeros(1024, len(phone))
+            ja_bert = torch.zeros(768, len(phone))
         assert bert.shape[-1] == len(phone), (
         bert.shape, len(phone), sum(word2ph), p1, p2, t1, t2, pold, pold2, word2ph, text, w2pho)
         phone = torch.LongTensor(phone)
