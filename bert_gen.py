@@ -5,10 +5,7 @@ import utils
 from tqdm import tqdm
 from loguru import logger
 from text import cleaned_text_to_sequence, get_bert
-
-config_path = "configs/config.json"
-hps = utils.get_hparams_from_file(config_path)
-total_gpus = torch.cuda.device_count()
+import argparse
 
 
 def process_line(line):
@@ -45,6 +42,9 @@ def process_line(line):
 
 
 if __name__ == "__main__":
+    parser.add_argument('-c', '--config', type=str, default=None)
+    config_path = args.config
+    hps = utils.get_hparams_from_file(config_path)
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
@@ -52,7 +52,11 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    # RTX4090 24GB suitable config, if coom, please decrease the processes number.
-    with Pool(processes=6) as pool:
+    parser.add_argument(
+        '--num_processes', type=int, default=1, help='You are advised to set the number of processes to the same as the number of CPU cores'
+    )
+    
+    num_processes = args.num_processes
+    with Pool(processes=num_processes) as pool:
         for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
             pass
