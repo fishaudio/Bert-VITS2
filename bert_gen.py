@@ -14,7 +14,6 @@ def process_line(line):
     if torch.cuda.is_available():
         gpu_id = rank % torch.cuda.device_count()
         device = torch.device(f"cuda:{gpu_id}")
-    #logger.info(f"Rank {rank} uses device {device}")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
     phone = phones.split(" ")
     tone = [int(i) for i in tone.split(" ")]
@@ -36,9 +35,12 @@ def process_line(line):
         bert = torch.load(bert_path)
         assert bert.shape[-1] == len(phone)
     except Exception:
-        bert = get_bert(text, word2ph, language_str,device)
-        assert bert.shape[-1] == len(phone)
-        torch.save(bert, bert_path)
+        try:
+            bert = get_bert(text, word2ph, language_str,device)
+            assert bert.shape[-1] == len(phone)
+            torch.save(bert, bert_path)
+        except Exception:
+            print(text)
 
 
 if __name__ == "__main__":
