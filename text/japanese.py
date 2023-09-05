@@ -529,7 +529,7 @@ def distribute_phone(n_phone, n_word):
         phones_per_word[min_index] += 1
     return phones_per_word
 
-tokenizer = AutoTokenizer.from_pretrained("./pretrain/bert-base-japanese-v3")
+tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 def g2p(norm_text):
     tokenized = tokenizer.tokenize(norm_text)
     phs = []
