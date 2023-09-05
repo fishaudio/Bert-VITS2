@@ -558,7 +558,7 @@ def g2p(norm_text):
     return phones, tones, word2ph
 
 if __name__ == '__main__':
-    tokenizer = AutoTokenizer.from_pretrained("./pretrain/bert-base-japanese-v3")
+    tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
     text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
 
