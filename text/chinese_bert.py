@@ -13,9 +13,11 @@ device = torch.device(
     )
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
-model = AutoModelForMaskedLM.from_pretrained("./bert/chinese-roberta-wwm-ext-large").to(device)
 
-def get_bert_feature(text, word2ph):
+def get_bert_feature(text, word2ph, device):
+    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu"
+        device == "mps"
+    model = AutoModelForMaskedLM.from_pretrained("./bert/chinese-roberta-wwm-ext-large").to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors='pt')
         for i in inputs:
