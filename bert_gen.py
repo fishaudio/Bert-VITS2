@@ -43,9 +43,7 @@ def process_line(line):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="configs/config.json")
-    parser.add_argument(
-        '--num_processes', type=int, default=1, help='You are advised to set the number of processes to the same as the number of CPU cores'
-    )
+    parser.add_argument('--num_processes', type=int, default=2')
     args = parser.parse_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
