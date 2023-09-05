@@ -25,5 +25,4 @@ def get_bert_feature(text, word2ph, device=None):
 
     phone_level_feature = torch.cat(phone_level_feature, dim=0)
 
-
     return phone_level_feature.T
