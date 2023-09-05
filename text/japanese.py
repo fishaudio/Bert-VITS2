@@ -558,11 +558,8 @@ def g2p(norm_text):
     return phones, tones, word2ph
 
 if __name__ == '__main__':
-    path = "../../../Downloads/transcript_utf8.txt"
     tokenizer = AutoTokenizer.from_pretrained("./pretrain/bert-base-japanese-v3")
     text = "hello,こんにちは、世界！……"
-    # text = 'こんにちは、末期試験に備えて、本当に気合いを入れて勉強しなきゃ。'
-        # text = '溺れかかっていた乗客は、すべて救助された。'
     from text.japanese_bert import get_bert_feature
 
     text = text_normalize(text)
