@@ -34,14 +34,14 @@ num_tones = num_zh_tones + num_ja_tones + num_en_tones
 # language maps
 language_id_map = {
     'ZH': 0,
-    "JA": 1,
+    "JP": 1,
     "EN": 2
 }
 num_languages = len(language_id_map.keys())
 
 language_tone_start_map = {
     'ZH': 0,
-    "JA": num_zh_tones,
+    "JP": num_zh_tones,
     "EN": num_zh_tones + num_ja_tones
 }
 
