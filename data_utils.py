@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.utils.data
 from tqdm import tqdm
-
+from loguru import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch, spec_to_mel_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
@@ -57,6 +57,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audiopaths_sid_text_new = []
         lengths = []
         skipped = 0
+        logger.info("Init dataset...")
         for _id, spk, language, text, phones, tone, word2ph in tqdm(self.audiopaths_sid_text):
             audiopath = f'{_id}'
             if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
@@ -67,7 +68,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
-        print("skipped: ", skipped, ", total: ", len(self.audiopaths_sid_text))
+        logger.info("skipped: " + skipped + ", total: " + len(self.audiopaths_sid_text))
         self.audiopaths_sid_text = audiopaths_sid_text_new
         self.lengths = lengths
 
