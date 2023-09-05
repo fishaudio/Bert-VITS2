@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-
+import sys
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
