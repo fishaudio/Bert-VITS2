@@ -42,6 +42,7 @@ def process_line(line):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="configs/config.json")
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
