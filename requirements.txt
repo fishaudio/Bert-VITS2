@@ -16,3 +16,4 @@ cn2an
 gradio
 av
 mecab-python3
+loguru
