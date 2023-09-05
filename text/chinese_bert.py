@@ -30,7 +30,6 @@ def get_bert_feature(text, word2ph, device=None):
     return phone_level_feature.T
 
 if __name__ == '__main__':
-    # feature = get_bert_feature('你好,我是说的道理。')
     import torch
 
     word_level_feature = torch.rand(38, 1024)  # 12个词,每个词1024维特征
