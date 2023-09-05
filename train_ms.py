@@ -205,7 +205,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
     net_d.train()
     if net_dur_disc is not None:
         net_dur_disc.train()
-    for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert) in tqdm(enumerate(train_loader)):
+    for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert, ja_bert) in tqdm(enumerate(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = net_g.module.mas_noise_scale_initial - net_g.module.noise_scale_delta * global_step
             net_g.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
@@ -216,10 +216,11 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         tone = tone.cuda(rank, non_blocking=True)
         language = language.cuda(rank, non_blocking=True)
         bert = bert.cuda(rank, non_blocking=True)
+        ja_bert = ja_bert.cuda(rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             y_hat, l_length, attn, ids_slice, x_mask, z_mask, \
-                (z, z_p, m_p, logs_p, m_q, logs_q), (hidden_x, logw, logw_) = net_g(x, x_lengths, spec, spec_lengths, speakers, tone, language, bert)
+                (z, z_p, m_p, logs_p, m_q, logs_q), (hidden_x, logw, logw_) = net_g(x, x_lengths, spec, spec_lengths, speakers, tone, language, bert, ja_bert)
             mel = spec_to_mel_torch(
                 spec,
                 hps.data.filter_length,
@@ -342,7 +343,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     audio_dict = {}
     print("Evaluating ...")
     with torch.no_grad():
-        for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert) in enumerate(eval_loader):
+        for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths, speakers, tone, language, bert, ja_bert) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             y, y_lengths = y.cuda(), y_lengths.cuda()
@@ -351,7 +352,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             tone = tone.cuda()
             language = language.cuda()
             for use_sdp in [True, False]:
-                y_hat, attn, mask, *_ = generator.module.infer(x, x_lengths, speakers, tone, language, bert, y=spec, max_len=1000, sdp_ratio=0.0 if not use_sdp else 1.0)
+                y_hat, attn, mask, *_ = generator.module.infer(x, x_lengths, speakers, tone, language, bert, ja_bert, y=spec, max_len=1000, sdp_ratio=0.0 if not use_sdp else 1.0)
                 y_hat_lengths = mask.sum([1, 2]).long() * hps.data.hop_length
 
                 mel = spec_to_mel_torch(
