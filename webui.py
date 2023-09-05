@@ -25,9 +25,7 @@ from text.cleaner import clean_text
 import gradio as gr
 import webbrowser
 
-
 net_g = None
-
 
 def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
@@ -51,9 +49,9 @@ def get_text(text, language_str, hps):
 
     return bert, phone, tone, language
 
-def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid):
+def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, language):
     global net_g
-    bert, phones, tones, lang_ids = get_text(text, "ZH", hps)
+    bert, phones, tones, lang_ids = get_text(text, language, hps)
     with torch.no_grad():
         x_tst=phones.to(device).unsqueeze(0)
         tones=tones.to(device).unsqueeze(0)
@@ -67,9 +65,9 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid):
         del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
         return audio
 
-def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale):
+def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
     with torch.no_grad():
-        audio = infer(text, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker)
+        audio = infer(text, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker, language=language)
     return "Success", (hps.data.sampling_rate, audio)
 
 
@@ -107,6 +105,7 @@ if __name__ == "__main__":
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
+    languages = ["ZH","JA"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
@@ -117,6 +116,7 @@ if __name__ == "__main__":
                 noise_scale = gr.Slider(minimum=0.1, maximum=2, value=0.6, step=0.1, label='Noise Scale')
                 noise_scale_w = gr.Slider(minimum=0.1, maximum=2, value=0.8, step=0.1, label='Noise Scale W')
                 length_scale = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.1, label='Length Scale')
+                language = gr.Dropdown(choices=languages, value=languages[0], label='Language')
                 btn = gr.Button("Generate!", variant="primary")
             with gr.Column():
                 text_output = gr.Textbox(label="Message")
