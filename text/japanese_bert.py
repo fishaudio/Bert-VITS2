@@ -5,8 +5,10 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 def get_bert_feature(text, word2ph):
-    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu"
-        device == "mps"
+    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu":
+        device = "mps"
+    if not device:
+        device = "cuda"
     model = AutoModelForMaskedLM.from_pretrained("./bert/bert-base-japanese-v3").to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors='pt')
