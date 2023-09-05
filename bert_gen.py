@@ -46,7 +46,7 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    # A100 40GB suitable config, if coom, please decrease the processes number.
+    # RTX4090 24GB suitable config, if coom, please decrease the processes number.
     with Pool(processes=6) as pool:
         for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
             pass
