@@ -4,9 +4,11 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
 
-def get_bert_feature(text, word2ph, device):
-    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu"
-        device == "mps"
+def get_bert_feature(text, word2ph, device=None):
+    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu":
+        device = "mps"
+    if not device:
+        device = "cuda"
     model = AutoModelForMaskedLM.from_pretrained("./bert/chinese-roberta-wwm-ext-large").to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors='pt')
