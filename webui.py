@@ -78,6 +78,7 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
 def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
     with torch.no_grad():
         audio = infer(text, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker, language=language)
+        torch.cuda.empty_cache()
     return "Success", (hps.data.sampling_rate, audio)
 
 
