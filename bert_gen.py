@@ -44,6 +44,10 @@ def process_line(line):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="configs/config.json")
+    parser.add_argument(
+        '--num_processes', type=int, default=1, help='You are advised to set the number of processes to the same as the number of CPU cores'
+    )
+    args = parser.parse_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
     lines = []
@@ -53,9 +57,6 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    parser.add_argument(
-        '--num_processes', type=int, default=1, help='You are advised to set the number of processes to the same as the number of CPU cores'
-    )
     
     num_processes = args.num_processes
     with Pool(processes=num_processes) as pool:
