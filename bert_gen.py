@@ -35,12 +35,9 @@ def process_line(line):
         bert = torch.load(bert_path)
         assert bert.shape[-1] == len(phone)
     except Exception:
-        try:
-            bert = get_bert(text, word2ph, language_str,device)
-            assert bert.shape[-1] == len(phone)
-            torch.save(bert, bert_path)
-        except Exception:
-            print(text)
+        bert = get_bert(text, word2ph, language_str,device)
+        assert bert.shape[-1] == len(phone)
+        torch.save(bert, bert_path)
 
 
 if __name__ == "__main__":
