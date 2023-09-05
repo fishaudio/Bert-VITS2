@@ -1,7 +1,15 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        else (
+            "mps"
+            if sys.platform == "darwin" and torch.backends.mps.is_available()
+            else "cpu"
+        )
+    )
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 model = AutoModelForMaskedLM.from_pretrained("./bert/bert-base-japanese-v3").to(device)
