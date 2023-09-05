@@ -12,8 +12,9 @@ zh_symbols = ['E', 'En', 'a', 'ai', 'an', 'ang', 'ao', 'b', 'c', 'ch', 'd', 'e',
 num_zh_tones = 6
 
 # japanese
-ja_symbols = ['I', 'N', 'U', 'a', 'b', 'by', 'ch', 'cl', 'd', 'dy', 'e', 'f', 'g', 'gy', 'h', 'hy', 'i', 'j', 'k', 'ky',
-              'm', 'my', 'n', 'ny', 'o', 'p', 'py', 'r', 'ry', 's', 'sh', 't', 'ts', 'u', 'V', 'w', 'y', 'z']
+ja_symbols = ['N', 'a', 'a:', 'b', 'by', 'ch', 'd', 'dy', 'e', 'e:', 'f', 'g', 'gy', 'h', 'hy', 'i', 'i:', 'j', 'k', 'ky',
+              'm', 'my', 'n', 'ny', 'o', 'o:', 'p', 'py', 'q', 'r', 'ry', 's', 'sh', 't', 'ts', 'ty', 'u', 'u:',
+              'w', 'y', 'z', 'zy']
 num_ja_tones = 1
 
 # English
