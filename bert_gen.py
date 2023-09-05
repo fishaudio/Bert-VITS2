@@ -6,7 +6,7 @@ from tqdm import tqdm
 from loguru import logger
 from text import cleaned_text_to_sequence, get_bert
 import argparse
-
+import torch.multiprocessing as mp
 
 def process_line(line):
     rank = mp.current_process()._identity
