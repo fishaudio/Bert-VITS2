@@ -35,7 +35,6 @@ def main(
     max_val_total: int,
     clean: bool,
 ):
-
     if cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
