@@ -20,7 +20,6 @@
     "c_kl": 1.0
   },
   "data": {
-    "use_mel_posterior_encoder": false,
     "training_files": "filelists/train.list",
     "validation_files": "filelists/val.list",
     "max_wav_value": 32768.0,
