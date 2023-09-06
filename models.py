@@ -355,7 +355,7 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, tone, language, bert, ja_bert, g=None):
-        bert_emb = self.zh_bert_proj(bert).transpose(1, 2)
+        bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         x = (
             self.emb(x)
