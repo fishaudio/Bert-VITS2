@@ -32,7 +32,7 @@ from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 
-os.environ['NCCL_P2P_DISABLE'] = 1  # Avoid training problem.
+os.environ["NCCL_P2P_DISABLE"] = 1  # Avoid training problem.
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.sdp_kernel("flash")
