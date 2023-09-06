@@ -3,7 +3,8 @@ name: push format
 on:
   push:
     branches:
-      - main
+      - master
+      - dev
 
 permissions:
   contents: write
