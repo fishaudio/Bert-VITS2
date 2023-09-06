@@ -33,7 +33,9 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 
 os.environ['NCCL_P2P_DISABLE'] = 1  # Avoid training problem.
-
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True  # If encontered training problem,please try to disable TF32.
+torch.set_float32_matmul_precision('medium')
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.sdp_kernel("flash")
 torch.backends.cuda.enable_flash_sdp(True)
