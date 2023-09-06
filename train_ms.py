@@ -32,7 +32,6 @@ from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 
-os.environ["NCCL_P2P_DISABLE"] = 1  # Avoid training problem.
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
     True  # If encontered training problem,please try to disable TF32.
@@ -76,12 +75,11 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=16,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
-        persistent_workers=True,
         prefetch_factor=4,
     )  # 128G Memory suitable loader.
     if rank == 0:
