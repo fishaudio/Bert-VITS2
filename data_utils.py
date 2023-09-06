@@ -80,7 +80,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
-        return (phones, spec, wav, sid, tone, language, bert)
+        return (phones, spec, wav, sid, tone, language, bert，ja_bert)
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
