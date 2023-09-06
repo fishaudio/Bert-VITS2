@@ -114,7 +114,7 @@ def main():
             return "Missing Parameter"
         if fmt not in ("mp3", "wav", "ogg"):
             return "Invalid Format"
-        if language not in ("JA", "ZH")
+        if language not in ("JA", "ZH"):
             return "Invalid language"
     except:
         return "Invalid Parameter"
