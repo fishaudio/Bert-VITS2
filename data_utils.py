@@ -68,7 +68,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
-        logger.info("skipped: " + skipped + ", total: " + len(self.audiopaths_sid_text))
+        logger.info("skipped: " + str(skipped) + ", total: " + str(len(self.audiopaths_sid_text)))
         self.audiopaths_sid_text = audiopaths_sid_text_new
         self.lengths = lengths
 
