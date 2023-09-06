@@ -7,6 +7,7 @@ from text import cleaned_text_to_sequence, get_bert
 import argparse
 import torch.multiprocessing as mp
 
+
 def process_line(line):
     rank = mp.current_process()._identity
     rank = rank[0] if len(rank) > 0 else 0
@@ -34,15 +35,15 @@ def process_line(line):
         bert = torch.load(bert_path)
         assert bert.shape[-1] == len(phone)
     except Exception:
-        bert = get_bert(text, word2ph, language_str,device)
+        bert = get_bert(text, word2ph, language_str, device)
         assert bert.shape[-1] == len(phone)
         torch.save(bert, bert_path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="configs/config.json")
-    parser.add_argument('--num_processes', type=int, default=2 )
+    parser.add_argument("-c", "--config", type=str, default="configs/config.json")
+    parser.add_argument("--num_processes", type=int, default=2)
     args = parser.parse_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
@@ -53,7 +54,6 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    
     num_processes = args.num_processes
     with Pool(processes=num_processes) as pool:
         for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):

@@ -331,12 +331,12 @@ def kata2phoneme(text: str) -> str:
             x = _RULEMAP2.get(text[:2])
             if x is not None:
                 text = text[2:]
-                res += x.split(' ')[1:]
+                res += x.split(" ")[1:]
                 continue
         x = _RULEMAP1.get(text[0])
         if x is not None:
             text = text[1:]
-            res += x.split(' ')[1:]
+            res += x.split(" ")[1:]
             continue
         res.append(text[0])
         text = text[1:]
@@ -357,6 +357,7 @@ def hira2kata(text: str) -> str:
 _SYMBOL_TOKENS = set(list("・、。？！"))
 _NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
 _TAGGER = MeCab.Tagger()
+
 
 def text2kata(text: str) -> str:
     parsed = _TAGGER.parse(text)
@@ -472,6 +473,7 @@ def japanese_text_to_phonemes(text: str) -> str:
     res = kata2phoneme(res)
     return res
 
+
 def is_japanese_character(char):
     # 定义日语文字系统的 Unicode 范围
     japanese_ranges = [
@@ -493,26 +495,36 @@ def is_japanese_character(char):
 
     return False
 
+
 rep_map = {
-    '：': ',',
-    '；': ',',
-    '，': ',',
-    '。': '.',
-    '！': '!',
-    '？': '?',
-    '\n': '.',
+    "：": ",",
+    "；": ",",
+    "，": ",",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "\n": ".",
     "·": ",",
-    '、': ",",
-    '...': '…'
+    "、": ",",
+    "...": "…",
 }
+
+
 def replace_punctuation(text):
-    pattern = re.compile('|'.join(re.escape(p) for p in rep_map.keys()))
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
 
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
-    replaced_text = re.sub(r'[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF'+"".join(punctuation)+r']+', '', replaced_text)
+    replaced_text = re.sub(
+        r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF"
+        + "".join(punctuation)
+        + r"]+",
+        "",
+        replaced_text,
+    )
 
     return replaced_text
+
 
 def text_normalize(text):
     res = unicodedata.normalize("NFKC", text)
@@ -520,6 +532,7 @@ def text_normalize(text):
     # res = "".join([i for i in res if is_japanese_character(i)])
     res = replace_punctuation(res)
     return res
+
 
 def distribute_phone(n_phone, n_word):
     phones_per_word = [0] * n_word
@@ -529,16 +542,19 @@ def distribute_phone(n_phone, n_word):
         phones_per_word[min_index] += 1
     return phones_per_word
 
+
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
+
+
 def g2p(norm_text):
     tokenized = tokenizer.tokenize(norm_text)
     phs = []
     ph_groups = []
     for t in tokenized:
-        if not t.startswith('#'):
+        if not t.startswith("#"):
             ph_groups.append([t])
         else:
-            ph_groups[-1].append(t.replace("#", ''))
+            ph_groups[-1].append(t.replace("#", ""))
     word2ph = []
     for group in ph_groups:
         phonemes = kata2phoneme(text2kata("".join(group)))
@@ -552,12 +568,13 @@ def g2p(norm_text):
         word2ph += aaa
 
         phs += phonemes
-    phones = ['_'] + phs + ["_"]
+    phones = ["_"] + phs + ["_"]
     tones = [0 for i in phones]
     word2ph = [1] + word2ph + [1]
     return phones, tones, word2ph
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
     text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
@@ -568,6 +585,3 @@ if __name__ == '__main__':
     bert = get_bert_feature(text, word2ph)
 
     print(phones, tones, word2ph, bert.shape)
-
-
-

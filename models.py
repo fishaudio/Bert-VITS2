@@ -104,7 +104,6 @@ class TransformerCouplingBlock(nn.Module):
         gin_channels=0,
         share_parameter=False,
     ):
-
         super().__init__()
         self.channels = channels
         self.hidden_channels = hidden_channels
@@ -685,7 +684,6 @@ class ReferenceEncoder(nn.Module):
     """
 
     def __init__(self, spec_channels, gin_channels=0):
-
         super().__init__()
         self.spec_channels = spec_channels
         ref_enc_filters = [32, 32, 64, 64, 128, 128]
@@ -770,7 +768,6 @@ class SynthesizerTrn(nn.Module):
         use_transformer_flow=True,
         **kwargs
     ):
-
         super().__init__()
         self.n_vocab = n_vocab
         self.spec_channels = spec_channels
