@@ -286,6 +286,7 @@
     }
   },
   "model": {
+    "freeze_enc": false,
     "use_spk_conditioned_encoder": true,
     "use_noise_scaled_mas": true,
     "use_mel_posterior_encoder": false,
