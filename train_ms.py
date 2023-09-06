@@ -114,12 +114,6 @@ def run():
         noise_scale_delta = noise_scale_delta,
         **hps.model).cuda(rank)
 
-    freeze_enc = getattr(hps.model, "freeze_enc", False)
-    if freeze_enc:
-        print("freeze encoder !!!")
-        for param in net_g.enc_p.parameters():
-            param.requires_grad = False
-
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
