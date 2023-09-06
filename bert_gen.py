@@ -3,7 +3,6 @@ from multiprocessing import Pool
 import commons
 import utils
 from tqdm import tqdm
-from loguru import logger
 from text import cleaned_text_to_sequence, get_bert
 import argparse
 import torch.multiprocessing as mp
