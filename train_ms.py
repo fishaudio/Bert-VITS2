@@ -80,8 +80,7 @@ def run():
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
-        prefetch_factor=4,
-    )  # 128G Memory suitable loader.
+    )  # 0 worker
     if rank == 0:
         eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
         eval_loader = DataLoader(
