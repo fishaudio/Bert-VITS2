@@ -25,14 +25,12 @@ import webbrowser
 
 net_g = None
 
-if (
-    sys.platform == "darwin"
-    and torch.backends.mps.is_available()
-    ):
+if sys.platform == "darwin" and torch.backends.mps.is_available():
     device = "mps"
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 else:
     device = "cuda"
+
 
 def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
@@ -207,7 +205,15 @@ if __name__ == "__main__":
 
         btn.click(
             tts_fn,
-            inputs=[text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language],
+            inputs=[
+                text,
+                speaker,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                language,
+            ],
             outputs=[text_output, audio_output],
         )
 
