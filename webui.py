@@ -1,8 +1,4 @@
 import sys, os
-
-if sys.platform == "darwin":
-    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-
 import logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -29,6 +25,14 @@ import webbrowser
 
 net_g = None
 
+if (
+    sys.platform == "darwin"
+    and torch.backends.mps.is_available()
+    ):
+    device = "mps"
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+else:
+    device = "cuda"
 
 def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
