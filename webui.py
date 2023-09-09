@@ -43,7 +43,7 @@ def get_text(text, language_str, hps):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str)
+    bert = get_bert(norm_text, word2ph, language_str, device)
     del word2ph
     assert bert.shape[-1] == len(phone), phone
 
