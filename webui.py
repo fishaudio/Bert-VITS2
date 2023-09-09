@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
         btn.click(
             tts_fn,
-            inputs=[text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale],
+            inputs=[text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language],
             outputs=[text_output, audio_output],
         )
 
