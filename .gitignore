@@ -162,3 +162,7 @@ cython_debug/
 .DS_Store
 /models
 /logs
+
+filelists/*
+!/filelists/esd.list
+data/*

@@ -7,7 +7,7 @@
 ## origin.
 ##
 ## cmudict.0.6 is the fifth release of cmudict, first released as cmudict.0.1
-## in September of 1993.  There was no generally available public release 
+## in September of 1993.  There was no generally available public release
 ## of version 0.5.
 ##
 ## See the README in this directory before you use this dictionary.
@@ -16,11 +16,11 @@
 ## Alex Rudnicky, Jack Mostow, Roni Rosenfeld, Richard Stern,
 ## Matthew Siegler, Kevin Lenzo, Maxine Eskenazi, Mosur Ravishankar,
 ## Eric Thayer, Kristie Seymore, and Raj Reddy at CMU; Lin Chase at
-## LIMSI; Doug Paul at MIT Lincoln Labs; Ben Serridge at MIT SLS; Murray 
-## Spiegel at Bellcore; Tony Robinson at Cambridge UK; David Bowness of 
-## CAE Electronics Ltd. and CRIM; Stephen Hocking; Jerry Quinn at BNR 
-## Canada, and Marshal Midden for bringing to our attention problems and 
-## inadequacies with the first releases. Most special thanks to Bob Weide 
+## LIMSI; Doug Paul at MIT Lincoln Labs; Ben Serridge at MIT SLS; Murray
+## Spiegel at Bellcore; Tony Robinson at Cambridge UK; David Bowness of
+## CAE Electronics Ltd. and CRIM; Stephen Hocking; Jerry Quinn at BNR
+## Canada, and Marshal Midden for bringing to our attention problems and
+## inadequacies with the first releases. Most special thanks to Bob Weide
 ## for all his work on prior versions of the dictionary.
 ##
 ## We welcome input from users and will continue to acknowledge such input
@@ -37,12 +37,12 @@
 ## so keep your eyes open for problems and mail them to me.
 ##
 ## We hope this dictionary is an improvement over cmudict.0.4.
-## 
+##
 ## email: cmudict@cs.cmu.edu
 ## web:   http://www.speech.cs.cmu.edu/cgi-bin/cmudict
 ## ftp:   ftp://ftp.cs.cmu.edu/project/speech/dict/
 ##
-## Thank you for your continued interest in the CMU Pronouncing 
+## Thank you for your continued interest in the CMU Pronouncing
 ## Dictionary.  Further addictions and improvements are planned
 ## for forthcoming releases.
 ##
