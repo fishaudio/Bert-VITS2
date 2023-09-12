@@ -5,7 +5,7 @@ from typing import Optional
 
 from tqdm import tqdm
 import click
-from text.cleaner import clean_text
+from text.parser import parse_text_to_segments, segments_g2p
 
 
 @click.command()
@@ -43,16 +43,18 @@ def main(
         for line in tqdm(open(transcription_path, encoding="utf-8").readlines()):
             try:
                 utt, spk, language, text = line.strip().split("|")
-                norm_text, phones, tones, word2ph = clean_text(text, language)
+                segments = parse_text_to_segments(text)
+                words, phones, tones, word2ph, languages = segments_g2p(segments)
                 out_file.write(
-                    "{}|{}|{}|{}|{}|{}|{}\n".format(
+                    "{}|{}|{}|{}|{}|{}|{}|{}\n".format(
                         utt,
                         spk,
                         language,
-                        norm_text,
+                        json.dumps(words, ensure_ascii=False),
                         " ".join(phones),
                         " ".join([str(i) for i in tones]),
                         " ".join([str(i) for i in word2ph]),
+                        " ".join([str(i) for i in languages]),
                     )
                 )
             except Exception as error:
@@ -68,7 +70,7 @@ def main(
 
     with open(transcription_path, encoding="utf-8") as f:
         for line in f.readlines():
-            utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
+            _, spk, *_ = line.strip().split("|")
             spk_utt_map[spk].append(line)
 
             if spk not in spk_id_map.keys():

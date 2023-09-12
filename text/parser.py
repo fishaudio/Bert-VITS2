@@ -130,7 +130,7 @@ def parse_unknown_segment(text, order):
         if char in punctuation or char in string.digits:
             # If the punctuation / number is in the middle of the text,
             # we should not split the text.
-            detected_language = last_language
+            detected_language = last_language or order[0]
         else:
             detected_language = None
 
