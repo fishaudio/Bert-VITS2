@@ -179,14 +179,17 @@ def text_normalize(text):
 def g2p(text):
     phones = []
     tones = []
+    word2ph = []
     words = re.split(r"([,;.\-\?\!\s+])", text)
-    for w in words:
-        if w.upper() in eng_dict:
-            phns, tns = refine_syllables(eng_dict[w.upper()])
+    words = [word for word in words if word.strip() != ""]
+    for word in words:
+        if word.upper() in eng_dict:
+            phns, tns = refine_syllables(eng_dict[word.upper()])
             phones += phns
             tones += tns
+            word2ph.append(len(phns))
         else:
-            phone_list = list(filter(lambda p: p != " ", _g2p(w)))
+            phone_list = list(filter(lambda p: p != " ", _g2p(word)))
             for ph in phone_list:
                 if ph in arpa:
                     ph, tn = refine_ph(ph)
@@ -195,17 +198,16 @@ def g2p(text):
                 else:
                     phones.append(ph)
                     tones.append(0)
-    # todo: implement word2ph
-    word2ph = [1 for i in phones]
+            word2ph.append(len(phone_list))
 
     phones = [post_replace_ph(i) for i in phones]
-    return phones, tones, word2ph
+    return words, phones, tones, word2ph
 
 
 if __name__ == "__main__":
     # print(get_dict())
     # print(eng_word_to_phoneme("hello"))
-    print(g2p("In this paper, we propose 1 DSPGAN, a GAN-based universal vocoder."))
+    print(g2p("Hugging face, B GM"))
     # all_phones = set()
     # for k, syllables in eng_dict.items():
     #     for group in syllables:

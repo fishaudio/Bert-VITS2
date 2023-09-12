@@ -314,8 +314,8 @@ _REJECT_RX = re.compile("[^ a-zA-Z:,.?]")
 
 
 def _makerulemap():
-    l = [tuple(x.split("/")) for x in _CONVRULES]
-    return tuple({k: v for k, v in l if len(k) == i} for i in (1, 2))
+    rule = [tuple(x.split("/")) for x in _CONVRULES]
+    return tuple({k: v for k, v in rule if len(k) == i} for i in (1, 2))
 
 
 _RULEMAP1, _RULEMAP2 = _makerulemap()
@@ -554,23 +554,24 @@ def g2p(norm_text):
             ph_groups.append([t])
         else:
             ph_groups[-1].append(t.replace("#", ""))
+
     word2ph = []
+    words = []
+
     for group in ph_groups:
         phonemes = kata2phoneme(text2kata("".join(group)))
         # phonemes = [i for i in phonemes if i in symbols]
         for i in phonemes:
             assert i in symbols, (group, norm_text, tokenized)
         phone_len = len(phonemes)
-        word_len = len(group)
 
-        aaa = distribute_phone(phone_len, word_len)
-        word2ph += aaa
-
+        # aaa = distribute_phone(phone_len, word_len)
+        # print(word_len)
+        word2ph += [phone_len]
+        words += ["".join(group)]
         phs += phonemes
-    phones = ["_"] + phs + ["_"]
-    tones = [0 for i in phones]
-    word2ph = [1] + word2ph + [1]
-    return phones, tones, word2ph
+
+    return words, phs, [0] * len(phs), word2ph
 
 
 if __name__ == "__main__":

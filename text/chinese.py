@@ -6,14 +6,13 @@ from pypinyin import lazy_pinyin, Style
 
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
+import jieba.posseg as psg
 
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
     line.split("\t")[0]: line.strip().split("\t")[1]
     for line in open(os.path.join(current_file_path, "opencpop-strict.txt")).readlines()
 }
-
-import jieba.posseg as psg
 
 
 rep_map = {
@@ -65,16 +64,26 @@ def replace_punctuation(text):
     return replaced_text
 
 
+# def g2p(text):
+#     pattern = r"(?<=[{0}])\s*".format("".join(punctuation))
+#     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
+#     phones, tones, word2ph = _g2p(sentences)
+#     assert sum(word2ph) == len(phones)
+#     assert len(word2ph) == len(text)  # Sometimes it will crash.
+#     phones = ["_"] + phones + ["_"]
+#     tones = [0] + tones + [0]
+#     word2ph = [1] + word2ph + [1]
+#     return phones, tones, word2ph
+
+
 def g2p(text):
+    text = text_normalize(text)
     pattern = r"(?<=[{0}])\s*".format("".join(punctuation))
     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
     phones, tones, word2ph = _g2p(sentences)
     assert sum(word2ph) == len(phones)
-    assert len(word2ph) == len(text)  # Sometimes it will crash,you can add a try-catch.
-    phones = ["_"] + phones + ["_"]
-    tones = [0] + tones + [0]
-    word2ph = [1] + word2ph + [1]
-    return phones, tones, word2ph
+
+    return list(text), phones, tones, word2ph
 
 
 def _get_initials_finals(word):
@@ -182,8 +191,6 @@ def get_bert_feature(text, word2ph):
 
 
 if __name__ == "__main__":
-    from text.chinese_bert import get_bert_feature
-
     text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
     text = text_normalize(text)
     print(text)

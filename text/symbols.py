@@ -73,7 +73,7 @@ zh_symbols = [
 num_zh_tones = 6
 
 # japanese
-ja_symbols = [
+jp_symbols = [
     "N",
     "a",
     "a:",
@@ -117,7 +117,7 @@ ja_symbols = [
     "z",
     "zy",
 ]
-num_ja_tones = 1
+num_jp_tones = 1
 
 # English
 en_symbols = [
@@ -164,24 +164,31 @@ en_symbols = [
 num_en_tones = 4
 
 # combine all symbols
-normal_symbols = sorted(set(zh_symbols + ja_symbols + en_symbols))
+normal_symbols = sorted(set(zh_symbols + jp_symbols + en_symbols))
 symbols = [pad] + normal_symbols + pu_symbols
 sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
 
 # combine all tones
-num_tones = num_zh_tones + num_ja_tones + num_en_tones
+num_tones = num_zh_tones + num_jp_tones + num_en_tones
 
 # language maps
 language_id_map = {"ZH": 0, "JP": 1, "EN": 2}
+language_unicode_range_map = {
+    "ZH": [(0x4E00, 0x9FFF)],
+    "JP": [(0x3040, 0x309F), (0x30A0, 0x30FF), (0x31F0, 0x31FF)],
+    "EN": [(0x0000, 0x007F)],
+}
 num_languages = len(language_id_map.keys())
 
 language_tone_start_map = {
     "ZH": 0,
     "JP": num_zh_tones,
-    "EN": num_zh_tones + num_ja_tones,
+    "EN": num_zh_tones + num_jp_tones,
 }
 
 if __name__ == "__main__":
     a = set(zh_symbols)
     b = set(en_symbols)
     print(sorted(a & b))
+
+    print(zh_symbols, jp_symbols, en_symbols)
