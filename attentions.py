@@ -1,4 +1,3 @@
-import copy
 import math
 import torch
 from torch import nn
@@ -341,7 +340,7 @@ class MultiHeadAttention(nn.Module):
         return ret
 
     def _get_relative_embeddings(self, relative_embeddings, length):
-        max_relative_position = 2 * self.window_size + 1
+        2 * self.window_size + 1
         # Pad first before slice to avoid using cond ops.
         pad_length = max(length - (self.window_size + 1), 0)
         slice_start_position = max((self.window_size + 1) - length, 0)
@@ -385,7 +384,7 @@ class MultiHeadAttention(nn.Module):
         ret: [b, h, l, 2*l-1]
         """
         batch, heads, length, _ = x.size()
-        # padd along column
+        # pad along column
         x = F.pad(
             x, commons.convert_pad_shape([[0, 0], [0, 0], [0, 0], [0, length - 1]])
         )

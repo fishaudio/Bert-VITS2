@@ -1,6 +1,5 @@
 # Convert Japanese text to phonemes which is
 # compatible with Julius https://github.com/julius-speech/segmentation-kit
-import math
 import re
 import unicodedata
 

@@ -17,7 +17,8 @@
     "init_lr_ratio": 1,
     "warmup_epochs": 0,
     "c_mel": 45,
-    "c_kl": 1.0
+    "c_kl": 1.0,
+    "skip_optimizer": true
   },
   "data": {
     "training_files": "filelists/train.list",

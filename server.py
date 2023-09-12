@@ -40,20 +40,9 @@ def get_text(text, language_str, hps):
     else:
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(768, len(phone))
-    assert bert.shape[-1] == len(phone), (
-        bert.shape,
-        len(phone),
-        sum(word2ph),
-        p1,
-        p2,
-        t1,
-        t2,
-        pold,
-        pold2,
-        word2ph,
-        text,
-        w2pho,
-    )
+    assert bert.shape[-1] == len(
+        phone
+    ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
     phone = torch.LongTensor(phone)
     tone = torch.LongTensor(tone)
     language = torch.LongTensor(language)
@@ -126,7 +115,7 @@ net_g = SynthesizerTrn(
     hps.data.filter_length // 2 + 1,
     hps.train.segment_size // hps.data.hop_length,
     n_speakers=hps.data.n_speakers,
-    **hps.model
+    **hps.model,
 ).to(dev)
 _ = net_g.eval()
 

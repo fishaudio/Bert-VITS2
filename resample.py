@@ -1,11 +1,9 @@
 import os
 import argparse
 import librosa
-import numpy as np
 from multiprocessing import Pool, cpu_count
 
 import soundfile
-from scipy.io import wavfile
 from tqdm import tqdm
 
 
@@ -29,9 +27,9 @@ if __name__ == "__main__":
         "--out_dir", type=str, default="./dataset", help="path to target dir"
     )
     args = parser.parse_args()
-    # processs = 8
-    processs = cpu_count() - 2 if cpu_count() > 4 else 1
-    pool = Pool(processes=processs)
+    # processes = 8
+    processes = cpu_count() - 2 if cpu_count() > 4 else 1
+    pool = Pool(processes=processes)
 
     for speaker in os.listdir(args.in_dir):
         spk_dir = os.path.join(args.in_dir, speaker)

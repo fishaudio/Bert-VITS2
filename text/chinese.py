@@ -4,7 +4,6 @@ import re
 import cn2an
 from pypinyin import lazy_pinyin, Style
 
-from text import symbols
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
 
@@ -96,7 +95,6 @@ def _g2p(segments):
     tones_list = []
     word2ph = []
     for seg in segments:
-        pinyins = []
         # Replace all English words in the sentence
         seg = re.sub("[a-zA-Z]+", "", seg)
         seg_cut = psg.lcut(seg)

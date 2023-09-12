@@ -1,14 +1,10 @@
+# flake8: noqa: E402
+
 import os
-import json
-import argparse
-import itertools
-import math
 import torch
-from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
@@ -42,7 +38,7 @@ torch.backends.cuda.sdp_kernel("flash")
 torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(
     True
-)  # Not avaliable if torch version is lower than 2.0
+)  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
@@ -97,23 +93,20 @@ def run():
         )
     if (
         "use_noise_scaled_mas" in hps.model.keys()
-        and hps.model.use_noise_scaled_mas == True
+        and hps.model.use_noise_scaled_mas is True
     ):
         print("Using noise scaled MAS for VITS2")
-        use_noise_scaled_mas = True
         mas_noise_scale_initial = 0.01
         noise_scale_delta = 2e-6
     else:
         print("Using normal MAS for VITS1")
-        use_noise_scaled_mas = False
         mas_noise_scale_initial = 0.0
         noise_scale_delta = 0.0
     if (
         "use_duration_discriminator" in hps.model.keys()
-        and hps.model.use_duration_discriminator == True
+        and hps.model.use_duration_discriminator is True
     ):
         print("Using duration discriminator for VITS2")
-        use_duration_discriminator = True
         net_dur_disc = DurationDiscriminator(
             hps.model.hidden_channels,
             hps.model.hidden_channels,
@@ -123,16 +116,14 @@ def run():
         ).cuda(rank)
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
-        and hps.model.use_spk_conditioned_encoder == True
+        and hps.model.use_spk_conditioned_encoder is True
     ):
         if hps.data.n_speakers == 0:
             raise ValueError(
                 "n_speakers must be > 0 when using spk conditioned encoder to train multi-speaker model"
             )
-        use_spk_conditioned_encoder = True
     else:
         print("Using normal encoder for VITS1")
-        use_spk_conditioned_encoder = False
 
     net_g = SynthesizerTrn(
         len(symbols),
@@ -176,19 +167,25 @@ def run():
                 utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
                 net_dur_disc,
                 optim_dur_disc,
-                skip_optimizer=True,
+                skip_optimizer=hps.train.skip_optimizer
+                if "skip_optimizer" in hps.train
+                else True,
             )
             _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
                 utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
                 net_g,
                 optim_g,
-                skip_optimizer=True,
+                skip_optimizer=hps.train.skip_optimizer
+                if "skip_optimizer" in hps.train
+                else True,
             )
             _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
                 utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
                 net_d,
                 optim_d,
-                skip_optimizer=True,
+                skip_optimizer=hps.train.skip_optimizer
+                if "skip_optimizer" in hps.train
+                else True,
             )
             if not optim_g.param_groups[0].get("initial_lr"):
                 optim_g.param_groups[0]["initial_lr"] = g_resume_lr
@@ -371,9 +368,7 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                grad_norm_dur_disc = commons.clip_grad_value_(
-                    net_dur_disc.parameters(), None
-                )
+                commons.clip_grad_value_(net_dur_disc.parameters(), None)
                 scaler.step(optim_dur_disc)
 
         optim_d.zero_grad()

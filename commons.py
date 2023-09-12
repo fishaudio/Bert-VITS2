@@ -1,7 +1,5 @@
 import math
-import numpy as np
 import torch
-from torch import nn
 from torch.nn import functional as F
 
 
@@ -16,8 +14,8 @@ def get_padding(kernel_size, dilation=1):
 
 
 def convert_pad_shape(pad_shape):
-    l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
+    layer = pad_shape[::-1]
+    pad_shape = [item for sublist in layer for item in sublist]
     return pad_shape
 
 
@@ -110,8 +108,8 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
 
 
 def convert_pad_shape(pad_shape):
-    l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
+    layer = pad_shape[::-1]
+    pad_shape = [item for sublist in layer for item in sublist]
     return pad_shape
 
 
@@ -132,7 +130,6 @@ def generate_path(duration, mask):
     duration: [b, 1, t_x]
     mask: [b, 1, t_y, t_x]
     """
-    device = duration.device
 
     b, _, t_y, t_x = mask.shape
     cum_duration = torch.cumsum(duration, -1)

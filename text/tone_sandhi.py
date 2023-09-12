@@ -536,7 +536,7 @@ class ToneSandhi:
             [item.isnumeric() for item in word if item != "一"]
         ):
             return finals
-        # "一" between reduplication words shold be yi5, e.g. 看一看
+        # "一" between reduplication words should be yi5, e.g. 看一看
         elif len(word) == 3 and word[1] == "一" and word[0] == word[-1]:
             finals[1] = finals[1][:-1] + "5"
         # when "一" is ordinal word, it should be yi1
