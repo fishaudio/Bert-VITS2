@@ -20,76 +20,82 @@ import commons
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
-from text import cleaned_text_to_sequence, get_bert
-from text.cleaner import clean_text
+from text import cleaned_text_to_sequence
+from text.parser import parse_text_to_segments, segments_g2p, get_bert_alignment
 import gradio as gr
 import webbrowser
 
 net_g = None
 
-if sys.platform == "darwin" and torch.backends.mps.is_available():
-    device = "mps"
-    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-else:
-    device = "cuda"
+device = (
+    "cuda:0"
+    if torch.cuda.is_available()
+    else (
+        "mps"
+        if sys.platform == "darwin" and torch.backends.mps.is_available()
+        else "cpu"
+    )
+)
 
 
-def get_text(text, language_str, hps):
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+def get_text(text, hps):
+    segments = parse_text_to_segments(text)
+    words, phones, tones, word2ph, languages = segments_g2p(segments)
+    complex_tokens = get_bert_alignment(words, phones, word2ph)
+    token_ids = [i["token_id"] for i in complex_tokens]
+    offsets = [i["offset"] for i in complex_tokens]
+
+    # Convert offsets to mapping
+    phones2tokens = [0] * len(phones)  # All use CLS by default
+    for i in range(len(offsets)):
+        if offsets[i] is None:
+            continue
+
+        start, end = offsets[i]
+        for j in range(start, end):
+            phones2tokens[j] = i
+
+    phones, tones, languages = cleaned_text_to_sequence(phones, tones, languages)
 
     if hps.data.add_blank:
-        phone = commons.intersperse(phone, 0)
-        tone = commons.intersperse(tone, 0)
-        language = commons.intersperse(language, 0)
-        for i in range(len(word2ph)):
-            word2ph[i] = word2ph[i] * 2
-        word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str, device)
-    del word2ph
-    assert bert.shape[-1] == len(phone), phone
+        phones = commons.intersperse(phones, 0)
+        tones = commons.intersperse(tones, 0)
+        languages = commons.intersperse(languages, 0)
+        phones2tokens = commons.intersperse(phones2tokens, 0)
 
-    if language_str == "ZH":
-        bert = bert
-        ja_bert = torch.zeros(768, len(phone))
-    elif language_str == "JA":
-        ja_bert = bert
-        bert = torch.zeros(1024, len(phone))
-    else:
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(768, len(phone))
+    assert len(phones) == len(phones2tokens) == len(tones) == len(languages)
 
-    assert bert.shape[-1] == len(
-        phone
-    ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
-
-    phone = torch.LongTensor(phone)
-    tone = torch.LongTensor(tone)
-    language = torch.LongTensor(language)
-    return bert, ja_bert, phone, tone, language
+    return dict(
+        phones=torch.LongTensor(phones),
+        tones=torch.LongTensor(tones),
+        languages=torch.LongTensor(languages),
+        phones2tokens=torch.LongTensor(phones2tokens),
+        token_ids=torch.LongTensor(token_ids),
+        token_attention_masks=torch.ones(len(token_ids)),
+    )
 
 
-def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, language):
+def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid):
     global net_g
-    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps)
+
+    data = get_text(text, hps)
+    for k in list(data.keys()):
+        data[k] = data[k][None].to(device)
+
     with torch.no_grad():
-        x_tst = phones.to(device).unsqueeze(0)
-        tones = tones.to(device).unsqueeze(0)
-        lang_ids = lang_ids.to(device).unsqueeze(0)
-        bert = bert.to(device).unsqueeze(0)
-        ja_bert = ja_bert.to(device).unsqueeze(0)
-        x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
-        del phones
+        x_tst_lengths = torch.LongTensor([data["phones"].size(1)]).to(device)
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
+
         audio = (
             net_g.infer(
-                x_tst,
+                data["phones"],
                 x_tst_lengths,
                 speakers,
-                tones,
-                lang_ids,
-                bert,
-                ja_bert,
+                data["tones"],
+                data["languages"],
+                data["token_ids"],
+                data["token_attention_masks"],
+                data["phones2tokens"],
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -99,13 +105,11 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
+
         return audio
 
 
-def tts_fn(
-    text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
-):
+def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale):
     with torch.no_grad():
         audio = infer(
             text,
@@ -114,9 +118,9 @@ def tts_fn(
             noise_scale_w=noise_scale_w,
             length_scale=length_scale,
             sid=speaker,
-            language=language,
         )
         torch.cuda.empty_cache()
+
     return "Success", (hps.data.sampling_rate, audio)
 
 
@@ -143,16 +147,6 @@ if __name__ == "__main__":
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(args.config)
-
-    device = (
-        "cuda:0"
-        if torch.cuda.is_available()
-        else (
-            "mps"
-            if sys.platform == "darwin" and torch.backends.mps.is_available()
-            else "cpu"
-        )
-    )
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
@@ -166,7 +160,7 @@ if __name__ == "__main__":
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP"]
+
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
@@ -190,10 +184,8 @@ if __name__ == "__main__":
                 length_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=1, step=0.1, label="Length Scale"
                 )
-                language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="Language"
-                )
                 btn = gr.Button("Generate!", variant="primary")
+
             with gr.Column():
                 text_output = gr.Textbox(label="Message")
                 audio_output = gr.Audio(label="Output Audio")
@@ -207,7 +199,6 @@ if __name__ == "__main__":
                 noise_scale,
                 noise_scale_w,
                 length_scale,
-                language,
             ],
             outputs=[text_output, audio_output],
         )
