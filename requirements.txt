@@ -18,3 +18,4 @@ av
 mecab-python3
 loguru
 unidic-lite
+faster-whisper
