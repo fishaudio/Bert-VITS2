@@ -367,7 +367,7 @@ class TextEncoder(nn.Module):
             )
             layer.attention.self.value.load_state_dict(state_dict, strict=False)
 
-        loralib.mark_only_lora_as_trainable(self.bert, "lora")
+        loralib.mark_only_lora_as_trainable(self.bert, "lora_only")
 
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
 
