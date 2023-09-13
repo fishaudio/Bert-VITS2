@@ -54,6 +54,7 @@ def get_data_safe(line: str):
 )
 @click.option("--val-per-spk", default=4)
 @click.option("--max-val-total", default=8)
+@click.option("--append/--no-append", default=False)
 def main(
     transcription_path: str,
     train_path: str,
@@ -61,7 +62,13 @@ def main(
     config_path: str,
     val_per_spk: int,
     max_val_total: int,
+    append: bool,
 ):
+    if append is False:
+        # Clear the file
+        open(train_path, "w", encoding="utf-8").close()
+        open(val_path, "w", encoding="utf-8").close()
+
     current_sid = 0
     spk_utt_map = defaultdict(list)
     spk_id_map = {}
@@ -69,7 +76,7 @@ def main(
     with ProcessPoolExecutor() as executor:
         lines = open(transcription_path, encoding="utf-8").readlines()
 
-        for data in tqdm(executor.map(get_data, lines), total=len(lines)):
+        for data in tqdm(executor.map(get_data_safe, lines), total=len(lines)):
             if isinstance(data, Exception):
                 print("err!", line, data)
                 continue
@@ -94,11 +101,11 @@ def main(
         train_list += val_list[max_val_total:]
         val_list = val_list[:max_val_total]
 
-    with open(train_path, "w", encoding="utf-8") as f:
+    with open(train_path, "a", encoding="utf-8") as f:
         for line in train_list:
             f.write(f"{line}\n")
 
-    with open(val_path, "w", encoding="utf-8") as f:
+    with open(val_path, "a", encoding="utf-8") as f:
         for line in val_list:
             f.write(f"{line}\n")
 
