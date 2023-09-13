@@ -45,8 +45,8 @@ global_step = 0
 
 def run():
     dist.init_process_group(
-        backend="gloo",
-        init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
+        backend="nccl",
+        init_method="env://",
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     n_gpus = dist.get_world_size()
@@ -120,7 +120,8 @@ def run():
     ):
         if hps.data.n_speakers == 0:
             raise ValueError(
-                "n_speakers must be > 0 when using spk conditioned encoder to train multi-speaker model"
+                "n_speakers must be > 0 when using spk conditioned"
+                + "encoder to train multi-speaker model"
             )
     else:
         print("Using normal encoder for VITS1")
@@ -275,8 +276,9 @@ def train_and_evaluate(
         speakers,
         tone,
         language,
-        bert,
-        ja_bert,
+        tokens,
+        tokens_attention_mask,
+        phones2tokens,
     ) in tqdm(enumerate(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -296,8 +298,9 @@ def train_and_evaluate(
         speakers = speakers.cuda(rank, non_blocking=True)
         tone = tone.cuda(rank, non_blocking=True)
         language = language.cuda(rank, non_blocking=True)
-        bert = bert.cuda(rank, non_blocking=True)
-        ja_bert = ja_bert.cuda(rank, non_blocking=True)
+        tokens = tokens.cuda(rank, non_blocking=True)
+        tokens_attention_mask = tokens_attention_mask.cuda(rank, non_blocking=True)
+        phones2tokens = phones2tokens.cuda(rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             (
@@ -317,8 +320,9 @@ def train_and_evaluate(
                 speakers,
                 tone,
                 language,
-                bert,
-                ja_bert,
+                tokens,
+                tokens_attention_mask,
+                phones2tokens,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -358,7 +362,7 @@ def train_and_evaluate(
                     hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach()
                 )
                 with autocast(enabled=False):
-                    # TODO: I think need to mean using the mask, but for now, just mean all
+                    # TODO: I think need to mean using the mask, but mean all for now
                     (
                         loss_dur_disc,
                         losses_dur_disc_r,
@@ -511,17 +515,20 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             speakers,
             tone,
             language,
-            bert,
-            ja_bert,
+            tokens,
+            tokens_attention_mask,
+            phones2tokens,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             y, y_lengths = y.cuda(), y_lengths.cuda()
             speakers = speakers.cuda()
-            bert = bert.cuda()
-            ja_bert = ja_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            tokens = tokens.cuda()
+            tokens_attention_mask = tokens_attention_mask.cuda()
+            phones2tokens = phones2tokens.cuda()
+
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
@@ -529,8 +536,9 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     speakers,
                     tone,
                     language,
-                    bert,
-                    ja_bert,
+                    tokens,
+                    tokens_attention_mask,
+                    phones2tokens,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
