@@ -354,7 +354,7 @@ class TextEncoder(nn.Module):
                 lora_alpha=32,
                 lora_dropout=0.1,
             )
-            layer.attention.self.query.load_state_dict(state_dict, strict=True)
+            layer.attention.self.query.load_state_dict(state_dict, strict=False)
 
             value = layer.attention.self.value
             state_dict = value.state_dict()
@@ -365,7 +365,7 @@ class TextEncoder(nn.Module):
                 lora_alpha=32,
                 lora_dropout=0.1,
             )
-            layer.attention.self.value.load_state_dict(state_dict, strict=True)
+            layer.attention.self.value.load_state_dict(state_dict, strict=False)
 
         loralib.mark_only_lora_as_trainable(self.bert, "lora")
 
