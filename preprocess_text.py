@@ -1,11 +1,42 @@
 import json
 from collections import defaultdict
 from random import shuffle
-from typing import Optional
 
 from tqdm import tqdm
 import click
-from text.parser import parse_text_to_segments, segments_g2p
+from text.parser import parse_text_to_segments, segments_g2p, get_bert_alignment
+from concurrent.futures import ProcessPoolExecutor
+
+
+def get_data(line: str):
+    utt, spk, text = line.strip().split("|")
+    segments = parse_text_to_segments(text)
+    words, phones, tones, word2ph, languages = segments_g2p(segments)
+
+    bert_alignment = get_bert_alignment(words, phones, word2ph)
+    tokens = [i["token"] for i in bert_alignment]
+    token_ids = [i["token_id"] for i in bert_alignment]
+    offsets = [i["offset"] for i in bert_alignment]
+
+    return dict(
+        path=utt,
+        spk=spk,
+        words=words,
+        phones=phones,
+        tones=tones,
+        word2ph=word2ph,
+        languages=languages,
+        tokens=tokens,
+        token_ids=token_ids,
+        offsets=offsets,
+    )
+
+
+def get_data_safe(line: str):
+    try:
+        return get_data(line)
+    except Exception as e:
+        return e
 
 
 @click.command()
@@ -14,9 +45,8 @@ from text.parser import parse_text_to_segments, segments_g2p
     default="filelists/genshin.list",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--cleaned-path", default=None)
-@click.option("--train-path", default="filelists/train.list")
-@click.option("--val-path", default="filelists/val.list")
+@click.option("--train-path", default="filelists/train.jsonl")
+@click.option("--val-path", default="filelists/val.jsonl")
 @click.option(
     "--config-path",
     default="configs/config.json",
@@ -24,55 +54,30 @@ from text.parser import parse_text_to_segments, segments_g2p
 )
 @click.option("--val-per-spk", default=4)
 @click.option("--max-val-total", default=8)
-@click.option("--clean/--no-clean", default=True)
 def main(
     transcription_path: str,
-    cleaned_path: Optional[str],
     train_path: str,
     val_path: str,
     config_path: str,
     val_per_spk: int,
     max_val_total: int,
-    clean: bool,
 ):
-    if cleaned_path is None:
-        cleaned_path = transcription_path + ".cleaned"
-
-    if clean:
-        out_file = open(cleaned_path, "w", encoding="utf-8")
-        for line in tqdm(open(transcription_path, encoding="utf-8").readlines()):
-            try:
-                utt, spk, language, text = line.strip().split("|")
-                segments = parse_text_to_segments(text)
-                words, phones, tones, word2ph, languages = segments_g2p(segments)
-                out_file.write(
-                    "{}|{}|{}|{}|{}|{}|{}|{}\n".format(
-                        utt,
-                        spk,
-                        language,
-                        json.dumps(words, ensure_ascii=False),
-                        " ".join(phones),
-                        " ".join([str(i) for i in tones]),
-                        " ".join([str(i) for i in word2ph]),
-                        " ".join([str(i) for i in languages]),
-                    )
-                )
-            except Exception as error:
-                print("err!", line, error)
-
-        out_file.close()
-
-        transcription_path = cleaned_path
-
+    current_sid = 0
     spk_utt_map = defaultdict(list)
     spk_id_map = {}
-    current_sid = 0
 
-    with open(transcription_path, encoding="utf-8") as f:
-        for line in f.readlines():
-            _, spk, *_ = line.strip().split("|")
-            spk_utt_map[spk].append(line)
+    with ProcessPoolExecutor() as executor:
+        lines = open(transcription_path, encoding="utf-8").readlines()
 
+        for data in tqdm(executor.map(get_data, lines), total=len(lines)):
+            if isinstance(data, Exception):
+                print("err!", line, data)
+                continue
+
+            spk = data["spk"]
+            data = json.dumps(data, ensure_ascii=False)
+
+            spk_utt_map[spk].append(data)
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
@@ -91,11 +96,11 @@ def main(
 
     with open(train_path, "w", encoding="utf-8") as f:
         for line in train_list:
-            f.write(line)
+            f.write(f"{line}\n")
 
     with open(val_path, "w", encoding="utf-8") as f:
         for line in val_list:
-            f.write(line)
+            f.write(f"{line}\n")
 
     config = json.load(open(config_path, encoding="utf-8"))
     config["data"]["spk2id"] = spk_id_map

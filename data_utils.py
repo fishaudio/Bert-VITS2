@@ -7,7 +7,7 @@ from loguru import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence, get_bert
+from text import cleaned_text_to_sequence
 
 """Multi speaker version"""
 
@@ -58,40 +58,67 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         lengths = []
         skipped = 0
         logger.info("Init dataset...")
-        for _id, spk, language, text, phones, tone, word2ph in tqdm(
-            self.audiopaths_sid_text
-        ):
-            audiopath = f"{_id}"
+
+        for data in tqdm(self.audiopaths_sid_text):
+            audiopath, phones = data["path"], data["phones"]
             if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
-                phones = phones.split(" ")
-                tone = [int(i) for i in tone.split(" ")]
-                word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append(
-                    [audiopath, spk, language, text, phones, tone, word2ph]
-                )
+                audiopaths_sid_text_new.append(data)
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
+
         logger.info(
-            "skipped: "
-            + str(skipped)
-            + ", total: "
-            + str(len(self.audiopaths_sid_text))
+            f"Skipped: {skipped} because of text length, total: {len(self.audiopaths_sid_text)}"
         )
+
         self.audiopaths_sid_text = audiopaths_sid_text_new
         self.lengths = lengths
 
-    def get_audio_text_speaker_pair(self, audiopath_sid_text):
-        # separate filename, speaker_id and text
-        audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
+    def get_audio_text_speaker_pair(self, data):
+        sid = torch.LongTensor([int(self.spk_map[data["spk"]])])
+        spec, wav = self.get_audio(data["path"])
 
-        bert, ja_bert, phones, tone, language = self.get_text(
-            text, word2ph, phones, tone, language, audiopath
+        phones, tones, languages = cleaned_text_to_sequence(
+            data["phones"], data["tones"], data["languages"]
         )
+        token_ids, offsets = data["token_ids"], data["offsets"]
 
-        spec, wav = self.get_audio(audiopath)
-        sid = torch.LongTensor([int(self.spk_map[sid])])
-        return (phones, spec, wav, sid, tone, language, bert, ja_bert)
+        # Convert offsets to mapping
+        phones2tokens = [0] * len(phones)  # All use CLS by default
+        for i in range(len(offsets)):
+            if offsets[i] is None:
+                continue
+
+            start, end = offsets[i]
+            for j in range(start, end):
+                phones2tokens[j] = i
+
+        if self.add_blank:
+            phones = commons.intersperse(phones, 0)
+            tones = commons.intersperse(tones, 0)
+            languages = commons.intersperse(languages, 0)
+            phones2tokens = commons.intersperse(phones2tokens, 0)
+
+            # Don't intersperse tokens since they will be handled by Bert
+
+        assert len(phones) == len(tones) == len(languages) == len(phones2tokens)
+
+        phones = torch.LongTensor(phones)
+        tones = torch.LongTensor(tones)
+        languages = torch.LongTensor(languages)
+        token_ids = torch.LongTensor(token_ids)
+        phones2tokens = torch.LongTensor(phones2tokens)
+
+        return dict(
+            phones=phones,
+            spec=spec,
+            wav=wav,
+            sid=sid,
+            tones=tones,
+            languages=languages,
+            token_ids=token_ids,
+            phones2tokens=phones2tokens,
+        )
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
@@ -134,56 +161,6 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             torch.save(spec, spec_filename)
         return spec, audio_norm
 
-    def get_text(self, text, word2ph, phone, tone, language_str, wav_path):
-        phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-        if self.add_blank:
-            phone = commons.intersperse(phone, 0)
-            tone = commons.intersperse(tone, 0)
-            language = commons.intersperse(language, 0)
-            for i in range(len(word2ph)):
-                word2ph[i] = word2ph[i] * 2
-            word2ph[0] += 1
-        bert_path = wav_path.replace(".wav", ".bert.pt")
-        try:
-            bert = torch.load(bert_path)
-            assert bert.shape[-1] == len(phone)
-        except:
-            bert = get_bert(text, word2ph, language_str)
-            torch.save(bert, bert_path)
-            assert bert.shape[-1] == len(phone), phone
-
-        if language_str == "ZH":
-            bert = bert
-            ja_bert = torch.zeros(768, len(phone))
-        elif language_str == "JA":
-            ja_bert = bert
-            bert = torch.zeros(1024, len(phone))
-        else:
-            bert = torch.zeros(1024, len(phone))
-            ja_bert = torch.zeros(768, len(phone))
-        assert bert.shape[-1] == len(phone), (
-            bert.shape,
-            len(phone),
-            sum(word2ph),
-            p1,
-            p2,
-            t1,
-            t2,
-            pold,
-            pold2,
-            word2ph,
-            text,
-            w2pho,
-        )
-        phone = torch.LongTensor(phone)
-        tone = torch.LongTensor(tone)
-        language = torch.LongTensor(language)
-        return bert, ja_bert, phone, tone, language
-
-    def get_sid(self, sid):
-        sid = torch.LongTensor([int(sid)])
-        return sid
-
     def __getitem__(self, index):
         return self.get_audio_text_speaker_pair(self.audiopaths_sid_text[index])
 
@@ -201,65 +178,66 @@ class TextAudioSpeakerCollate:
         """Collate's training batch from normalized text, audio and speaker identities
         PARAMS
         ------
-        batch: [text_normalized, spec_normalized, wav_normalized, sid]
+        batch: [{phones, spec, wav, sid, tones, languages, token_ids, phones2tokens}]
         """
+
         # Right zero-pad all one-hot text sequences to max input length
-        _, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([x[1].size(1) for x in batch]), dim=0, descending=True
+        batch = sorted(batch, key=lambda x: x["spec"].size(1), reverse=True)
+
+        max_text_len = max([len(x["phones"]) for x in batch])
+        max_spec_len = max([x["spec"].size(1) for x in batch])
+        max_wav_len = max([x["wav"].size(1) for x in batch])
+        max_token_ids_len = max([len(x["token_ids"]) for x in batch])
+
+        text_lengths = torch.zeros(len(batch), dtype=torch.long)
+        spec_lengths = torch.zeros(len(batch), dtype=torch.long)
+        wav_lengths = torch.zeros(len(batch), dtype=torch.long)
+        sid = torch.zeros(len(batch), dtype=torch.long)
+
+        text_padded = torch.zeros((len(batch), max_text_len), dtype=torch.long)
+        tone_padded = torch.zeros((len(batch), max_text_len), dtype=torch.long)
+        language_padded = torch.zeros((len(batch), max_text_len), dtype=torch.long)
+        phones2tokens_padded = torch.zeros((len(batch), max_text_len), dtype=torch.long)
+
+        spec_padded = torch.zeros(
+            (len(batch), batch[0]["spec"].size(0), max_spec_len), dtype=torch.float
+        )
+        wav_padded = torch.zeros((len(batch), 1, max_wav_len), dtype=torch.float)
+
+        token_ids_padded = torch.zeros(
+            (len(batch), max_token_ids_len), dtype=torch.long
+        )
+        tokens_attention_mask = torch.zeros(
+            (len(batch), max_token_ids_len), dtype=torch.long
         )
 
-        max_text_len = max([len(x[0]) for x in batch])
-        max_spec_len = max([x[1].size(1) for x in batch])
-        max_wav_len = max([x[2].size(1) for x in batch])
-
-        text_lengths = torch.LongTensor(len(batch))
-        spec_lengths = torch.LongTensor(len(batch))
-        wav_lengths = torch.LongTensor(len(batch))
-        sid = torch.LongTensor(len(batch))
-
-        text_padded = torch.LongTensor(len(batch), max_text_len)
-        tone_padded = torch.LongTensor(len(batch), max_text_len)
-        language_padded = torch.LongTensor(len(batch), max_text_len)
-        bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
-        ja_bert_padded = torch.FloatTensor(len(batch), 768, max_text_len)
-
-        spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
-        wav_padded = torch.FloatTensor(len(batch), 1, max_wav_len)
-        text_padded.zero_()
-        tone_padded.zero_()
-        language_padded.zero_()
-        spec_padded.zero_()
-        wav_padded.zero_()
-        bert_padded.zero_()
-        ja_bert_padded.zero_()
-        for i in range(len(ids_sorted_decreasing)):
-            row = batch[ids_sorted_decreasing[i]]
-
-            text = row[0]
+        for i, row in enumerate(batch):
+            text = row["phones"]
             text_padded[i, : text.size(0)] = text
             text_lengths[i] = text.size(0)
 
-            spec = row[1]
+            spec = row["spec"]
             spec_padded[i, :, : spec.size(1)] = spec
             spec_lengths[i] = spec.size(1)
 
-            wav = row[2]
+            wav = row["wav"]
             wav_padded[i, :, : wav.size(1)] = wav
             wav_lengths[i] = wav.size(1)
 
-            sid[i] = row[3]
+            sid[i] = row["sid"]
 
-            tone = row[4]
+            tone = row["tones"]
             tone_padded[i, : tone.size(0)] = tone
 
-            language = row[5]
+            language = row["languages"]
             language_padded[i, : language.size(0)] = language
 
-            bert = row[6]
-            bert_padded[i, :, : bert.size(1)] = bert
+            phones2tokens = row["phones2tokens"]
+            phones2tokens_padded[i, : phones2tokens.size(0)] = phones2tokens
 
-            ja_bert = row[7]
-            ja_bert_padded[i, :, : ja_bert.size(1)] = ja_bert
+            token_ids = row["token_ids"]
+            token_ids_padded[i, : token_ids.size(0)] = token_ids
+            tokens_attention_mask[i, : token_ids.size(0)] = 1
 
         return (
             text_padded,
@@ -271,8 +249,9 @@ class TextAudioSpeakerCollate:
             sid,
             tone_padded,
             language_padded,
-            bert_padded,
-            ja_bert_padded,
+            token_ids_padded,
+            tokens_attention_mask,
+            phones2tokens_padded,
         )
 
 

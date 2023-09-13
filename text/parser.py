@@ -170,7 +170,7 @@ def segments_g2p(segments):
         all_phones.extend(phones)
         all_tones.extend(tones)
         all_word2ph.extend(word2ph)
-        all_languages.extend([language_id_map[i.language]] * len(phones))
+        all_languages.extend([i.language] * len(phones))
 
         assert len(words) == len(word2ph), f"{i.language}, {words}, {word2ph}"
 
@@ -221,7 +221,8 @@ def get_bert_alignment(words, phones, word2ph, model_name="xlm-roberta-large"):
 
     # Use offset to map the word and then the phone
     for i in range(len(complex_tokens)):
-        if complex_tokens[i]["is_special"]:
+        if complex_tokens[i]["is_special"] or complex_tokens[i]["token"].strip() == "":
+            complex_tokens[i]["offset"] = None
             continue
 
         start, end = complex_tokens[i]["offset"]
@@ -237,9 +238,7 @@ def get_bert_alignment(words, phones, word2ph, model_name="xlm-roberta-large"):
         complex_tokens[i]["phones"] = phones[phone_start:phone_end]
         complex_tokens[i]["offset"] = (phone_start, phone_end)
 
-    return [
-        i for i in complex_tokens if not i["is_special"] and i["token"].strip() != ""
-    ]
+    return complex_tokens
 
 
 if __name__ == "__main__":
