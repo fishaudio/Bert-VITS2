@@ -13,6 +13,7 @@ from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from transformers import AutoModel
 from commons import init_weights, get_padding
 from text import symbols, num_tones, num_languages
+import loralib
 
 
 class DurationDiscriminator(nn.Module):  # vits2
@@ -322,7 +323,6 @@ class TextEncoder(nn.Module):
         kernel_size,
         p_dropout,
         gin_channels=0,
-        freeze_bert=True,
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -342,11 +342,32 @@ class TextEncoder(nn.Module):
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
 
         self.bert = AutoModel.from_pretrained("xlm-roberta-large")
-        self.freeze_bert = freeze_bert
 
-        if self.freeze_bert:
-            for param in self.bert.parameters():
-                param.requires_grad = False
+        # Apply Lora
+        for layer in self.bert.encoder.layer:
+            query = layer.attention.self.query
+            state_dict = query.state_dict()
+            layer.attention.self.query = loralib.Linear(
+                query.in_features,
+                query.out_features,
+                r=8,
+                lora_alpha=32,
+                lora_dropout=0.1,
+            )
+            layer.attention.self.query.load_state_dict(state_dict, strict=True)
+
+            value = layer.attention.self.value
+            state_dict = value.state_dict()
+            layer.attention.self.value = loralib.Linear(
+                value.in_features,
+                value.out_features,
+                r=8,
+                lora_alpha=32,
+                lora_dropout=0.1,
+            )
+            layer.attention.self.value.load_state_dict(state_dict, strict=True)
+
+        loralib.mark_only_lora_as_trainable(self.bert, "lora")
 
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
 
@@ -372,9 +393,6 @@ class TextEncoder(nn.Module):
         phones2tokens,
         g=None,
     ):
-        if self.freeze_bert:
-            self.bert.eval()
-
         bert_features = self.bert(
             tokens, attention_mask=tokens_attention_mask, output_hidden_states=True
         )
@@ -793,7 +811,6 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=6,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        freeze_bert=True,
         **kwargs
     ):
         super().__init__()
@@ -836,7 +853,6 @@ class SynthesizerTrn(nn.Module):
             kernel_size,
             p_dropout,
             gin_channels=self.enc_gin_channels,
-            freeze_bert=freeze_bert,
         )
         self.dec = Generator(
             inter_channels,
