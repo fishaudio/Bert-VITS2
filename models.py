@@ -334,6 +334,7 @@ class TextEncoder(nn.Module):
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
         self.gin_channels = gin_channels
+
         self.emb = nn.Embedding(len(symbols), hidden_channels)
         nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
         self.tone_emb = nn.Embedding(num_tones, hidden_channels)
@@ -369,7 +370,8 @@ class TextEncoder(nn.Module):
 
         loralib.mark_only_lora_as_trainable(self.bert, "lora_only")
 
-        self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
+        self.bert_proj = nn.Linear(4 * 1024, hidden_channels)
+        nn.init.normal_(self.bert_proj.weight, 0.0, hidden_channels**-0.5)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -396,8 +398,9 @@ class TextEncoder(nn.Module):
         bert_features = self.bert(
             tokens, attention_mask=tokens_attention_mask, output_hidden_states=True
         )
-        bert = bert_features.last_hidden_state
-        bert_emb = self.bert_proj(bert.transpose(1, 2)).transpose(1, 2)
+        bert_hidden_states = bert_features.hidden_states[-4:]
+        bert_hidden_states = torch.cat(bert_hidden_states, dim=-1)
+        bert_emb = self.bert_proj(bert_hidden_states)
 
         # Gather bert features (tokens) to phones
         bert_emb = bert_emb.gather(

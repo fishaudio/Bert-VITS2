@@ -61,7 +61,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         for data in tqdm(self.audiopaths_sid_text):
             audiopath, phones = data["path"], data["phones"]
-            if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
+            if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len and os.path.exists(audiopath):
                 audiopaths_sid_text_new.append(data)
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:

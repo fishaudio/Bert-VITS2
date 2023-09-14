@@ -1,7 +1,9 @@
 import json
 from collections import defaultdict
 from random import shuffle
+from typing import Optional
 
+import traceback
 from tqdm import tqdm
 import click
 from text.parser import parse_text_to_segments, segments_g2p, get_bert_alignment
@@ -35,8 +37,8 @@ def get_data(line: str):
 def get_data_safe(line: str):
     try:
         return get_data(line)
-    except Exception as e:
-        return e
+    except Exception:
+        traceback.print_exc()
 
 
 @click.command()
@@ -55,6 +57,7 @@ def get_data_safe(line: str):
 @click.option("--val-per-spk", default=4)
 @click.option("--max-val-total", default=8)
 @click.option("--append/--no-append", default=False)
+@click.option("--num-workers", default=None, type=int)
 def main(
     transcription_path: str,
     train_path: str,
@@ -63,31 +66,25 @@ def main(
     val_per_spk: int,
     max_val_total: int,
     append: bool,
+    num_workers: Optional[int],
 ):
     if append is False:
         # Clear the file
         open(train_path, "w", encoding="utf-8").close()
         open(val_path, "w", encoding="utf-8").close()
 
-    current_sid = 0
     spk_utt_map = defaultdict(list)
-    spk_id_map = {}
 
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
         lines = open(transcription_path, encoding="utf-8").readlines()
 
         for data in tqdm(executor.map(get_data_safe, lines), total=len(lines)):
-            if isinstance(data, Exception):
-                print("err!", line, data)
+            if data is None:
                 continue
 
             spk = data["spk"]
             data = json.dumps(data, ensure_ascii=False)
-
             spk_utt_map[spk].append(data)
-            if spk not in spk_id_map.keys():
-                spk_id_map[spk] = current_sid
-                current_sid += 1
 
     train_list = []
     val_list = []
@@ -110,7 +107,14 @@ def main(
             f.write(f"{line}\n")
 
     config = json.load(open(config_path, encoding="utf-8"))
-    config["data"]["spk2id"] = spk_id_map
+    original = {} if append is False else config["data"]["spk2id"]
+
+    for spk in spk_utt_map.keys():
+        if spk in original:
+            continue
+
+        original[spk] = len(original)
+
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 

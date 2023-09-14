@@ -192,6 +192,8 @@ def run():
                 optim_g.param_groups[0]["initial_lr"] = g_resume_lr
             if not optim_d.param_groups[0].get("initial_lr"):
                 optim_d.param_groups[0]["initial_lr"] = d_resume_lr
+            if optim_dur_disc is not None and not optim_dur_disc.param_groups[0].get("initial_lr"):
+                optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
 
         epoch_str = max(epoch_str, 1)
         global_step = (epoch_str - 1) * len(train_loader)
@@ -207,8 +209,6 @@ def run():
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     if net_dur_disc is not None:
-        if not optim_dur_disc.param_groups[0].get("initial_lr"):
-            optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
         scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
             optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
         )
