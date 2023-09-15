@@ -335,12 +335,9 @@ class TextEncoder(nn.Module):
         self.p_dropout = p_dropout
         self.gin_channels = gin_channels
 
-        self.emb = nn.Embedding(len(symbols), hidden_channels)
-        nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
-        self.tone_emb = nn.Embedding(num_tones, hidden_channels)
-        nn.init.normal_(self.tone_emb.weight, 0.0, hidden_channels**-0.5)
-        self.language_emb = nn.Embedding(num_languages, hidden_channels)
-        nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
+        self.emb = nn.Embedding(len(symbols) + 1, hidden_channels)
+        self.tone_emb = nn.Embedding(num_tones + 1, hidden_channels)
+        self.language_emb = nn.Embedding(num_languages + 1, hidden_channels)
 
         self.bert = AutoModel.from_pretrained("xlm-roberta-large")
 
@@ -371,7 +368,6 @@ class TextEncoder(nn.Module):
         loralib.mark_only_lora_as_trainable(self.bert, "lora_only")
 
         self.bert_proj = nn.Linear(4 * 1024, hidden_channels)
-        nn.init.normal_(self.bert_proj.weight, 0.0, hidden_channels**-0.5)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -403,16 +399,23 @@ class TextEncoder(nn.Module):
         bert_emb = self.bert_proj(bert_hidden_states)
 
         # Gather bert features (tokens) to phones
+        phones2tokens_mask = phones2tokens == -1
+        phones2tokens[phones2tokens == -1] = 0
+
         bert_emb = bert_emb.gather(
             1,
             phones2tokens.unsqueeze(-1).expand(-1, -1, bert_emb.size(-1)),
         )
 
+        bert_emb[phones2tokens_mask] = 0
+
         x = (
-            self.emb(x) + self.tone_emb(tone) + self.language_emb(language) + bert_emb
-        ) * math.sqrt(
-            self.hidden_channels
-        )  # [b, t, h]
+            self.emb(x + 1)
+            + self.tone_emb(tone + 1)
+            + self.language_emb(language + 1)
+            + bert_emb
+        )
+
         x = torch.transpose(x, 1, -1)  # [b, h, t]
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(
             x.dtype

@@ -61,14 +61,19 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         for data in tqdm(self.audiopaths_sid_text):
             audiopath, phones = data["path"], data["phones"]
-            if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len and os.path.exists(audiopath):
+            if (
+                self.min_text_len <= len(phones)
+                and len(phones) <= self.max_text_len
+                and os.path.exists(audiopath)
+            ):
                 audiopaths_sid_text_new.append(data)
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
 
         logger.info(
-            f"Skipped: {skipped} because of text length, total: {len(self.audiopaths_sid_text)}"
+            f"Skipped: {skipped} because of text length, "
+            + "total: {len(self.audiopaths_sid_text)}"
         )
 
         self.audiopaths_sid_text = audiopaths_sid_text_new
@@ -94,10 +99,11 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 phones2tokens[j] = i
 
         if self.add_blank:
-            phones = commons.intersperse(phones, 0)
-            tones = commons.intersperse(tones, 0)
-            languages = commons.intersperse(languages, 0)
-            phones2tokens = commons.intersperse(phones2tokens, 0)
+            # Add blank token between each token
+            phones = commons.intersperse(phones, -1)
+            tones = commons.intersperse(tones, -1)
+            languages = commons.intersperse(languages, -1)
+            phones2tokens = commons.intersperse(phones2tokens, -1)
 
             # Don't intersperse tokens since they will be handled by Bert
 
@@ -133,9 +139,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         spec_filename = filename.replace(".wav", ".spec.pt")
         if self.use_mel_spec_posterior:
             spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
+
         try:
             spec = torch.load(spec_filename)
-        except:
+        except Exception:
             if self.use_mel_spec_posterior:
                 spec = mel_spectrogram_torch(
                     audio_norm,
@@ -263,7 +270,7 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
 
     It removes samples which are not included in the boundaries.
     Ex) boundaries = [b1, b2, b3] -> any x s.t. length(x) <= b1 or length(x) > b3 are discarded.
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
