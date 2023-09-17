@@ -166,16 +166,17 @@ en_symbols = [
 num_en_tones = 4
 
 symbol_systems = [
-    (pad, [pad]),
+    (None, [pad]),
     ("ZH", zh_symbols),
     ("JP", jp_symbols),
     ("EN", en_symbols),
-    ("PU", pu_symbols),
+    (None, pu_symbols),
 ]
 
 symbols = list(
     chain.from_iterable(
-        [f"{lang}_{s}" for s in symbols] for lang, symbols in symbol_systems
+        ([f"{lang}_{s}" for s in symbols] if lang is not None else symbols)
+        for lang, symbols in symbol_systems
     )
 )
 

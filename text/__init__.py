@@ -11,7 +11,14 @@ def cleaned_text_to_sequence(phones, tones, languages):
 
     assert len(phones) == len(tones) == len(languages)
 
-    phones = [symbols.index(f"{lang}_{i}") for i, lang in zip(phones, languages)]
+    phones = []
+    for i, lang in zip(phones, languages):
+        if f"{lang}_{i}" in symbols:
+            phones.append(symbols.index(f"{lang}_{i}"))
+        else:
+            # Maybe it's a punctuation mark
+            phones.append(symbols.index(i))
+
     tones = [i + language_tone_start_map[lang] for i, lang in zip(tones, languages)]
     lang_ids = [language_id_map[i] for i in languages]
 
