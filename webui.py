@@ -1,6 +1,6 @@
 # flake8: noqa: E402
 
-import sys, os
+import sys
 import logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
