@@ -163,9 +163,24 @@ en_symbols = [
 ]
 num_en_tones = 4
 
-# combine all symbols
-normal_symbols = sorted(set(zh_symbols + jp_symbols + en_symbols))
-symbols = [pad] + normal_symbols + pu_symbols
+symbol_systems = [
+    (pad, [pad]),
+    ("ZH", zh_symbols),
+    ("JP", jp_symbols),
+    ("EN", en_symbols),
+    ("PU", pu_symbols),
+]
+
+language_symbols_start_map = {}
+symbols_with_language = []
+symbol_id_counter = 0
+
+for idx, (lang, symbols) in enumerate(symbol_systems):
+    language_symbols_start_map[lang] = symbol_id_counter
+    symbols_with_language += [(i, lang) for i in symbols]
+    symbol_id_counter += len(symbols)
+
+symbols = [s for s, _ in symbols_with_language]
 sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
 
 # combine all tones
@@ -186,10 +201,3 @@ language_tone_start_map = {
     "JP": 1 + num_zh_tones,
     "EN": 1 + num_zh_tones + num_jp_tones,
 }
-
-if __name__ == "__main__":
-    a = set(zh_symbols)
-    b = set(en_symbols)
-    print(sorted(a & b))
-
-    print(zh_symbols, jp_symbols, en_symbols)

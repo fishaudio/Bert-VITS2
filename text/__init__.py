@@ -1,7 +1,4 @@
-from text.symbols import *
-
-
-_symbol_to_id = {s: i for i, s in enumerate(symbols)}
+from text.symbols import language_tone_start_map, language_id_map, symbols_with_language
 
 
 def cleaned_text_to_sequence(phones, tones, languages):
@@ -10,11 +7,13 @@ def cleaned_text_to_sequence(phones, tones, languages):
       text: string to convert to a sequence
     Returns:
       List of integers corresponding to the symbols in the text
-    """
+    """  # noqa: E501
 
     assert len(phones) == len(tones) == len(languages)
 
-    phones = [_symbol_to_id[symbol] for symbol in phones]
+    phones = [
+        symbols_with_language.index((i, lang)) for i, lang in zip(phones, languages)
+    ]
     tones = [i + language_tone_start_map[lang] for i, lang in zip(tones, languages)]
     lang_ids = [language_id_map[i] for i in languages]
 
