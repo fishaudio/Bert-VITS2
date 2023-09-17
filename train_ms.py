@@ -192,7 +192,9 @@ def run():
                 optim_g.param_groups[0]["initial_lr"] = g_resume_lr
             if not optim_d.param_groups[0].get("initial_lr"):
                 optim_d.param_groups[0]["initial_lr"] = d_resume_lr
-            if optim_dur_disc is not None and not optim_dur_disc.param_groups[0].get("initial_lr"):
+            if optim_dur_disc is not None and not optim_dur_disc.param_groups[0].get(
+                "initial_lr"
+            ):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
 
         epoch_str = max(epoch_str, 1)
