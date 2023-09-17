@@ -100,10 +100,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         if self.add_blank:
             # Add blank token between each token
-            phones = commons.intersperse(phones, -1)
-            tones = commons.intersperse(tones, -1)
-            languages = commons.intersperse(languages, -1)
-            phones2tokens = commons.intersperse(phones2tokens, -1)
+            phones = commons.intersperse(phones, 0)
+            tones = commons.intersperse(tones, 0)
+            languages = commons.intersperse(languages, 0)
+            phones2tokens = commons.intersperse(phones2tokens, -1)  # Do not gather
 
             # Don't intersperse tokens since they will be handled by Bert
 

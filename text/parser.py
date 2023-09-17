@@ -162,6 +162,12 @@ def parse_unknown_segment(text, order):
 def segments_g2p(segments):
     all_words, all_phones, all_tones, all_word2ph, all_languages = [], [], [], [], []
 
+    all_words.append("_")
+    all_phones.append("_")
+    all_tones.append(0)
+    all_word2ph.append(1)
+    all_languages.append("_")
+
     for i in segments:
         words, phones, tones, word2ph = LANGUAGE_TO_MODULE_MAP[i.language].g2p(i.text)
         assert sum(word2ph) == len(phones) == len(tones)
@@ -173,6 +179,12 @@ def segments_g2p(segments):
         all_languages.extend([i.language] * len(phones))
 
         assert len(words) == len(word2ph), f"{i.language}, {words}, {word2ph}"
+
+    all_words.append("_")
+    all_phones.append("_")
+    all_tones.append(0)
+    all_word2ph.append(1)
+    all_languages.append("_")
 
     assert sum(all_word2ph) == len(all_phones) == len(all_tones)
     assert len(all_word2ph) == len(all_words), f"{all_word2ph}, {all_words}"

@@ -169,10 +169,10 @@ symbols = [pad] + normal_symbols + pu_symbols
 sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
 
 # combine all tones
-num_tones = num_zh_tones + num_jp_tones + num_en_tones
+num_tones = 1 + num_zh_tones + num_jp_tones + num_en_tones  # 1 for padding
 
 # language maps
-language_id_map = {"ZH": 0, "JP": 1, "EN": 2}
+language_id_map = {pad: 0, "ZH": 1, "JP": 2, "EN": 3}
 language_unicode_range_map = {
     "ZH": [(0x4E00, 0x9FFF)],
     "JP": [(0x3040, 0x309F), (0x30A0, 0x30FF), (0x31F0, 0x31FF)],
@@ -181,9 +181,10 @@ language_unicode_range_map = {
 num_languages = len(language_id_map.keys())
 
 language_tone_start_map = {
-    "ZH": 0,
-    "JP": num_zh_tones,
-    "EN": num_zh_tones + num_jp_tones,
+    pad: 0,
+    "ZH": 1,
+    "JP": 1 + num_zh_tones,
+    "EN": 1 + num_zh_tones + num_jp_tones,
 }
 
 if __name__ == "__main__":

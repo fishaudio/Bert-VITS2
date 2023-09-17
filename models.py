@@ -409,12 +409,7 @@ class TextEncoder(nn.Module):
 
         bert_emb[phones2tokens_mask] = 0
 
-        x = (
-            self.emb(x + 1)
-            + self.tone_emb(tone + 1)
-            + self.language_emb(language + 1)
-            + bert_emb
-        )
+        x = self.emb(x) + self.tone_emb(tone) + self.language_emb(language) + bert_emb
 
         x = torch.transpose(x, 1, -1)  # [b, h, t]
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(
