@@ -72,8 +72,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 skipped += 1
 
         logger.info(
-            f"Skipped: {skipped} because of text length, "
-            + "total: {len(self.audiopaths_sid_text)}"
+            f"Skipped: {skipped} because of text length / file not found, "
+            + f"total: {len(self.audiopaths_sid_text)}"
         )
 
         self.audiopaths_sid_text = audiopaths_sid_text_new
