@@ -1,3 +1,5 @@
+from itertools import chain
+
 punctuation = ["!", "?", "…", ",", ".", "'", "-"]
 pu_symbols = punctuation + ["SP", "UNK"]
 pad = "_"
@@ -171,17 +173,11 @@ symbol_systems = [
     ("PU", pu_symbols),
 ]
 
-language_symbols_start_map = {}
-symbols_with_language = []
-symbol_id_counter = 0
-
-for idx, (lang, symbols) in enumerate(symbol_systems):
-    language_symbols_start_map[lang] = symbol_id_counter
-    symbols_with_language += [(i, lang) for i in symbols]
-    symbol_id_counter += len(symbols)
-
-symbols = [s for s, _ in symbols_with_language]
-sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
+symbols = list(
+    chain.from_iterable(
+        [f"{lang}_{s}" for s in symbols] for lang, symbols in symbol_systems
+    )
+)
 
 # combine all tones
 num_tones = 1 + num_zh_tones + num_jp_tones + num_en_tones  # 1 for padding

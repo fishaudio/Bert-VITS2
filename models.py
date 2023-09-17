@@ -12,7 +12,7 @@ from torch.nn import Conv1d, ConvTranspose1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from transformers import AutoModel
 from commons import init_weights, get_padding
-from text import symbols, num_tones, num_languages
+from text.symbols import symbols, num_tones, num_languages
 import loralib
 
 
@@ -335,9 +335,9 @@ class TextEncoder(nn.Module):
         self.p_dropout = p_dropout
         self.gin_channels = gin_channels
 
-        self.emb = nn.Embedding(len(symbols) + 1, hidden_channels)
-        self.tone_emb = nn.Embedding(num_tones + 1, hidden_channels)
-        self.language_emb = nn.Embedding(num_languages + 1, hidden_channels)
+        self.emb = nn.Embedding(len(symbols), hidden_channels)
+        self.tone_emb = nn.Embedding(num_tones, hidden_channels)
+        self.language_emb = nn.Embedding(num_languages, hidden_channels)
 
         self.bert = AutoModel.from_pretrained("xlm-roberta-large")
 

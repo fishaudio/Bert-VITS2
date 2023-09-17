@@ -1,4 +1,4 @@
-from text.symbols import language_tone_start_map, language_id_map, symbols_with_language
+from text.symbols import language_tone_start_map, language_id_map, symbols
 
 
 def cleaned_text_to_sequence(phones, tones, languages):
@@ -11,9 +11,7 @@ def cleaned_text_to_sequence(phones, tones, languages):
 
     assert len(phones) == len(tones) == len(languages)
 
-    phones = [
-        symbols_with_language.index((i, lang)) for i, lang in zip(phones, languages)
-    ]
+    phones = [symbols.index(f"{lang}_{i}") for i, lang in zip(phones, languages)]
     tones = [i + language_tone_start_map[lang] for i, lang in zip(tones, languages)]
     lang_ids = [language_id_map[i] for i in languages]
 
