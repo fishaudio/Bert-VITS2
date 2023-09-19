@@ -5,7 +5,7 @@ import unicodedata
 
 from transformers import AutoTokenizer
 
-from text import punctuation, symbols
+from text.symbols import punctuation, symbols
 
 try:
     import MeCab
