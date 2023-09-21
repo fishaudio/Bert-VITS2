@@ -10,16 +10,23 @@ from text.symbols import symbols
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 from scipy.io import wavfile
+import sys
 
 # Flask Init
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
+if sys.platform == "darwin" and torch.backends.mps.is_available():
+    device = "mps"
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+else:
+    device = "cuda"
 
 def get_text(text, language_str, hps):
+
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-
+    print(norm_text, phone, tone, word2ph)
     if hps.data.add_blank:
         phone = commons.intersperse(phone, 0)
         tone = commons.intersperse(tone, 0)
@@ -27,7 +34,7 @@ def get_text(text, language_str, hps):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str)
+    bert = get_bert(norm_text, word2ph, language_str, device)
     del word2ph
     assert bert.shape[-1] == len(phone), phone
 
@@ -107,7 +114,7 @@ def wav2(i, o, format):
 
 
 # Load Generator
-hps = utils.get_hparams_from_file("./configs/config.json")
+hps = utils.get_hparams_from_file("./logs/chn/config.json")
 
 dev = "cuda"
 net_g = SynthesizerTrn(
@@ -119,7 +126,7 @@ net_g = SynthesizerTrn(
 ).to(dev)
 _ = net_g.eval()
 
-_ = utils.load_checkpoint("logs/G_649000.pth", net_g, None, skip_optimizer=True)
+_ = utils.load_checkpoint("logs/chn/G_8000.pth", net_g, None, skip_optimizer=True)
 
 
 @app.route("/")
@@ -168,3 +175,6 @@ def main():
             return Response(
                 ofp.getvalue(), mimetype="audio/mpeg" if fmt == "mp3" else "audio/ogg"
             )
+
+if __name__ == "__main__":
+    app.run(port=5000,debug=False)
