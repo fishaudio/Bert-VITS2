@@ -27,7 +27,7 @@ from models import (
 from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
-
+import torch.multiprocessing as mp
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
     True  # If encontered training problem,please try to disable TF32.
@@ -42,15 +42,26 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
+def main():
+    """Assume Single Node Multi GPUs Training Only"""
+    assert torch.cuda.is_available(), "CPU training is not allowed."
 
-def run():
+    n_gpus = torch.cuda.device_count()
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '8000'
+    os.environ['RANK'] = '0'
+    os.environ['WORLD_SIZE'] = '1'
+    hps = utils.get_hparams()
+    mp.spawn(run, nprocs=n_gpus, args=(n_gpus, hps,))
+
+def run(rank, n_gpus, hps):
     dist.init_process_group(
         backend="gloo",
         init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
+        world_size=n_gpus,
+        rank=rank
     )  # Use torchrun instead of mp.spawn
-    rank = dist.get_rank()
-    n_gpus = dist.get_world_size()
-    hps = utils.get_hparams()
+
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(rank)
     global global_step
@@ -81,7 +92,9 @@ def run():
         prefetch_factor=4,
     )  # DataLoader config could be adjusted.
     if rank == 0:
-        eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
+        eval_dataset = TextAudioSpeakerLoader(
+            hps.data.validation_files,
+            hps.data)
         eval_loader = DataLoader(
             eval_dataset,
             num_workers=0,
@@ -589,4 +602,4 @@ def evaluate(hps, generator, eval_loader, writer_eval):
 
 
 if __name__ == "__main__":
-    run()
+    main()
