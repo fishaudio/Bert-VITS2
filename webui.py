@@ -212,5 +212,5 @@ if __name__ == "__main__":
             outputs=[text_output, audio_output],
         )
 
-    webbrowser.open("http://127.0.0.1:7860")
-    app.launch(share=args.share)
+    webbrowser.open("http://127.0.0.1:6660")
+    app.launch(share=args.share, server_port=6660)
