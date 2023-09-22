@@ -126,7 +126,7 @@ def fn_transcript(raw_folder):
                         transcription = lab_file.read().strip()
                     # 获取对应的 WAV 文件路径
                     wav_file_path = os.path.splitext(lab_file_path)[0] + ".wav"
-                    wav_file_path = wav_file_path.replace('\\', '/')
+                    wav_file_path = wav_file_path.replace('\\', '/').replace("./raw", "./dataset")
                     print(wav_file_path)
                     # 写入数据到总的转写文本文件
                     line = f"{wav_file_path}|{folder_name}|{inv_lang_dict[folder_name_suffix]}|{transcription}\n"
