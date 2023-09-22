@@ -22,8 +22,8 @@ if sys.platform == "darwin" and torch.backends.mps.is_available():
 else:
     device = "cuda"
 
-def get_text(text, language_str, hps):
 
+def get_text(text, language_str, hps):
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
     print(norm_text, phone, tone, word2ph)
@@ -176,5 +176,6 @@ def main():
                 ofp.getvalue(), mimetype="audio/mpeg" if fmt == "mp3" else "audio/ogg"
             )
 
+
 if __name__ == "__main__":
-    app.run(port=5000,debug=False)
+    app.run(port=5000, debug=False)
