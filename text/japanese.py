@@ -6,12 +6,9 @@ import sys
 
 from transformers import AutoTokenizer
 
-from text import punctuation, symbols
-from typing import TextIO
 import pyopenjtalk
 
-from num2words import num2words
-BERT = './bert/bert-large-japanese-v2'
+BERT = "./bert/bert-large-japanese-v2"
 _CONVRULES = [
     # Conversion of 2 letters
     "アァ/ a a",
@@ -385,6 +382,7 @@ def replace_punctuation(text):
         replaced_text = replaced_text.replace(x, rep_map[x])
     return replaced_text
 
+
 def text_normalize(text):
     res = unicodedata.normalize("NFKC", text)
     res = japanese_convert_numbers_to_words(res)
@@ -393,27 +391,29 @@ def text_normalize(text):
     return res
 
 
-
 tokenizer = AutoTokenizer.from_pretrained(BERT)
+
 
 def g2p(norm_text):
     tokenized = tokenizer.tokenize(norm_text)
     st = [x.replace("#", "") for x in tokenized]
     word2ph = []
-    phs = pyopenjtalk.g2p(norm_text).split(" ")  # Directly use the entire norm_text sequence.
+    phs = pyopenjtalk.g2p(norm_text).split(
+        " "
+    )  # Directly use the entire norm_text sequence.
     for sub in st:  # the following code is only for calculating word2ph
         wph = 0
         for x in sub:
             sys.stdout.flush()
-            if x not in ['?', '.', '!', '…', ',']:  # This will throw warnings.
+            if x not in ["?", ".", "!", "…", ","]:  # This will throw warnings.
                 phonemes = pyopenjtalk.g2p(x)
             else:
-                phonemes = 'pau'
+                phonemes = "pau"
             # for x in range(repeat):
-            wph += len(phonemes.split(' '))
+            wph += len(phonemes.split(" "))
             # print(f'{x}-->:{phones}')
         word2ph.append(wph)
-    phonemes = ['_'] + phs + ['_']
+    phonemes = ["_"] + phs + ["_"]
     tones = [0 for i in phonemes]
     word2ph = [1] + word2ph + [1]
     return phonemes, tones, word2ph

@@ -208,7 +208,13 @@ class TextAudioSpeakerCollate:
             torch.LongTensor([x[1].size(1) for x in batch]), dim=0, descending=True
         )
 
-        max_text_len = max([batch[ids_sorted_decreasing[i]][7].size(1) for i in range(len(ids_sorted_decreasing))] + [len(x[0]) for x in batch])
+        max_text_len = max(
+            [
+                batch[ids_sorted_decreasing[i]][7].size(1)
+                for i in range(len(ids_sorted_decreasing))
+            ]
+            + [len(x[0]) for x in batch]
+        )
         max_spec_len = max([x[1].size(1) for x in batch])
         max_wav_len = max([x[2].size(1) for x in batch])
 
