@@ -154,13 +154,13 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         if language_str == "ZH":
             bert = bert
-            ja_bert = torch.zeros(768, len(phone))
+            ja_bert = torch.zeros(1024, len(phone))
         elif language_str == "JA":
             ja_bert = bert
             bert = torch.zeros(1024, len(phone))
         else:
             bert = torch.zeros(1024, len(phone))
-            ja_bert = torch.zeros(768, len(phone))
+            ja_bert = torch.zeros(1024, len(phone))
         assert bert.shape[-1] == len(phone), (
             bert.shape,
             len(phone),
@@ -221,7 +221,7 @@ class TextAudioSpeakerCollate:
         tone_padded = torch.LongTensor(len(batch), max_text_len)
         language_padded = torch.LongTensor(len(batch), max_text_len)
         bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
-        ja_bert_padded = torch.FloatTensor(len(batch), 768, max_text_len)
+        ja_bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
         wav_padded = torch.FloatTensor(len(batch), 1, max_wav_len)
