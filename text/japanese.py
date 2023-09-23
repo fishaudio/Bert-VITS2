@@ -7,10 +7,8 @@ from transformers import AutoTokenizer
 
 from text import punctuation, symbols
 
-try:
-    import MeCab
-except ImportError as e:
-    raise ImportError("Japanese requires mecab-python3 and unidic-lite.") from e
+import pyopenjtalk
+
 from num2words import num2words
 
 _CONVRULES = [
@@ -353,99 +351,6 @@ def hira2kata(text: str) -> str:
     return text.replace("う゛", "ヴ")
 
 
-_SYMBOL_TOKENS = set(list("・、。？！"))
-_NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
-_TAGGER = MeCab.Tagger()
-
-
-def text2kata(text: str) -> str:
-    parsed = _TAGGER.parse(text)
-    res = []
-    for line in parsed.split("\n"):
-        if line == "EOS":
-            break
-        parts = line.split("\t")
-
-        word, yomi = parts[0], parts[1]
-        if yomi:
-            res.append(yomi)
-        else:
-            if word in _SYMBOL_TOKENS:
-                res.append(word)
-            elif word in ("っ", "ッ"):
-                res.append("ッ")
-            elif word in _NO_YOMI_TOKENS:
-                pass
-            else:
-                res.append(word)
-    return hira2kata("".join(res))
-
-
-_ALPHASYMBOL_YOMI = {
-    "#": "シャープ",
-    "%": "パーセント",
-    "&": "アンド",
-    "+": "プラス",
-    "-": "マイナス",
-    ":": "コロン",
-    ";": "セミコロン",
-    "<": "小なり",
-    "=": "イコール",
-    ">": "大なり",
-    "@": "アット",
-    "a": "エー",
-    "b": "ビー",
-    "c": "シー",
-    "d": "ディー",
-    "e": "イー",
-    "f": "エフ",
-    "g": "ジー",
-    "h": "エイチ",
-    "i": "アイ",
-    "j": "ジェー",
-    "k": "ケー",
-    "l": "エル",
-    "m": "エム",
-    "n": "エヌ",
-    "o": "オー",
-    "p": "ピー",
-    "q": "キュー",
-    "r": "アール",
-    "s": "エス",
-    "t": "ティー",
-    "u": "ユー",
-    "v": "ブイ",
-    "w": "ダブリュー",
-    "x": "エックス",
-    "y": "ワイ",
-    "z": "ゼット",
-    "α": "アルファ",
-    "β": "ベータ",
-    "γ": "ガンマ",
-    "δ": "デルタ",
-    "ε": "イプシロン",
-    "ζ": "ゼータ",
-    "η": "イータ",
-    "θ": "シータ",
-    "ι": "イオタ",
-    "κ": "カッパ",
-    "λ": "ラムダ",
-    "μ": "ミュー",
-    "ν": "ニュー",
-    "ξ": "クサイ",
-    "ο": "オミクロン",
-    "π": "パイ",
-    "ρ": "ロー",
-    "σ": "シグマ",
-    "τ": "タウ",
-    "υ": "ウプシロン",
-    "φ": "ファイ",
-    "χ": "カイ",
-    "ψ": "プサイ",
-    "ω": "オメガ",
-}
-
-
 _NUMBER_WITH_SEPARATOR_RX = re.compile("[0-9]{1,3}(,[0-9]{3})+")
 _CURRENCY_MAP = {"$": "ドル", "¥": "円", "£": "ポンド", "€": "ユーロ"}
 _CURRENCY_RX = re.compile(r"([$¥£€])([0-9.]*[0-9])")
@@ -453,46 +358,8 @@ _NUMBER_RX = re.compile(r"[0-9]+(\.[0-9]+)?")
 
 
 def japanese_convert_numbers_to_words(text: str) -> str:
-    res = _NUMBER_WITH_SEPARATOR_RX.sub(lambda m: m[0].replace(",", ""), text)
-    res = _CURRENCY_RX.sub(lambda m: m[2] + _CURRENCY_MAP.get(m[1], m[1]), res)
-    res = _NUMBER_RX.sub(lambda m: num2words(m[0], lang="ja"), res)
+    res = text
     return res
-
-
-def japanese_convert_alpha_symbols_to_words(text: str) -> str:
-    return "".join([_ALPHASYMBOL_YOMI.get(ch, ch) for ch in text.lower()])
-
-
-def japanese_text_to_phonemes(text: str) -> str:
-    """Convert Japanese text to phonemes."""
-    res = unicodedata.normalize("NFKC", text)
-    res = japanese_convert_numbers_to_words(res)
-    # res = japanese_convert_alpha_symbols_to_words(res)
-    res = text2kata(res)
-    res = kata2phoneme(res)
-    return res
-
-
-def is_japanese_character(char):
-    # 定义日语文字系统的 Unicode 范围
-    japanese_ranges = [
-        (0x3040, 0x309F),  # 平假名
-        (0x30A0, 0x30FF),  # 片假名
-        (0x4E00, 0x9FFF),  # 汉字 (CJK Unified Ideographs)
-        (0x3400, 0x4DBF),  # 汉字扩展 A
-        (0x20000, 0x2A6DF),  # 汉字扩展 B
-        # 可以根据需要添加其他汉字扩展范围
-    ]
-
-    # 将字符的 Unicode 编码转换为整数
-    char_code = ord(char)
-
-    # 检查字符是否在任何一个日语范围内
-    for start, end in japanese_ranges:
-        if start <= char_code <= end:
-            return True
-
-    return False
 
 
 rep_map = {
@@ -544,30 +411,15 @@ def distribute_phone(n_phone, n_word):
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
-
-def g2p(norm_text):
-    tokenized = tokenizer.tokenize(norm_text)
-    phs = []
-    ph_groups = []
-    for t in tokenized:
-        if not t.startswith("#"):
-            ph_groups.append([t])
-        else:
-            ph_groups[-1].append(t.replace("#", ""))
+def g2p_ojt(norm_text):
+    norm_text = list(norm_text)
     word2ph = []
-    for group in ph_groups:
-        phonemes = kata2phoneme(text2kata("".join(group)))
-        # phonemes = [i for i in phonemes if i in symbols]
-        for i in phonemes:
-            assert i in symbols, (group, norm_text, tokenized)
-        phone_len = len(phonemes)
-        word_len = len(group)
-
-        aaa = distribute_phone(phone_len, word_len)
-        word2ph += aaa
-
-        phs += phonemes
-    phones = ["_"] + phs + ["_"]
+    phs = []
+    for x in norm_text:
+        phones = pyopenjtalk.g2p(x)
+        word2ph.append(len(phones))
+        phs += phones.split(" ")
+    phones = ['_'] + phs + ['_']
     tones = [0 for i in phones]
     word2ph = [1] + word2ph + [1]
     return phones, tones, word2ph
@@ -580,7 +432,7 @@ if __name__ == "__main__":
 
     text = text_normalize(text)
     print(text)
-    phones, tones, word2ph = g2p(text)
+    phones, tones, word2ph = g2p_ojt(text)
     bert = get_bert_feature(text, word2ph)
 
     print(phones, tones, word2ph, bert.shape)
