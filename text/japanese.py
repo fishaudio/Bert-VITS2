@@ -2,11 +2,12 @@
 # compatible with Julius https://github.com/julius-speech/segmentation-kit
 import re
 import unicodedata
+import sys
 
 from transformers import AutoTokenizer
 
 from text import punctuation, symbols
-
+from typing import TextIO
 import pyopenjtalk
 
 from num2words import num2words
@@ -359,6 +360,8 @@ _NUMBER_RX = re.compile(r"[0-9]+(\.[0-9]+)?")
 
 def japanese_convert_numbers_to_words(text: str) -> str:
     res = text
+    for x in _CURRENCY_MAP.keys():
+        res = res.replace(x, _CURRENCY_MAP[x])
     return res
 
 
@@ -377,16 +380,10 @@ rep_map = {
 
 
 def replace_punctuation(text):
-    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
-
-    replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
-
-    replaced_text = re.sub(r'[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF' + "".join(punctuation) + r']+', '',
-                           replaced_text)
-    #print('AFTER1:', replaced_text)
-
+    replaced_text = text
+    for x in rep_map.keys():
+        replaced_text = replaced_text.replace(x, rep_map[x])
     return replaced_text
-
 
 def text_normalize(text):
     res = unicodedata.normalize("NFKC", text)
@@ -403,15 +400,18 @@ def g2p(norm_text):
     tokenized = tokenizer.tokenize(norm_text)
     st = [x.replace("#", "") for x in tokenized]
     word2ph = []
-    phs = []
-    for sub in st:
+    phs = pyopenjtalk.g2p(norm_text).split(" ")  # Directly use the entire norm_text sequence.
+    for sub in st:  # the following code is only for calculating word2ph
         wph = 0
         for x in sub:
-            phonemes = pyopenjtalk.g2p(x)
+            sys.stdout.flush()
+            if x not in ['?', '.', '!', '…', ',']:  # This will throw warnings.
+                phonemes = pyopenjtalk.g2p(x)
+            else:
+                phonemes = 'pau'
             # for x in range(repeat):
             wph += len(phonemes.split(' '))
             # print(f'{x}-->:{phones}')
-            phs += phonemes.split(" ")
         word2ph.append(wph)
     phonemes = ['_'] + phs + ['_']
     tones = [0 for i in phonemes]
