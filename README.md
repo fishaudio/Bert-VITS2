@@ -14,5 +14,5 @@ VITS2 Backbone with bert
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
-  <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2/" />
+  <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2" />
 </a>
