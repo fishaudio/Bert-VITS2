@@ -6,12 +6,9 @@ import sys
 
 from transformers import AutoTokenizer
 
-from text import punctuation, symbols
-from typing import TextIO
 import pyopenjtalk
 
 from num2words import num2words
-
 BERT = "./bert/bert-large-japanese-v2"
 _CONVRULES = [
     # Conversion of 2 letters
