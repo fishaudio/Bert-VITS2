@@ -10,7 +10,7 @@ from text import punctuation, symbols
 import pyopenjtalk
 
 from num2words import num2words
-
+BERT = './bert/bert-large-japanese-v2'
 _CONVRULES = [
     # Conversion of 2 letters
     "アァ/ a a",
@@ -381,13 +381,9 @@ def replace_punctuation(text):
 
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
-    replaced_text = re.sub(
-        r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF"
-        + "".join(punctuation)
-        + r"]+",
-        "",
-        replaced_text,
-    )
+    replaced_text = re.sub(r'[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF' + "".join(punctuation) + r']+', '',
+                           replaced_text)
+    #print('AFTER1:', replaced_text)
 
     return replaced_text
 
@@ -400,33 +396,31 @@ def text_normalize(text):
     return res
 
 
-def distribute_phone(n_phone, n_word):
-    phones_per_word = [0] * n_word
-    for task in range(n_phone):
-        min_tasks = min(phones_per_word)
-        min_index = phones_per_word.index(min_tasks)
-        phones_per_word[min_index] += 1
-    return phones_per_word
 
+tokenizer = AutoTokenizer.from_pretrained(BERT)
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
-
-def g2p_ojt(norm_text):
-    norm_text = list(norm_text)
+def g2p(norm_text):
+    tokenized = tokenizer.tokenize(norm_text)
+    st = [x.replace("#", "") for x in tokenized]
     word2ph = []
     phs = []
-    for x in norm_text:
-        phones = pyopenjtalk.g2p(x)
-        word2ph.append(len(phones))
-        phs += phones.split(" ")
-    phones = ['_'] + phs + ['_']
-    tones = [0 for i in phones]
+    for sub in st:
+        wph = 0
+        for x in sub:
+            phonemes = pyopenjtalk.g2p(x)
+            # for x in range(repeat):
+            wph += len(phonemes.split(' '))
+            # print(f'{x}-->:{phones}')
+            phs += phonemes.split(" ")
+        word2ph.append(wph)
+    phonemes = ['_'] + phs + ['_']
+    tones = [0 for i in phonemes]
     word2ph = [1] + word2ph + [1]
-    return phones, tones, word2ph
+    return phonemes, tones, word2ph
 
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
+    tokenizer = AutoTokenizer.from_pretrained(BERT)
     text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
 
