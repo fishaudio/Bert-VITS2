@@ -2,7 +2,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 import sys
 
-BERT = './bert/bert-large-japanese-v2'
+BERT = "./bert/bert-large-japanese-v2"
 
 tokenizer = AutoTokenizer.from_pretrained(BERT)
 # bert-large model has 25 hidden layers.You can decide which layer to use by setting this variable to a specific value
@@ -19,15 +19,13 @@ def get_bert_feature(text, word2ph, device=None):
         device = "mps"
     if not device:
         device = "cuda"
-    model = AutoModelForMaskedLM.from_pretrained(BERT).to(
-        device
-    )
+    model = AutoModelForMaskedLM.from_pretrained(BERT).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
         res = model(**inputs, output_hidden_states=True)
-        res = res['hidden_states'][BERT_LAYER]
+        res = res["hidden_states"][BERT_LAYER]
     assert inputs["input_ids"].shape[-1] == len(word2ph)
     word2phone = word2ph
     phone_level_feature = []
