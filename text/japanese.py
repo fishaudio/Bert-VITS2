@@ -8,7 +8,6 @@ from transformers import AutoTokenizer
 
 import pyopenjtalk
 
-from num2words import num2words
 BERT = "./bert/bert-large-japanese-v2"
 _CONVRULES = [
     # Conversion of 2 letters
