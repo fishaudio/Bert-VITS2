@@ -763,7 +763,7 @@ class SynthesizerTrn(nn.Module):
         gin_channels=256,
         use_sdp=True,
         n_flow_layer=4,
-        n_layers_trans_flow=6,
+        n_layers_trans_flow=4,
         flow_share_parameter=False,
         use_transformer_flow=True,
         **kwargs
