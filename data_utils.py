@@ -7,7 +7,7 @@ from loguru import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence, get_bert
+from text import cleaned_text_to_sequence
 
 """Multi speaker version"""
 
@@ -148,8 +148,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             bert = torch.load(bert_path)
             assert bert.shape[-1] == len(phone)
         except:
-            bert = get_bert(text, word2ph, language_str)
-            torch.save(bert, bert_path)
+            #bert = get_bert(text, word2ph, language_str)
+            #torch.save(bert, bert_path)
             assert bert.shape[-1] == len(phone), phone
 
         if language_str == "ZH":
