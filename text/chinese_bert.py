@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
 models = dict()
 
+
 def get_bert_feature(text, word2ph, device=None):
     if (
         sys.platform == "darwin"

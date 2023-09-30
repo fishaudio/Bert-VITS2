@@ -147,8 +147,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         try:
             bert = torch.load(bert_path)
         except Exception as e:
-            #bert = get_bert(text, word2ph, language_str, "cuda")
-            #torch.save(bert, bert_path)
+            # bert = get_bert(text, word2ph, language_str, "cuda")
+            # torch.save(bert, bert_path)
             print("Bert load failed: ", e)
 
         if language_str == "ZH":
