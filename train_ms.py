@@ -198,6 +198,7 @@ def run():
         print(e)
         epoch_str = 1
         global_step = 0
+        dur_resume_lr = 2e-4
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
