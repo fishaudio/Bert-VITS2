@@ -155,7 +155,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         if language_str == "ZH":
             bert = bert
             ja_bert = torch.zeros(768, len(phone))
-        elif language_str == "JA":
+        elif language_str == "JP":
             ja_bert = bert
             bert = torch.zeros(1024, len(phone))
         else:
