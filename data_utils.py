@@ -8,7 +8,6 @@ import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import cleaned_text_to_sequence, get_bert
-from text.japanese_bert import tokenizer
 
 """Multi speaker version"""
 
@@ -148,7 +147,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         try:
             bert = torch.load(bert_path)
         except:
-            bert = get_bert(text, word2ph, language_str, "cuda", tokenizer)
+            bert = get_bert(text, word2ph, language_str, "cuda")
             torch.save(bert, bert_path)
 
         if language_str == "ZH":
