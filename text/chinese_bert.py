@@ -4,8 +4,6 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
 
-models = dict()
-
 
 def get_bert_feature(text, word2ph, device=None):
     if (
@@ -16,15 +14,14 @@ def get_bert_feature(text, word2ph, device=None):
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/chinese-roberta-wwm-ext-large"
-        ).to(device)
+    model = AutoModelForMaskedLM.from_pretrained(
+        "./bert/chinese-roberta-wwm-ext-large"
+    ).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
-        res = models[device](**inputs, output_hidden_states=True)
+        res = model(**inputs, output_hidden_states=True)
         res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
 
     assert len(word2ph) == len(text) + 2
