@@ -11,7 +11,12 @@ def cleaned_text_to_sequence(cleaned_text, tones, language):
     Returns:
       List of integers corresponding to the symbols in the text
     """
-    phones = [_symbol_to_id[symbol] for symbol in cleaned_text]
+    phones = []  # _symbol_to_id[symbol] for symbol in cleaned_text
+    for symbol in cleaned_text:
+        try:
+            phones.append(_symbol_to_id[symbol])
+        except KeyError:
+            phones.append(0)  # symbol not found in ID map, use 0('_') by default
     tone_start = language_tone_start_map[language]
     tones = [i + tone_start for i in tones]
     lang_id = language_id_map[language]

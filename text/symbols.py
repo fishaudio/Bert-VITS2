@@ -74,6 +74,7 @@ num_zh_tones = 6
 
 # japanese
 ja_symbols = [
+    "pau",
     "N",
     "a",
     "a:",
@@ -117,6 +118,8 @@ ja_symbols = [
     "z",
     "zy",
 ]
+for x in range(ord("a"), ord("z") + 1):
+    ja_symbols.append(chr(x).upper())
 num_ja_tones = 1
 
 # English
