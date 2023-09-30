@@ -8,17 +8,19 @@ tokenizer = AutoTokenizer.from_pretrained(BERT)
 # bert-large model has 25 hidden layers.You can decide which layer to use by setting this variable to a specific value
 # default value is 3(untested)
 BERT_LAYER = 20
-if (
+models = dict()
+
+def get_bert_feature(text, word2ph, device=None):
+    if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()
         and device == "cpu"
     ):
         device = "mps"
-if not device:
-    device = "cuda"
-model = AutoModelForMaskedLM.from_pretrained(BERT).to(device)
-
-def get_bert_feature(text, word2ph, device=None):
+    if not device:
+        device = "cuda"
+    if device not in models.keys():
+        models[device] = AutoModelForMaskedLM.from_pretrained(BERT).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
