@@ -147,7 +147,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         try:
             bert = torch.load(bert_path)
         except:
-            bert = get_bert(text, word2ph, language_str)
+            bert = get_bert(text, word2ph, language_str,device=None)
             torch.save(bert, bert_path)
 
         if language_str == "ZH":
