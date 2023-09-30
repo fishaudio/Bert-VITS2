@@ -1,5 +1,5 @@
 from text.symbols import *
-
+import torch
 
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
 
