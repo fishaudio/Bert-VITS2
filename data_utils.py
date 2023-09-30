@@ -7,7 +7,7 @@ from loguru import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence，get_bert
+from text import cleaned_text_to_sequence, get_bert
 
 """Multi speaker version"""
 
