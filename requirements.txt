@@ -15,7 +15,7 @@ pypinyin
 cn2an
 gradio
 av
-pyopenjtalk
+mecab-python3
 loguru
 unidic-lite
 cmudict
