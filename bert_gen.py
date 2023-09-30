@@ -31,13 +31,13 @@ def process_line(line):
 
     bert_path = wav_path.replace(".wav", ".bert.pt")
 
-    #try:
-        #bert = torch.load(bert_path)
-        #assert bert.shape[-1] == len(phone)
-    #except Exception:
-    bert = get_bert(text, word2ph, language_str, device)
-    assert bert.shape[-1] == len(phone)
-    torch.save(bert, bert_path)
+    try:
+        bert = torch.load(bert_path)
+        assert bert.shape[-1] == len(phone)
+    except Exception:
+        bert = get_bert(text, word2ph, language_str, device)
+        assert bert.shape[-1] == len(phone)
+        torch.save(bert, bert_path)
 
 
 if __name__ == "__main__":
