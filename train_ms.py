@@ -45,7 +45,7 @@ global_step = 0
 
 def run():
     dist.init_process_group(
-        backend="nccl",
+        backend="gloo",
         init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
