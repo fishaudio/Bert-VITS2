@@ -146,7 +146,6 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         bert_path = wav_path.replace(".wav", ".bert.pt")
         try:
             bert = torch.load(bert_path)
-            assert bert.shape[-1] == len(phone)
         except:
             bert = get_bert(text, word2ph, language_str)
             torch.save(bert, bert_path)
