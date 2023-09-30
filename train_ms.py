@@ -40,6 +40,7 @@ torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
+torch.multiprocessing.set_start_method('spawn')
 global_step = 0
 
 
