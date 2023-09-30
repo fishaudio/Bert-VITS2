@@ -9,6 +9,8 @@ tokenizer = AutoTokenizer.from_pretrained(BERT)
 # default value is 3(untested)
 BERT_LAYER = 3
 
+models = dict()
+
 
 def get_bert_feature(text, word2ph, device=None):
     if (
@@ -19,7 +21,10 @@ def get_bert_feature(text, word2ph, device=None):
         device = "mps"
     if not device:
         device = "cuda"
-    model = AutoModelForMaskedLM.from_pretrained(BERT).to(device)
+    if device not in models.keys():
+        models[device] = AutoModelForMaskedLM.from_pretrained(
+            "./bert/bert-base-japanese-v3"
+        ).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
