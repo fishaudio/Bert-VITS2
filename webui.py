@@ -104,17 +104,32 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
         return audio
 
 
-def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
+def tts_fn(
+    text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
+):
     slices = text.split("|")
     audio_list = []
     with torch.no_grad():
         for slice in slices:
+<<<<<<< HEAD
             audio = infer(slice, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker, language=language)
+=======
+            audio = infer(
+                slice,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+                sid=speaker,
+                language=language,
+            )
+>>>>>>> 497d40052ca6a9b61707a3dff6b894f38234c177
             audio_list.append(audio)
             silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
             audio_list.append(silence)  # 将静音添加到列表中
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
