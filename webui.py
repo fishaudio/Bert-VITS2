@@ -112,8 +112,11 @@ def tts_fn(
     with torch.no_grad():
         for slice in slices:
 <<<<<<< HEAD
+<<<<<<< HEAD
             audio = infer(slice, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker, language=language)
 =======
+=======
+>>>>>>> 497d40052ca6a9b61707a3dff6b894f38234c177
             audio = infer(
                 slice,
                 sdp_ratio=sdp_ratio,
@@ -123,6 +126,9 @@ def tts_fn(
                 sid=speaker,
                 language=language,
             )
+<<<<<<< HEAD
+>>>>>>> 497d40052ca6a9b61707a3dff6b894f38234c177
+=======
 >>>>>>> 497d40052ca6a9b61707a3dff6b894f38234c177
             audio_list.append(audio)
             silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
