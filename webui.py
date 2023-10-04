@@ -101,15 +101,16 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
             .numpy()
         )
         del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
+        torch.cuda.empty_cache()
         return audio
 
 
-def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale):
+def tts_fn(text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
     slices = text.split("|")
     audio_list = []
     with torch.no_grad():
         for slice in slices:
-            audio = infer(slice, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker)
+            audio = infer(slice, sdp_ratio=sdp_ratio, noise_scale=noise_scale, noise_scale_w=noise_scale_w, length_scale=length_scale, sid=speaker, language=language)
             audio_list.append(audio)
             silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
             audio_list.append(silence)  # 将静音添加到列表中
