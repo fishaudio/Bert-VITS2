@@ -21,13 +21,12 @@ def process_line(line):
     word2ph = [i for i in word2ph]
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 
-    if hps.data.add_blank:
-        phone = commons.intersperse(phone, 0)
-        tone = commons.intersperse(tone, 0)
-        language = commons.intersperse(language, 0)
-        for i in range(len(word2ph)):
-            word2ph[i] = word2ph[i] * 2
-        word2ph[0] += 1
+    phone = commons.intersperse(phone, 0)
+    tone = commons.intersperse(tone, 0)
+    language = commons.intersperse(language, 0)
+    for i in range(len(word2ph)):
+        word2ph[i] = word2ph[i] * 2
+    word2ph[0] += 1
 
     bert_path = wav_path.replace(".wav", ".bert.pt")
 
