@@ -27,7 +27,7 @@ def get_text(text, language_str, hps):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str)
+    bert = get_bert(norm_text, word2ph, language_str, dev)
     del word2ph
     assert bert.shape[-1] == len(phone), phone
 
@@ -56,7 +56,7 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
         tones = tones.to(dev).unsqueeze(0)
         lang_ids = lang_ids.to(dev).unsqueeze(0)
         bert = bert.to(dev).unsqueeze(0)
-        ja_bert = ja_bert.to(device).unsqueeze(0)
+        ja_bert = ja_bert.to(dev).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(dev)
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(dev)
         audio = (
