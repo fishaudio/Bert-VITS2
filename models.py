@@ -864,7 +864,9 @@ class SynthesizerTrn(nn.Module):
         else:
             self.ref_enc = ReferenceEncoder(spec_channels, gin_channels)
 
-    def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert, ja_bert, emo=None):
+    def forward(
+        self, x, x_lengths, y, y_lengths, sid, tone, language, bert, ja_bert, emo=None
+    ):
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
