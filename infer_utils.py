@@ -46,7 +46,18 @@ def get_text(text, language_str, hps, device):
     return bert, ja_bert, phone, tone, language
 
 
-def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, language, hps, net_g, device):
+def infer(
+    text,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    sid,
+    language,
+    hps,
+    net_g,
+    device,
+):
     bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps, device)
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)

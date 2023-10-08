@@ -91,7 +91,7 @@ def main():
             language=language,
             hps=hps,
             net_g=net_g,
-            device=dev
+            device=dev,
         )
 
     with BytesIO() as wav:

@@ -50,7 +50,7 @@ def tts_fn(
                 language=language,
                 hps=hps,
                 net_g=net_g,
-                device=device
+                device=device,
             )
             audio_list.append(audio)
             silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
