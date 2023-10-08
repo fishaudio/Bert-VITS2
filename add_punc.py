@@ -33,24 +33,24 @@ def process(audios, pid):
     print("loading model")
     inference_pipeline = pipeline(
         task=Tasks.punctuation,
-        model='damo/punc_ct-transformer_zh-cn-common-vocab272727-pytorch'
+        model="damo/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
     )
     print("loaded model")
 
     total_cnt = 0
     skip_cnt = 0
     for audiofile in tqdm(audios):
-        for k, sentence in enumerate(audiofile['segments']):
-            confidence = sentence['confidence']
+        for k, sentence in enumerate(audiofile["segments"]):
+            confidence = sentence["confidence"]
             if confidence >= 0.95:
-                text = sentence['text']
+                text = sentence["text"]
                 rec_result = inference_pipeline(text_in=text)
-                sentence['text'] = rec_result['text']
+                sentence["text"] = rec_result["text"]
                 total_cnt += 1
             else:
                 skip_cnt += 1
         print("preprocessed text count :", total_cnt, "skip count :", skip_cnt)
-    with open(f"tmp/{pid}.json", 'w') as f:
+    with open(f"tmp/{pid}.json", "w") as f:
         json.dump(audios, f, ensure_ascii=False, indent=2)
 
 
@@ -59,7 +59,7 @@ def process_wrapper(args):
     process(audios, pid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Define the number of processes
     n_process = 8
 
