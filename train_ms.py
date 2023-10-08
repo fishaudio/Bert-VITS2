@@ -300,6 +300,7 @@ def train_and_evaluate(
         language = language.cuda(rank, non_blocking=True)
         bert = bert.cuda(rank, non_blocking=True)
         ja_bert = ja_bert.cuda(rank, non_blocking=True)
+        emo = emo.cuda(rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             (
@@ -321,6 +322,7 @@ def train_and_evaluate(
                 language,
                 bert,
                 ja_bert,
+                emo,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -515,6 +517,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             language,
             bert,
             ja_bert,
+            emo,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -524,6 +527,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             ja_bert = ja_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            emo = emo.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
