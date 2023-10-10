@@ -363,7 +363,7 @@ class TextEncoder(nn.Module):
             + self.language_emb(language)
             + bert_emb
             + ja_bert_emb
-            + elf.emo_proj(emo.unsqueeze(1))
+            + self.emo_proj(emo.unsqueeze(1))
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
