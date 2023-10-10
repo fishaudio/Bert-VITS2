@@ -1,9 +1,5 @@
 """
-@Author: Kasugano Sora
-@Github: https://github.com/jiangyuxiaoxiao
-@Date: 2023/10/08-18:01
-@Desc:
-@Ver : 1.0.0
+推理
 """
 import torch
 import commons
