@@ -1,6 +1,4 @@
 import os
-import soundfile
-import multiprocessing
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from modelscope.utils.logger import get_logger
@@ -10,19 +8,18 @@ from pydub import AudioSegment
 
 logger = get_logger(log_level=logging.CRITICAL)
 logger.setLevel(logging.CRITICAL)
-
 os.environ["MODELSCOPE_CACHE"] = "./"
-print(os.environ["SELECT_LANGUAGE"])
-if "ZH(中文)" in os.environ["SELECT_LANGUAGE"]:
-    inference_pipeline_zh = pipeline(
-        task=Tasks.auto_speech_recognition,
-        model='damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch'
-    )
 
-elif "JP(日语)" in os.environ["SELECT_LANGUAGE"]:
+
+if "JP(日语)" in os.environ["SELECT_LANGUAGE"]:
     inference_pipeline_jp = pipeline(
         task=Tasks.auto_speech_recognition,
         model='damo/speech_UniASR_asr_2pass-ja-16k-common-vocab93-tensorflow1-offline'
+    )
+else:
+    inference_pipeline_zh = pipeline(
+        task=Tasks.auto_speech_recognition,
+        model='damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch'
     )
 
 
@@ -30,13 +27,14 @@ def transcribe_worker(file_path:str):
     """
     Worker function for transcribing a segment of an audio file.
     """
-    if file_path.rstrip(".wav").endswith("_zh"):
+    dir_path = os.path.dirname(file_path)
+    if dir_path.endswith("_zh"):
         rec_result = inference_pipeline_zh(audio_in=file_path)
-    elif file_path.rstrip(".wav").endswith("_jp"):
+    elif dir_path.endswith("_jp"):
         rec_result = inference_pipeline_jp(audio_in=file_path)
     else:
         rec_result = {"text": ""}
-    print(file_path)
+    print(dir_path, ' ', file_path)
     print(rec_result)
     return str(rec_result.get('text','')).strip()
 
