@@ -42,6 +42,10 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
+os.environ["MASTER_ADDR"] = "localhost"
+os.environ["MASTER_PORT"] = "8000"
+os.environ["WORLD_SIZE"] = "1"
+os.environ["RANK"] = "0"
 
 def run():
     dist.init_process_group(
