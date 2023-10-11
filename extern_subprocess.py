@@ -78,11 +78,8 @@ def terminate_training():
 
 def do_training(model_folder:str, batch_size:int):
     update_batch(batch_size)
-
-    model_dir = f'./logs/{model_folder}'
-    os.makedirs(model_dir, exist_ok=True)
     command = [r"python", "train_ms.py"]
-    command.extend(["-m", model_dir,
+    command.extend(["-m", model_folder,
                     "-c", './configs/config.json'])
     terminate_training()
     managers[4].start(command)
