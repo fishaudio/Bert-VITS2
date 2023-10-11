@@ -179,33 +179,36 @@ if __name__ == "__main__":
         with gr.Row():
             with gr.Column():
                 text = gr.TextArea(
-                    label="Text",
-                    placeholder="Input Text Here",
-                    value="吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",
+                    label="输入文本内容",
+                    placeholder="在此输入，可以使用'|'分割长段实现分句生成"
                 )
                 speaker = gr.Dropdown(
-                    choices=speakers, value=speakers[0], label="Speaker"
+                    choices=speakers, value=speakers[0], label="选择说话人"
                 )
                 sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
+                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise Scale"
+                    minimum=0.1, maximum=2, value=0.2, step=0.1, label="感情"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise Scale W"
+                    minimum=0.1, maximum=2, value=0.9, step=0.1, label="音素长度"
                 )
                 length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=1, step=0.1, label="Length Scale"
+                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="语速"
                 )
                 language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="Language"
+                    choices=languages, value=languages[0], label="选择语言"
                 )
-                btn = gr.Button("Generate!", variant="primary")
+                btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
-                text_output = gr.Textbox(label="Message")
-                audio_output = gr.Audio(label="Output Audio")
-
+                text_output = gr.Textbox(label="状态信息")
+                audio_output = gr.Audio(label="输出音频")
+                explain_image = gr.Image(label="参数解释信息",
+                                         show_label=True,
+                                         show_share_button=False,
+                                         show_download_button=False,
+                                         value=os.path.abspath("./img/参数说明.png"))
         btn.click(
             tts_fn,
             inputs=[
@@ -221,4 +224,4 @@ if __name__ == "__main__":
         )
 
     webbrowser.open("http://127.0.0.1:7860")
-    app.launch(share=args.share)
+    app.launch(share=args.share, server_port=7860)
