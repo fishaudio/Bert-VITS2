@@ -11,39 +11,38 @@ logger.setLevel(logging.CRITICAL)
 os.environ["MODELSCOPE_CACHE"] = "./"
 
 
-if "JP(日语)" in os.environ["SELECT_LANGUAGE"]:
-    inference_pipeline_jp = pipeline(
-        task=Tasks.auto_speech_recognition,
-        model='damo/speech_UniASR_asr_2pass-ja-16k-common-vocab93-tensorflow1-offline'
-    )
-else:
-    inference_pipeline_zh = pipeline(
-        task=Tasks.auto_speech_recognition,
-        model='damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch'
-    )
-
-
-def transcribe_worker(file_path:str):
+def transcribe_worker(file_path:str, inference_pipeline):
     """
     Worker function for transcribing a segment of an audio file.
     """
     dir_path = os.path.dirname(file_path)
     if dir_path.endswith("_zh"):
-        rec_result = inference_pipeline_zh(audio_in=file_path)
+        rec_result = inference_pipeline(audio_in=file_path)
     elif dir_path.endswith("_jp"):
-        rec_result = inference_pipeline_jp(audio_in=file_path)
+        rec_result = inference_pipeline(audio_in=file_path)
     else:
         rec_result = {"text": ""}
     print(dir_path, ' ', file_path)
     print(rec_result)
-    return str(rec_result.get('text','')).strip()
+    return str(rec_result.get('text', '')).strip()
 
 
-def transcribe_folder_parallel(folder_path):
+def transcribe_folder_parallel(folder_path, language):
     """
     Transcribe all .wav files in the given folder using multiple processes.
     """
-    max_duration = 60 # 最大持续时间（秒）
+    if language == "JP(日语)":
+        inference_pipeline = pipeline(
+            task=Tasks.auto_speech_recognition,
+            model='damo/speech_UniASR_asr_2pass-ja-16k-common-vocab93-tensorflow1-offline'
+        )
+    else:
+        inference_pipeline = pipeline(
+            task=Tasks.auto_speech_recognition,
+            model='damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
+            model_revision="v1.2.4"
+        )
+    max_duration = 60  # 最大持续时间（秒）
     file_paths = []
     for root, _, files in os.walk(folder_path):
         for file in files:
@@ -56,7 +55,7 @@ def transcribe_folder_parallel(folder_path):
 
     transcriptions = list()
     for path in file_paths:
-        transcriptions.append(transcribe_worker(path))
+        transcriptions.append(transcribe_worker(path, inference_pipeline))
 
     for file_path, transcription in zip(file_paths, transcriptions):
         if transcription:
@@ -70,6 +69,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-f", "--filepath", default='./raw/lzy_zh', help="path of your model"
     )
+    parser.add_argument(
+        "-l", "--language", default='ZH(中文)', help="language"
+    )
     args = parser.parse_args()
 
-    transcribe_folder_parallel(args.filepath)
+    transcribe_folder_parallel(args.filepath, args.language)
