@@ -48,6 +48,8 @@ def tts_fn(
                 length_scale=length_scale,
                 sid=speaker,
                 language=language,
+                sid=speaker,
+                language=language,
                 hps=hps,
                 net_g=net_g,
                 device=device,

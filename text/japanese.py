@@ -381,6 +381,31 @@ def text2kata(text: str) -> str:
     return hira2kata("".join(res))
 
 
+def text2sep_kata(text: str) -> (list, list):
+    parsed = _TAGGER.parse(text)
+    res = []
+    sep = []
+    for line in parsed.split("\n"):
+        if line == "EOS":
+            break
+        parts = line.split("\t")
+
+        word, yomi = parts[0], parts[1]
+        if yomi:
+            res.append(yomi)
+        else:
+            if word in _SYMBOL_TOKENS:
+                res.append(word)
+            elif word in ("っ", "ッ"):
+                res.append("ッ")
+            elif word in _NO_YOMI_TOKENS:
+                pass
+            else:
+                res.append(word)
+        sep.append(word)
+    return sep, [hira2kata(i) for i in res]
+
+
 _ALPHASYMBOL_YOMI = {
     "#": "シャープ",
     "%": "パーセント",
@@ -505,7 +530,7 @@ rep_map = {
     "\n": ".",
     "·": ",",
     "、": ",",
-    "...": "…",
+    "…": "...",
 }
 
 
@@ -546,28 +571,22 @@ tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
 def g2p(norm_text):
-    tokenized = tokenizer.tokenize(norm_text)
-    phs = []
-    ph_groups = []
-    for t in tokenized:
-        if not t.startswith("#"):
-            ph_groups.append([t])
-        else:
-            ph_groups[-1].append(t.replace("#", ""))
+    sep_text, sep_kata = text2sep_kata(norm_text)
+    sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
+    sep_phonemes = [kata2phoneme(i) for i in sep_kata]
+    # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
+    for i in sep_phonemes:
+        for j in i:
+            assert j in symbols, (sep_text, sep_kata, sep_phonemes)
+
     word2ph = []
-    for group in ph_groups:
-        phonemes = kata2phoneme(text2kata("".join(group)))
-        # phonemes = [i for i in phonemes if i in symbols]
-        for i in phonemes:
-            assert i in symbols, (group, norm_text, tokenized)
-        phone_len = len(phonemes)
-        word_len = len(group)
+    for token, phoneme in zip(sep_tokenized, sep_phonemes):
+        phone_len = len(phoneme)
+        word_len = len(token)
 
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
-
-        phs += phonemes
-    phones = ["_"] + phs + ["_"]
+    phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
     tones = [0 for i in phones]
     word2ph = [1] + word2ph + [1]
     return phones, tones, word2ph
@@ -580,6 +599,7 @@ if __name__ == "__main__":
 
     text = text_normalize(text)
     print(text)
+
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)
 
