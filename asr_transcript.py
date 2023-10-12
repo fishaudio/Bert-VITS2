@@ -15,15 +15,8 @@ def transcribe_worker(file_path:str, inference_pipeline):
     """
     Worker function for transcribing a segment of an audio file.
     """
-    dir_path = os.path.dirname(file_path)
-    if dir_path.endswith("_zh"):
-        rec_result = inference_pipeline(audio_in=file_path)
-        
-    elif dir_path.endswith("_jp"):
-        rec_result = inference_pipeline(audio_in=file_path)
-    else:
-        rec_result = {"text": ""}
-    logger.critical(dir_path+' '+file_path)
+    rec_result = inference_pipeline(audio_in=file_path)
+    logger.critical(file_path)
     logger.critical("text: "+rec_result.get('text', ''))
     return str(rec_result.get('text', '')).strip()
 
@@ -63,6 +56,7 @@ def transcribe_folder_parallel(folder_path, language):
             lab_file_path = os.path.splitext(file_path)[0] + ".lab"
             with open(lab_file_path, "w", encoding="utf-8") as lab_file:
                 lab_file.write(transcription)
+    logger.critical("已经将wav文件转写为同名的.lab文件, 都在raw文件夹下")
 
 
 if __name__ == "__main__":
