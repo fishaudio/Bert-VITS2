@@ -47,11 +47,12 @@ class SubprocessManager:
 managers = [SubprocessManager() for _ in range(7)]
 
 def do_transcribe(target_path, language):
-    additional_args = ["-f", target_path + lang_dict[language]]
+    additional_args = ["-f", target_path + lang_dict[language], "-l", language]
     command = [r"python", "asr_transcript.py"]
     command.extend(additional_args)
     os.environ["SELECT_LANGUAGE"] = language
     managers[0].start(command)
+    print("转写文本成功！")
     return "转写文本成功！"
 
 
@@ -59,21 +60,25 @@ def do_preprocess_text(target_path=""):
     os.makedirs("filelists", exist_ok=True)
     command = [r"python", "preprocess_text.py"]
     managers[1].start(command)
+    print("生成训练集和验证集成功！")
     return "生成训练集和验证集成功！"
 
 def do_resample(target_path=""):
     command = [r"python", "resample.py"]
     managers[2].start(command)
+    print("重采样完成！")
     return "重采样完成！"
 
 def do_bert_gen(num_processes, target_path=""):
     command = [r"python", "bert_gen.py"]
     command.extend(["--num_processes", str(num_processes)])
     managers[3].start(command)
+    print("bert生成完成！")
     return "bert生成完成！"
 
 def terminate_training():
     managers[4].terminate()
+    print("终止训练！")
     return "终止训练！"
 
 def do_training(model_folder:str, batch_size:int):
@@ -83,10 +88,12 @@ def do_training(model_folder:str, batch_size:int):
                     "-c", './configs/config.json'])
     terminate_training()
     managers[4].start(command)
+    print("开启训练成功！\n http://127.0.0.1:8000")
     return "开启训练成功！\n http://127.0.0.1:8000"
 
 def terminate_webui():
     managers[5].terminate()
+    print("关闭推理页面！")
     return "关闭推理页面！"
 
 def do_inference_webui(model_path:str, config_path:str):
@@ -98,6 +105,7 @@ def do_inference_webui(model_path:str, config_path:str):
         return "找不到对应配置文件！请确保配置路径正确！"
     terminate_webui()
     managers[5].start(command)
+    print("开启推理页面成功 \n http://127.0.0.1:7860")
     return "开启推理页面成功 \n http://127.0.0.1:7860"
 
 
