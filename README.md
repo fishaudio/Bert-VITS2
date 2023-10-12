@@ -12,6 +12,7 @@ VITS2 Backbone with bert
 + [p0p4k/vits2_pytorch](https://github.com/p0p4k/vits2_pytorch)
 + [svc-develop-team/so-vits-svc](https://github.com/svc-develop-team/so-vits-svc)
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
++ [emotional-vits](https://github.com/innnky/emotional-vits)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2"/>
