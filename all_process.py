@@ -11,6 +11,7 @@ from moviepy.editor import AudioFileClip
 from concurrent.futures import ThreadPoolExecutor
 from pydub import AudioSegment
 import extern_subprocess
+
 temp_folder = tempfile.gettempdir()
 current_file_path = os.path.abspath(__file__)
 current_directory = os.path.dirname(current_file_path)
@@ -33,6 +34,7 @@ inv_lang_dict = {"_en": "EN", "_zh": "ZH", "_jp": "JP"}
 
 
 def extract_zip(zip_path, extract_path, encoding='gbk'):
+    print(zip_path)
     with zipfile.ZipFile(zip_path, 'r') as z:
         for file_info in z.infolist():
             original_file_name = file_info.filename
@@ -44,6 +46,7 @@ def extract_zip(zip_path, extract_path, encoding='gbk'):
             file_info.filename = os.path.basename(file_info.filename)
             print(file_info.filename)
             z.extract(file_info, extract_path)
+
 
 def update_transcript_status(target_path: str):
     target_path = target_path.rstrip('/').rstrip('\\')
@@ -75,12 +78,10 @@ def update_wav_lab_pairs(target_path: str):
                 tot_count += 1
     return f"{wav_count} / {tot_count}"
 
-# 函数：从视频中提取音频
-def clip_file(file, video_dir, audio_dir):
-    my_audio_clip = AudioFileClip(video_dir + file)
-    my_audio_clip.write_audiofile(audio_dir + file.rstrip("mp4") + "wav")
 
 from pydub.silence import split_on_silence
+
+
 def voice_detection_with_pydub(
         denoised_audio_path,
         target_path_dir,
@@ -90,7 +91,7 @@ def voice_detection_with_pydub(
         silence_thresh=-42):
     print(denoised_audio_path, ' ', target_path_dir)
     audio = AudioSegment.from_file(denoised_audio_path)
-    segments = split_on_silence(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh,keep_silence=500)
+    segments = split_on_silence(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh, keep_silence=500)
     for i, segment in enumerate(segments):
         segment_duration = len(segment)
         if segment_duration >= min_wav_len * 1000 and segment_duration <= max_wav_len * 1000:
@@ -314,24 +315,35 @@ def clear_temp_files():
         return str(e)
 
 
+# 函数：从视频中提取音频
+def clip_file(file, video_dir, audio_dir):
+    video_path = os.path.join(video_dir, file)
+    os.makedirs(audio_dir, exist_ok=True)
+    audio_path = os.path.join(audio_dir, file.replace(".mp4", ".wav"))
+    my_audio_clip = AudioFileClip(video_path)
+    my_audio_clip.write_audiofile(audio_path)
+    print(video_path, ' ', audio_path)
+
+
 def process_video_files(file, target_path, lang):
     target_path = target_path.rstrip('/').rstrip('\\') + lang_dict[lang]
-    video_dir = os.path.join(temp_folder, 'video_dir', os.path.basename(target_path))
-    audio_dir = os.path.join(temp_folder, 'audio_dir', os.path.basename(target_path))
-    denoise_audio_dir = os.path.join(temp_folder, 'denoise_audio_dir', os.path.basename(target_path))
-    # 创建必要的目录
+    print(file)
+    file_name = file.name
+    video_dir = os.path.join(os.path.dirname(file_name), 'video_dir', os.path.basename(target_path))
     os.makedirs(video_dir, exist_ok=True)
-    os.makedirs(audio_dir, exist_ok=True)
-    os.makedirs(denoise_audio_dir, exist_ok=True)
-
+    video_dir_path = os.path.join(video_dir, os.path.basename(file_name))
+    extract_zip(file_name, video_dir)
+    print(f"zip文件已成功解压到 {video_dir}")
     # 获取视频文件列表并提取音频
     filelist = list(os.walk(video_dir))[0][2]
-    videos = [_file for _file in filelist if file.endswith(".mp4")]
+    print(filelist)
+    videos = [_file for _file in filelist if _file.endswith(".mp4")]
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-        executor.map(clip_file, videos)
+        executor.map(clip_file, videos, [video_dir] * len(videos), [target_path] * len(videos))
 
     sub_folders_str = update_transcript_status(target_path)
-    return "处理视频完成" + '\n' + sub_folders_str
+    return "处理视频完成, " + os.path.basename(video_dir) + "\n" + sub_folders_str
+
 
 def fn_transcript(raw_folder):
     # 打开总的转写文本文件以写入数据
@@ -357,10 +369,12 @@ def fn_transcript(raw_folder):
                         "./raw", "./dataset"
                     )
                     print(wav_file_path)
-                    # 写入数据到总的转写文本文件
-                    line = f"{wav_file_path}|{folder_name}|{inv_lang_dict[folder_name_suffix]}|{transcription}\n"
-                    f.write(line)
+                    if folder_name_suffix in inv_lang_dict.keys():
+                        # 写入数据到总的转写文本文件
+                        line = f"{wav_file_path}|{folder_name}|{inv_lang_dict[folder_name_suffix]}|{transcription}\n"
+                        f.write(line)
     return f"转写文本 {transcript_txt_file} 生成完成"
+
 
 def update_g_files():
     g_files = []
@@ -372,6 +386,7 @@ def update_g_files():
                 cnt += 1
     print(g_files)
     return f"更新模型列表完成, 共找到{cnt}个模型", gr.Dropdown.update(choices=g_files)
+
 
 def update_c_files():
     c_files = []
@@ -386,7 +401,6 @@ def update_c_files():
 
 
 if __name__ == "__main__":
-
     with gr.Blocks(title="全流程处理", css="./css/gradio.css") as app:
         with gr.Row():
             with gr.Column():
@@ -428,6 +442,10 @@ if __name__ == "__main__":
                         value=args.target_path,
                         interactive=True,
                     )
+                    dropdown_lang = gr.Dropdown(
+                        label="选择语言", choices=list(lang_dict.keys()), value="ZH(中文)"
+                    )
+                with gr.Row():
                     textbox_1_output = gr.Textbox(
                         label="1 输出信息",
                         placeholder="执行0/1.1/1.2/切片",
@@ -440,8 +458,7 @@ if __name__ == "__main__":
                         audio_submit_btn = gr.Button(value="1.1 处理音频", variant="primary")
                     with gr.Column(min_width=100):
                         video_submit_btn = gr.Button(value="1.2 处理视频", variant="primary")
-                    with gr.Column(min_width=100):
-                        slice_btn = gr.Button(value="继续切片", variant="secondary")
+
                 with gr.Row():
                     with gr.Column(min_width=100):
                         slider_min_wav_length = gr.Slider(
@@ -454,7 +471,7 @@ if __name__ == "__main__":
 
                     with gr.Column(min_width=100):
                         radio_detach = gr.Radio(
-                           label="分离背景音和人声(demucs)", choices=["是", "否"], value="是", interactive=True
+                            label="分离背景音和人声(demucs)", choices=["是", "否"], value="是", interactive=True
                         )
                 with gr.Row():
                     with gr.Column(min_width=100):
@@ -465,24 +482,23 @@ if __name__ == "__main__":
                         slider_min_slience = gr.Slider(
                             minimum=100, maximum=1000, value=300, step=1, label="最小静音间距(毫秒ms)"
                         )
+                    with gr.Column(min_width=100):
+                        slice_btn = gr.Button(value="继续切片", variant="secondary")
                 with gr.Row():
-                    with gr.Column(min_width=150):
-                        do_transcipt_btn = gr.Button(value="1.3 转写音频到文本")
-                    with gr.Column(min_width=150):
-                        textbox_transcipt = gr.Textbox(label="对应转写文本数/音频数",
-                                                       value=update_wav_lab_pairs(textbox_tar_path.value),
-                                                       interactive=False, placeholder="N/A")
-
-                with gr.Row():
+                    slider_trans_workers = gr.Slider(minimum=1, maximum=12, value=1, step=1, label="转写进程数")
                     textbox_taboo_sym = gr.Textbox(
                         label="需要去掉的文本所包含的非法符号",
                         placeholder="输入所有需要屏蔽的符号",
                         value=taboo_symbols,
                         interactive=True,
                     )
-                    dropdown_lang = gr.Dropdown(
-                        label="选择语言", choices=list(lang_dict.keys()), value="ZH(中文)"
-                    )
+
+                with gr.Row():
+                    do_transcipt_btn = gr.Button(value="1.3 转写音频到文本")
+                    with gr.Column(min_width=150):
+                        textbox_transcipt = gr.Textbox(label="对应转写文本数/音频数",
+                                                       value=update_wav_lab_pairs(textbox_tar_path.value),
+                                                       interactive=False, placeholder="N/A")
 
                 with gr.Row():
                     transcript_btn = gr.Button(value="1.4 提取总转写文本到filelists下", variant="primary")
@@ -497,7 +513,6 @@ if __name__ == "__main__":
             with gr.Column():
                 image_1 = gr.Image(value=os.path.abspath("./img/神里绫华.png")
                                    , show_label=False, show_download_button=False)
-
 
         # -----------------------------------------------------------
         with gr.Row():
@@ -550,9 +565,10 @@ if __name__ == "__main__":
                 with gr.Row():
                     with gr.Column():
                         model_dir_text = gr.Textbox(label="输入模型文件夹名称(即底模所在的位置):例如 mix", value="mix",
-                                                placeholder="name", interactive=True)
+                                                    placeholder="name", interactive=True)
                     with gr.Column():
-                        slider_batch_size = gr.Slider(minimum=1, maximum=40, value=4, step=1, label="batch_size 批处理大小")
+                        slider_batch_size = gr.Slider(minimum=1, maximum=40, value=4, step=1,
+                                                      label="batch_size 批处理大小")
                 with gr.Row():
                     train_btn = gr.Button(value="3.1 点击开始训练", variant="primary")
                 with gr.Row():
@@ -562,9 +578,9 @@ if __name__ == "__main__":
                     all_3_text = gr.Textbox(label="3 输出信息", placeholder="")
             with gr.Column():
                 image_3 = gr.Image(value=os.path.abspath("./img/纳西妲.png")
-                                 , show_label=False, show_download_button=False)
-    # ----------------------------------------------------------------------
-    # ----------------------------------------------------------------------
+                                   , show_label=False, show_download_button=False)
+        # ----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         with gr.Row():
             gr.HTML("<hr></hr>")
         with gr.Row():
@@ -585,7 +601,8 @@ if __name__ == "__main__":
                     with gr.Column():
                         infer_path_dropdown = gr.Dropdown(label="选择模型G_xxxx.pth(请放在logs的某个文件夹下)")
                     with gr.Column():
-                        config_path_dropdown = gr.Dropdown(label="选择配置文件config.json(请放在logs的某个文件夹下)", interactive=True)
+                        config_path_dropdown = gr.Dropdown(label="选择配置文件config.json(请放在logs的某个文件夹下)",
+                                                           interactive=True)
                 with gr.Row():
                     infer_btn = gr.Button(value="4.1 点击开始推理", variant="primary")
                 with gr.Row():
@@ -594,13 +611,13 @@ if __name__ == "__main__":
                     all_4_text = gr.Textbox(label="4 输出信息", placeholder="")
             with gr.Column():
                 image_4 = gr.Image(value=os.path.abspath("./img/yuyu.png")
-                                 ,show_label=False, show_download_button=False)
-    # ----------------------------------------------------------------------
+                                   , show_label=False, show_download_button=False)
+        # ----------------------------------------------------------------------
 
         infer_path_dropdown.change(fn=update_g_files, inputs=[],
                                    outputs=[all_4_text, infer_path_dropdown])
         config_path_dropdown.change(fn=update_c_files, inputs=[],
-                                   outputs=[all_4_text, config_path_dropdown])
+                                    outputs=[all_4_text, config_path_dropdown])
         slice_btn.click(
             slice_audio,
             inputs=[textbox_tar_path, dropdown_lang, slider_top_db, slider_min_slience,
@@ -609,7 +626,7 @@ if __name__ == "__main__":
         )
         do_transcipt_btn.click(
             extern_subprocess.do_transcribe,
-            inputs=[textbox_tar_path, dropdown_lang],
+            inputs=[textbox_tar_path, dropdown_lang, slider_trans_workers],
             outputs=[textbox_1_output]
         )
         clear_btn.click(
@@ -680,5 +697,5 @@ if __name__ == "__main__":
 
     # -------------------------------------
     os.environ["no_proxy"] = "localhost,127.0.0.1"
-    # webbrowser.open("http://127.0.0.1:6680")
-    app.launch(share=args.share, server_port=6680)
+    # webbrowser.open("http://127.0.0.1:6006")
+    app.launch(share=args.share, server_port=6006)
