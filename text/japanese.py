@@ -597,12 +597,14 @@ def g2p(norm_text):
 
 
 if __name__ == "__main__":
-    tokenizer =  AutoTokenizer.from_pretrained("bert/bert-base-japanese-v3")
-    text = "これが先頭の景色……観覧車みたいです。童、小童！"
+    tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
+    text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
-
+    
+    text = text_normalize(text)
+    print(text)
 
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)
 
-    print(phones, tones, word2ph,bert.shape)
+    print(phones, tones, word2ph, bert.shape)
