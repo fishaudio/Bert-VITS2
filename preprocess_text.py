@@ -67,8 +67,14 @@ def main(
     current_sid = 0
 
     with open(transcription_path, encoding="utf-8") as f:
+        audioPaths = set()
         for line in f.readlines():
             utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
+            if utt in audioPaths:
+                # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
+                print(f"重复音频文本：{line}")
+                continue
+            audioPaths.add(utt)
             spk_utt_map[spk].append(line)
 
             if spk not in spk_id_map.keys():
