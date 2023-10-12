@@ -46,8 +46,8 @@ class SubprocessManager:
 
 managers = [SubprocessManager() for _ in range(7)]
 
-def do_transcribe(target_path, language):
-    additional_args = ["-f", target_path + lang_dict[language], "-l", language]
+def do_transcribe(target_path, language, workers):
+    additional_args = ["-f", target_path + lang_dict[language], "-l", language, "-w", str(workers)]
     command = [r"python", "asr_transcript.py"]
     command.extend(additional_args)
     os.environ["SELECT_LANGUAGE"] = language
