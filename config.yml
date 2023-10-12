@@ -1,0 +1,122 @@
+# 全局配置
+# 拟提供通用路径配置，统一存放数据，避免数据放得很乱
+# 对于希望在同一时间使用多个配置文件的情况，例如两个GPU同时跑两个训练集：通过环境变量指定配置文件，不指定则默认为./config.yml
+
+
+# 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
+# 不填或者填空则路径为相对于项目根目录的路径
+datasetPath: "Data/你的数据集"
+
+
+# resample 音频重采样配置
+# 注意， “:” 后需要加空格
+resample:
+  # 目标重采样率
+  sampling_rate: 44100
+  # 音频文件输入路径，重采样会将该路径下所有.wav音频文件重采样
+  # 请填入相对于datasetPath的相对路径
+  in_dir: "audios/raw" # 相对于根目录的路径为 /datasetPath/in_dir
+  # 音频文件重采样后输出路径
+  out_dir: "audios/wavs"
+
+# preprocess_text 数据集预处理相关配置
+# 注意， “:” 后需要加空格
+preprocess_text:
+  # 原始文本文件路径，文本格式应为{wav_path}|{speaker_name}|{language}|{text}。
+  transcription_path: "filelists/你的数据集文本.list"
+  # 数据清洗后文本路径，可以不填。不填则将在原始文本目录生成
+  cleaned_path: ""
+  # 训练集路径，可以不填。不填则将在原始文本目录生成
+  train_path: ""
+  # 验证集路径，可以不填。不填则将在原始文本目录生成
+  val_path: ""
+  # 配置文件路径
+  config_path: "config.json"
+  # 每个speaker的验证集条数
+  val_per_spk: 5
+  # 验证集最大条数，多于的会被截断并放到训练集中
+  max_val_total: 10000
+  # 是否进行数据清洗
+  clean: true
+
+# bert_gen 相关配置
+# 注意， “:” 后需要加空格
+bert_gen:
+  # 训练数据集配置文件路径
+  config_path: "config.json"
+  # 并行数
+  num_processes: 2
+  # 使用设备：可选项 "cuda" 显卡推理， "cpu" cpu推理
+  # 此配置会影响所有使用bert的任务，包括bert_gen、train_ms、web_ui、api
+  device: "cuda"
+
+# train 训练配置
+# 注意， “:” 后需要加空格
+train_ms:
+  # 需要加载的环境变量，多显卡训练，RANK推荐手动填写
+  env:
+    MASTER_ADDR: "localhost"
+    MASTER_PORT: 10086
+    WORLD_SIZE: 1
+    RANK: 0
+    # 可以填写任意名的环境变量
+    THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+  # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/model下
+  model: "model"
+  # 配置文件路径
+  config: "config.json"
+
+
+
+
+
+# webui webui配置
+webui:
+
+# server api配置
+api:
+  # 需要加载的所有模型的配置
+  models:
+    - # 模型的路径
+      model: ""
+      # 模型config.json的路径
+      config: ""
+      # 模型使用设备，若无此字段或者不填则默认为cuda
+      device: "cuda"
+      # 模型默认使用的语言
+      language: "ZH"
+      # 模型人物默认参数
+      # 不必填写所有人物，不填的使用默认值
+      speakers:
+        - speaker: "科比"
+          sdp_ratio: 0.2
+          noise_scale: 0.6
+          noise_scale_w: 0.8
+          length_scale: 1
+        - speaker: "五条悟"
+          sdp_ratio: 0.3
+          noise_scale: 0.7
+          noise_scale_w: 0.8
+          length_scale: 0.5
+        - speaker: "安倍晋三"
+          sdp_ratio: 0.2
+          noise_scale: 0.6
+          noise_scale_w: 0.8
+          length_scale: 1.2
+    - # 模型的路径
+      model: ""
+      # 模型config.json的路径
+      config: ""
+      # 模型使用设备，若无此字段或者不填则默认为cuda
+      device: "cpu"
+      # 模型默认使用的语言
+      language: "JP"
+      # 模型人物默认参数
+      # 不必填写所有人物，不填的使用默认值
+      speakers: [ ] #
+
+
+
+
+
+
