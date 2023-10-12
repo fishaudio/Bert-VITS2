@@ -18,12 +18,13 @@ def transcribe_worker(file_path:str, inference_pipeline):
     dir_path = os.path.dirname(file_path)
     if dir_path.endswith("_zh"):
         rec_result = inference_pipeline(audio_in=file_path)
+        
     elif dir_path.endswith("_jp"):
         rec_result = inference_pipeline(audio_in=file_path)
     else:
         rec_result = {"text": ""}
-    print(dir_path, ' ', file_path)
-    print(rec_result)
+    logger.critical(dir_path+' '+file_path)
+    logger.critical("text: "+rec_result.get('text', ''))
     return str(rec_result.get('text', '')).strip()
 
 
