@@ -381,7 +381,7 @@ def text2kata(text: str) -> str:
     return hira2kata("".join(res))
 
 
-def text2sep_kata(text: str) -> (list,list):
+def text2sep_kata(text: str) -> (list, list):
     parsed = _TAGGER.parse(text)
     res = []
     sep = []
@@ -404,8 +404,6 @@ def text2sep_kata(text: str) -> (list,list):
                 res.append(word)
         sep.append(word)
     return sep, [hira2kata(i) for i in res]
-
-
 
 
 _ALPHASYMBOL_YOMI = {
@@ -532,7 +530,7 @@ rep_map = {
     "\n": ".",
     "·": ",",
     "、": ",",
-    "…": "..."
+    "…": "...",
 }
 
 
@@ -576,11 +574,10 @@ def g2p(norm_text):
     sep_text, sep_kata = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = [kata2phoneme(i) for i in sep_kata]
-    #异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
+    # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
             assert j in symbols, (sep_text, sep_kata, sep_phonemes)
-    
 
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
@@ -595,12 +592,11 @@ def g2p(norm_text):
     return phones, tones, word2ph
 
 
-
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
     text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
-    
+
     text = text_normalize(text)
     print(text)
 

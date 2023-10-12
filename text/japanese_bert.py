@@ -9,13 +9,11 @@ models = dict()
 
 
 def get_bert_feature(text, word2ph, device=None):
-    sep_text,_ = text2sep_kata(text)
+    sep_text, _ = text2sep_kata(text)
     sep_tokens = [tokenizer.tokenize(t) for t in sep_text]
     sep_ids = [tokenizer.convert_tokens_to_ids(t) for t in sep_tokens]
-    sep_ids = [2]+[item for sublist in sep_ids for item in sublist]+[3]
+    sep_ids = [2] + [item for sublist in sep_ids for item in sublist] + [3]
     return get_bert_feature_with_token(sep_ids, word2ph, device)
-
-
 
 
 def get_bert_feature_with_token(tokens, word2ph, device=None):
@@ -35,8 +33,11 @@ def get_bert_feature_with_token(tokens, word2ph, device=None):
         inputs = torch.tensor(tokens).to(device).unsqueeze(0)
         token_type_ids = torch.zeros_like(inputs).to(device)
         attention_mask = torch.ones_like(inputs).to(device)
-        inputs = {"input_ids": inputs, "token_type_ids": token_type_ids, "attention_mask": attention_mask}
-
+        inputs = {
+            "input_ids": inputs,
+            "token_type_ids": token_type_ids,
+            "attention_mask": attention_mask,
+        }
 
         # for i in inputs:
         #     inputs[i] = inputs[i].to(device)
@@ -52,5 +53,3 @@ def get_bert_feature_with_token(tokens, word2ph, device=None):
     phone_level_feature = torch.cat(phone_level_feature, dim=0)
 
     return phone_level_feature.T
-
-
