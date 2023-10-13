@@ -166,3 +166,4 @@ cython_debug/
 filelists/*
 !/filelists/esd.list
 data/*
+/config.yml

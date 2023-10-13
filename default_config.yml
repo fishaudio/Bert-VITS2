@@ -1,8 +1,7 @@
 # 全局配置
-# 拟提供通用路径配置，统一存放数据，避免数据放得很乱
 # 对于希望在同一时间使用多个配置文件的情况，例如两个GPU同时跑两个训练集：通过环境变量指定配置文件，不指定则默认为./config.yml
 
-
+# 拟提供通用路径配置，统一存放数据，避免数据放得很乱
 # 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
 # 不填或者填空则路径为相对于项目根目录的路径
 datasetPath: "Data/你的数据集"
@@ -18,6 +17,7 @@ resample:
   in_dir: "audios/raw" # 相对于根目录的路径为 /datasetPath/in_dir
   # 音频文件重采样后输出路径
   out_dir: "audios/wavs"
+
 
 # preprocess_text 数据集预处理相关配置
 # 注意， “:” 后需要加空格
@@ -39,6 +39,7 @@ preprocess_text:
   # 是否进行数据清洗
   clean: true
 
+
 # bert_gen 相关配置
 # 注意， “:” 后需要加空格
 bert_gen:
@@ -49,6 +50,7 @@ bert_gen:
   # 使用设备：可选项 "cuda" 显卡推理， "cpu" cpu推理
   # 此配置会影响所有使用bert的任务，包括bert_gen、train_ms、web_ui、api
   device: "cuda"
+
 
 # train 训练配置
 # 注意， “:” 后需要加空格
@@ -67,13 +69,23 @@ train_ms:
   config: "config.json"
 
 
-
-
-
 # webui webui配置
+# 注意， “:” 后需要加空格
 webui:
+  # 端口号
+  port: 7860
+  # 是否公开部署，对外网开放
+  share: false
+  # 是否开启debug模式
+  debug: false
+  # 模型路径
+  model: "./logs/as/G_8000.pth"
+  # 配置文件路径
+  config: "./configs/config.json"
+
 
 # server api配置
+# 注意， “:” 后需要加空格
 api:
   # 需要加载的所有模型的配置
   models:
