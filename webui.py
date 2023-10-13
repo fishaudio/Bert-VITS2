@@ -23,6 +23,9 @@ from infer_utils import infer
 import gradio as gr
 import webbrowser
 import numpy as np
+import jieba
+import re
+import MeCab
 
 net_g = None
 
@@ -32,11 +35,93 @@ if sys.platform == "darwin" and torch.backends.mps.is_available():
 else:
     device = "cuda"
 
+MAX_LENGTH = 512
+
+# 静音时长映射
+PUNCTUATIONS_SILENCE = {
+    ",": 0.2, "，": 0.2,
+    ".": 0.5, "。": 0.5,
+    "?": 0.5, "？": 0.5,
+    "!": 0.5, "！": 0.5,
+    # 可以继续添加其他标点符号
+}
+pattern = re.compile(r'([^,，.。?？!！]*[,，.。?？!！]?)')
+mecab = MeCab.Tagger("-Owakati")
+
+def split_by_tokenizer(text, language):
+    """
+    根据语言对过长的文本进行分词处理，以确保片段不超过MAX_LENGTH。
+    :param text: 待分词的文本。
+    :param language: 指定文本的语言。
+    :return: 返回一个分词后的文本片段列表。
+    """
+
+    # 根据不同的语言进行分词
+    if language == "ZH":
+        tokens = jieba.lcut(text)  # 中文使用jieba分词
+    elif language == "JP":
+        tokens = mecab.parse(text).strip().split()
+    else:
+        tokens = text.split()  # 英文简单用空格分词
+
+    slices = []
+    temp_slice = []
+
+    for token in tokens:
+        if len(''.join(temp_slice + [token])) > MAX_LENGTH:
+            slices.append(''.join(temp_slice))
+            temp_slice = []
+        temp_slice.append(token)
+
+    # 添加剩余的片段
+    if temp_slice:
+        slices.append(''.join(temp_slice))
+
+    return slices
+
+
+def split_text(text, language):
+    """
+    根据标点符号对文本进行分割，同时确保每个片段接近MAX_LENGTH。
+    :param text: 待分割的文本。
+    :param language: 指定文本的语言。
+    :return: 返回一个包含文本片段和对应静音时长的列表。
+    """
+
+    # 使用正则表达式按照标点符号对文本进行初步分割
+    prelim_slices = pattern.findall(text)
+
+    current_slice = ""
+    slices = []
+
+    for slice in prelim_slices:
+        # 检查添加新片段是否会超出上限
+        if len(current_slice + slice) <= MAX_LENGTH:
+            current_slice += slice
+        else:
+            slices.append(current_slice)
+            current_slice = slice
+
+            # 如果当前片段仍超出上限，则使用分词器进行切分
+            if len(current_slice) > MAX_LENGTH:
+                extended_slices = split_by_tokenizer(current_slice, language)
+                slices.extend(extended_slices[:-1])  # 将除了最后一个部分的所有部分添加到slices中
+                current_slice = extended_slices[-1]  # 将最后一个部分设置为当前片段
+
+    if current_slice:
+        if len(current_slice) > MAX_LENGTH:
+            # 如果剩余片段过长，则进一步使用分词器进行分割
+            slices.extend(split_by_tokenizer(current_slice, language))
+        else:
+            slices.append(current_slice)
+    slices = [slice.strip() for slice in slices if slice.strip()]
+    return slices
 
 def tts_fn(
     text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
 ):
-    slices = text.split("|")
+    slices = split_text(text, language)
+    #logger.info(slices)
     audio_list = []
     with torch.no_grad():
         for slice in slices:
@@ -50,7 +135,10 @@ def tts_fn(
                 language=language,
             )
             audio_list.append(audio)
-            silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
+
+            # 根据最后标点符号添加静音
+            silence_duration = PUNCTUATIONS_SILENCE.get(slice[-1], 0.1)
+            silence = np.zeros(hps.data.sampling_rate * silence_duration)
             audio_list.append(silence)  # 将静音添加到列表中
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
