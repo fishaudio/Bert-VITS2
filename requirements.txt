@@ -21,3 +21,4 @@ unidic-lite
 cmudict
 fugashi
 num2words
+PyYAML
