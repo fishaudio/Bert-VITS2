@@ -92,6 +92,7 @@ def voice_detection_with_pydub(
     print(denoised_audio_path, ' ', target_path_dir)
     audio = AudioSegment.from_file(denoised_audio_path)
     segments = split_on_silence(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh, keep_silence=500)
+    total_len = 0
     for i, segment in enumerate(segments):
         segment_duration = len(segment)
         if segment_duration >= min_wav_len * 1000 and segment_duration <= max_wav_len * 1000:
@@ -100,8 +101,11 @@ def voice_detection_with_pydub(
                 .replace('.WAV', '.wav').replace('.wav', f'_seg_{i}.wav')
             )
             segment.export(output_filename, format="wav")
+            total_len += segment_duration
             print("OK: Duration:", segment_duration / 1000, "seconds")
-    print("切割人声完毕")
+    total_len /= 1000
+    hr, minute, sec = int(total_len / 3600), (int(total_len) % 3600) // 60, int(total_len) % 60
+    print(f"切割人声完毕，有效总时长={hr}小时:{minute}分钟:{sec}秒")
 
 
 def denoise_audio(audio_dir,
