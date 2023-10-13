@@ -4,7 +4,7 @@
 # 拟提供通用路径配置，统一存放数据，避免数据放得很乱
 # 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
 # 不填或者填空则路径为相对于项目根目录的路径
-datasetPath: "Data/你的数据集"
+dataset_path: "Data/你的数据集"
 
 
 # resample 音频重采样配置
@@ -63,10 +63,10 @@ train_ms:
     RANK: 0
     # 可以填写任意名的环境变量
     THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
-  # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/model下
-  model: "model"
+  # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
+  model: "models"
   # 配置文件路径
-  config: "config.json"
+  config_path: "config.json"
 
 
 # webui webui配置
@@ -79,21 +79,26 @@ webui:
   # 是否开启debug模式
   debug: false
   # 模型路径
-  model: "./logs/as/G_8000.pth"
+  model: "models/G_8000.pth"
   # 配置文件路径
-  config: "./configs/config.json"
+  config_path: "config.json"
 
 
 # server api配置
 # 注意， “:” 后需要加空格
-api:
+# 注意，本配置下的所有配置均为相对于根目录的路径
+server:
+  # 端口号
+  port: 5000
+  # 模型默认使用设备
+  device: "cuda"
   # 需要加载的所有模型的配置
   models:
     - # 模型的路径
       model: ""
       # 模型config.json的路径
       config: ""
-      # 模型使用设备，若无此字段或者不填则默认为cuda
+      # 模型使用设备，若填写则会覆盖默认配置
       device: "cuda"
       # 模型默认使用的语言
       language: "ZH"
@@ -119,10 +124,10 @@ api:
       model: ""
       # 模型config.json的路径
       config: ""
-      # 模型使用设备，若无此字段或者不填则默认为cuda
+      # 模型使用设备，若填写则会覆盖默认配置
       device: "cpu"
       # 模型默认使用的语言
       language: "JP"
       # 模型人物默认参数
       # 不必填写所有人物，不填的使用默认值
-      speakers: [ ] #
+      speakers: [ ] # 也可以不填
