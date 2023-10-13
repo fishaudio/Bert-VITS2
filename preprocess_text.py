@@ -1,4 +1,5 @@
 import json
+import os.path
 from collections import defaultdict
 from random import shuffle
 from typing import Optional
@@ -67,13 +68,27 @@ def main(
     current_sid = 0
 
     with open(transcription_path, encoding="utf-8") as f:
+        audioPaths = set()
+        countSame = 0
+        countNotFound = 0
         for line in f.readlines():
             utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
+            if utt in audioPaths:
+                # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
+                print(f"重复音频文本：{line}")
+                countSame += 1
+                continue
+            if not os.path.isfile(utt):
+                print(f"没有找到对应的音频：{utt}")
+                countNotFound += 1
+                continue
+            audioPaths.add(utt)
             spk_utt_map[spk].append(line)
 
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
+        print(f"总重复音频数：{countSame}，总未找到的音频数:{countNotFound}")
 
     train_list = []
     val_list = []
