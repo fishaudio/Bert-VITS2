@@ -39,14 +39,19 @@ MAX_LENGTH = 512
 
 # 静音时长映射
 PUNCTUATIONS_SILENCE = {
-    ",": 0.2, "，": 0.2,
-    ".": 0.5, "。": 0.5,
-    "?": 0.5, "？": 0.5,
-    "!": 0.5, "！": 0.5,
+    ",": 0.2,
+    "，": 0.2,
+    ".": 0.5,
+    "。": 0.5,
+    "?": 0.5,
+    "？": 0.5,
+    "!": 0.5,
+    "！": 0.5,
     # 可以继续添加其他标点符号
 }
-pattern = re.compile(r'([^,，.。?？!！]*[,，.。?？!！]?)')
+pattern = re.compile(r"([^,，.。?？!！]*[,，.。?？!！]?)")
 mecab = MeCab.Tagger("-Owakati")
+
 
 def split_by_tokenizer(text, language):
     """
@@ -68,14 +73,14 @@ def split_by_tokenizer(text, language):
     temp_slice = []
 
     for token in tokens:
-        if len(''.join(temp_slice + [token])) > MAX_LENGTH:
-            slices.append(''.join(temp_slice))
+        if len("".join(temp_slice + [token])) > MAX_LENGTH:
+            slices.append("".join(temp_slice))
             temp_slice = []
         temp_slice.append(token)
 
     # 添加剩余的片段
     if temp_slice:
-        slices.append(''.join(temp_slice))
+        slices.append("".join(temp_slice))
 
     return slices
 
@@ -117,11 +122,12 @@ def split_text(text, language):
     slices = [slice.strip() for slice in slices if slice.strip()]
     return slices
 
+
 def tts_fn(
     text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
 ):
     slices = split_text(text, language)
-    #logger.info(slices)
+    # logger.info(slices)
     audio_list = []
     with torch.no_grad():
         for slice in slices:
