@@ -3,20 +3,29 @@ import subprocess
 import re
 import multiprocessing
 import json
+import platform
 lang_dict = {"EN(英文)": "_en", "ZH(中文)": "_zh", "JP(日语)": "_jp"}
 
-def update_batch(batch_size):
+def update_json(batch_size:int, log_interval:int, eval_interval:int,
+                epochs:int, lr:float, keep_ckpts:int):
     with open("configs/config.json", "r", encoding='utf-8') as json_file:
         hps = json.load(json_file)
     hps["train"]["batch_size"] = batch_size
-    print("现在的batch_size: ", batch_size)
+    hps["train"]["log_interval"] = log_interval
+    hps["train"]["eval_interval"] = eval_interval
+    hps["train"]["epochs"] = epochs
+    hps["train"]["lr"] = lr
+    hps["train"]["keep_ckpts"] = keep_ckpts
+    print("现在的[BS,LI,EI,epochs,lr,keep]: ", [batch_size, log_interval, eval_interval, epochs, lr, keep_ckpts])
     with open("configs/config.json", "w", encoding='utf-8') as json_file:
         json.dump(hps, json_file, indent=4)
     print("config.json文件已更新")
 
+
 class SubprocessManager:
     def __init__(self):
         self.process = None
+
     def worker(self, command):
         try:
             result = subprocess.check_output(
@@ -32,8 +41,13 @@ class SubprocessManager:
         if self.process:
             print("已有子进程正在运行，先终止它")
             self.terminate()
-        print(command)
-        self.process = multiprocessing.Process(target=self.worker, args=(command,))
+
+        if platform.system() == "Windows":
+            cmd = ["cmd.exe", "/c"] + command + ["&", "pause"]
+        else:
+            cmd = command
+        print(" ".join(cmd))
+        self.process = multiprocessing.Process(target=self.worker, args=(cmd,))
         self.process.start()
 
     def terminate(self):
@@ -81,8 +95,9 @@ def terminate_training():
     print("终止训练！")
     return "终止训练！"
 
-def do_training(model_folder:str, batch_size:int):
-    update_batch(batch_size)
+def do_training(model_folder:str, batch_size:int, log_interval:int, eval_interval:int,
+                epochs:int, lr:float, keep_ckpts:int):
+    update_json(batch_size, log_interval, eval_interval, epochs, lr, keep_ckpts)
     command = [r"python", "train_ms.py"]
     command.extend(["-m", model_folder,
                     "-c", './configs/config.json'])
