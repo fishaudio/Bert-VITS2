@@ -126,7 +126,7 @@ def generate_audio(slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, 
 
 def tts_fn(text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
     audio_list = []
-    if speaker == "mix":
+    if language == "mix":
         bool_valid, str_valid = re_matching.validate_text(text)
         if not bool_valid:
             return str_valid, (hps.data.sampling_rate, np.concatenate([np.zeros(hps.data.sampling_rate // 2)]))
