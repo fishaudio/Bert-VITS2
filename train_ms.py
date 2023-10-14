@@ -47,6 +47,7 @@ os.environ["MASTER_PORT"] = "8000"
 os.environ["WORLD_SIZE"] = "1"
 os.environ["RANK"] = "0"
 
+
 def run():
     dist.init_process_group(
         backend="gloo",

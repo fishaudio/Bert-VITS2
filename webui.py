@@ -1,8 +1,8 @@
 # flake8: noqa: E402
-import re
 import sys, os
 import logging
 import re_matching
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -105,7 +105,9 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
         return audio
 
 
-def generate_audio(slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language):
+def generate_audio(
+    slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language
+):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2)
     with torch.no_grad():
@@ -124,23 +126,43 @@ def generate_audio(slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, 
     return audio_list
 
 
-def tts_fn(text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
+def tts_fn(
+    text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
+):
     audio_list = []
     if language == "mix":
         bool_valid, str_valid = re_matching.validate_text(text)
         if not bool_valid:
-            return str_valid, (hps.data.sampling_rate, np.concatenate([np.zeros(hps.data.sampling_rate // 2)]))
+            return str_valid, (
+                hps.data.sampling_rate,
+                np.concatenate([np.zeros(hps.data.sampling_rate // 2)]),
+            )
         result = re_matching.text_matching(text)
         for one in result:
             _speaker = one.pop()
             for lang, content in one:
                 audio_list.extend(
-                    generate_audio(content.split("|"), sdp_ratio, noise_scale,
-                                   noise_scale_w, length_scale, _speaker+'_'+lang.lower(), lang)
+                    generate_audio(
+                        content.split("|"),
+                        sdp_ratio,
+                        noise_scale,
+                        noise_scale_w,
+                        length_scale,
+                        _speaker + "_" + lang.lower(),
+                        lang,
+                    )
                 )
     else:
         audio_list.extend(
-            generate_audio(text.split("|"), sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language)
+            generate_audio(
+                text.split("|"),
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                speaker,
+                language,
+            )
         )
 
     audio_concat = np.concatenate(audio_list)
@@ -207,7 +229,7 @@ if __name__ == "__main__":
                          [说话人3]<zh>谢谢。<jp>どういたしまして。
                          ...
                     另外，所有的语言选项都可以用'|'分割长段实现分句生成。
-                    """
+                    """,
                 )
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="选择说话人"
@@ -231,11 +253,13 @@ if __name__ == "__main__":
             with gr.Column():
                 text_output = gr.Textbox(label="状态信息")
                 audio_output = gr.Audio(label="输出音频")
-                explain_image = gr.Image(label="参数解释信息",
-                                         show_label=True,
-                                         show_share_button=False,
-                                         show_download_button=False,
-                                         value=os.path.abspath("./img/参数说明.png"))
+                explain_image = gr.Image(
+                    label="参数解释信息",
+                    show_label=True,
+                    show_share_button=False,
+                    show_download_button=False,
+                    value=os.path.abspath("./img/参数说明.png"),
+                )
         btn.click(
             tts_fn,
             inputs=[
