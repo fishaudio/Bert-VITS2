@@ -403,6 +403,17 @@ def update_c_files():
     print(c_files)
     return f"更新模型列表完成, 共找到{cnt}个配置文件", gr.Dropdown.update(choices=c_files)
 
+def update_model_folders():
+    subdirs = []
+    cnt = 0
+    for root, dirs, files in os.walk(os.path.abspath("./logs")):
+        for dir_name in dirs:
+            if os.path.basename(dir_name) != "eval":
+                subdirs.append(os.path.join(root, dir_name))
+                cnt += 1
+    print(subdirs)
+    return f"更新模型文件夹列表完成, 共找到{cnt}个文件夹", gr.Dropdown.update(choices=subdirs)
+
 
 if __name__ == "__main__":
     with gr.Blocks(title="全流程处理", css="./css/gradio.css") as app:
@@ -459,9 +470,9 @@ if __name__ == "__main__":
                     with gr.Column(min_width=100):
                         clear_btn = gr.Button(value="0. 清除临时文件", variant="secondary")
                     with gr.Column(min_width=100):
-                        audio_submit_btn = gr.Button(value="1.1 处理音频", variant="primary")
+                        audio_submit_btn = gr.Button(value="1.1 解析音频压缩包", variant="primary")
                     with gr.Column(min_width=100):
-                        video_submit_btn = gr.Button(value="1.2 处理视频", variant="primary")
+                        video_submit_btn = gr.Button(value="1.2 解析视频压缩包", variant="primary")
 
                 with gr.Row():
                     with gr.Column(min_width=100):
@@ -498,7 +509,7 @@ if __name__ == "__main__":
                     )
 
                 with gr.Row():
-                    do_transcipt_btn = gr.Button(value="1.3 转写音频到文本")
+                    do_transcipt_btn = gr.Button(value="1.3 转写音频一一对应到文本")
                     with gr.Column(min_width=150):
                         textbox_transcipt = gr.Textbox(label="对应转写文本数/音频数",
                                                        value=update_wav_lab_pairs(textbox_tar_path.value),
@@ -538,11 +549,11 @@ if __name__ == "__main__":
                 with gr.Row():
                     preprocess_text_btn = gr.Button(value="2.1 生成训练集和验证集标注文本", variant="primary")
                 with gr.Row():
-                    resample_btn = gr.Button(value="2.2 音频重采样", variant="primary")
+                    resample_btn = gr.Button(value="2.2 音频重采样到44100hz(音频从raw转到dataset)", variant="primary")
                 with gr.Row():
                     slider_bert_gen = gr.Slider(value=2, step=1, label="bert处理线程数", minimum=1, maximum=12)
                 with gr.Row():
-                    bert_gen_btn = gr.Button(value="2.3 生成bert文件", variant="primary")
+                    bert_gen_btn = gr.Button(value="2.3 生成bert文件(语调、停顿)", variant="primary")
                 with gr.Row():
                     all_2_text = gr.Textbox(label="2 输出信息", placeholder="", lines=3)
             with gr.Column():
@@ -568,15 +579,32 @@ if __name__ == "__main__":
             with gr.Column():
                 with gr.Row():
                     with gr.Column():
-                        model_dir_text = gr.Textbox(label="输入模型文件夹名称(即底模所在的位置):例如 mix", value="mix",
-                                                    placeholder="name", interactive=True)
+                        model_dir_dropdown = gr.Dropdown(label="选择模型文件夹名称(即底模所在的位置，没有则会在./logs下创建文件夹)",
+                                                         value="mix",
+                                                         allow_custom_value=True,
+                                                         interactive=True)
+                with gr.Row():
+                    slider_batch_size = gr.Slider(minimum=1, maximum=40, value=4, step=1,
+                                                  label="batch_size 批处理大小")
+                    slider_keep_ckpts = gr.Slider(minimum=1, maximum=20, value=5, step=1,
+                                                  label="最多保存n个最新模型，超过则删除最早的")
+                with gr.Row():
+                    slider_log_interval = gr.Slider(minimum=50, maximum=3000, value=200, step=50,
+                                                    label="log_interval 打印日志步数间隔")
+                    slider_eval_interval = gr.Slider(minimum=500, maximum=5000, value=1000, step=50,
+                                                     label="eval_interval 保存模型步数间隔")
+                with gr.Row():
+                    slider_epochs = gr.Slider(minimum=100, maximum=10000, value=1000, step=100,
+                                              label="epochs 训练轮数")
+                    slider_lr = gr.Slider(minimum=0.0001, maximum=0.0010, value=0.0003, step=0.0001,
+                                          label="learning_rate 学习率")
+                with gr.Row():
                     with gr.Column():
-                        slider_batch_size = gr.Slider(minimum=1, maximum=40, value=4, step=1,
-                                                      label="batch_size 批处理大小")
+                        train_btn = gr.Button(value="3.1 点击开始训练", variant="primary")
+                    with gr.Column():
+                        train_btn_2 = gr.Button(value="3.2 继续训练", variant="primary")
                 with gr.Row():
-                    train_btn = gr.Button(value="3.1 点击开始训练", variant="primary")
-                with gr.Row():
-                    stop_train_btn = gr.Button(value="终止训练", variant="secondary")
+                    stop_train_btn = gr.Button(value="终止训练（已弃用，请手动关闭窗口）", variant="secondary")
 
                 with gr.Row():
                     all_3_text = gr.Textbox(label="3 输出信息", placeholder="")
@@ -603,21 +631,23 @@ if __name__ == "__main__":
             with gr.Column():
                 with gr.Row():
                     with gr.Column():
-                        infer_path_dropdown = gr.Dropdown(label="选择模型G_xxxx.pth(请放在logs的某个文件夹下)")
+                        infer_path_dropdown = gr.Dropdown(label="选择模型G_xxxx.pth(请放在logs的某个文件夹下)",
+                                                          interactive=True)
                     with gr.Column():
                         config_path_dropdown = gr.Dropdown(label="选择配置文件config.json(请放在logs的某个文件夹下)",
                                                            interactive=True)
                 with gr.Row():
                     infer_btn = gr.Button(value="4.1 点击开始推理", variant="primary")
                 with gr.Row():
-                    stop_infer_btn = gr.Button(value="终止推理", variant="secondary")
+                    stop_infer_btn = gr.Button(value="终止推理（已弃用，请手动关闭窗口）", variant="secondary")
                 with gr.Row():
                     all_4_text = gr.Textbox(label="4 输出信息", placeholder="")
             with gr.Column():
                 image_4 = gr.Image(value=os.path.abspath("./img/yuyu.png")
                                    , show_label=False, show_download_button=False)
         # ----------------------------------------------------------------------
-
+        model_dir_dropdown.change(fn=update_model_folders, inputs=[],
+                                  outputs=[all_3_text, model_dir_dropdown])
         infer_path_dropdown.change(fn=update_g_files, inputs=[],
                                    outputs=[all_4_text, infer_path_dropdown])
         config_path_dropdown.change(fn=update_c_files, inputs=[],
@@ -684,7 +714,13 @@ if __name__ == "__main__":
         )
         train_btn.click(
             extern_subprocess.do_training,
-            inputs=[model_dir_text, slider_batch_size],
+            inputs=[model_dir_dropdown, slider_batch_size, slider_log_interval, slider_eval_interval,
+                    slider_epochs, slider_lr, slider_keep_ckpts],
+            outputs=[all_3_text]
+        )
+        train_btn_2.click(
+            extern_subprocess.do_training,
+            inputs=[model_dir_dropdown, slider_batch_size],
             outputs=[all_3_text]
         )
         stop_infer_btn.click(
