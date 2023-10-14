@@ -1,8 +1,8 @@
 # flake8: noqa: E402
-
+import re
 import sys, os
 import logging
-
+import re_matching
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -105,15 +105,13 @@ def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, langua
         return audio
 
 
-def tts_fn(
-    text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
-):
-    slices = text.split("|")
+def generate_audio(slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language):
     audio_list = []
+    silence = np.zeros(hps.data.sampling_rate // 2)
     with torch.no_grad():
-        for slice in slices:
+        for piece in slices:
             audio = infer(
-                slice,
+                piece,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -122,8 +120,29 @@ def tts_fn(
                 language=language,
             )
             audio_list.append(audio)
-            silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
             audio_list.append(silence)  # 将静音添加到列表中
+    return audio_list
+
+
+def tts_fn(text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language):
+    audio_list = []
+    if speaker == "mix":
+        bool_valid, str_valid = re_matching.validate_text(text)
+        if not bool_valid:
+            return str_valid, (hps.data.sampling_rate, np.concatenate([np.zeros(hps.data.sampling_rate // 2)]))
+        result = re_matching.text_matching(text)
+        for one in result:
+            _speaker = one.pop()
+            for lang, content in one:
+                audio_list.extend(
+                    generate_audio(content.split("|"), sdp_ratio, noise_scale,
+                                   noise_scale_w, length_scale, _speaker+'_'+lang.lower(), lang)
+                )
+    else:
+        audio_list.extend(
+            generate_audio(text.split("|"), sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language)
+        )
+
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
 
@@ -174,13 +193,21 @@ if __name__ == "__main__":
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP"]
+    languages = ["ZH", "JP", "mix"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
                 text = gr.TextArea(
                     label="输入文本内容",
-                    placeholder="在此输入，可以使用'|'分割长段实现分句生成"
+                    placeholder="""
+                    如果你选择语言为\'mix\'，必须按照格式输入，否则报错:
+                        格式举例(zh是中文，jp是日语，不区分大小写；说话人举例:gongzi):
+                         [说话人1]<zh>你好，こんにちは！ <jp>こんにちは，世界。
+                         [说话人2]<zh>你好吗？<jp>元気ですか？
+                         [说话人3]<zh>谢谢。<jp>どういたしまして。
+                         ...
+                    另外，所有的语言选项都可以用'|'分割长段实现分句生成。
+                    """
                 )
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="选择说话人"
@@ -198,7 +225,7 @@ if __name__ == "__main__":
                     minimum=0.1, maximum=2, value=0.8, step=0.1, label="语速"
                 )
                 language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="选择语言"
+                    choices=languages, value=languages[0], label="选择语言(新增mix混合选项)"
                 )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
