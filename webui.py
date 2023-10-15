@@ -18,12 +18,13 @@ import torch
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
-from infer_utils import infer
+from infer import infer
 import gradio as gr
 import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
+from oldVersion import V111
 
 net_g = None
 
@@ -63,16 +64,27 @@ if __name__ == "__main__":
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
+    version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
+    SynthesizerTrnMap = {"1.1.1": V111.SynthesizerTrn}
+    if version != "1.1.1-dev":
+        net_g = SynthesizerTrnMap[version](
+            len(symbols),
+            hps.data.filter_length // 2 + 1,
+            hps.train.segment_size // hps.data.hop_length,
+            n_speakers=hps.data.n_speakers,
+            **hps.model,
+        ).to(device)
+    else:
+        # 当前版本模型 net_g
+        net_g = SynthesizerTrn(
+            len(symbols),
+            hps.data.filter_length // 2 + 1,
+            hps.train.segment_size // hps.data.hop_length,
+            n_speakers=hps.data.n_speakers,
+            **hps.model,
+        ).to(device)
 
-    net_g = SynthesizerTrn(
-        len(symbols),
-        hps.data.filter_length // 2 + 1,
-        hps.train.segment_size // hps.data.hop_length,
-        n_speakers=hps.data.n_speakers,
-        **hps.model,
-    ).to(device)
     _ = net_g.eval()
-
     _ = utils.load_checkpoint(
         config.webui_config.model, net_g, None, skip_optimizer=True
     )
