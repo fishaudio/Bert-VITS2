@@ -1,6 +1,6 @@
 # flake8: noqa: E402
 
-import sys, os
+import os
 import logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -15,7 +15,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import torch
-import argparse
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
@@ -23,14 +22,14 @@ from infer_utils import infer
 import gradio as gr
 import webbrowser
 import numpy as np
+from config import config
+from tools.translate import translate
 
 net_g = None
 
-if sys.platform == "darwin" and torch.backends.mps.is_available():
-    device = "mps"
+device = config.webui_config.device
+if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-else:
-    device = "cuda"
 
 
 def tts_fn(
@@ -60,38 +59,11 @@ def tts_fn(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-m", "--model", default="./logs/as/G_8000.pth", help="path of your model"
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        default="./configs/config.json",
-        help="path of your config file",
-    )
-    parser.add_argument(
-        "--share", default=False, help="make link public", action="store_true"
-    )
-    parser.add_argument(
-        "-d", "--debug", action="store_true", help="enable DEBUG-LEVEL log"
-    )
-
-    args = parser.parse_args()
-    if args.debug:
+    if config.webui_config.debug:
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
-    hps = utils.get_hparams_from_file(args.config)
+    hps = utils.get_hparams_from_file(config.webui_config.config_path)
 
-    device = (
-        "cuda:0"
-        if torch.cuda.is_available()
-        else (
-            "mps"
-            if sys.platform == "darwin" and torch.backends.mps.is_available()
-            else "cpu"
-        )
-    )
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
@@ -101,7 +73,9 @@ if __name__ == "__main__":
     ).to(device)
     _ = net_g.eval()
 
-    _ = utils.load_checkpoint(args.model, net_g, None, skip_optimizer=True)
+    _ = utils.load_checkpoint(
+        config.webui_config.model, net_g, None, skip_optimizer=True
+    )
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
@@ -114,6 +88,7 @@ if __name__ == "__main__":
                     placeholder="Input Text Here",
                     value="吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",
                 )
+                trans = gr.Button("中翻日", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
@@ -151,5 +126,11 @@ if __name__ == "__main__":
             outputs=[text_output, audio_output],
         )
 
-    webbrowser.open("http://127.0.0.1:7860")
-    app.launch(share=args.share)
+        trans.click(
+            translate,
+            inputs=[text],
+            outputs=[text],
+        )
+
+    webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
+    app.launch(share=config.webui_config.share, server_port=config.webui_config.port)

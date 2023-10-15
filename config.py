@@ -111,12 +111,14 @@ class Webui_config:
 
     def __init__(
         self,
+        device: str,
         model: str,
         config_path: str,
         port: int = 7860,
         share: bool = False,
         debug: bool = False,
     ):
+        self.device: str = device
         self.model: str = model  # 端口号
         self.config_path: str = config_path  # 是否公开部署，对外网开放
         self.port: int = port  # 是否开启debug模式
@@ -137,6 +139,18 @@ class Server_config:
         self.models: List[Dict[str, any]] = models  # 需要加载的所有模型的配置
         self.port: int = port  # 端口号
         self.device: str = device  # 模型默认使用设备
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, any]):
+        return cls(**data)
+
+
+class Translate_config:
+    """翻译api配置"""
+
+    def __init__(self, app_key: str, secret_key: str):
+        self.app_key = app_key
+        self.secret_key = secret_key
 
     @classmethod
     def from_dict(cls, data: Dict[str, any]):
@@ -165,11 +179,14 @@ class Config:
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
             )
-            self.web_ui_config: Webui_config = Webui_config.from_dict(
+            self.webui_config: Webui_config = Webui_config.from_dict(
                 dataset_path, yaml_config["webui"]
             )
             self.server_config: Server_config = Server_config.from_dict(
                 yaml_config["server"]
+            )
+            self.translate_config: Translate_config = Translate_config.from_dict(
+                yaml_config["translate"]
             )
 
 
@@ -177,7 +194,3 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", type=str, default="config.yml")
 args = parser.parse_args()
 config = Config(args.config)
-
-if __name__ == "__main__":
-    config2 = config
-    pass
