@@ -87,6 +87,3 @@ def infer(
         del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
         torch.cuda.empty_cache()
         return audio
-
-
-from .models import SynthesizerTrn
