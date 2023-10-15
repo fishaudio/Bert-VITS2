@@ -72,16 +72,18 @@ train_ms:
 # webui webui配置
 # 注意， “:” 后需要加空格
 webui:
+  # 推理设备
+  device: "cuda"
+  # 模型路径
+  model: "models/G_8000.pth"
+  # 配置文件路径
+  config_path: "config.json"
   # 端口号
   port: 7860
   # 是否公开部署，对外网开放
   share: false
   # 是否开启debug模式
   debug: false
-  # 模型路径
-  model: "models/G_8000.pth"
-  # 配置文件路径
-  config_path: "config.json"
 
 
 # server api配置
@@ -131,3 +133,13 @@ server:
       # 模型人物默认参数
       # 不必填写所有人物，不填的使用默认值
       speakers: [ ] # 也可以不填
+
+
+# 百度翻译开放平台 api配置
+# api接入文档 https://api.fanyi.baidu.com/doc/21
+# 请不要在github等网站公开分享你的app id 与 key
+translate:
+  # 你的APPID
+  "app_key": ""
+  # 你的密钥
+  "secret_key": ""
