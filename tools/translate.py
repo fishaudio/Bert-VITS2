@@ -21,7 +21,7 @@ def translate(Sentence: str, to_Language: str = "jp", from_Language: str = ""):
     key = config.translate_config.secret_key
     if appid == "" or key == "":
         return "请在开发者config.yml中配置app_key与secret_key"
-    url = f"https://fanyi-api.baidu.com/api/trans/vip/translate"
+    url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
     # 签名计算 参考文档 https://api.fanyi.baidu.com/product/113
     salt = str(random.randint(1, 100000))
     signString = appid + Sentence + salt + key
