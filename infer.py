@@ -5,7 +5,7 @@ import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
-from oldVersion import V111
+from oldVersion import V111, V110, V101
 
 
 def get_text(text, language_str, hps, device):
@@ -55,13 +55,25 @@ def infer(
     hps,
     net_g,
     device,
-    version="1.1.1-dev",
 ):
-    inferMap = {"1.1.1": V111.infer}
+    # 支持中日双语版本
+    inferMap_V2 = {
+        "1.1.1": V111.infer,
+        "1.1": V110.infer,
+        "1.1.0": V110.infer,
+    }
+    # 仅支持中文版本
+    # 在测试中，并未发现两个版本的模型不能互相通用
+    inferMap_V1 = {
+        "1.0.1": V101.infer,
+        "1.0": V101.infer,
+        "1.0.0": V101.infer,
+    }
+    version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
     # 根据版本号选择合适的infer
     if version != "1.1.1-dev":
-        if version in inferMap.keys():
-            return inferMap[version](
+        if version in inferMap_V2.keys():
+            return inferMap_V2[version](
                 text,
                 sdp_ratio,
                 noise_scale,
@@ -69,6 +81,18 @@ def infer(
                 length_scale,
                 sid,
                 language,
+                hps,
+                net_g,
+                device,
+            )
+        if version in inferMap_V1.keys():
+            return inferMap_V1[version](
+                text,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
                 hps,
                 net_g,
                 device,

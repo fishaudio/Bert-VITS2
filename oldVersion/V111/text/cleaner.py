@@ -1,4 +1,4 @@
-from text import chinese, japanese, cleaned_text_to_sequence
+from . import chinese, japanese, cleaned_text_to_sequence
 
 
 language_module_map = {"ZH": chinese, "JP": japanese}
