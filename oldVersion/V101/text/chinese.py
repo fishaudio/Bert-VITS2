@@ -96,7 +96,6 @@ def _g2p(segments):
     tones_list = []
     word2ph = []
     for seg in segments:
-        pinyins = []
         # Replace all English words in the sentence
         seg = re.sub("[a-zA-Z]+", "", seg)
         seg_cut = psg.lcut(seg)

@@ -2,7 +2,6 @@ import pickle
 import os
 import re
 from g2p_en import G2p
-from string import punctuation
 
 from . import symbols
 
