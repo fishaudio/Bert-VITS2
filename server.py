@@ -6,7 +6,7 @@ from av import open as avopen
 import utils
 from models import SynthesizerTrn
 from text.symbols import symbols
-from infer_utils import infer
+from infer import infer
 from scipy.io import wavfile
 
 # Flask Init
