@@ -5,7 +5,7 @@ import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
-from oldVersion import V111, V110, V101, V100
+from oldVersion import V111, V110, V101
 
 
 def get_text(text, language_str, hps, device):
@@ -66,8 +66,8 @@ def infer(
     # 在测试中，并未发现两个版本的模型不能互相通用
     inferMap_V1 = {
         "1.0.1": V101.infer,
-        "1.0": V100.infer,
-        "1.0.0": V100.infer,
+        "1.0": V101.infer,
+        "1.0.0": V101.infer,
     }
     version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
     # 根据版本号选择合适的infer

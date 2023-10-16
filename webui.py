@@ -30,8 +30,6 @@ from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
 from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
-from oldVersion.V100.models import SynthesizerTrn as V100SynthesizerTrn
-from oldVersion.V100.text import symbols as V100symbols
 
 net_g = None
 
@@ -77,16 +75,16 @@ if __name__ == "__main__":
         "1.1": V110SynthesizerTrn,
         "1.1.0": V110SynthesizerTrn,
         "1.0.1": V101SynthesizerTrn,
-        "1.0": V100SynthesizerTrn,
-        "1.0.0": V100SynthesizerTrn,
+        "1.0": V101SynthesizerTrn,
+        "1.0.0": V101SynthesizerTrn,
     }
     symbolsMap = {
         "1.1.1": V111symbols,
         "1.1": V110symbols,
         "1.1.0": V110symbols,
         "1.0.1": V101symbols,
-        "1.0": V100symbols,
-        "1.0.0": V100symbols,
+        "1.0": V101symbols,
+        "1.0.0": V101symbols,
     }
     if version != "1.1.1-dev":
         net_g = SynthesizerTrnMap[version](
