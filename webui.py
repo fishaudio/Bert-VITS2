@@ -24,7 +24,7 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
-from oldVersion import V111
+from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
 
 net_g = None
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
     version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
-    SynthesizerTrnMap = {"1.1.1": V111.SynthesizerTrn}
+    SynthesizerTrnMap = {"1.1.1": V111SynthesizerTrn}
     if version != "1.1.1-dev":
         net_g = SynthesizerTrnMap[version](
             len(symbols),
