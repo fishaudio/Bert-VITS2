@@ -56,7 +56,7 @@ def infer(
     net_g,
     device,
 ):
-    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps)
+    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps, device)
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -84,6 +84,7 @@ def infer(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
-        torch.cuda.empty_cache()
+        del x_tst, x_tst_lengths, speakers, tones, lang_ids, bert, ja_bert
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         return audio

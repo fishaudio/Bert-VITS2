@@ -4,8 +4,8 @@ import re
 import cn2an
 from pypinyin import lazy_pinyin, Style
 
-from text.symbols import punctuation
-from text.tone_sandhi import ToneSandhi
+from .symbols import punctuation
+from .tone_sandhi import ToneSandhi
 
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
