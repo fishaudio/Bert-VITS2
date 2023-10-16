@@ -4,9 +4,9 @@ VITS2 Backbone with bert
 
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9) 
-## 本此项目与[PlayVoice/vits_chinese](https://github.com/PlayVoice/vits_chinese) 没有任何关系
+## 本项目与[PlayVoice/vits_chinese](https://github.com/PlayVoice/vits_chinese) 没有任何关系
 
-本仓库来源于之前在朋友分享了ai峰哥的视频，本人被其中的效果惊艳，在自己尝试MassTTS以后发现fs在音质方面与vits有一定差距，并且training的pipeline比vits更复杂，因此按照其思路将bert
+本仓库来源于之前朋友分享了ai峰哥的视频，本人被其中的效果惊艳，在自己尝试MassTTS以后发现fs在音质方面与vits有一定差距，并且training的pipeline比vits更复杂，因此按照其思路将bert
 与vits结合起来以获得更好的韵律。本身我们是出于兴趣玩开源项目，用爱发电，我们本无意与任何人起冲突，然而[MaxMax2016](https://github.com/MaxMax2016)
 以及其organization[PlayVoice](https://github.com/PlayVoice)几次三番前来碰瓷，说本项目抄袭了他们的代码，甚至上法院云云，因此在Readme中特别声明，本项目与
 [PlayVoice/vits_chinese](https://github.com/PlayVoice/vits_chinese)没有任何关系，结合bert的思路方面也是完全来源于MassTTS
