@@ -11,6 +11,9 @@ VITS2 Backbone with bert
 以及其organization[PlayVoice](https://github.com/PlayVoice)几次三番前来碰瓷，说本项目抄袭了他们的代码，甚至上法院云云，因此在Readme中特别声明，本项目与
 [PlayVoice/vits_chinese](https://github.com/PlayVoice/vits_chinese)没有任何关系，结合bert的思路方面也是完全来源于MassTTS
 
+
+附：对面认为本项目抄袭了他代码的证据，诸位可以自行查看并做出判断，[bert_vits2引用的MassTTS的实际代码](https://github.com/PlayVoice/vits_chinese/tree/4781241520c6b9fdcf090fca289148719272e89f#bert_vits2%E5%BC%95%E7%94%A8%E7%9A%84masstts%E7%9A%84%E5%AE%9E%E9%99%85%E4%BB%A3%E7%A0%81) 
+
 ## 成熟的旅行者/开拓者/舰长/博士/sensei/猎魔人/喵喵露/V应当参阅代码自己学习如何训练。
 ### 严禁将此项目用于一切违反《中华人民共和国宪法》，《中华人民共和国刑法》，《中华人民共和国治安管理处罚法》和《中华人民共和国民法典》之用途。
 ### 严禁用于任何政治相关用途。
