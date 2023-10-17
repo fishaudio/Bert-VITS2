@@ -95,3 +95,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     transcribe_folder_parallel(args.filepath, args.language, int(args.workers))
+    print("转写结束！")
