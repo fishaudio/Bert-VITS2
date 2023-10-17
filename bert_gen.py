@@ -11,7 +11,7 @@ from config import config
 
 def process_line(line):
     device = config.bert_gen_config.device
-    if device == "multi":
+    if config.bert_gen_config.use_multi_device:
         rank = mp.current_process()._identity
         rank = rank[0] if len(rank) > 0 else 0
         if torch.cuda.is_available():
