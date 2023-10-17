@@ -15,7 +15,7 @@ def update_json(batch_size:int, log_interval:int, eval_interval:int,
     hps["train"]["log_interval"] = log_interval
     hps["train"]["eval_interval"] = eval_interval
     hps["train"]["epochs"] = epochs
-    hps["train"]["lr"] = lr
+    hps["train"]["learning_rate"] = lr
     hps["train"]["keep_ckpts"] = keep_ckpts
     print("现在的[BS,LI,EI,epochs,lr,keep]: ", [batch_size, log_interval, eval_interval, epochs, lr, keep_ckpts])
     with open("configs/config.json", "w", encoding='utf-8') as json_file:
@@ -44,7 +44,7 @@ class SubprocessManager:
             self.terminate()
 
         if platform.system() == "Windows":
-            cmd = ["cmd.exe", "/c"] + command + ["&", "pause"]
+            cmd = ["cmd.exe", "/c"] + command
         else:
             cmd = command
         print(" ".join(cmd))
