@@ -108,6 +108,7 @@ server:
       language: "ZH"
       # 模型人物默认参数
       # 不必填写所有人物，不填的使用默认值
+      # speakers配置暂时不生效
       speakers:
         - speaker: "科比"
           sdp_ratio: 0.2
