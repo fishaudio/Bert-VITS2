@@ -252,3 +252,4 @@ if __name__ == "__main__":
 
     webbrowser.open("http://127.0.0.1:7860")
     app.launch(share=args.share, server_port=7860)
+    print("推理页面已开启!")
