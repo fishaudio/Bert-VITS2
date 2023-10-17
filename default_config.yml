@@ -47,7 +47,7 @@ bert_gen:
   config_path: "config.json"
   # 并行数
   num_processes: 2
-  # 使用设备：可选项 "cuda" 显卡推理， "cpu" cpu推理
+  # 使用设备：可选项 "cuda" 显卡推理， "multi" 多显卡推理 ，"cpu" cpu推理
   # 该选项同时决定了get_bert_feature的默认设备
   device: "cuda"
 

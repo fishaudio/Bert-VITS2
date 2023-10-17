@@ -5,11 +5,20 @@ import utils
 from tqdm import tqdm
 from text import cleaned_text_to_sequence, get_bert
 import argparse
+import torch.multiprocessing as mp
 from config import config
 
 
 def process_line(line):
     device = config.bert_gen_config.device
+    if device == "multi":
+        rank = mp.current_process()._identity
+        rank = rank[0] if len(rank) > 0 else 0
+        if torch.cuda.is_available():
+            gpu_id = rank % torch.cuda.device_count()
+            device = torch.device(f"cuda:{gpu_id}")
+        else:
+            device = torch.device("cpu")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
     phone = phones.split(" ")
     tone = [int(i) for i in tone.split(" ")]
