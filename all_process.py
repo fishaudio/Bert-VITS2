@@ -22,7 +22,7 @@ with open("./configs/config.json", 'r', encoding='utf-8') as f:
     hps = json.load(f)
 target_sr = hps['data']['sampling_rate']
 
-taboo_symbols = "{<>}[]"
+taboo_symbols = "{<>}[]abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--share", default=False, help="make link public", action="store_true"
@@ -265,6 +265,7 @@ def process_audio_files(file, max_wav_len, taboo_symbols, target_path, lang):
             for it in rm_files:
                 if os.path.exists(it):
                     os.remove(it)
+        print("解析音频文件完成")
         return update_status.update_raw_folders()
 
     except Exception as e:
@@ -313,7 +314,7 @@ def process_video_files(file, target_path, lang):
     videos = [_file for _file in filelist if _file.endswith(".mp4")]
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
         executor.map(clip_file, videos, [video_dir] * len(videos), [target_path] * len(videos))
-
+    print("解析视频文件完成")
     return update_status.update_raw_folders()
 
 
@@ -333,11 +334,12 @@ def fn_transcript(raw_folder="./raw"):
                     # 读取转写文本
                     with open(lab_file_path, "r", encoding="utf-8") as lab_file:
                         transcription = lab_file.read().strip()
+                    if len(transcription) == 0:
+                        continue
                     # 获取对应的 WAV 文件路径
                     wav_file_path = os.path.splitext(lab_file_path)[0] + ".wav"
-                    wav_file_path = wav_file_path.replace("\\", "/").replace(
-                        "./raw", "./dataset"
-                    )
+                    wav_file_path = wav_file_path.replace("\\", "/") \
+                    .replace("./raw", "./dataset").replace("raw", "./dataset")
                     print(wav_file_path)
                     if folder_name_suffix in inv_lang_dict.keys():
                         # 写入数据到总的转写文本文件
