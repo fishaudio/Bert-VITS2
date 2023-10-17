@@ -26,16 +26,16 @@ preprocess_text:
   transcription_path: "filelists/你的数据集文本.list"
   # 数据清洗后文本路径，可以不填。不填则将在原始文本目录生成
   cleaned_path: ""
-  # 训练集路径，可以不填。不填则将在原始文本目录生成
-  train_path: ""
-  # 验证集路径，可以不填。不填则将在原始文本目录生成
-  val_path: ""
+  # 训练集路径
+  train_path: "filelists/train.list"
+  # 验证集路径
+  val_path: "filelists/val.list"
   # 配置文件路径
   config_path: "config.json"
   # 每个speaker的验证集条数
   val_per_spk: 5
   # 验证集最大条数，多于的会被截断并放到训练集中
-  max_val_total: 10000
+  max_val_total: 8
   # 是否进行数据清洗
   clean: true
 
@@ -48,14 +48,14 @@ bert_gen:
   # 并行数
   num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理， "cpu" cpu推理
-  # 此配置会影响所有使用bert的任务，包括bert_gen、train_ms、web_ui、api
+  # 该选项同时决定了get_bert_feature的默认设备
   device: "cuda"
 
 
 # train 训练配置
 # 注意， “:” 后需要加空格
 train_ms:
-  # 需要加载的环境变量，多显卡训练，RANK推荐手动填写
+  # 需要加载的环境变量，多显卡训练时RANK请手动在环境变量填写
   env:
     MASTER_ADDR: "localhost"
     MASTER_PORT: 10086

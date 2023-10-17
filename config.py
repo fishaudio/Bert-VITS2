@@ -57,7 +57,10 @@ class Preprocess_text_config:
         data["transcription_path"] = os.path.join(
             dataset_path, data["transcription_path"]
         )
-        data["cleaned_path"] = os.path.join(dataset_path, data["cleaned_path"])
+        if data["cleaned_path"] == "" or data["cleaned_path"] is None:
+            data["cleaned_path"] = None
+        else:
+            data["cleaned_path"] = os.path.join(dataset_path, data["cleaned_path"])
         data["train_path"] = os.path.join(dataset_path, data["train_path"])
         data["val_path"] = os.path.join(dataset_path, data["val_path"])
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
@@ -191,6 +194,7 @@ class Config:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--config", type=str, default="config.yml")
-args = parser.parse_args()
-config = Config(args.config)
+# 为避免与以前的config.json起冲突，将其更名如下
+parser.add_argument("-y", "--yml_config", type=str, default="config.yml")
+args, _ = parser.parse_known_args()
+config = Config(args.yml_config)
