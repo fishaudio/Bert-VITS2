@@ -23,7 +23,6 @@ from text.symbols import symbols
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 import gradio as gr
-import webbrowser
 import numpy as np
 
 net_g = None
