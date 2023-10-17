@@ -5,7 +5,6 @@ import utils
 from tqdm import tqdm
 from text import cleaned_text_to_sequence, get_bert
 import argparse
-import torch.multiprocessing as mp
 from config import config
 
 

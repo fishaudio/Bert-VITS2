@@ -41,7 +41,6 @@ def main(
     clean: bool,
     yml_config: str,
 ):
-    yml_config = ""  # 兼容config.py 防止被bot删除
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
