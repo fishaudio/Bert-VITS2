@@ -33,7 +33,7 @@ def process_line(line):
         word2ph[i] = word2ph[i] * 2
     word2ph[0] += 1
 
-    bert_path = wav_path.replace(".wav", ".bert.pt")
+    bert_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".bert.pt")
 
     try:
         bert = torch.load(bert_path)
@@ -61,8 +61,10 @@ if __name__ == "__main__":
 
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
+    if len(lines) != 0:
+        num_processes = args.num_processes
+        with Pool(processes=num_processes) as pool:
+            for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
+                pass
 
-    num_processes = args.num_processes
-    with Pool(processes=num_processes) as pool:
-        for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
-            pass
+    print(f"bert生成完毕!, 共有{len(lines)}个bert.pt生成!")
