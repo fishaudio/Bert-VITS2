@@ -42,7 +42,7 @@ def preprocess(
         with open(cleaned_path, "w", encoding="utf-8") as out_file:
             with open(transcription_path, "r", encoding="utf-8") as trans_file:
                 lines = trans_file.readlines()
-                print(lines, ' ', len(lines))
+                # print(lines, ' ', len(lines))
                 if len(lines) != 0:
                     for line in tqdm(lines):
                         try:
