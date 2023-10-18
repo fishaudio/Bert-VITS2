@@ -29,7 +29,7 @@ preprocess_text_config = config.preprocess_text_config
 @click.option("--max-val-total", default=preprocess_text_config.max_val_total)
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
-def main(
+def preprocess(
     transcription_path: str,
     cleaned_path: Optional[str],
     train_path: str,
@@ -66,8 +66,8 @@ def main(
                                     " ".join([str(i) for i in word2ph]),
                                 )
                             )
-                        except Exception:
-                            print("生成训练集和验证集时发生错误！")
+                        except Exception as e:
+                            print(f"生成训练集和验证集时发生错误！, 详细信息:\n{e}")
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
