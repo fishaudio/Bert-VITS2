@@ -1,31 +1,29 @@
 import torch
 import sys
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-from config import config
+
+device = torch.device(
+    "cuda"
+    if torch.cuda.is_available()
+    else (
+        "mps"
+        if sys.platform == "darwin" and torch.backends.mps.is_available()
+        else "cpu"
+    )
+)
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
+model = AutoModelForMaskedLM.from_pretrained("./bert/chinese-roberta-wwm-ext-large").to(
+    device
+)
 
-models = dict()
 
-
-def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
-    if (
-        sys.platform == "darwin"
-        and torch.backends.mps.is_available()
-        and device == "cpu"
-    ):
-        device = "mps"
-    if not device:
-        device = "cuda"
-    if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/chinese-roberta-wwm-ext-large"
-        ).to(device)
+def get_bert_feature(text, word2ph):
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
-        res = models[device](**inputs, output_hidden_states=True)
+        res = model(**inputs, output_hidden_states=True)
         res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
 
     assert len(word2ph) == len(text) + 2
@@ -41,6 +39,7 @@ def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
 
 
 if __name__ == "__main__":
+    # feature = get_bert_feature('你好,我是说的道理。')
     import torch
 
     word_level_feature = torch.rand(38, 1024)  # 12个词,每个词1024维特征

@@ -5,7 +5,7 @@ import unicodedata
 
 from transformers import AutoTokenizer
 
-from text import punctuation, symbols
+from . import punctuation, symbols
 
 try:
     import MeCab
@@ -216,168 +216,6 @@ _CONVRULES = [
     "ヴェ/ b e",
     "ヴォ/ b o",
     "ヴュ/ by u",
-    "アー/ a:",
-    "イー/ i:",
-    "ウー/ u:",
-    "エー/ e:",
-    "オー/ o:",
-    "カー/ k a:",
-    "キー/ k i:",
-    "クー/ k u:",
-    "ケー/ k e:",
-    "コー/ k o:",
-    "サー/ s a:",
-    "シー/ sh i:",
-    "スー/ s u:",
-    "セー/ s e:",
-    "ソー/ s o:",
-    "ター/ t a:",
-    "チー/ ch i:",
-    "ツー/ ts u:",
-    "テー/ t e:",
-    "トー/ t o:",
-    "ナー/ n a:",
-    "ニー/ n i:",
-    "ヌー/ n u:",
-    "ネー/ n e:",
-    "ノー/ n o:",
-    "ハー/ h a:",
-    "ヒー/ h i:",
-    "フー/ f u:",
-    "ヘー/ h e:",
-    "ホー/ h o:",
-    "マー/ m a:",
-    "ミー/ m i:",
-    "ムー/ m u:",
-    "メー/ m e:",
-    "モー/ m o:",
-    "ラー/ r a:",
-    "リー/ r i:",
-    "ルー/ r u:",
-    "レー/ r e:",
-    "ロー/ r o:",
-    "ガー/ g a:",
-    "ギー/ g i:",
-    "グー/ g u:",
-    "ゲー/ g e:",
-    "ゴー/ g o:",
-    "ザー/ z a:",
-    "ジー/ j i:",
-    "ズー/ z u:",
-    "ゼー/ z e:",
-    "ゾー/ z o:",
-    "ダー/ d a:",
-    "ヂー/ j i:",
-    "ヅー/ z u:",
-    "デー/ d e:",
-    "ドー/ d o:",
-    "バー/ b a:",
-    "ビー/ b i:",
-    "ブー/ b u:",
-    "ベー/ b e:",
-    "ボー/ b o:",
-    "パー/ p a:",
-    "ピー/ p i:",
-    "プー/ p u:",
-    "ペー/ p e:",
-    "ポー/ p o:",
-    "ヤー/ y a:",
-    "ユー/ y u:",
-    "ヨー/ y o:",
-    "ワー/ w a:",
-    "ヰー/ i:",
-    "ヱー/ e:",
-    "ヲー/ o:",
-    "ヴー/ b u:",
-    # Coversion of long pronunciations
-    "アア/ a:",
-    "カア/ k a:",
-    "ガア/ g a:",
-    "サア/ s a:",
-    "ザア/ z a:",
-    "タア/ t a:",
-    "ダア/ d a:",
-    "ナア/ n a:",
-    "ハア/ h a:",
-    "バア/ b a:",
-    "パア/ p a:",
-    "マア/ m a:",
-    "ヤア/ y a:",
-    "ラア/ r a:",
-    "ワア/ w a:",
-    "イイ/ i:",
-    "キイ/ k i:",
-    "ギイ/ g i:",
-    "シイ/ sh i:",
-    "ジイ/ j i:",
-    "チイ/ ch i:",
-    "ヂイ/ j i:",
-    "ニイ/ n i:",
-    "ヒイ/ h i:",
-    "ビイ/ b i:",
-    "ピイ/ p i:",
-    "ミイ/ m i:",
-    "リイ/ r i:",
-    "ヰイ/ i:",
-    "イウ/ y u:",
-    "ウウ/ u:",
-    "クウ/ k u:",
-    "グウ/ g u:",
-    "スウ/ s u:",
-    "ズウ/ z u:",
-    "ツウ/ ts u:",
-    "ヅウ/ z u:",
-    "ヌウ/ n u:",
-    "フウ/ f u:",
-    "ブウ/ b u:",
-    "プウ/ p u:",
-    "ムウ/ m u:",
-    "ユウ/ y u:",
-    "ルウ/ r u:",
-    "エエ/ e:",
-    "ケエ/ k e:",
-    "ゲエ/ g e:",
-    "セエ/ s e:",
-    "ゼエ/ z e:",
-    "テエ/ t e:",
-    "デエ/ d e:",
-    "ネエ/ n e:",
-    "ヘエ/ h e:",
-    "ベエ/ b e:",
-    "ペエ/ p e:",
-    "メエ/ m e:",
-    "レエ/ r e:",
-    "ヱエ/ e:",
-    "オオ/ o:",
-    "コオ/ k o:",
-    "ゴオ/ g o:",
-    "ソオ/ s o:",
-    "ゾオ/ z o:",
-    "トオ/ t o:",
-    "ドオ/ d o:",
-    "ノオ/ n o:",
-    "ホオ/ h o:",
-    "ボオ/ b o:",
-    "ポオ/ p o:",
-    "モオ/ m o:",
-    "ヨオ/ y o:",
-    "ロオ/ r o:",
-    "ヲオ/ o:",
-    "オウ/ o:",
-    "コウ/ k o:",
-    "ゴウ/ g o:",
-    "ソウ/ s o:",
-    "ゾウ/ z o:",
-    "トウ/ t o:",
-    "ドウ/ d o:",
-    "ノウ/ n o:",
-    "ホウ/ h o:",
-    "ボウ/ b o:",
-    "ポウ/ p o:",
-    "モウ/ m o:",
-    "ヨウ/ y o:",
-    "ロウ/ r o:",
-    "ヲウ/ o:",
     # Conversion of 1 letter
     "ア/ a",
     "イ/ i",
@@ -454,7 +292,7 @@ _CONVRULES = [
     "ン/ N",
     "ッ/ q",
     "ヴ/ b u",
-    "ー/:",  # 这里会把所有独立的、不符合规则的ー都给消灭掉
+    "ー/:",
     # Try converting broken text
     "ァ/ a",
     "ィ/ i",
@@ -541,31 +379,6 @@ def text2kata(text: str) -> str:
             else:
                 res.append(word)
     return hira2kata("".join(res))
-
-
-def text2sep_kata(text: str) -> (list, list):
-    parsed = _TAGGER.parse(text)
-    res = []
-    sep = []
-    for line in parsed.split("\n"):
-        if line == "EOS":
-            break
-        parts = line.split("\t")
-
-        word, yomi = parts[0], parts[1]
-        if yomi:
-            res.append(yomi)
-        else:
-            if word in _SYMBOL_TOKENS:
-                res.append(word)
-            elif word in ("っ", "ッ"):
-                res.append("ッ")
-            elif word in _NO_YOMI_TOKENS:
-                pass
-            else:
-                res.append(word)
-        sep.append(word)
-    return sep, [hira2kata(i) for i in res]
 
 
 _ALPHASYMBOL_YOMI = {
@@ -692,7 +505,7 @@ rep_map = {
     "\n": ".",
     "·": ",",
     "、": ",",
-    "…": "...",
+    "...": "…",
 }
 
 
@@ -733,22 +546,28 @@ tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
 def g2p(norm_text):
-    sep_text, sep_kata = text2sep_kata(norm_text)
-    sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
-    sep_phonemes = [kata2phoneme(i) for i in sep_kata]
-    # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
-    for i in sep_phonemes:
-        for j in i:
-            assert j in symbols, (sep_text, sep_kata, sep_phonemes)
-
+    tokenized = tokenizer.tokenize(norm_text)
+    phs = []
+    ph_groups = []
+    for t in tokenized:
+        if not t.startswith("#"):
+            ph_groups.append([t])
+        else:
+            ph_groups[-1].append(t.replace("#", ""))
     word2ph = []
-    for token, phoneme in zip(sep_tokenized, sep_phonemes):
-        phone_len = len(phoneme)
-        word_len = len(token)
+    for group in ph_groups:
+        phonemes = kata2phoneme(text2kata("".join(group)))
+        # phonemes = [i for i in phonemes if i in symbols]
+        for i in phonemes:
+            assert i in symbols, (group, norm_text, tokenized)
+        phone_len = len(phonemes)
+        word_len = len(group)
 
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
-    phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
+
+        phs += phonemes
+    phones = ["_"] + phs + ["_"]
     tones = [0 for i in phones]
     word2ph = [1] + word2ph + [1]
     return phones, tones, word2ph
@@ -756,12 +575,11 @@ def g2p(norm_text):
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
-    text = "hello,こんにちは、世界ー！……"
+    text = "hello,こんにちは、世界！……"
     from text.japanese_bert import get_bert_feature
 
     text = text_normalize(text)
     print(text)
-
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)
 

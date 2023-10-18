@@ -6,26 +6,30 @@ from typing import Optional
 from tqdm import tqdm
 import click
 from text.cleaner import clean_text
+from config import config
+
+preprocess_text_config = config.preprocess_text_config
 
 
 @click.command()
 @click.option(
     "--transcription-path",
-    default="filelists/genshin.list",
+    default=preprocess_text_config.transcription_path,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--cleaned-path", default=None)
-@click.option("--train-path", default="filelists/train.list")
-@click.option("--val-path", default="filelists/val.list")
+@click.option("--cleaned-path", default=preprocess_text_config.cleaned_path)
+@click.option("--train-path", default=preprocess_text_config.train_path)
+@click.option("--val-path", default=preprocess_text_config.val_path)
 @click.option(
     "--config-path",
-    default="configs/config.json",
+    default=preprocess_text_config.config_path,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--val-per-spk", default=4)
-@click.option("--max-val-total", default=8)
-@click.option("--clean/--no-clean", default=True)
-def preprocess(
+@click.option("--val-per-spk", default=preprocess_text_config.val_per_spk)
+@click.option("--max-val-total", default=preprocess_text_config.max_val_total)
+@click.option("--clean/--no-clean", default=preprocess_text_config.clean)
+@click.option("-y", "--yml_config")
+def main(
     transcription_path: str,
     cleaned_path: Optional[str],
     train_path: str,
@@ -34,8 +38,9 @@ def preprocess(
     val_per_spk: int,
     max_val_total: int,
     clean: bool,
+    yml_config: str,
 ):
-    if cleaned_path is None:
+    if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
     if clean:

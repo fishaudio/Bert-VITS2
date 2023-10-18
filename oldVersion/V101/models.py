@@ -12,7 +12,7 @@ from torch.nn import Conv1d, ConvTranspose1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 
 from commons import init_weights, get_padding
-from text import symbols, num_tones, num_languages
+from .text import symbols, num_tones, num_languages
 
 
 class DurationDiscriminator(nn.Module):  # vits2
@@ -340,8 +340,6 @@ class TextEncoder(nn.Module):
         self.language_emb = nn.Embedding(num_languages, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.emo_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -354,16 +352,12 @@ class TextEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x, x_lengths, tone, language, bert, ja_bert, emo, g=None):
-        bert_emb = self.bert_proj(bert).transpose(1, 2)
-        ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
+    def forward(self, x, x_lengths, tone, language, bert, g=None):
         x = (
             self.emb(x)
             + self.tone_emb(tone)
             + self.language_emb(language)
-            + bert_emb
-            + ja_bert_emb
-            + self.emo_proj(emo.unsqueeze(1))
+            + self.bert_proj(bert).transpose(1, 2)
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
@@ -537,10 +531,10 @@ class Generator(torch.nn.Module):
 
     def remove_weight_norm(self):
         print("Removing weight norm...")
-        for layer in self.ups:
-            remove_weight_norm(layer)
-        for layer in self.resblocks:
-            layer.remove_weight_norm()
+        for l in self.ups:
+            remove_weight_norm(l)
+        for l in self.resblocks:
+            l.remove_weight_norm()
 
 
 class DiscriminatorP(torch.nn.Module):
@@ -611,8 +605,8 @@ class DiscriminatorP(torch.nn.Module):
             t = t + n_pad
         x = x.view(b, c, t // self.period, self.period)
 
-        for layer in self.convs:
-            x = layer(x)
+        for l in self.convs:
+            x = l(x)
             x = F.leaky_relu(x, modules.LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
@@ -641,8 +635,8 @@ class DiscriminatorS(torch.nn.Module):
     def forward(self, x):
         fmap = []
 
-        for layer in self.convs:
-            x = layer(x)
+        for l in self.convs:
+            x = l(x)
             x = F.leaky_relu(x, modules.LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
@@ -704,7 +698,7 @@ class ReferenceEncoder(nn.Module):
             for i in range(K)
         ]
         self.convs = nn.ModuleList(convs)
-        # self.wns = nn.ModuleList([weight_norm(num_features=ref_enc_filters[i]) for i in range(K)]) # noqa: E501
+        # self.wns = nn.ModuleList([weight_norm(num_features=ref_enc_filters[i]) for i in range(K)])
 
         out_channels = self.calculate_channels(spec_channels, 3, 2, 1, K)
         self.gru = nn.GRU(
@@ -859,21 +853,17 @@ class SynthesizerTrn(nn.Module):
             hidden_channels, 256, 3, 0.5, gin_channels=gin_channels
         )
 
-        if n_speakers > 1:
+        if n_speakers > 0:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
         else:
             self.ref_enc = ReferenceEncoder(spec_channels, gin_channels)
 
-    def forward(
-        self, x, x_lengths, y, y_lengths, sid, tone, language, bert, ja_bert, emo=None
-    ):
-        if self.n_speakers > 0:
+    def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert):
+        if self.n_speakers >= 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, emo, g=g
-        )
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, g=g)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
@@ -948,8 +938,6 @@ class SynthesizerTrn(nn.Module):
         tone,
         language,
         bert,
-        ja_bert,
-        emo=None,
         noise_scale=0.667,
         length_scale=1,
         noise_scale_w=0.8,
@@ -963,9 +951,7 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, emo, g=g
-        )
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, g=g)
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
             sdp_ratio
         ) + self.dp(x, x_mask, g=g) * (1 - sdp_ratio)
