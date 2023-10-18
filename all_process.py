@@ -631,7 +631,7 @@ if __name__ == "__main__":
             outputs=[all_1_text, tar_path_dropdown, textbox_transcript_num],
         )
         transcript_btn.click(
-            fn_transcript, inputs=[tar_path_dropdown], outputs=[textbox_output_text]
+            fn_transcript, inputs=[], outputs=[textbox_output_text]
         )
         preprocess_text_btn.click(
             extern_subprocess.do_preprocess_text,
