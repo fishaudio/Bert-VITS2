@@ -88,8 +88,9 @@ def process_func(
 embs = []
 wavnames = []
 
+
 def extract_dir():
-    with open('filelists/genshin.list.cleaned', 'r') as file:
+    with open("filelists/genshin.list.cleaned", "r") as file:
         for idx, line in enumerate(file):
             wavname = line.split()[0]  # 获取每一行的第一部分
             wav, sr = librosa.load(wavname, 16000)
@@ -97,6 +98,6 @@ def extract_dir():
             embs.append(emb)
             wavnames.append(wavname)
             np.save(f"{wavname}.emo.npy", emb.squeeze(0))
-    
+
 
 extract_dir()
