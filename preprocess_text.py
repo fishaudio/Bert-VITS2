@@ -52,7 +52,9 @@ def main(
                     for line in tqdm(lines):
                         try:
                             utt, spk, language, text = line.strip().split("|")
-                            norm_text, phones, tones, word2ph = clean_text(text, language)
+                            norm_text, phones, tones, word2ph = clean_text(
+                                text, language
+                            )
                             out_file.write(
                                 "{}|{}|{}|{}|{}|{}|{}\n".format(
                                     utt,
@@ -64,10 +66,8 @@ def main(
                                     " ".join([str(i) for i in word2ph]),
                                 )
                             )
-                        except Exception as e:
+                        except Exception:
                             print("生成训练集和验证集时发生错误！")
-
-
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -112,4 +112,3 @@ def main(
 
 if __name__ == "__main__":
     preprocess()
-
