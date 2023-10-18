@@ -43,6 +43,7 @@ torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
 
+
 def run():
     dist.init_process_group(
         backend="gloo",
