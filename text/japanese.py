@@ -12,6 +12,8 @@ try:
 except ImportError as e:
     raise ImportError("Japanese requires mecab-python3 and unidic-lite.") from e
 from num2words import num2words
+from pykakasi import kakasi
+
 
 _CONVRULES = [
     # Conversion of 2 letters
@@ -486,6 +488,10 @@ _RULEMAP1, _RULEMAP2 = _makerulemap()
 def kata2phoneme(text: str) -> str:
     """Convert katakana text to phonemes."""
     text = text.strip()
+    if text == "ー":
+        return ["ー"]
+    elif text.startswith("ー"):
+        return ["ー"] + kata2phoneme(text[1:])
     res = []
     while text:
         if len(text) >= 2:
@@ -507,6 +513,7 @@ def kata2phoneme(text: str) -> str:
 
 _KATAKANA = "".join(chr(ch) for ch in range(ord("ァ"), ord("ン") + 1))
 _HIRAGANA = "".join(chr(ch) for ch in range(ord("ぁ"), ord("ん") + 1))
+_KANA = _KATAKANA + _HIRAGANA + "ー"
 _HIRA2KATATRANS = str.maketrans(_HIRAGANA, _KATAKANA)
 
 
@@ -520,6 +527,11 @@ _NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
 _TAGGER = MeCab.Tagger()
 
 
+kakasi = kakasi()
+kakasi.setMode("J", "H")
+conv = kakasi.getConverter()
+
+
 def text2kata(text: str) -> str:
     parsed = _TAGGER.parse(text)
     res = []
@@ -530,6 +542,7 @@ def text2kata(text: str) -> str:
 
         word, yomi = parts[0], parts[1]
         if yomi:
+            yomi = conv.do(yomi)
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -554,6 +567,7 @@ def text2sep_kata(text: str) -> (list, list):
 
         word, yomi = parts[0], parts[1]
         if yomi:
+            yomi = conv.do(yomi)
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -692,7 +706,27 @@ rep_map = {
     "\n": ".",
     "·": ",",
     "、": ",",
-    "…": "...",
+    "...": "…",
+    "$": ".",
+    "“": "'",
+    "”": "'",
+    "‘": "'",
+    "’": "'",
+    "（": "'",
+    "）": "'",
+    "(": "'",
+    ")": "'",
+    "《": "'",
+    "》": "'",
+    "【": "'",
+    "】": "'",
+    "[": "'",
+    "]": "'",
+    "—": "-",
+    "～": "-",
+    "~": "-",
+    "「": "'",
+    "」": "'",
 }
 
 
@@ -732,10 +766,21 @@ def distribute_phone(n_phone, n_word):
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
+def handle_long(sep_phonemes):
+    for i in range(len(sep_phonemes)):
+        if sep_phonemes[i][0] == "ー":
+            sep_phonemes[i][0] = sep_phonemes[i - 1][-1].replace(":", "")
+        elif "ー" in sep_phonemes[i]:
+            for j in range(len(sep_phonemes[i])):
+                if sep_phonemes[i][j] == "ー":
+                    sep_phonemes[i][j] = sep_phonemes[i][j - 1][-1].replace(":", "")
+    return sep_phonemes
+
+
 def g2p(norm_text):
     sep_text, sep_kata = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
-    sep_phonemes = [kata2phoneme(i) for i in sep_kata]
+    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
