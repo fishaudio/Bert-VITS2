@@ -333,7 +333,7 @@ def kata2phoneme(text: str) -> str:
     res = []
     prev = None
     while text:
-        if text.startswith('ー'):
+        if text.startswith("ー"):
             if prev:
                 res.append(prev[-1])
             text = text[1:]
@@ -370,7 +370,9 @@ def hira2kata(text: str) -> str:
 _SYMBOL_TOKENS = set(list("・、。？！"))
 _NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
 _TAGGER = MeCab.Tagger()
-_MARKS = re.compile(r'[^A-Za-z\d\u3005\u3040-\u30ff\u4e00-\u9fff\uff11-\uff19\uff21-\uff3a\uff41-\uff5a\uff66-\uff9d]')
+_MARKS = re.compile(
+    r"[^A-Za-z\d\u3005\u3040-\u30ff\u4e00-\u9fff\uff11-\uff19\uff21-\uff3a\uff41-\uff5a\uff66-\uff9d]"
+)
 
 
 kakasi = kakasi()
@@ -389,7 +391,7 @@ def text2kata(text: str) -> str:
         word, yomi = parts[0], parts[1]
         if yomi:
             if not re.match(_MARKS, yomi):
-                yomi = conv.do(yomi).replace('-', 'ー')
+                yomi = conv.do(yomi).replace("-", "ー")
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -415,7 +417,7 @@ def text2sep_kata(text: str) -> (list, list):
         word, yomi = parts[0], parts[1]
         if yomi:
             if not re.match(_MARKS, yomi):
-                yomi = conv.do(yomi).replace('-', 'ー')
+                yomi = conv.do(yomi).replace("-", "ー")
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
