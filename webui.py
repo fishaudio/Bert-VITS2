@@ -62,6 +62,69 @@ def generate_audio(
     return audio_list
 
 
+def tts_split(
+    text: str,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+    cut_by_sent,
+    interval_between_para,
+    interval_between_sent,
+):
+    if language == "mix":
+        return ("invalid", None)
+    while text.find("\n\n") != -1:
+        text = text.replace("\n\n", "\n")
+    para_list = re_matching.cut_para(text)
+    audio_list = []
+    if not cut_by_sent:
+        for p in para_list:
+            audio = infer(
+                p,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+                sid=speaker,
+                language=language,
+                hps=hps,
+                net_g=net_g,
+                device=device,
+            )
+            audio_list.append(audio)
+            silence = np.zeros((int)(44100 * interval_between_para))
+            audio_list.append(silence)
+    else:
+        for p in para_list:
+            sent_list = re_matching.cut_sent(p)
+            for s in sent_list:
+                audio = infer(
+                    s,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise_scale,
+                    noise_scale_w=noise_scale_w,
+                    length_scale=length_scale,
+                    sid=speaker,
+                    language=language,
+                    hps=hps,
+                    net_g=net_g,
+                    device=device,
+                )
+                audio_list.append(audio)
+                silence = np.zeros((int)(44100 * interval_between_sent))
+                audio_list.append(silence)
+            if (interval_between_para - interval_between_sent) > 0:
+                silence = np.zeros(
+                    (int)(44100 * (interval_between_para - interval_between_sent))
+                )
+                audio_list.append(silence)
+    audio_concat = np.concatenate(audio_list)
+    return ("Success", (44100, audio_concat))
+
+
 def tts_fn(
     text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
 ):
@@ -190,6 +253,26 @@ if __name__ == "__main__":
                 )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
+                with gr.Row():
+                    with gr.Column():
+                        interval_between_sent = gr.Slider(
+                            minimum=0,
+                            maximum=5,
+                            value=0.2,
+                            step=0.1,
+                            label="句间停顿(秒)，勾选按句切分才生效",
+                        )
+                        interval_between_para = gr.Slider(
+                            minimum=0,
+                            maximum=10,
+                            value=1,
+                            step=0.1,
+                            label="段间停顿(秒)，需要大于句间停顿才有效",
+                        )
+                        opt_cut_by_sent = gr.Checkbox(
+                            label="按句切分    在按段落切分的基础上再按句子切分文本"
+                        )
+                        slicer = gr.Button("切分生成", variant="primary")
                 text_output = gr.Textbox(label="状态信息")
                 audio_output = gr.Audio(label="输出音频")
                 explain_image = gr.Image(
@@ -219,9 +302,20 @@ if __name__ == "__main__":
             outputs=[text],
         )
         slicer.click(
-            cut_sent,
-            inputs=[text],
-            outputs=[text],
+            tts_split,
+            inputs=[
+                text,
+                speaker,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                language,
+                opt_cut_by_sent,
+                interval_between_para,
+                interval_between_sent,
+            ],
+            outputs=[text_output, audio_output],
         )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
