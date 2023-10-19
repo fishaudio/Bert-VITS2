@@ -156,11 +156,11 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         if language_str == "ZH":
             bert = bert
             ja_bert = torch.zeros(1024, len(phone))
-            en_bert = torch.zeros(1024, len(phone))
+            en_bert = torch.zeros(768, len(phone))
         elif language_str == "JP":
             bert = torch.zeros(1024, len(phone))
             ja_bert = bert
-            en_bert = torch.zeros(1024, len(phone))
+            en_bert = torch.zeros(768, len(phone))
         elif anguage_str == "EN":
             bert = torch.zeros(1024, len(phone))
             ja_bert = torch.zeros(1024, len(phone))
@@ -226,7 +226,7 @@ class TextAudioSpeakerCollate:
         language_padded = torch.LongTensor(len(batch), max_text_len)
         bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
         ja_bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
-        en_bert
+        en_bert_padded = torch.FloatTensor(len(batch), 768, max_text_len)
         emo = torch.FloatTensor(len(batch), 1024)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
@@ -238,6 +238,7 @@ class TextAudioSpeakerCollate:
         wav_padded.zero_()
         bert_padded.zero_()
         ja_bert_padded.zero_()
+        en_bert_padded.zero_()
         emo.zero_()
 
         for i in range(len(ids_sorted_decreasing)):
@@ -269,7 +270,9 @@ class TextAudioSpeakerCollate:
             ja_bert = row[7]
             ja_bert_padded[i, :, : ja_bert.size(1)] = ja_bert
 
-            emo[i, :] = row[8]
+            en_bert = row[8]
+            en_bert_padded[i, :, : en_bert.size(1)] = en_bert
+            emo[i, :] = row[9]
 
         return (
             text_padded,
@@ -283,6 +286,7 @@ class TextAudioSpeakerCollate:
             language_padded,
             bert_padded,
             ja_bert_padded,
+            en_bert_padded,
             emo,
         )
 
