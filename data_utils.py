@@ -85,14 +85,14 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         # separate filename, speaker_id and text
         audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
 
-        bert, ja_bert, phones, tone, language = self.get_text(
+        bert, ja_bert, en_bert, phones, tone, language = self.get_text(
             text, word2ph, phones, tone, language, audiopath
         )
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
         emo = torch.FloatTensor(np.load(audiopath + ".emo.npy"))
-        return (phones, spec, wav, sid, tone, language, bert, ja_bert, emo)
+        return (phones, spec, wav, sid, tone, language, bert, ja_bert, en_bert, emo)
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
@@ -156,12 +156,15 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         if language_str == "ZH":
             bert = bert
             ja_bert = torch.zeros(1024, len(phone))
+            en_bert = torch.zeros(1024, len(phone))
         elif language_str == "JP":
-            ja_bert = bert
             bert = torch.zeros(1024, len(phone))
-        else:
+            ja_bert = bert
+            en_bert = torch.zeros(1024, len(phone))
+        elif anguage_str == "EN":
             bert = torch.zeros(1024, len(phone))
             ja_bert = torch.zeros(1024, len(phone))
+            en_bert = bert
         assert bert.shape[-1] == len(phone), (
             bert.shape,
             len(phone),
@@ -179,7 +182,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         phone = torch.LongTensor(phone)
         tone = torch.LongTensor(tone)
         language = torch.LongTensor(language)
-        return bert, ja_bert, phone, tone, language
+        return bert, ja_bert, en_bert, phone, tone, language
 
     def get_sid(self, sid):
         sid = torch.LongTensor([int(sid)])
@@ -223,6 +226,7 @@ class TextAudioSpeakerCollate:
         language_padded = torch.LongTensor(len(batch), max_text_len)
         bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
         ja_bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
+        en_bert
         emo = torch.FloatTensor(len(batch), 1024)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
