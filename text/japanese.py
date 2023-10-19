@@ -333,7 +333,7 @@ def kata2phoneme(text: str) -> str:
     res = []
     prev = None
     while text:
-        if text == 'ー':
+        if text == "ー":
             if prev:
                 res.append(prev[-1])
         if len(text) >= 2:
