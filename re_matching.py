@@ -48,6 +48,15 @@ def text_matching(text: str) -> list:
     return result
 
 
+def cut_sent(para):
+    para = re.sub("([。！;？\?])([^”’])", r"\1|\2", para)  # 单字符断句符
+    para = re.sub("(\.{6})([^”’])", r"\1|\2", para)  # 英文省略号
+    para = re.sub("(\…{2})([^”’])", r"\1|\2", para)  # 中文省略号
+    para = re.sub("([。！？\?][”’])([^，。！？\?])", r"\1|\2", para)
+    para = para.rstrip("|")  # 段尾如果有多余的|就去掉
+    return para
+
+
 if __name__ == "__main__":
     text = """
     [说话人1]
