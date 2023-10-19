@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP", "mix"]
+    languages = ["ZH", "JP", "EN","mix"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
