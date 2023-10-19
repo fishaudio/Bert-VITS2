@@ -49,15 +49,18 @@ def text_matching(text: str) -> list:
 
 
 def cut_para(text):
-    splitted_para = re.split('[\n]', text)#按段分
-    splitted_para = [sentence.strip() for sentence in splitted_para if sentence.strip()]#删除空字符串
+    splitted_para = re.split("[\n]", text)  # 按段分
+    splitted_para = [
+        sentence.strip() for sentence in splitted_para if sentence.strip()
+    ]  # 删除空字符串
     return splitted_para
 
+
 def cut_sent(para):
-    para = re.sub('([。！;？\?])([^”’])', r"\1\n\2", para)  # 单字符断句符
-    para = re.sub('(\.{6})([^”’])', r"\1\n\2", para)  # 英文省略号
-    para = re.sub('(\…{2})([^”’])', r"\1\n\2", para)  # 中文省略号
-    para = re.sub('([。！？\?][”’])([^，。！？\?])', r'\1\n\2', para)
+    para = re.sub("([。！;？\?])([^”’])", r"\1\n\2", para)  # 单字符断句符
+    para = re.sub("(\.{6})([^”’])", r"\1\n\2", para)  # 英文省略号
+    para = re.sub("(\…{2})([^”’])", r"\1\n\2", para)  # 中文省略号
+    para = re.sub("([。！？\?][”’])([^，。！？\?])", r"\1\n\2", para)
     para = para.rstrip()  # 段尾如果有多余的\n就去掉它
     return para.split("\n")
 
