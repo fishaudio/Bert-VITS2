@@ -424,7 +424,6 @@ def kata2phoneme(text: str) -> str:
 
 _KATAKANA = "".join(chr(ch) for ch in range(ord("ァ"), ord("ン") + 1))
 _HIRAGANA = "".join(chr(ch) for ch in range(ord("ぁ"), ord("ん") + 1))
-_KANA = _KATAKANA + _HIRAGANA + "ー"
 _HIRA2KATATRANS = str.maketrans(_HIRAGANA, _KATAKANA)
 
 
