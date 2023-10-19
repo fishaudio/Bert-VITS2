@@ -169,6 +169,7 @@ if __name__ == "__main__":
                     """,
                 )
                 trans = gr.Button("中翻日", variant="primary")
+                slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="选择说话人"
                 )
@@ -214,6 +215,11 @@ if __name__ == "__main__":
 
         trans.click(
             translate,
+            inputs=[text],
+            outputs=[text],
+        )
+        slicer.click(
+            cut_sent,
             inputs=[text],
             outputs=[text],
         )
