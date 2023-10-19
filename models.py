@@ -355,7 +355,9 @@ class TextEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=None):
+    def forward(
+        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=None
+    ):
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
@@ -868,7 +870,18 @@ class SynthesizerTrn(nn.Module):
             self.ref_enc = ReferenceEncoder(spec_channels, gin_channels)
 
     def forward(
-        self, x, x_lengths, y, y_lengths, sid, tone, language, bert, ja_bert, en_bert, emo=None
+        self,
+        x,
+        x_lengths,
+        y,
+        y_lengths,
+        sid,
+        tone,
+        language,
+        bert,
+        ja_bert,
+        en_bert,
+        emo=None,
     ):
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
