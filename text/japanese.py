@@ -12,6 +12,8 @@ try:
 except ImportError as e:
     raise ImportError("Japanese requires mecab-python3 and unidic-lite.") from e
 from num2words import num2words
+from pykakasi import kakasi
+
 
 _CONVRULES = [
     # Conversion of 2 letters
@@ -289,95 +291,6 @@ _CONVRULES = [
     "ヱー/ e:",
     "ヲー/ o:",
     "ヴー/ b u:",
-    # Coversion of long pronunciations
-    "アア/ a:",
-    "カア/ k a:",
-    "ガア/ g a:",
-    "サア/ s a:",
-    "ザア/ z a:",
-    "タア/ t a:",
-    "ダア/ d a:",
-    "ナア/ n a:",
-    "ハア/ h a:",
-    "バア/ b a:",
-    "パア/ p a:",
-    "マア/ m a:",
-    "ヤア/ y a:",
-    "ラア/ r a:",
-    "ワア/ w a:",
-    "イイ/ i:",
-    "キイ/ k i:",
-    "ギイ/ g i:",
-    "シイ/ sh i:",
-    "ジイ/ j i:",
-    "チイ/ ch i:",
-    "ヂイ/ j i:",
-    "ニイ/ n i:",
-    "ヒイ/ h i:",
-    "ビイ/ b i:",
-    "ピイ/ p i:",
-    "ミイ/ m i:",
-    "リイ/ r i:",
-    "ヰイ/ i:",
-    "イウ/ y u:",
-    "ウウ/ u:",
-    "クウ/ k u:",
-    "グウ/ g u:",
-    "スウ/ s u:",
-    "ズウ/ z u:",
-    "ツウ/ ts u:",
-    "ヅウ/ z u:",
-    "ヌウ/ n u:",
-    "フウ/ f u:",
-    "ブウ/ b u:",
-    "プウ/ p u:",
-    "ムウ/ m u:",
-    "ユウ/ y u:",
-    "ルウ/ r u:",
-    "エエ/ e:",
-    "ケエ/ k e:",
-    "ゲエ/ g e:",
-    "セエ/ s e:",
-    "ゼエ/ z e:",
-    "テエ/ t e:",
-    "デエ/ d e:",
-    "ネエ/ n e:",
-    "ヘエ/ h e:",
-    "ベエ/ b e:",
-    "ペエ/ p e:",
-    "メエ/ m e:",
-    "レエ/ r e:",
-    "ヱエ/ e:",
-    "オオ/ o:",
-    "コオ/ k o:",
-    "ゴオ/ g o:",
-    "ソオ/ s o:",
-    "ゾオ/ z o:",
-    "トオ/ t o:",
-    "ドオ/ d o:",
-    "ノオ/ n o:",
-    "ホオ/ h o:",
-    "ボオ/ b o:",
-    "ポオ/ p o:",
-    "モオ/ m o:",
-    "ヨオ/ y o:",
-    "ロオ/ r o:",
-    "ヲオ/ o:",
-    "オウ/ o:",
-    "コウ/ k o:",
-    "ゴウ/ g o:",
-    "ソウ/ s o:",
-    "ゾウ/ z o:",
-    "トウ/ t o:",
-    "ドウ/ d o:",
-    "ノウ/ n o:",
-    "ホウ/ h o:",
-    "ボウ/ b o:",
-    "ポウ/ p o:",
-    "モウ/ m o:",
-    "ヨウ/ y o:",
-    "ロウ/ r o:",
-    "ヲウ/ o:",
     # Conversion of 1 letter
     "ア/ a",
     "イ/ i",
@@ -486,6 +399,10 @@ _RULEMAP1, _RULEMAP2 = _makerulemap()
 def kata2phoneme(text: str) -> str:
     """Convert katakana text to phonemes."""
     text = text.strip()
+    if text == "ー":
+        return ["ー"]
+    elif text.startswith("ー"):
+        return ["ー"] + kata2phoneme(text[1:])
     res = []
     while text:
         if len(text) >= 2:
@@ -520,6 +437,11 @@ _NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
 _TAGGER = MeCab.Tagger()
 
 
+kakasi = kakasi()
+kakasi.setMode("J", "H")
+conv = kakasi.getConverter()
+
+
 def text2kata(text: str) -> str:
     parsed = _TAGGER.parse(text)
     res = []
@@ -530,6 +452,7 @@ def text2kata(text: str) -> str:
 
         word, yomi = parts[0], parts[1]
         if yomi:
+            yomi = conv.do(yomi)
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -554,6 +477,7 @@ def text2sep_kata(text: str) -> (list, list):
 
         word, yomi = parts[0], parts[1]
         if yomi:
+            yomi = conv.do(yomi)
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -692,7 +616,27 @@ rep_map = {
     "\n": ".",
     "·": ",",
     "、": ",",
-    "…": "...",
+    "...": "…",
+    "$": ".",
+    "“": "'",
+    "”": "'",
+    "‘": "'",
+    "’": "'",
+    "（": "'",
+    "）": "'",
+    "(": "'",
+    ")": "'",
+    "《": "'",
+    "》": "'",
+    "【": "'",
+    "】": "'",
+    "[": "'",
+    "]": "'",
+    "—": "-",
+    "～": "-",
+    "~": "-",
+    "「": "'",
+    "」": "'",
 }
 
 
@@ -732,10 +676,21 @@ def distribute_phone(n_phone, n_word):
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
+def handle_long(sep_phonemes):
+    for i in range(len(sep_phonemes)):
+        if sep_phonemes[i][0] == "ー":
+            sep_phonemes[i][0] = sep_phonemes[i - 1][-1].replace(":", "")
+        elif "ー" in sep_phonemes[i]:
+            for j in range(len(sep_phonemes[i])):
+                if sep_phonemes[i][j] == "ー":
+                    sep_phonemes[i][j] = sep_phonemes[i][j - 1][-1].replace(":", "")
+    return sep_phonemes
+
+
 def g2p(norm_text):
     sep_text, sep_kata = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
-    sep_phonemes = [kata2phoneme(i) for i in sep_kata]
+    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
