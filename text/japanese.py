@@ -620,7 +620,7 @@ def handle_long(sep_phonemes):
     for i in range(len(sep_phonemes)):
         if sep_phonemes[i][0] == "ー":
             sep_phonemes[i][0] = sep_phonemes[i - 1][-1]
-        elif "ー" in sep_phonemes[i]:
+        if "ー" in sep_phonemes[i]:
             for j in range(len(sep_phonemes[i])):
                 if sep_phonemes[i][j] == "ー":
                     sep_phonemes[i][j] = sep_phonemes[i][j - 1][-1]
