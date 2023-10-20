@@ -1,5 +1,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
+from config import config
+import sys
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-historic-english-cased")
 
