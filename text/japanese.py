@@ -56,13 +56,15 @@ def text2kata(text: str) -> str:
     for parts in parsed:
         word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
         if yomi:
-            if yomi in _SYMBOL_TOKENS:
+            if re.match(_MARKS, yomi):
                 if len(word) > 1:
                     word = [replace_punctuation(i) for i in list(word)]
                     yomi = word
                     res += yomi
                     sep += word
                     continue
+                elif word not in rep_map.keys() and word not in rep_map.values():
+                    word = ","
                 yomi = word
             res.append(yomi)
         else:
@@ -85,13 +87,15 @@ def text2sep_kata(text: str) -> (list, list):
     for parts in parsed:
         word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
         if yomi:
-            if yomi in _SYMBOL_TOKENS:
+            if re.match(_MARKS, yomi):
                 if len(word) > 1:
                     word = [replace_punctuation(i) for i in list(word)]
                     yomi = word
                     res += yomi
                     sep += word
                     continue
+                elif word not in rep_map.keys() and word not in rep_map.values():
+                    word = ","
                 yomi = word
             res.append(yomi)
         else:
@@ -230,7 +234,9 @@ rep_map = {
     "？": "?",
     "\n": ".",
     "．": ".",
+    "・・・": "…",
     "·": ",",
+    "・": ",",
     "、": ",",
     "...": "…",
     "$": ".",
