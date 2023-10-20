@@ -27,7 +27,7 @@ VITS2 Backbone with bert
 + [svc-develop-team/so-vits-svc](https://github.com/svc-develop-team/so-vits-svc)
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
 + [emotional-vits](https://github.com/innnky/emotional-vits)  
-[Bert-VITS2-en](https://github.com/xwan07017/Bert-VITS2-en)
++ [Bert-VITS2-en](https://github.com/xwan07017/Bert-VITS2-en)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2"/>
