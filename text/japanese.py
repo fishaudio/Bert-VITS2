@@ -7,320 +7,10 @@ from transformers import AutoTokenizer
 
 from text import punctuation, symbols
 
-try:
-    import MeCab
-except ImportError as e:
-    raise ImportError("Japanese requires mecab-python3 and unidic-lite.") from e
 from num2words import num2words
-from pykakasi import kakasi
 
-
-_CONVRULES = [
-    # Conversion of 2 letters
-    "アァ/ a a",
-    "イィ/ i i",
-    "イェ/ i e",
-    "イャ/ y a",
-    "ウゥ/ u u",
-    "エェ/ e e",
-    "オォ/ o o",
-    "カァ/ k a a",
-    "キィ/ k i i",
-    "クゥ/ k u u",
-    "クャ/ ky a",
-    "クュ/ ky u",
-    "クョ/ ky o",
-    "ケェ/ k e e",
-    "コォ/ k o o",
-    "ガァ/ g a a",
-    "ギィ/ g i i",
-    "グゥ/ g u u",
-    "グャ/ gy a",
-    "グュ/ gy u",
-    "グョ/ gy o",
-    "ゲェ/ g e e",
-    "ゴォ/ g o o",
-    "サァ/ s a a",
-    "シィ/ sh i i",
-    "スゥ/ s u u",
-    "スャ/ sh a",
-    "スュ/ sh u",
-    "スョ/ sh o",
-    "セェ/ s e e",
-    "ソォ/ s o o",
-    "ザァ/ z a a",
-    "ジィ/ j i i",
-    "ズゥ/ z u u",
-    "ズャ/ zy a",
-    "ズュ/ zy u",
-    "ズョ/ zy o",
-    "ゼェ/ z e e",
-    "ゾォ/ z o o",
-    "タァ/ t a a",
-    "チィ/ ch i i",
-    "ツァ/ ts a",
-    "ツィ/ ts i",
-    "ツゥ/ ts u u",
-    "ツャ/ ch a",
-    "ツュ/ ch u",
-    "ツョ/ ch o",
-    "ツェ/ ts e",
-    "ツォ/ ts o",
-    "テェ/ t e e",
-    "トォ/ t o o",
-    "ダァ/ d a a",
-    "ヂィ/ j i i",
-    "ヅゥ/ d u u",
-    "ヅャ/ zy a",
-    "ヅュ/ zy u",
-    "ヅョ/ zy o",
-    "デェ/ d e e",
-    "ドォ/ d o o",
-    "ナァ/ n a a",
-    "ニィ/ n i i",
-    "ヌゥ/ n u u",
-    "ヌャ/ ny a",
-    "ヌュ/ ny u",
-    "ヌョ/ ny o",
-    "ネェ/ n e e",
-    "ノォ/ n o o",
-    "ハァ/ h a a",
-    "ヒィ/ h i i",
-    "フゥ/ f u u",
-    "フャ/ hy a",
-    "フュ/ hy u",
-    "フョ/ hy o",
-    "ヘェ/ h e e",
-    "ホォ/ h o o",
-    "バァ/ b a a",
-    "ビィ/ b i i",
-    "ブゥ/ b u u",
-    "フャ/ hy a",
-    "ブュ/ by u",
-    "フョ/ hy o",
-    "ベェ/ b e e",
-    "ボォ/ b o o",
-    "パァ/ p a a",
-    "ピィ/ p i i",
-    "プゥ/ p u u",
-    "プャ/ py a",
-    "プュ/ py u",
-    "プョ/ py o",
-    "ペェ/ p e e",
-    "ポォ/ p o o",
-    "マァ/ m a a",
-    "ミィ/ m i i",
-    "ムゥ/ m u u",
-    "ムャ/ my a",
-    "ムュ/ my u",
-    "ムョ/ my o",
-    "メェ/ m e e",
-    "モォ/ m o o",
-    "ヤァ/ y a a",
-    "ユゥ/ y u u",
-    "ユャ/ y a a",
-    "ユュ/ y u u",
-    "ユョ/ y o o",
-    "ヨォ/ y o o",
-    "ラァ/ r a a",
-    "リィ/ r i i",
-    "ルゥ/ r u u",
-    "ルャ/ ry a",
-    "ルュ/ ry u",
-    "ルョ/ ry o",
-    "レェ/ r e e",
-    "ロォ/ r o o",
-    "ワァ/ w a a",
-    "ヲォ/ o o",
-    "ディ/ d i",
-    "デェ/ d e e",
-    "デャ/ dy a",
-    "デュ/ dy u",
-    "デョ/ dy o",
-    "ティ/ t i",
-    "テェ/ t e e",
-    "テャ/ ty a",
-    "テュ/ ty u",
-    "テョ/ ty o",
-    "スィ/ s i",
-    "ズァ/ z u a",
-    "ズィ/ z i",
-    "ズゥ/ z u",
-    "ズャ/ zy a",
-    "ズュ/ zy u",
-    "ズョ/ zy o",
-    "ズェ/ z e",
-    "ズォ/ z o",
-    "キャ/ ky a",
-    "キュ/ ky u",
-    "キョ/ ky o",
-    "シャ/ sh a",
-    "シュ/ sh u",
-    "シェ/ sh e",
-    "ショ/ sh o",
-    "チャ/ ch a",
-    "チュ/ ch u",
-    "チェ/ ch e",
-    "チョ/ ch o",
-    "トゥ/ t u",
-    "トャ/ ty a",
-    "トュ/ ty u",
-    "トョ/ ty o",
-    "ドァ/ d o a",
-    "ドゥ/ d u",
-    "ドャ/ dy a",
-    "ドュ/ dy u",
-    "ドョ/ dy o",
-    "ドォ/ d o o",
-    "ニャ/ ny a",
-    "ニュ/ ny u",
-    "ニョ/ ny o",
-    "ヒャ/ hy a",
-    "ヒュ/ hy u",
-    "ヒョ/ hy o",
-    "ミャ/ my a",
-    "ミュ/ my u",
-    "ミョ/ my o",
-    "リャ/ ry a",
-    "リュ/ ry u",
-    "リョ/ ry o",
-    "ギャ/ gy a",
-    "ギュ/ gy u",
-    "ギョ/ gy o",
-    "ヂェ/ j e",
-    "ヂャ/ j a",
-    "ヂュ/ j u",
-    "ヂョ/ j o",
-    "ジェ/ j e",
-    "ジャ/ j a",
-    "ジュ/ j u",
-    "ジョ/ j o",
-    "ビャ/ by a",
-    "ビュ/ by u",
-    "ビョ/ by o",
-    "ピャ/ py a",
-    "ピュ/ py u",
-    "ピョ/ py o",
-    "ウァ/ u a",
-    "ウィ/ w i",
-    "ウェ/ w e",
-    "ウォ/ w o",
-    "ファ/ f a",
-    "フィ/ f i",
-    "フゥ/ f u",
-    "フャ/ hy a",
-    "フュ/ hy u",
-    "フョ/ hy o",
-    "フェ/ f e",
-    "フォ/ f o",
-    "ヴァ/ b a",
-    "ヴィ/ b i",
-    "ヴェ/ b e",
-    "ヴォ/ b o",
-    "ヴュ/ by u",
-    # Conversion of 1 letter
-    "ア/ a",
-    "イ/ i",
-    "ウ/ u",
-    "エ/ e",
-    "オ/ o",
-    "カ/ k a",
-    "キ/ k i",
-    "ク/ k u",
-    "ケ/ k e",
-    "コ/ k o",
-    "サ/ s a",
-    "シ/ sh i",
-    "ス/ s u",
-    "セ/ s e",
-    "ソ/ s o",
-    "タ/ t a",
-    "チ/ ch i",
-    "ツ/ ts u",
-    "テ/ t e",
-    "ト/ t o",
-    "ナ/ n a",
-    "ニ/ n i",
-    "ヌ/ n u",
-    "ネ/ n e",
-    "ノ/ n o",
-    "ハ/ h a",
-    "ヒ/ h i",
-    "フ/ f u",
-    "ヘ/ h e",
-    "ホ/ h o",
-    "マ/ m a",
-    "ミ/ m i",
-    "ム/ m u",
-    "メ/ m e",
-    "モ/ m o",
-    "ラ/ r a",
-    "リ/ r i",
-    "ル/ r u",
-    "レ/ r e",
-    "ロ/ r o",
-    "ガ/ g a",
-    "ギ/ g i",
-    "グ/ g u",
-    "ゲ/ g e",
-    "ゴ/ g o",
-    "ザ/ z a",
-    "ジ/ j i",
-    "ズ/ z u",
-    "ゼ/ z e",
-    "ゾ/ z o",
-    "ダ/ d a",
-    "ヂ/ j i",
-    "ヅ/ z u",
-    "デ/ d e",
-    "ド/ d o",
-    "バ/ b a",
-    "ビ/ b i",
-    "ブ/ b u",
-    "ベ/ b e",
-    "ボ/ b o",
-    "パ/ p a",
-    "ピ/ p i",
-    "プ/ p u",
-    "ペ/ p e",
-    "ポ/ p o",
-    "ヤ/ y a",
-    "ユ/ y u",
-    "ヨ/ y o",
-    "ワ/ w a",
-    "ヰ/ i",
-    "ヱ/ e",
-    "ヲ/ o",
-    "ン/ N",
-    "ッ/ q",
-    "ヴ/ b u",
-    # "ー/:",  # 这里会把所有独立的、不符合规则的ー都给消灭掉
-    # Try converting broken text
-    "ァ/ a",
-    "ィ/ i",
-    "ゥ/ u",
-    "ェ/ e",
-    "ォ/ o",
-    "ヮ/ w a",
-    "ォ/ o",
-    # Symbols
-    "、/ ,",
-    "。/ .",
-    "！/ !",
-    "？/ ?",
-    "・/ ,",
-]
-
-_COLON_RX = re.compile(":+")
-_REJECT_RX = re.compile("[^ a-zA-Z:,.?]")
-
-
-def _makerulemap():
-    l = [tuple(x.split("/")) for x in _CONVRULES]
-    return tuple({k: v for k, v in l if len(k) == i} for i in (1, 2))
-
-
-_RULEMAP1, _RULEMAP2 = _makerulemap()
+import pyopenjtalk
+import jaconv
 
 
 def kata2phoneme(text: str) -> str:
@@ -333,65 +23,47 @@ def kata2phoneme(text: str) -> str:
     res = []
     prev = None
     while text:
+        if re.match(_MARKS, text):
+            res.append(text)
+            text = text[1:]
+            continue
         if text.startswith("ー"):
             if prev:
                 res.append(prev[-1])
             text = text[1:]
             continue
-        if len(text) >= 2:
-            x = _RULEMAP2.get(text[:2])
-            if x is not None:
-                text = text[2:]
-                prev = x.split(" ")[1:]
-                res += prev
-                continue
-        x = _RULEMAP1.get(text[0])
-        if x is not None:
-            text = text[1:]
-            prev = x.split(" ")[1:]
-            res += prev
-            continue
-        res.append(text[0])
-        text = text[1:]
+        res += pyopenjtalk.g2p(text).lower().replace("cl", "q").split(" ")
+        break
     # res = _COLON_RX.sub(":", res)
     return res
 
 
-_KATAKANA = "".join(chr(ch) for ch in range(ord("ァ"), ord("ン") + 1))
-_HIRAGANA = "".join(chr(ch) for ch in range(ord("ぁ"), ord("ん") + 1))
-_HIRA2KATATRANS = str.maketrans(_HIRAGANA, _KATAKANA)
-
-
 def hira2kata(text: str) -> str:
-    text = text.translate(_HIRA2KATATRANS)
-    return text.replace("う゛", "ヴ")
+    return jaconv.hira2kata(text)
 
 
 _SYMBOL_TOKENS = set(list("・、。？！"))
 _NO_YOMI_TOKENS = set(list("「」『』―（）［］[]"))
-_TAGGER = MeCab.Tagger()
 _MARKS = re.compile(
     r"[^A-Za-z\d\u3005\u3040-\u30ff\u4e00-\u9fff\uff11-\uff19\uff21-\uff3a\uff41-\uff5a\uff66-\uff9d]"
 )
 
 
-kakasi = kakasi()
-kakasi.setMode("J", "H")
-conv = kakasi.getConverter()
-
-
 def text2kata(text: str) -> str:
-    parsed = _TAGGER.parse(text)
-    res = []
-    for line in parsed.split("\n"):
-        if line == "EOS":
-            break
-        parts = line.split("\t")
+    parsed = pyopenjtalk.run_frontend(text)
 
-        word, yomi = parts[0], parts[1]
+    res = []
+    for parts in parsed:
+        word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
         if yomi:
-            if not re.match(_MARKS, yomi):
-                yomi = conv.do(yomi).replace("-", "ー")
+            if yomi in _SYMBOL_TOKENS:
+                if len(word) > 1:
+                    word = [replace_punctuation(i) for i in list(word)]
+                    yomi = word
+                    res += yomi
+                    sep += word
+                    continue
+                yomi = word
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -406,18 +78,21 @@ def text2kata(text: str) -> str:
 
 
 def text2sep_kata(text: str) -> (list, list):
-    parsed = _TAGGER.parse(text)
+    parsed = pyopenjtalk.run_frontend(text)
+
     res = []
     sep = []
-    for line in parsed.split("\n"):
-        if line == "EOS":
-            break
-        parts = line.split("\t")
-
-        word, yomi = parts[0], parts[1]
+    for parts in parsed:
+        word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
         if yomi:
-            if not re.match(_MARKS, yomi):
-                yomi = conv.do(yomi).replace("-", "ー")
+            if yomi in _SYMBOL_TOKENS:
+                if len(word) > 1:
+                    word = [replace_punctuation(i) for i in list(word)]
+                    yomi = word
+                    res += yomi
+                    sep += word
+                    continue
+                yomi = word
             res.append(yomi)
         else:
             if word in _SYMBOL_TOKENS:
@@ -554,6 +229,7 @@ rep_map = {
     "！": "!",
     "？": "?",
     "\n": ".",
+    "．": ".",
     "·": ",",
     "、": ",",
     "...": "…",
@@ -573,6 +249,7 @@ rep_map = {
     "[": "'",
     "]": "'",
     "—": "-",
+    "−": "-",
     "～": "-",
     "~": "-",
     "「": "'",
@@ -613,9 +290,6 @@ def distribute_phone(n_phone, n_word):
     return phones_per_word
 
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
-
-
 def handle_long(sep_phonemes):
     for i in range(len(sep_phonemes)):
         if sep_phonemes[i][0] == "ー":
@@ -625,6 +299,9 @@ def handle_long(sep_phonemes):
                 if sep_phonemes[i][j] == "ー":
                     sep_phonemes[i][j] = sep_phonemes[i][j - 1][-1]
     return sep_phonemes
+
+
+tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
 def g2p(norm_text):
