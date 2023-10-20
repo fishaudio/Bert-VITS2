@@ -23,5 +23,5 @@ fugashi
 num2words
 PyYAML
 requests
-pyopenjtalk
+openjtalk
 jaconv
