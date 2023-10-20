@@ -8,13 +8,6 @@ from text import symbols
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
 CACHE_PATH = os.path.join(current_file_path, "cmudict_cache.pickle")
-
-cmudict_dir = "./nltk_data/corpora"
-av_p_t_dit = "./nltk_data/taggers"
-if not os.path.exists(cmudict_dir):
-    os.mkdir(cmudict_dir)
-if not os.path.exists(av_p_t_dit):
-    os.mkdir(av_p_t_dit)
 _g2p = G2p()
 
 arpa = {
