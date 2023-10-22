@@ -124,7 +124,7 @@ def get_accent(parsed):
             continue
         a1 = int(re.search(r"/A:(\-?[0-9]+)\+", label).group(1))
         a2 = int(re.search(r"\+(\d+)\+", label).group(1))
-        a3 = int(re.search(r"\+(\d+)/", label).group(1))
+        int(re.search(r"\+(\d+)/", label).group(1))
         if re.search(r"\-([^\+]*)\+", labels[n + 1]).group(1) in ["sil", "pau"]:
             a2_next = -1
         else:
