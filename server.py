@@ -49,6 +49,7 @@ def wav2(i, o, format):
 
 # 版本兼容
 SynthesizerTrnMap = {
+    "1.1.1-fix": V111SynthesizerTrn,
     "1.1.1": V111SynthesizerTrn,
     "1.1": V110SynthesizerTrn,
     "1.1.0": V110SynthesizerTrn,
@@ -57,6 +58,7 @@ SynthesizerTrnMap = {
     "1.0.0": V101SynthesizerTrn,
 }
 symbolsMap = {
+    "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
     "1.1.0": V110symbols,
