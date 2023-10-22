@@ -124,7 +124,6 @@ def get_accent(parsed):
             continue
         a1 = int(re.search(r"/A:(\-?[0-9]+)\+", label).group(1))
         a2 = int(re.search(r"\+(\d+)\+", label).group(1))
-        int(re.search(r"\+(\d+)/", label).group(1))
         if re.search(r"\-([^\+]*)\+", labels[n + 1]).group(1) in ["sil", "pau"]:
             a2_next = -1
         else:
@@ -299,7 +298,7 @@ def replace_punctuation(text):
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
     replaced_text = re.sub(
-        r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF"
+        r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005"
         + "".join(punctuation)
         + r"]+",
         "",
@@ -363,14 +362,14 @@ def align_tones(phones, tones):
 
 
 def g2p(norm_text):
-    sep_text, sep_kata, sep_acc = text2sep_kata(norm_text)
+    sep_text, sep_kata, acc = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
             assert j in symbols, (sep_text, sep_kata, sep_phonemes)
-    tones = align_tones(sep_phonemes, sep_acc)
+    tones = align_tones(sep_phonemes, acc)
 
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
