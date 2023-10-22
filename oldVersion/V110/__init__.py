@@ -6,7 +6,7 @@ import torch
 import commons
 from .text.cleaner import clean_text
 from .text import cleaned_text_to_sequence
-from text import get_bert
+from .text import get_bert
 
 
 def get_text(text, language_str, hps, device):
