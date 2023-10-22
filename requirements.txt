@@ -25,4 +25,3 @@ PyYAML
 requests
 openjtalk
 jaconv
-config
