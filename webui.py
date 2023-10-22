@@ -175,6 +175,7 @@ if __name__ == "__main__":
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
     version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
     SynthesizerTrnMap = {
+        "1.1.1-fix": V111SynthesizerTrn,
         "1.1.1": V111SynthesizerTrn,
         "1.1": V110SynthesizerTrn,
         "1.1.0": V110SynthesizerTrn,
@@ -183,6 +184,7 @@ if __name__ == "__main__":
         "1.0.0": V101SynthesizerTrn,
     }
     symbolsMap = {
+        "1.1.1-fix": V111symbols,
         "1.1.1": V111symbols,
         "1.1": V110symbols,
         "1.1.0": V110symbols,

@@ -58,6 +58,7 @@ def infer(
 ):
     # 支持中日双语版本
     inferMap_V2 = {
+        "1.1.1-fix": V111.infer_fix,
         "1.1.1": V111.infer,
         "1.1": V110.infer,
         "1.1.0": V110.infer,
