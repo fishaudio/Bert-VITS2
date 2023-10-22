@@ -10,7 +10,7 @@ models = dict()
 
 
 def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
-    sep_text, _ = text2sep_kata(text)
+    sep_text, _, _ = text2sep_kata(text)
     sep_tokens = [tokenizer.tokenize(t) for t in sep_text]
     sep_ids = [tokenizer.convert_tokens_to_ids(t) for t in sep_tokens]
     sep_ids = [2] + [item for sublist in sep_ids for item in sublist] + [3]

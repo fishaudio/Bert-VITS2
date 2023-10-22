@@ -108,7 +108,36 @@ def text2sep_kata(text: str) -> (list, list):
             else:
                 res.append(word)
         sep.append(word)
-    return sep, [hira2kata(i) for i in res]
+    return sep, [hira2kata(i) for i in res], get_accent(parsed)
+
+
+def get_accent(parsed):
+    labels = pyopenjtalk.make_label(parsed)
+
+    phonemes = []
+    accents = []
+    for n, label in enumerate(labels):
+        phoneme = re.search(r"\-([^\+]*)\+", label).group(1)
+        if phoneme not in ["sil", "pau"]:
+            phonemes.append(phoneme.replace("cl", "q").lower())
+        else:
+            continue
+        a1 = int(re.search(r"/A:(\-?[0-9]+)\+", label).group(1))
+        a2 = int(re.search(r"\+(\d+)\+", label).group(1))
+        a3 = int(re.search(r"\+(\d+)/", label).group(1))
+        if re.search(r"\-([^\+]*)\+", labels[n + 1]).group(1) in ["sil", "pau"]:
+            a2_next = -1
+        else:
+            a2_next = int(re.search(r"\+(\d+)\+", labels[n + 1]).group(1))
+        # Falling
+        if a1 == 0 and a2_next == a2 + 1:
+            accents.append(-1)
+        # Rising
+        elif a2 == 1 and a2_next == 2:
+            accents.append(1)
+        else:
+            accents.append(0)
+    return list(zip(phonemes, accents))
 
 
 _ALPHASYMBOL_YOMI = {
@@ -311,14 +340,37 @@ def handle_long(sep_phonemes):
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 
+def align_tones(phones, tones):
+    res = []
+    for pho in phones:
+        temp = [0] * len(pho)
+        for idx, p in enumerate(pho):
+            if len(tones) == 0:
+                break
+            if p == tones[0][0]:
+                temp[idx] = tones[0][1]
+                if idx > 0:
+                    temp[idx] += temp[idx - 1]
+                tones.pop(0)
+        temp = [0] + temp
+        temp = temp[:-1]
+        if -1 in temp:
+            temp = [i + 1 for i in temp]
+        res.append(temp)
+    res = [i for j in res for i in j]
+    assert not any([i < 0 for i in res]) and not any([i > 1 for i in res])
+    return res
+
+
 def g2p(norm_text):
-    sep_text, sep_kata = text2sep_kata(norm_text)
+    sep_text, sep_kata, sep_acc = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
             assert j in symbols, (sep_text, sep_kata, sep_phonemes)
+    tones = align_tones(sep_phonemes, sep_acc)
 
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
@@ -328,8 +380,9 @@ def g2p(norm_text):
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
     phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
-    tones = [0 for i in phones]
+    tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
+    assert len(phones) == len(tones)
     return phones, tones, word2ph
 
 
