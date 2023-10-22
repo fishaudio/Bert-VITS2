@@ -4,7 +4,7 @@ import sys
 from text.japanese import text2sep_kata
 from config import config
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
+tokenizer = AutoTokenizer.from_pretrained("./bert/bert-large-japanese-v2")
 
 models = dict()
 
@@ -28,7 +28,7 @@ def get_bert_feature_with_token(tokens, word2ph, device=config.bert_gen_config.d
         device = "cuda"
     if device not in models.keys():
         models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/bert-base-japanese-v3"
+            "./bert/bert-large-japanese-v2"
         ).to(device)
     with torch.no_grad():
         inputs = torch.tensor(tokens).to(device).unsqueeze(0)
