@@ -16,20 +16,12 @@ logger = logging.getLogger(__name__)
 
 import torch
 import utils
-from models import SynthesizerTrn
-from text.symbols import symbols
-from infer import infer
+from infer import infer, latest_version, get_net_g
 import gradio as gr
 import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
-from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
-from oldVersion.V111.text import symbols as V111symbols
-from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
-from oldVersion.V110.text import symbols as V110symbols
-from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
-from oldVersion.V101.text import symbols as V101symbols
 
 net_g = None
 
@@ -173,48 +165,11 @@ if __name__ == "__main__":
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
-    version = hps.version if hasattr(hps, "version") else "1.1.1-dev"
-    SynthesizerTrnMap = {
-        "1.1.1-fix": V111SynthesizerTrn,
-        "1.1.1": V111SynthesizerTrn,
-        "1.1": V110SynthesizerTrn,
-        "1.1.0": V110SynthesizerTrn,
-        "1.0.1": V101SynthesizerTrn,
-        "1.0": V101SynthesizerTrn,
-        "1.0.0": V101SynthesizerTrn,
-    }
-    symbolsMap = {
-        "1.1.1-fix": V111symbols,
-        "1.1.1": V111symbols,
-        "1.1": V110symbols,
-        "1.1.0": V110symbols,
-        "1.0.1": V101symbols,
-        "1.0": V101symbols,
-        "1.0.0": V101symbols,
-    }
-    if version != "1.1.1-dev":
-        net_g = SynthesizerTrnMap[version](
-            len(symbolsMap[version]),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        ).to(device)
-    else:
-        # 当前版本模型 net_g
-        net_g = SynthesizerTrn(
-            len(symbols),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        ).to(device)
-
-    _ = net_g.eval()
-    _ = utils.load_checkpoint(
-        config.webui_config.model, net_g, None, skip_optimizer=True
+    # 若config.json中未指定版本则默认为最新版本
+    version = hps.version if hasattr(hps, "version") else latest_version
+    net_g = get_net_g(
+        model_path=config.webui_config.model, version=version, device=device, hps=hps
     )
-
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
     languages = ["ZH", "JP", "EN", "mix"]
