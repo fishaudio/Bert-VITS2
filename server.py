@@ -5,15 +5,9 @@ from av import open as avopen
 from typing import Dict, List
 
 import utils
-from infer import infer
+from infer import infer, get_net_g, latest_version
 from scipy.io import wavfile
 
-from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
-from oldVersion.V111.text import symbols as V111symbols
-from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
-from oldVersion.V110.text import symbols as V110symbols
-from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
-from oldVersion.V101.text import symbols as V101symbols
 from config import config
 
 # Flask Init
@@ -47,27 +41,6 @@ def wav2(i, o, format):
     inp.close()
 
 
-# 版本兼容
-SynthesizerTrnMap = {
-    "1.1.1-fix": V111SynthesizerTrn,
-    "1.1.1": V111SynthesizerTrn,
-    "1.1": V110SynthesizerTrn,
-    "1.1.0": V110SynthesizerTrn,
-    "1.0.1": V101SynthesizerTrn,
-    "1.0": V101SynthesizerTrn,
-    "1.0.0": V101SynthesizerTrn,
-}
-symbolsMap = {
-    "1.1.1-fix": V111symbols,
-    "1.1.1": V111symbols,
-    "1.1": V110symbols,
-    "1.1.0": V110symbols,
-    "1.0.1": V101symbols,
-    "1.0": V101symbols,
-    "1.0.0": V101symbols,
-}
-
-
 net_g_List = []
 hps_List = []
 # 模型角色字典
@@ -82,19 +55,17 @@ for model in models:
     chrsMap.append(dict())
     for name, cid in hps_List[-1].data.spk2id.items():
         chrsMap[-1][cid] = name
-    version = hps_List[-1].version if hasattr(hps_List[-1], "version") else "1.1.1-dev"
-    device = model["device"]
-    net_g_List.append(
-        SynthesizerTrnMap[version](
-            len(symbolsMap[version]),
-            hps_List[-1].data.filter_length // 2 + 1,
-            hps_List[-1].train.segment_size // hps_List[-1].data.hop_length,
-            n_speakers=hps_List[-1].data.n_speakers,
-            **hps_List[-1].model
-        ).to(device)
+    version = (
+        hps_List[-1].version if hasattr(hps_List[-1], "version") else latest_version
     )
-    _ = net_g_List[-1].eval()
-    _ = utils.load_checkpoint(model["model"], net_g_List[-1], None, skip_optimizer=True)
+    net_g_List.append(
+        get_net_g(
+            model_path=model["model"],
+            version=version,
+            device=model["device"],
+            hps=hps_List[-1],
+        )
+    )
 
 
 @app.route("/")
