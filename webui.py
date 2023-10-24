@@ -22,6 +22,7 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
+import librosa
 
 net_g = None
 
@@ -259,7 +260,7 @@ if __name__ == "__main__":
                 #     value=os.path.abspath("./img/参数说明.png"),
                 # )
                 reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
-                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）")
+                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
         btn.click(
             tts_fn,
             inputs=[
@@ -296,6 +297,12 @@ if __name__ == "__main__":
                 reference_audio,
             ],
             outputs=[text_output, audio_output],
+        )
+
+        reference_audio.upload(
+            lambda x: librosa.load(x, 16000)[::-1],
+            inputs=[reference_audio],
+            outputs=[reference_audio],
         )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
