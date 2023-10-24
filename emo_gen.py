@@ -11,7 +11,7 @@ import argparse
 from config import config
 import utils
 import os
-from tqdm import tqdm
+import torch.multiprocessing as mp
 
 
 class RegressionHead(nn.Module):
@@ -69,6 +69,7 @@ def process_func(
     # run through processor to normalize signal
     # always returns a batch, so we just get the first entry
     # then we put it on the device
+    model = model.to(device)
     y = processor(x, sampling_rate=sampling_rate)
     y = y["input_values"][0]
     y = torch.from_numpy(y).unsqueeze(0).to(device)
@@ -86,15 +87,22 @@ def process_func(
 wavnames = []
 
 
-def extract_dir(line, model, processor):
-    wavname = line.split("|")[0]  # 获取每一行的第一部分
-    emo_path = wavname.replace(".wav", ".emo.npy")
-    if os.path.exists(emo_path):
-        return
-    wav, sr = librosa.load(wavname, 16000)
-    emb = process_func(np.expand_dims(wav, 0), sr, model, processor, embeddings=True)
-    wavnames.append(wavname)
-    np.save(emo_path, emb.squeeze(0))
+def extract_dir(data_queue, model, processor):
+    while True:
+        data = data_queue.get()
+        if data is None:
+            break
+        wavname = data.split("|")[0]  # 获取每一行的第一部分
+        emo_path = wavname.replace(".wav", ".emo.npy")
+        if os.path.exists(emo_path):
+            continue
+        wav, sr = librosa.load(wavname, 16000)
+        emb = process_func(
+            np.expand_dims(wav, 0), sr, model, processor, embeddings=True
+        )
+        wavnames.append(wavname)
+        np.save(emo_path, emb.squeeze(0))
+        print(f"{emo_path} 生成完毕！")
 
 
 if __name__ == "__main__":
@@ -112,8 +120,7 @@ if __name__ == "__main__":
     device = config.bert_gen_config.device
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
     processor = Wav2Vec2Processor.from_pretrained(model_name)
-    model = EmotionModel.from_pretrained(model_name).to(device)
-    batch_size = args.num_processes
+    model = EmotionModel.from_pretrained(model_name)
 
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
@@ -122,7 +129,20 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    for line in tqdm(lines):
-        extract_dir(line, model, processor)
+    processes = []
+    data_queue = mp.Queue()
+
+    # 将数据放入队列
+    for data in lines:
+        data_queue.put(data)
+
+    for _ in range(args.num_processes):  # 创建工作进程
+        p = mp.Process(target=extract_dir, args=(data_queue, model, processor))
+        p.start()
+        processes.append(p)
+
+    # 等待所有工作进程完成
+    for p in processes:
+        p.join()
 
     print(f"Emo vec 生成完毕!, 共有 {len(wavnames)} 个 emo.npy 生成!")
