@@ -75,6 +75,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     _ = utils.load_checkpoint(model_path, net_g, None, skip_optimizer=True)
     return net_g
 
+
 def get_text(text, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
@@ -117,7 +118,10 @@ def get_text(text, language_str, hps, device):
     language = torch.LongTensor(language)
     return bert, ja_bert, en_bert, phone, tone, language
 
+
 emotion = None
+
+
 def infer(
     text,
     sdp_ratio,
@@ -173,7 +177,9 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(text, language, hps, device)
+    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
+        text, language, hps, device
+    )
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -191,22 +197,27 @@ def infer(
         if emotion is None:
             emo_files = os.listdir(random_emotion_root)
             for emo_file in emo_files:
-                if emo_file.endswith('.emo.npy'):
+                if emo_file.endswith(".emo.npy"):
                     first_npy_file = os.path.join(random_emotion_root, emo_file)
                     break
-            emotion = first_npy_file.rstrip('.emo.npy')
+            emotion = first_npy_file.rstrip(".emo.npy")
         try:
             if os.path.exists(f"{emotion}.emo.npy"):
                 emo = torch.FloatTensor(np.load(f"{emotion}.emo.npy")).unsqueeze(0)
             elif emotion == "random_sample":
                 while True:
                     rand_wav = random.sample(os.listdir(random_emotion_root), 1)[0]
-                    if rand_wav.endswith('wav') and os.path.exists(f"{random_emotion_root}/{rand_wav}.emo.npy"):
+                    if rand_wav.endswith("wav") and os.path.exists(
+                        f"{random_emotion_root}/{rand_wav}.emo.npy"
+                    ):
                         break
-                emo = torch.FloatTensor(np.load(f"{random_emotion_root}/{rand_wav}.emo.npy")).unsqueeze(0)
+                emo = torch.FloatTensor(
+                    np.load(f"{random_emotion_root}/{rand_wav}.emo.npy")
+                ).unsqueeze(0)
                 print(f"{random_emotion_root}/{rand_wav}")
             elif emotion.endswith("wav"):
                 import emotional.emotional_vits.emotion_extract as emo_ext
+
                 emo = torch.FloatTensor(emo_ext.extract_wav(emotion))
         except Exception as e:
             print(f"emotion参数不正确, \n{e}")
