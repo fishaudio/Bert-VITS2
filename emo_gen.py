@@ -86,12 +86,14 @@ def process_func(
     return y
 
 
+model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+processor = Wav2Vec2Processor.from_pretrained(model_name)
+model = EmotionModel.from_pretrained(model_name)
+
+
 def get_emo(path):
     wav, sr = librosa.load(path, 16000)
     device = config.bert_gen_config.device
-    model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-    processor = Wav2Vec2Processor.from_pretrained(model_name)
-    model = EmotionModel.from_pretrained(model_name)
     return process_func(
         np.expand_dims(wav, 0).astype(np.float),
         sr,
