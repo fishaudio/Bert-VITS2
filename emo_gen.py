@@ -103,6 +103,7 @@ def extract_dir(data_queue, model, processor):
         wavnames.append(wavname)
         np.save(emo_path, emb.squeeze(0))
         print(f"{emo_path} 生成完毕！")
+        del data, wav, sr, emb
 
 
 if __name__ == "__main__":
