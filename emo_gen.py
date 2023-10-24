@@ -91,7 +91,7 @@ wavnames = []
 def extract_dir():
     with open("filelists/genshin.list.cleaned", "r") as file:
         for idx, line in enumerate(file):
-            wavname = line.split()[0]  # 获取每一行的第一部分
+            wavname = line.split("|")[0]  # 获取每一行的第一部分
             wav, sr = librosa.load(wavname, 16000)
             emb = process_func(np.expand_dims(wav, 0), sr, embeddings=True)
             embs.append(emb)
