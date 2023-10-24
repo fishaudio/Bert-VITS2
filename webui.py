@@ -260,10 +260,7 @@ if __name__ == "__main__":
                 #     value=os.path.abspath("./img/参数说明.png"),
                 # )
                 reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
-                reference_audio_in = gr.File(
-                    label="情感参考音频", file_count="single", file_types=["wav"]
-                )
-                reference_audio_out = gr.Audio(label="情感参考音频（预览）")
+                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）")
         btn.click(
             tts_fn,
             inputs=[
@@ -274,7 +271,7 @@ if __name__ == "__main__":
                 noise_scale_w,
                 length_scale,
                 language,
-                reference_audio_out,
+                reference_audio,
             ],
             outputs=[text_output, audio_output],
         )
@@ -297,15 +294,9 @@ if __name__ == "__main__":
                 opt_cut_by_sent,
                 interval_between_para,
                 interval_between_sent,
-                reference_audio_out,
+                reference_audio,
             ],
             outputs=[text_output, audio_output],
-        )
-
-        reference_audio_in.upload(
-            lambda x: librosa.load(x.name, 16000)[::-1],
-            inputs=[reference_audio_in],
-            outputs=[reference_audio_out],
         )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
