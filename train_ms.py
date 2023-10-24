@@ -10,6 +10,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import logging
+from config import config
+import argparse
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
@@ -44,13 +46,55 @@ global_step = 0
 
 
 def run():
+    # 环境变量解析
+    envs = config.train_ms_config.env
+    for env_name, env_value in envs.items():
+        if env_name not in os.environ.keys():
+            os.environ[env_name] = str(env_value)
+
+    # 多卡训练设置
     dist.init_process_group(
         backend="gloo",
         init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     n_gpus = dist.get_world_size()
-    hps = utils.get_hparams()
+
+    # 命令行/config.yml配置解析
+    # hps = utils.get_hparams()
+    parser = argparse.ArgumentParser()
+    # 非必要不建议使用命令行配置，请使用config.yml文件
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default=config.train_ms_config.config_path,
+        help="JSON file for configuration",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        required=True,
+        help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
+        default=config.dataset_path,
+    )
+    args = parser.parse_args()
+    model_dir = os.path.join(args.model, config.train_ms_config.model)
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    hps = utils.get_hparams_from_file(args.config)
+    hps.model_dir = model_dir
+    # 比较路径是否相同
+    if os.path.realpath(args.config) != os.path.realpath(
+        config.train_ms_config.config_path
+    ):
+        with open(args.config, "r", encoding="utf-8") as f:
+            data = f.read()
+        with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
+            f.write(data)
+
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(rank)
     global global_step
