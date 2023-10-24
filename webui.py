@@ -22,7 +22,6 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
-import librosa
 
 net_g = None
 
