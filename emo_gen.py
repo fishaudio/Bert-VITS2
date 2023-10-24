@@ -128,7 +128,6 @@ if __name__ == "__main__":
 
     processes = []
     data_queue = mp.Queue()
-    processed_queue = mp.Queue()
 
     # 将数据按 batch 放入队列
     queues = [mp.Queue()] * args.num_processes
