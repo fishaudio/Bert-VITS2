@@ -160,4 +160,4 @@ if __name__ == "__main__":
     for p in processes:
         p.join()
 
-    print(f"Emo vec 生成完毕!")
+    print("Emo vec 生成完毕!")
