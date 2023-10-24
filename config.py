@@ -100,12 +100,12 @@ class Train_ms_config:
         model: str,
     ):
         self.env = env  # 需要加载的环境变量
-        self.model = model  # 训练模型存储目录
+        self.model = model  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
         self.config_path = config_path  # 配置文件路径
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
-        data["model"] = os.path.join(dataset_path, data["model"])
+        # data["model"] = os.path.join(dataset_path, data["model"])
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
 
         return cls(**data)
@@ -170,6 +170,7 @@ class Config:
         with open(file=config_path, mode="r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
             dataset_path: str = yaml_config["dataset_path"]
+            self.dataset_path: str = dataset_path
             self.resample_config: Resample_config = Resample_config.from_dict(
                 dataset_path, yaml_config["resample"]
             )
