@@ -92,7 +92,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
-        emo = torch.FloatTensor(np.load(audiopath + ".emo.npy"))
+        emo = torch.FloatTensor(np.load(audiopath.replace(".wav", ".emo.npy")))
         return (phones, spec, wav, sid, tone, language, bert, ja_bert, en_bert, emo)
 
     def get_audio(self, filename):
