@@ -8,6 +8,7 @@ import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import cleaned_text_to_sequence
+import numpy as np
 
 """Multi speaker version"""
 
@@ -160,7 +161,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             bert = torch.zeros(1024, len(phone))
             ja_bert = bert
             en_bert = torch.zeros(768, len(phone))
-        elif anguage_str == "EN":
+        elif language_str == "EN":
             bert = torch.zeros(1024, len(phone))
             ja_bert = torch.zeros(1024, len(phone))
             en_bert = bert
