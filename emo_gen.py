@@ -77,6 +77,7 @@ def process_func(
     # run through model
     with torch.no_grad():
         y = model(y)[0 if embeddings else 1]
+    del model
 
     # convert to numpy
     y = y.detach().cpu().numpy()
@@ -84,14 +85,9 @@ def process_func(
     return y
 
 
-wavnames = []
-
-
 def extract_dir(data_queue, model, processor):
-    while True:
+    while not data_queue.empty():
         data = data_queue.get()
-        if data is None:
-            break
         wavname = data.split("|")[0]  # 获取每一行的第一部分
         emo_path = wavname.replace(".wav", ".emo.npy")
         if os.path.exists(emo_path):
@@ -100,9 +96,10 @@ def extract_dir(data_queue, model, processor):
         emb = process_func(
             np.expand_dims(wav, 0), sr, model, processor, embeddings=True
         )
-        wavnames.append(wavname)
         np.save(emo_path, emb.squeeze(0))
         print(f"{emo_path} 生成完毕！")
+        del data, wav, sr, emb
+    return
 
 
 if __name__ == "__main__":
@@ -131,13 +128,15 @@ if __name__ == "__main__":
 
     processes = []
     data_queue = mp.Queue()
+    processed_queue = mp.Queue()
 
-    # 将数据放入队列
-    for data in lines:
-        data_queue.put(data)
+    # 将数据按 batch 放入队列
+    queues = [mp.Queue()] * args.num_processes
+    for i, line in enumerate(lines):
+        queues[i % args.num_processes].put(line)
 
-    for _ in range(args.num_processes):  # 创建工作进程
-        p = mp.Process(target=extract_dir, args=(data_queue, model, processor))
+    for i in range(args.num_processes):  # 创建工作进程
+        p = mp.Process(target=extract_dir, args=(queues[i], model, processor))
         p.start()
         processes.append(p)
 
@@ -145,4 +144,4 @@ if __name__ == "__main__":
     for p in processes:
         p.join()
 
-    print(f"Emo vec 生成完毕!, 共有 {len(wavnames)} 个 emo.npy 生成!")
+    print("Emo vec 生成完毕!")
