@@ -241,7 +241,7 @@ if __name__ == "__main__":
         result = loaded_models.del_model(model_id)
         if result is None:
             return {"status": 14, "detail": f"模型{model_id}不存在，删除失败"}
-        return {"status": 0, "detail": f"删除成功"}
+        return {"status": 0, "detail": "删除成功"}
 
     @app.get("/models/add")
     def add_model(
@@ -262,7 +262,7 @@ if __name__ == "__main__":
             else:
                 return {
                     "status": 15,
-                    "detail": f"查询未传入配置文件路径，同时默认路径./与../中不存在配置文件config.json。",
+                    "detail": "查询未传入配置文件路径，同时默认路径./与../中不存在配置文件config.json。",
                 }
         try:
             model_id = loaded_models.init_model(
@@ -275,11 +275,11 @@ if __name__ == "__main__":
             logging.exception("模型加载出错")
             return {
                 "status": 16,
-                "detail": f"模型加载出错，详细查看日志",
+                "detail": "模型加载出错，详细查看日志",
             }
         return {
             "status": 0,
-            "detail": f"模型添加成功",
+            "detail": "模型添加成功",
             "Data": {
                 "model_id": model_id,
                 "model_info": loaded_models.models[model_id].to_dict(),
