@@ -167,3 +167,4 @@ filelists/*
 !/filelists/esd.list
 data/*
 /config.yml
+/Web/
