@@ -92,11 +92,11 @@ def get_text(text, reference_audio, language_str, hps, device):
     if language_str == "ZH":
         bert = bert
         ja_bert = torch.zeros(1024, len(phone))
-        en_bert = torch.zeros(768, len(phone))
+        en_bert = torch.zeros(1024, len(phone))
     elif language_str == "JP":
         bert = torch.zeros(1024, len(phone))
         ja_bert = bert
-        en_bert = torch.zeros(768, len(phone))
+        en_bert = torch.zeros(1024, len(phone))
     elif language_str == "EN":
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(1024, len(phone))

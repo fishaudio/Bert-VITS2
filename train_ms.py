@@ -76,7 +76,6 @@ def run():
         "-m",
         "--model",
         type=str,
-        required=True,
         help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
         default=config.dataset_path,
     )
