@@ -7,6 +7,10 @@
     1.1.1-fix： 1.1.1版本训练的模型，但是在推理时使用dev的日语修复
     1.1.1-dev： 当前版本
 """
+import os
+import random
+
+import numpy as np
 import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
@@ -24,10 +28,10 @@ from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
 from oldVersion import V111, V110, V101
+from config import config
 
 # 当前版本信息
 latest_version = "1.1.1-dev"
-
 # 版本兼容
 SynthesizerTrnMap = {
     "1.1.1-fix": V111SynthesizerTrn,
@@ -103,7 +107,6 @@ def get_text(text, reference_audio, language_str, hps, device):
         en_bert = bert
 
     emo = torch.from_numpy(get_emo(reference_audio))
-
     assert bert.shape[-1] == len(
         phone
     ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
@@ -112,6 +115,9 @@ def get_text(text, reference_audio, language_str, hps, device):
     tone = torch.LongTensor(tone)
     language = torch.LongTensor(language)
     return bert, ja_bert, en_bert, emo, phone, tone, language
+  
+emotion = None
+
 
 
 def infer(
@@ -172,7 +178,6 @@ def infer(
     # 在此处实现当前版本的推理
     bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
         text, reference_audio, language, hps, device
-    )
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -184,6 +189,38 @@ def infer(
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
+
+        random_emotion_root = config.resample_config.out_dir
+
+        global emotion
+        if emotion is None:
+            emo_files = os.listdir(random_emotion_root)
+            for emo_file in emo_files:
+                if emo_file.endswith(".emo.npy"):
+                    first_npy_file = os.path.join(random_emotion_root, emo_file)
+                    break
+            emotion = first_npy_file.rstrip(".emo.npy")
+        try:
+            if os.path.exists(f"{emotion}.emo.npy"):
+                emo = torch.FloatTensor(np.load(f"{emotion}.emo.npy")).unsqueeze(0)
+            elif emotion == "random_sample":
+                while True:
+                    rand_wav = random.sample(os.listdir(random_emotion_root), 1)[0]
+                    if rand_wav.endswith("wav") and os.path.exists(
+                        f"{random_emotion_root}/{rand_wav}.emo.npy"
+                    ):
+                        break
+                emo = torch.FloatTensor(
+                    np.load(f"{random_emotion_root}/{rand_wav}.emo.npy")
+                ).unsqueeze(0)
+                print(f"{random_emotion_root}/{rand_wav}")
+            elif emotion.endswith("wav"):
+                import emotional.emotional_vits.emotion_extract as emo_ext
+
+                emo = torch.FloatTensor(emo_ext.extract_wav(emotion))
+        except Exception as e:
+            print(f"emotion参数不正确, \n{e}")
+
         audio = (
             net_g.infer(
                 x_tst,
