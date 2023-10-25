@@ -25,5 +25,5 @@ PyYAML
 requests
 openjtalk
 jaconv
-import psutil
-import GPUtil
+psutil
+GPUtil
