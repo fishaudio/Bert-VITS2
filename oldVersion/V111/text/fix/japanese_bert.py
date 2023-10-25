@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 import sys
-from text.japanese import text2sep_kata
+from .japanese import text2sep_kata
 from config import config
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
