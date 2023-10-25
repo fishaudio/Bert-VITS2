@@ -63,6 +63,7 @@ def process_func(
     sampling_rate: int,
     model: EmotionModel,
     processor: Wav2Vec2Processor,
+    device: str,
     embeddings: bool = False,
 ) -> np.ndarray:
     r"""Predict emotions or extract embeddings from raw audio signal."""
@@ -85,7 +86,25 @@ def process_func(
     return y
 
 
-def extract_dir(data_queue, model, processor):
+model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+processor = Wav2Vec2Processor.from_pretrained(model_name)
+model = EmotionModel.from_pretrained(model_name)
+
+
+def get_emo(path):
+    wav, sr = librosa.load(path, 16000)
+    device = config.bert_gen_config.device
+    return process_func(
+        np.expand_dims(wav, 0).astype(np.float),
+        sr,
+        model,
+        processor,
+        device,
+        embeddings=True,
+    ).squeeze(0)
+
+
+def extract_dir(data_queue, model, processor, device):
     while not data_queue.empty():
         data = data_queue.get()
         wavname = data.split("|")[0]  # 获取每一行的第一部分
@@ -94,7 +113,7 @@ def extract_dir(data_queue, model, processor):
             continue
         wav, sr = librosa.load(wavname, 16000)
         emb = process_func(
-            np.expand_dims(wav, 0), sr, model, processor, embeddings=True
+            np.expand_dims(wav, 0), sr, model, processor, device, embeddings=True
         )
         np.save(emo_path, emb.squeeze(0))
         print(f"{emo_path} 生成完毕！")
@@ -135,7 +154,7 @@ if __name__ == "__main__":
         queues[i % args.num_processes].put(line)
 
     for i in range(args.num_processes):  # 创建工作进程
-        p = mp.Process(target=extract_dir, args=(queues[i], model, processor))
+        p = mp.Process(target=extract_dir, args=(queues[i], model, processor, device))
         p.start()
         processes.append(p)
 

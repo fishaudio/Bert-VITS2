@@ -19,6 +19,7 @@ import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
+from emo_gen import get_emo
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
 from oldVersion.V111.text import symbols as V111symbols
 from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
@@ -76,7 +77,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device):
+def get_text(text, reference_audio, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -97,18 +98,15 @@ def get_text(text, language_str, hps, device):
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = torch.zeros(768, len(phone))
     elif language_str == "JP":
-        ja_bert = bert
         bert = torch.zeros(1024, len(phone))
+        ja_bert = bert
         en_bert = torch.zeros(768, len(phone))
     elif language_str == "EN":
+        bert = torch.zeros(1024, len(phone))
+        ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(1024, len(phone))
-    else:
-        en_bert = torch.zeros(768, len(phone))
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(1024, len(phone))
 
+    emo = torch.from_numpy(get_emo(reference_audio))
     assert bert.shape[-1] == len(
         phone
     ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
@@ -116,14 +114,15 @@ def get_text(text, language_str, hps, device):
     phone = torch.LongTensor(phone)
     tone = torch.LongTensor(tone)
     language = torch.LongTensor(language)
-    return bert, ja_bert, en_bert, phone, tone, language
-
-
+    return bert, ja_bert, en_bert, emo, phone, tone, language
+  
 emotion = None
+
 
 
 def infer(
     text,
+    reference_audio,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -177,9 +176,8 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
-        text, language, hps, device
-    )
+    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
+        text, reference_audio, language, hps, device
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -187,6 +185,7 @@ def infer(
         bert = bert.to(device).unsqueeze(0)
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)

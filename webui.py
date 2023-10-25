@@ -22,6 +22,7 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
+import librosa
 
 net_g = None
 
@@ -31,7 +32,14 @@ if device == "mps":
 
 
 def generate_audio(
-    slices, sdp_ratio, noise_scale, noise_scale_w, length_scale, speaker, language
+    slices,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    speaker,
+    language,
+    reference_audio,
 ):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2)
@@ -39,6 +47,7 @@ def generate_audio(
         for piece in slices:
             audio = infer(
                 piece,
+                reference_audio,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -65,6 +74,7 @@ def tts_split(
     cut_by_sent,
     interval_between_para,
     interval_between_sent,
+    reference_audio,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -95,6 +105,7 @@ def tts_split(
             for s in sent_list:
                 audio = infer(
                     s,
+                    reference_audio,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -118,7 +129,14 @@ def tts_split(
 
 
 def tts_fn(
-    text: str, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
+    text: str,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+    reference_audio,
 ):
     audio_list = []
     if language == "mix":
@@ -141,6 +159,7 @@ def tts_fn(
                         length_scale,
                         _speaker + "_" + lang.lower(),
                         lang,
+                        reference_audio,
                     )
                 )
     else:
@@ -153,6 +172,7 @@ def tts_fn(
                 length_scale,
                 speaker,
                 language,
+                reference_audio,
             )
         )
 
@@ -197,13 +217,13 @@ if __name__ == "__main__":
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.2, step=0.1, label="感情"
+                    minimum=0.1, maximum=2, value=0.3, step=0.1, label="感情"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.9, step=0.1, label="音素长度"
+                    minimum=0.1, maximum=2, value=0.5, step=0.1, label="音素长度"
                 )
                 length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="语速"
+                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="语速"
                 )
                 language = gr.Dropdown(
                     choices=languages, value=languages[0], label="选择语言(新增mix混合选项)"
@@ -232,13 +252,15 @@ if __name__ == "__main__":
                         slicer = gr.Button("切分生成", variant="primary")
                 text_output = gr.Textbox(label="状态信息")
                 audio_output = gr.Audio(label="输出音频")
-                explain_image = gr.Image(
-                    label="参数解释信息",
-                    show_label=True,
-                    show_share_button=False,
-                    show_download_button=False,
-                    value=os.path.abspath("./img/参数说明.png"),
-                )
+                # explain_image = gr.Image(
+                #     label="参数解释信息",
+                #     show_label=True,
+                #     show_share_button=False,
+                #     show_download_button=False,
+                #     value=os.path.abspath("./img/参数说明.png"),
+                # )
+                reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
+                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
         btn.click(
             tts_fn,
             inputs=[
@@ -249,6 +271,7 @@ if __name__ == "__main__":
                 noise_scale_w,
                 length_scale,
                 language,
+                reference_audio,
             ],
             outputs=[text_output, audio_output],
         )
@@ -271,8 +294,15 @@ if __name__ == "__main__":
                 opt_cut_by_sent,
                 interval_between_para,
                 interval_between_sent,
+                reference_audio,
             ],
             outputs=[text_output, audio_output],
+        )
+
+        reference_audio.upload(
+            lambda x: librosa.load(x, 16000)[::-1],
+            inputs=[reference_audio],
+            outputs=[reference_audio],
         )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
