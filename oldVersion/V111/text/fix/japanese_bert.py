@@ -4,7 +4,7 @@ import sys
 from .japanese import text2sep_kata
 from config import config
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-large-japanese-v2")
+tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
 models = dict()
 
