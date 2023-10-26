@@ -54,7 +54,7 @@ if __name__ == "__main__":
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
         processes = args.processes
-    print('processes: ', processes)
+    print("processes: ", processes)
     pool = Pool(processes=processes)
 
     spk_dir = args.in_dir
@@ -67,8 +67,10 @@ if __name__ == "__main__":
                 twople = (os.path.abspath(dirpath), filename, args)
                 print(twople)
                 tasks.append(twople)
-                
-    for _ in tqdm(pool.imap_unordered(process, tasks),):
+
+    for _ in tqdm(
+        pool.imap_unordered(process, tasks),
+    ):
         pass
 
     pool.close()
