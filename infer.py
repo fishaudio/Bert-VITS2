@@ -166,7 +166,7 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
+    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
     )
     with torch.no_grad():
