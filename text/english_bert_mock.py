@@ -1,9 +1,9 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers import DebertaV2Model, DebertaV2Tokenizer
 from config import config
 import sys
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-historic-english-cased")
+tokenizer = DebertaV2Tokenizer.from_pretrained("./bert/deberta-v3-large")
 
 models = dict()
 
@@ -18,9 +18,9 @@ def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/bert-base-historic-english-cased"
-        ).to(device)
+        models[device] = DebertaV2Model.from_pretrained("./bert/deberta-v3-large").to(
+            device
+        )
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
