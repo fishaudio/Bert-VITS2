@@ -174,4 +174,3 @@ data/*
 /bert/chinese-roberta-wwm-ext-large/pytorch_model.bin
 asr_transcript.py
 extract_list.py
-

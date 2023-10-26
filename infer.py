@@ -101,7 +101,7 @@ def get_text(text, reference_audio, language_str, hps, device):
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert
-    
+
     emo = torch.from_numpy(get_emo(reference_audio))
 
     assert bert.shape[-1] == len(
