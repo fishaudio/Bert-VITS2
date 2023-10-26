@@ -73,7 +73,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, reference_audio, language_str, hps, device):
+def get_text(text, reference_audio, emotion, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -102,7 +102,11 @@ def get_text(text, reference_audio, language_str, hps, device):
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert
 
-    emo = torch.from_numpy(get_emo(reference_audio))
+    emo = (
+        torch.from_numpy(get_emo(reference_audio))
+        if reference_audio
+        else torch.Tensor([emotion])
+    )
 
     assert bert.shape[-1] == len(
         phone
@@ -117,6 +121,7 @@ def get_text(text, reference_audio, language_str, hps, device):
 def infer(
     text,
     reference_audio,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -171,7 +176,7 @@ def infer(
             )
     # 在此处实现当前版本的推理
     bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
-        text, reference_audio, language, hps, device
+        text, reference_audio, emotion, language, hps, device
     )
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)

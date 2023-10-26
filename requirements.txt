@@ -27,3 +27,4 @@ openjtalk
 jaconv
 psutil
 GPUtil
+vector_quantize_pytorch
