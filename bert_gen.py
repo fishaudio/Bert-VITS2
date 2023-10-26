@@ -43,6 +43,7 @@ def process_line(line):
         assert bert.shape[-1] == len(phone)
         torch.save(bert, bert_path)
 
+
 preprocess_text_config = config.preprocess_text_config
 
 if __name__ == "__main__":

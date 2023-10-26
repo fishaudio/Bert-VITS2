@@ -11,9 +11,10 @@ from config import config
 
 def process(item):
     spkdir, wav_name, args = item
-    wav_path = os.path.join(args.in_dir, wav_name)
+    wav_path = os.path.join(spkdir, wav_name)
+    os.makedirs(args.out_dir, exist_ok=True)
     if os.path.exists(wav_path) and ".wav" in wav_path:
-        os.makedirs(args.out_dir, exist_ok=True)
+        # print(wav_path)
         wav, sr = librosa.load(wav_path, sr=args.sr)
         soundfile.write(os.path.join(args.out_dir, wav_name), wav, sr)
 
@@ -38,27 +39,39 @@ if __name__ == "__main__":
         default=config.resample_config.out_dir,
         help="path to target dir",
     )
+    parser.add_argument(
+        "--processes",
+        type=int,
+        default=0,
+        help="cpu_processes",
+    )
     args, _ = parser.parse_known_args()
     print(config.resample_config.sampling_rate)
     print(config.resample_config.in_dir)
     print(config.resample_config.out_dir)
-    # processes = 8
-    processes = cpu_count() - 2 if cpu_count() > 4 else 1
+    # autodl 无卡模式会识别出46个cpu
+    if args.processes == 0:
+        processes = cpu_count() - 2 if cpu_count() > 4 else 1
+    else:
+        processes = args.processes
+    print('processes: ', processes)
     pool = Pool(processes=processes)
-    
+
     spk_dir = args.in_dir
-    if os.path.isdir(spk_dir):
-        print(spk_dir)
-        for _ in tqdm(
-            pool.imap_unordered(
-                process,
-                [
-                    (spk_dir, i, args)
-                    for i in os.listdir(spk_dir)
-                    if i.endswith("wav")
-                ],
-            )
-        ):
-            pass
+
+    tasks = []
+
+    for dirpath, _, filenames in os.walk(spk_dir):
+        for filename in filenames:
+            if filename.endswith(".wav"):
+                twople = (os.path.abspath(dirpath), filename, args)
+                print(twople)
+                tasks.append(twople)
+                
+    for _ in tqdm(pool.imap_unordered(process, tasks),):
+        pass
+
+    pool.close()
+    pool.join()
 
     print("音频重采样完毕!")
