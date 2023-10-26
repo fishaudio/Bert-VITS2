@@ -324,7 +324,6 @@ def train_and_evaluate(
         bert,
         ja_bert,
         en_bert,
-        emo,
     ) in tqdm(enumerate(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -347,7 +346,6 @@ def train_and_evaluate(
         bert = bert.cuda(rank, non_blocking=True)
         ja_bert = ja_bert.cuda(rank, non_blocking=True)
         en_bert = en_bert.cuda(rank, non_blocking=True)
-        emo = emo.cuda(rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             (
@@ -359,7 +357,6 @@ def train_and_evaluate(
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_),
-                loss_commit,
             ) = net_g(
                 x,
                 x_lengths,
@@ -371,7 +368,6 @@ def train_and_evaluate(
                 bert,
                 ja_bert,
                 en_bert,
-                emo,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -442,9 +438,7 @@ def train_and_evaluate(
 
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = (
-                    loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_commit
-                )
+                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
                     loss_gen_all += loss_dur_gen
@@ -569,7 +563,6 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert,
             ja_bert,
             en_bert,
-            emo,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -580,7 +573,6 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
-            emo = emo.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
@@ -591,7 +583,6 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     bert,
                     ja_bert,
                     en_bert,
-                    emo,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
