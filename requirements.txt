@@ -5,6 +5,8 @@ numba
 phonemizer
 scipy
 tensorboard
+torch
+torchvision
 Unidecode
 amfm_decompy
 jieba
@@ -21,8 +23,7 @@ fugashi
 num2words
 PyYAML
 requests
-pyopenjtalk
+openjtalk
 jaconv
 psutil
 GPUtil
-g2p_en

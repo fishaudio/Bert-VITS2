@@ -207,7 +207,7 @@ if __name__ == "__main__":
         with torch.no_grad():
             audio = infer(
                 text=text,
-                reference_audio="/root/autodl-tmp/Bert-VITS2/Data/宵宫/audios/wavs/00001.wav",
+                reference_audio=None,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise,
                 noise_scale_w=noisew,
