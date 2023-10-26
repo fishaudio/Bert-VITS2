@@ -44,6 +44,8 @@ def process_line(line):
         torch.save(bert, bert_path)
 
 
+preprocess_text_config = config.preprocess_text_config
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
