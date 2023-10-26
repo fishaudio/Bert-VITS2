@@ -40,6 +40,7 @@ def generate_audio(
     speaker,
     language,
     reference_audio,
+    emotion,
 ):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2)
@@ -48,6 +49,7 @@ def generate_audio(
             audio = infer(
                 piece,
                 reference_audio,
+                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -75,6 +77,7 @@ def tts_split(
     interval_between_para,
     interval_between_sent,
     reference_audio,
+    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -86,6 +89,8 @@ def tts_split(
         for p in para_list:
             audio = infer(
                 p,
+                reference_audio,
+                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -106,6 +111,7 @@ def tts_split(
                 audio = infer(
                     s,
                     reference_audio,
+                    emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -137,6 +143,7 @@ def tts_fn(
     length_scale,
     language,
     reference_audio,
+    emotion,
 ):
     audio_list = []
     if language == "mix":
@@ -160,6 +167,7 @@ def tts_fn(
                         _speaker + "_" + lang.lower(),
                         lang,
                         reference_audio,
+                        emotion,
                     )
                 )
     else:
@@ -173,6 +181,7 @@ def tts_fn(
                 speaker,
                 language,
                 reference_audio,
+                emotion,
             )
         )
 
@@ -213,14 +222,17 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="选择说话人"
                 )
+                emotion = gr.Slider(
+                    minimum=0, maximum=5, value=0, step=1, label="Emotion"
+                )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.3, step=0.1, label="感情"
+                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="感情"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.5, step=0.1, label="音素长度"
+                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="音素长度"
                 )
                 length_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=1.0, step=0.1, label="语速"
@@ -272,6 +284,7 @@ if __name__ == "__main__":
                 length_scale,
                 language,
                 reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
@@ -295,6 +308,7 @@ if __name__ == "__main__":
                 interval_between_para,
                 interval_between_sent,
                 reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
