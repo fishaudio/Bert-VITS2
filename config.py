@@ -6,6 +6,7 @@ import yaml
 from typing import Dict, List
 import os
 import shutil
+import sys
 
 
 class Resample_config:
@@ -166,7 +167,11 @@ class Config:
     def __init__(self, config_path: str):
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
             shutil.copy(src="default_config.yml", dst=config_path)
-            print(f"已根据默认配置文件default_config.yml生成配置文件{config_path}")
+            print(
+                f"已根据默认配置文件default_config.yml生成配置文件{config_path}。请按该配置文件的说明进行配置后重新运行。"
+            )
+            print(f"如无特殊需求，请勿修改default_config.yml或备份该文件。")
+            sys.exit(0)
         with open(file=config_path, mode="r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
             dataset_path: str = yaml_config["dataset_path"]
