@@ -172,6 +172,7 @@ data/*
 /bert/*/*.bin
 /bert/*/*.h5
 /bert/*/*.model
+/bert/*/*.safetensors
 asr_transcript.py
 extract_list.py
 /Data
