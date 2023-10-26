@@ -348,8 +348,6 @@ class TextEncoder(nn.Module):
             codebook_size=5,
             decay=0.8,
             commitment_weight=1.0,
-            learnable_codebook=True,
-            ema_update=False,
         )
         self.emo_proj = nn.Linear(1024, hidden_channels)
 
