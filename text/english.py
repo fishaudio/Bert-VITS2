@@ -337,6 +337,10 @@ def g2p(text):
 
     phones = [post_replace_ph(i) for i in phones]
 
+    phones = ["_"] + phones + ["_"]
+    tones = [0] + tones + [0]
+    word2ph = [1] + word2ph + [1]
+
     return phones, tones, word2ph
 
 
