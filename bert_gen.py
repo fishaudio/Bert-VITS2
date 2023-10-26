@@ -44,6 +44,8 @@ def process_line(line):
         torch.save(bert, bert_path)
 
 
+preprocess_text_config = config.preprocess_text_config
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -56,10 +58,10 @@ if __name__ == "__main__":
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
     lines = []
-    with open(hps.data.training_files, encoding="utf-8") as f:
+    with open(preprocess_text_config.train_path, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    with open(hps.data.validation_files, encoding="utf-8") as f:
+    with open(preprocess_text_config.val_path, encoding="utf-8") as f:
         lines.extend(f.readlines())
     if len(lines) != 0:
         num_processes = args.num_processes
