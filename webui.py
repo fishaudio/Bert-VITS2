@@ -39,8 +39,6 @@ def generate_audio(
     length_scale,
     speaker,
     language,
-    reference_audio,
-    emotion,
 ):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2)
@@ -48,8 +46,6 @@ def generate_audio(
         for piece in slices:
             audio = infer(
                 piece,
-                reference_audio,
-                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -76,8 +72,6 @@ def tts_split(
     cut_by_sent,
     interval_between_para,
     interval_between_sent,
-    reference_audio,
-    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -89,8 +83,6 @@ def tts_split(
         for p in para_list:
             audio = infer(
                 p,
-                reference_audio,
-                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -110,8 +102,6 @@ def tts_split(
             for s in sent_list:
                 audio = infer(
                     s,
-                    reference_audio,
-                    emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -142,8 +132,6 @@ def tts_fn(
     noise_scale_w,
     length_scale,
     language,
-    reference_audio,
-    emotion,
 ):
     audio_list = []
     if language == "mix":
@@ -166,8 +154,6 @@ def tts_fn(
                         length_scale,
                         _speaker + "_" + lang.lower(),
                         lang,
-                        reference_audio,
-                        emotion,
                     )
                 )
     else:
@@ -180,8 +166,6 @@ def tts_fn(
                 length_scale,
                 speaker,
                 language,
-                reference_audio,
-                emotion,
             )
         )
 
@@ -221,9 +205,6 @@ if __name__ == "__main__":
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="选择说话人"
-                )
-                emotion = gr.Slider(
-                    minimum=0, maximum=4, value=0, step=1, label="Emotion"
                 )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
@@ -271,8 +252,6 @@ if __name__ == "__main__":
                 #     show_download_button=False,
                 #     value=os.path.abspath("./img/参数说明.png"),
                 # )
-                reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
-                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
         btn.click(
             tts_fn,
             inputs=[
@@ -283,8 +262,6 @@ if __name__ == "__main__":
                 noise_scale_w,
                 length_scale,
                 language,
-                reference_audio,
-                emotion,
             ],
             outputs=[text_output, audio_output],
         )
@@ -307,17 +284,10 @@ if __name__ == "__main__":
                 opt_cut_by_sent,
                 interval_between_para,
                 interval_between_sent,
-                reference_audio,
-                emotion,
             ],
             outputs=[text_output, audio_output],
         )
 
-        reference_audio.upload(
-            lambda x: librosa.load(x, 16000)[::-1],
-            inputs=[reference_audio],
-            outputs=[reference_audio],
-        )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
     app.launch(share=config.webui_config.share, server_port=config.webui_config.port)
