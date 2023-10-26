@@ -336,7 +336,7 @@ def handle_long(sep_phonemes):
     return sep_phonemes
 
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
+tokenizer = AutoTokenizer.from_pretrained("./bert/bert-large-japanese-v2")
 
 
 def align_tones(phones, tones):
