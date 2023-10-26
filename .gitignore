@@ -168,3 +168,10 @@ filelists/*
 data/*
 /config.yml
 /Web/
+/emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim/pytorch_model.bin
+/bert/bert-base-historic-english-cased/pytorch_model.bin
+/bert/bert-large-japanese-v2/pytorch_model.bin
+/bert/chinese-roberta-wwm-ext-large/pytorch_model.bin
+asr_transcript.py
+extract_list.py
+
