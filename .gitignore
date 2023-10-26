@@ -174,9 +174,6 @@ data/*
 /bert/chinese-roberta-wwm-ext-large/pytorch_model.bin
 asr_transcript.py
 extract_list.py
-<<<<<<< HEAD
 /bert/bert-base-japanese-v3/pytorch_model.bin
-=======
->>>>>>> a1805c43dd349126beecab04c7adc9cbae358405
 /Data
 Data/*
