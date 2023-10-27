@@ -211,8 +211,6 @@ if __name__ == "__main__":
         with torch.no_grad():
             audio = infer(
                 text=text,
-                reference_audio=None,  # 在稳定版本发行前暂不支持
-                emotion=None,  # 在稳定版本发行前暂不支持
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise,
                 noise_scale_w=noisew,
