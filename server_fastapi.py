@@ -16,6 +16,7 @@ import psutil
 import GPUtil
 from typing import Dict, Optional, List
 import os
+from loguru import logger
 
 from infer import infer, get_net_g, latest_version
 import tools.translate as trans
@@ -114,6 +115,7 @@ class Models:
         else:
             self.paths[model_path] += 1
         # 修改计数
+        logger.success(f"添加模型{model_path}，使用配置文件{os.path.realpath(config_path)}")
         self.num += 1
         return self.num - 1
 
@@ -135,6 +137,7 @@ class Models:
             # 引用数为零时予以清空
             self.paths.pop(model_path)
         # 删除模型
+        logger.success(f"卸载模型{model_path}, id = {index}")
         self.models.pop(index)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -147,6 +150,7 @@ class Models:
 
 if __name__ == "__main__":
     app = FastAPI()
+    app.logger = logger
     # 挂载静态文件
     StaticDir: str = "./Web"
     dirs = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
@@ -368,7 +372,7 @@ if __name__ == "__main__":
         """翻译"""
         return {"texts": trans.translate(Sentence=texts, to_Language=to_language)}
 
-    logging.warning("本地服务，请勿将服务端口暴露于外网")
+    logger.warning("本地服务，请勿将服务端口暴露于外网")
     print(f"api文档地址 http://127.0.0.1:{config.server_config.port}/docs")
     webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
     uvicorn.run(app, port=config.server_config.port)

@@ -8,6 +8,7 @@ from tqdm import tqdm
 import click
 from text.cleaner import clean_text
 from config import config
+from infer import latest_version
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -119,10 +120,14 @@ def preprocess(
         for line in val_list:
             f.write(line)
 
-    config = json.load(open(config_path, encoding="utf-8"))
-    config["data"]["spk2id"] = spk_id_map
+    json_config = json.load(open(config_path, encoding="utf-8"))
+    json_config["data"]["spk2id"] = spk_id_map
+    # 新增写入：写入训练版本、数据集路径
+    json_config["version"] = latest_version
+    json_config["data"]["training_files"] = preprocess_text_config.train_path
+    json_config["data"]["validation_files"] = preprocess_text_config.val_path
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
+        json.dump(json_config, f, indent=2, ensure_ascii=False)
     print("训练集和验证集生成完成！")
 
 
