@@ -91,6 +91,26 @@ class Bert_gen_config:
         return cls(**data)
 
 
+class Emo_gen_config:
+    """emo_gen 配置"""
+
+    def __init__(
+        self,
+        config_path: str,
+        num_processes: int = 2,
+        device: str = "cuda",
+    ):
+        self.config_path = config_path
+        self.num_processes = num_processes
+        self.device = device
+
+    @classmethod
+    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+        data["config_path"] = os.path.join(dataset_path, data["config_path"])
+
+        return cls(**data)
+
+
 class Train_ms_config:
     """训练配置"""
 
@@ -186,6 +206,9 @@ class Config:
             )
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
+            )
+            self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
+                dataset_path, yaml_config["emo_gen"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
