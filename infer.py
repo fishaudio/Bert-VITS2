@@ -102,7 +102,7 @@ def get_text(text, reference_audio, emotion, language_str, hps, device):
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert
     else:
-        raise ValueError(f"language_str should be ZH, JP or EN")
+        raise ValueError("language_str should be ZH, JP or EN")
 
     emo = (
         torch.from_numpy(get_emo(reference_audio))
