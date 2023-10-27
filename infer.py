@@ -100,6 +100,8 @@ def get_text(text, language_str, hps, device):
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert
+    else:
+        raise ValueError("language_str should be ZH, JP or EN")
 
     assert bert.shape[-1] == len(
         phone
