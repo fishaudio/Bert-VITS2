@@ -124,16 +124,16 @@ def extract_dir(data_queue, model, processor, device):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-c", "--config", type=str, default=config.bert_gen_config.config_path
+        "-c", "--config", type=str, default=config.emo_gen_config.config_path
     )
     parser.add_argument(
-        "--num_processes", type=int, default=config.bert_gen_config.num_processes
+        "--num_processes", type=int, default=config.emo_gen_config.num_processes
     )
     args, _ = parser.parse_known_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
 
-    device = config.bert_gen_config.device
+    device = config.emo_gen_config.device
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
     processor = Wav2Vec2Processor.from_pretrained(model_name)
     model = EmotionModel.from_pretrained(model_name)

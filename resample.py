@@ -46,15 +46,15 @@ if __name__ == "__main__":
         help="cpu_processes",
     )
     args, _ = parser.parse_known_args()
-    print(config.resample_config.sampling_rate)
-    print(config.resample_config.in_dir)
-    print(config.resample_config.out_dir)
+    # print(config.resample_config.sampling_rate)
+    # print(config.resample_config.in_dir)
+    # print(config.resample_config.out_dir)
     # autodl 无卡模式会识别出46个cpu
     if args.processes == 0:
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
         processes = args.processes
-    print("processes: ", processes)
+    # print("processes: ", processes)
     pool = Pool(processes=processes)
 
     spk_dir = args.in_dir
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         for filename in filenames:
             if filename.endswith(".wav"):
                 twople = (os.path.abspath(dirpath), filename, args)
-                print(twople)
+                # print(twople)
                 tasks.append(twople)
 
     for _ in tqdm(
