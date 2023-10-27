@@ -124,8 +124,8 @@ def preprocess(
     json_config["data"]["spk2id"] = spk_id_map
     # 新增写入：写入训练版本、数据集路径
     json_config["version"] = latest_version
-    json_config["data"]["training_files"] = preprocess_text_config.train_path
-    json_config["data"]["validation_files"] = preprocess_text_config.val_path
+    json_config["data"]["training_files"] = os.path.normpath(preprocess_text_config.train_path).replace("\\", "/")
+    json_config["data"]["validation_files"] = os.path.normpath(preprocess_text_config.val_path).replace("\\", "/")
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
     print("训练集和验证集生成完成！")
