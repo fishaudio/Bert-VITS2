@@ -11,12 +11,10 @@ from config import config
 
 def process(item):
     spkdir, wav_name, args = item
-    wav_path = os.path.join(spkdir, wav_name)
-    os.makedirs(args.out_dir, exist_ok=True)
+    wav_path = os.path.join(args.in_dir, spkdir, wav_name)
     if os.path.exists(wav_path) and ".wav" in wav_path:
-        # print(wav_path)
         wav, sr = librosa.load(wav_path, sr=args.sr)
-        soundfile.write(os.path.join(args.out_dir, wav_name), wav, sr)
+        soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
 
 if __name__ == "__main__":
@@ -46,26 +44,24 @@ if __name__ == "__main__":
         help="cpu_processes",
     )
     args, _ = parser.parse_known_args()
-    print(config.resample_config.sampling_rate)
-    print(config.resample_config.in_dir)
-    print(config.resample_config.out_dir)
     # autodl 无卡模式会识别出46个cpu
     if args.processes == 0:
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
         processes = args.processes
-    print("processes: ", processes)
     pool = Pool(processes=processes)
-
-    spk_dir = args.in_dir
 
     tasks = []
 
-    for dirpath, _, filenames in os.walk(spk_dir):
+    for dirpath, _, filenames in os.walk(args.in_dir):
+        # 子级目录
+        spk_dir = os.path.relpath(dirpath, args.in_dir)
+        spk_dir_out = os.path.join(args.out_dir, spk_dir)
+        if not os.path.isdir(spk_dir_out):
+            os.makedirs(spk_dir_out, exist_ok=True)
         for filename in filenames:
             if filename.endswith(".wav"):
-                twople = (os.path.abspath(dirpath), filename, args)
-                print(twople)
+                twople = (spk_dir, filename, args)
                 tasks.append(twople)
 
     for _ in tqdm(
