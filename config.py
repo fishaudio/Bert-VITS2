@@ -207,9 +207,6 @@ class Config:
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
             )
-            self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
-                dataset_path, yaml_config["emo_gen"]
-            )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
             )
