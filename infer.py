@@ -5,7 +5,8 @@
     2. 请在模型的config.json中显示声明版本号，添加一个字段"version" : "你的版本号"
 特殊版本说明：
     1.1.1-fix： 1.1.1版本训练的模型，但是在推理时使用dev的日语修复
-    1.1.1-dev： 当前版本
+    1.1.1-dev： dev开发
+    2.0：当前版本
 """
 import torch
 import commons
@@ -25,7 +26,7 @@ from oldVersion.V101.text import symbols as V101symbols
 from oldVersion import V111, V110, V101
 
 # 当前版本信息
-latest_version = "1.1.1-dev"
+latest_version = "2.0"
 
 # 版本兼容
 SynthesizerTrnMap = {
