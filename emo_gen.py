@@ -142,4 +142,4 @@ errors = pqdm(
 
 print(errors)
 
-print(f"Emo vec 生成完毕!")
+print("Emo vec 生成完毕!")
