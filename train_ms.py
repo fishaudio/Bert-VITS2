@@ -54,8 +54,8 @@ def run():
 
     # 多卡训练设置
     dist.init_process_group(
-        backend="gloo",
-        init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
+        backend="nccl",
+        init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     n_gpus = dist.get_world_size()
