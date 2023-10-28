@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 from transformers import Wav2Vec2Processor
 from transformers.models.wav2vec2.modeling_wav2vec2 import (
     Wav2Vec2Model,
@@ -11,21 +13,7 @@ import argparse
 from config import config
 import utils
 import os
-from pqdm.processes import pqdm
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-c", "--config", type=str, default=config.bert_gen_config.config_path
-)
-parser.add_argument(
-    "--num_processes", type=int, default=config.bert_gen_config.num_processes
-)
-args, _ = parser.parse_known_args()
-config_path = args.config
-hps = utils.get_hparams_from_file(config_path)
-
-device = config.bert_gen_config.device
+from tqdm import tqdm
 
 
 class RegressionHead(nn.Module):
@@ -72,22 +60,36 @@ class EmotionModel(Wav2Vec2PreTrainedModel):
         return hidden_states, logits
 
 
+class AudioDataset(Dataset):
+    def __init__(self, list_of_wav_files, sr, processor):
+        self.list_of_wav_files = list_of_wav_files
+        self.processor = processor
+        self.sr = sr
+
+    def __len__(self):
+        return len(self.list_of_wav_files)
+
+    def __getitem__(self, idx):
+        wav_file = self.list_of_wav_files[idx]
+        audio_data, _ = librosa.load(wav_file, sr=self.sr)
+        processed_data = self.processor(audio_data, sampling_rate=self.sr)[
+            "input_values"
+        ][0]
+        return torch.from_numpy(processed_data)
+
+
 model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-global processor, model
 processor = Wav2Vec2Processor.from_pretrained(model_name)
-model = EmotionModel.from_pretrained(model_name).to(device)
+model = EmotionModel.from_pretrained(model_name)
 
 
 def process_func(
     x: np.ndarray,
     sampling_rate: int,
+    device: str,
     embeddings: bool = False,
 ) -> np.ndarray:
     r"""Predict emotions or extract embeddings from raw audio signal."""
-    # run through processor to normalize signal
-    # always returns a batch, so we just get the first entry
-    # then we put it on the device
-    global model
     y = processor(x, sampling_rate=sampling_rate)
     y = y["input_values"][0]
     y = torch.from_numpy(y).unsqueeze(0).to(device)
@@ -95,7 +97,6 @@ def process_func(
     # run through model
     with torch.no_grad():
         y = model(y)[0 if embeddings else 1]
-    del model
 
     # convert to numpy
     y = y.detach().cpu().numpy()
@@ -109,37 +110,55 @@ def get_emo(path):
     return process_func(
         np.expand_dims(wav, 0).astype(np.float),
         sr,
+        device,
         embeddings=True,
     ).squeeze(0)
 
 
-def extract_dir(data):
-    try:
-        wavname = data.split("|")[0]  # 获取每一行的第一部分
-        emo_path = wavname.replace(".wav", ".emo.npy")
-        if os.path.exists(emo_path):
-            return f"{emo_path} 已存在！"
-        wav, sr = librosa.load(wavname, 16000)
-        emb = process_func(np.expand_dims(wav, 0), sr, embeddings=True)
-        np.save(emo_path, emb.squeeze(0))
-        del data, wav, sr, emb
-    except Exception as e:
-        return e
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c", "--config", type=str, default=config.bert_gen_config.config_path
+    )
+    parser.add_argument(
+        "--num_processes", type=int, default=config.bert_gen_config.num_processes
+    )
+    args, _ = parser.parse_known_args()
+    config_path = args.config
+    hps = utils.get_hparams_from_file(config_path)
 
+    device = config.bert_gen_config.device
 
-lines = []
-with open(hps.data.training_files, encoding="utf-8") as f:
-    lines.extend(f.readlines())
+    model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    processor = (
+        Wav2Vec2Processor.from_pretrained(model_name)
+        if processor is None
+        else processor
+    )
+    model = (
+        EmotionModel.from_pretrained(model_name).to(device)
+        if model is None
+        else model.to(device)
+    )
 
-with open(hps.data.validation_files, encoding="utf-8") as f:
-    lines.extend(f.readlines())
+    lines = []
+    with open(hps.data.training_files, encoding="utf-8") as f:
+        lines.extend(f.readlines())
 
-errors = pqdm(
-    lines,
-    extract_dir,
-    n_jobs=4,
-)
+    with open(hps.data.validation_files, encoding="utf-8") as f:
+        lines.extend(f.readlines())
 
-print(errors)
+    wavnames = [line.split("|")[0] for line in lines]
+    dataset = AudioDataset(wavnames, 16000, processor)
+    data_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=16)
 
-print("Emo vec 生成完毕!")
+    with torch.no_grad():
+        for i, data in tqdm(enumerate(data_loader), total=len(data_loader)):
+            wavname = wavnames[i]
+            emo_path = wavname.replace(".wav", ".emo.npy")
+            if os.path.exists(emo_path):
+                continue
+            emb = model(data.to(device))[0].detach().cpu().numpy()
+            np.save(emo_path, emb)
+
+    print("Emo vec 生成完毕!")
