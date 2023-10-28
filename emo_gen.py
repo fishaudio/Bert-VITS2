@@ -166,4 +166,4 @@ if __name__ == "__main__":
             emb = model(data.to(device))[0].detach().cpu().numpy()
             np.save(emo_path, emb)
 
-    print(f"Emo vec 生成完毕!")
+    print("Emo vec 生成完毕!")
