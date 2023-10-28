@@ -75,7 +75,7 @@ class EmotionModel(Wav2Vec2PreTrainedModel):
 model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 global processor, model
 processor = Wav2Vec2Processor.from_pretrained(model_name)
-model = EmotionModel.from_pretrained(model_name)
+model = EmotionModel.from_pretrained(model_name).to(device)
 
 
 def process_func(
@@ -88,15 +88,14 @@ def process_func(
     # always returns a batch, so we just get the first entry
     # then we put it on the device
     global model
-    m = model.to(device)
     y = processor(x, sampling_rate=sampling_rate)
     y = y["input_values"][0]
     y = torch.from_numpy(y).unsqueeze(0).to(device)
 
     # run through model
     with torch.no_grad():
-        y = m(y)[0 if embeddings else 1]
-    del m
+        y = model(y)[0 if embeddings else 1]
+    del model
 
     # convert to numpy
     y = y.detach().cpu().numpy()
