@@ -86,10 +86,13 @@ model = EmotionModel.from_pretrained(model_name)
 def process_func(
     x: np.ndarray,
     sampling_rate: int,
+    model: EmotionModel,
+    processor: Wav2Vec2Processor,
     device: str,
     embeddings: bool = False,
 ) -> np.ndarray:
     r"""Predict emotions or extract embeddings from raw audio signal."""
+    model = model.to(device)
     y = processor(x, sampling_rate=sampling_rate)
     y = y["input_values"][0]
     y = torch.from_numpy(y).unsqueeze(0).to(device)
@@ -110,6 +113,8 @@ def get_emo(path):
     return process_func(
         np.expand_dims(wav, 0).astype(np.float),
         sr,
+        model,
+        processor,
         device,
         embeddings=True,
     ).squeeze(0)

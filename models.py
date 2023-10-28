@@ -322,6 +322,7 @@ class TextEncoder(nn.Module):
         n_layers,
         kernel_size,
         p_dropout,
+        n_speakers,
         gin_channels=0,
     ):
         super().__init__()
@@ -343,13 +344,18 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.emo_quantizer = VectorQuantize(
-            dim=1024,
-            codebook_size=5,
-            decay=0.8,
-            commitment_weight=1.0,
-        )
-        self.emo_proj = nn.Linear(1024, hidden_channels)
+        self.emo_proj = nn.Linear(1024, 1024)
+        self.emo_quantizer = [
+            VectorQuantize(
+                dim=1024,
+                codebook_size=5,
+                decay=0.8,
+                commitment_weight=1.0,
+                learnable_codebook=True,
+                ema_update=False,
+            )
+        ] * n_speakers
+        self.emo_q_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -363,18 +369,31 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(
-        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=None
+        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=None
     ):
+        sid = sid.cpu()
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
         if emo.size(-1) == 1024:
-            _, emo_indices, emo_commit_loss = self.emo_quantizer(emo.unsqueeze(1))
-            emo_emb = self.emo_quantizer.codebook[emo_indices.squeeze(0)].view(
-                *emo.unsqueeze(1).shape
-            )
+            emo_emb = self.emo_proj(emo.unsqueeze(1))
+            emo_commit_loss = torch.zeros(1)
+            emo_emb_ = []
+            for i in range(emo_emb.size(0)):
+                temp_emo_emb, _, temp_emo_commit_loss = self.emo_quantizer[sid[i]](
+                    emo_emb[i].unsqueeze(0).cpu()
+                )
+                emo_commit_loss += temp_emo_commit_loss
+                emo_emb_.append(temp_emo_emb)
+            emo_emb = torch.cat(emo_emb_, dim=0).to(emo_emb.device)
+            emo_commit_loss = emo_commit_loss.to(emo_emb.device)
         else:
-            emo_emb = self.emo_quantizer.codebook[emo.to(torch.int)[0][0]].unsqueeze(0)
+            emo_emb = (
+                self.emo_quantizer[sid[0]]
+                .get_output_from_indices(emo.to(torch.int).cpu())
+                .unsqueeze(0)
+                .to(emo.device)
+            )
             emo_commit_loss = torch.zeros(1)
         x = (
             self.emb(x)
@@ -383,7 +402,7 @@ class TextEncoder(nn.Module):
             + bert_emb
             + ja_bert_emb
             + en_bert_emb
-            + self.emo_proj(emo_emb)
+            + self.emo_q_proj(emo_emb)
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
@@ -829,6 +848,7 @@ class SynthesizerTrn(nn.Module):
             n_layers,
             kernel_size,
             p_dropout,
+            self.n_speakers,
             gin_channels=self.enc_gin_channels,
         )
         self.dec = Generator(
@@ -903,7 +923,7 @@ class SynthesizerTrn(nn.Module):
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
         x, m_p, logs_p, x_mask, loss_commit = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=g
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
@@ -997,7 +1017,7 @@ class SynthesizerTrn(nn.Module):
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
         x, m_p, logs_p, x_mask, _ = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=g
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
             sdp_ratio
