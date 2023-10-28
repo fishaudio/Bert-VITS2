@@ -339,5 +339,5 @@
         "use_spectral_norm": false,
         "gin_channels": 256
     },
-    "version": "1.1.1-dev"
+    "version": "2.0"
 }
