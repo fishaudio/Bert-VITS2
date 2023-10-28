@@ -1,7 +1,7 @@
 # flake8: noqa: E402
-
-import sys, os
+import os
 import logging
+import re_matching
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
@@ -15,197 +15,242 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import torch
-import argparse
-import commons
 import utils
-from models import SynthesizerTrn
-from text.symbols import symbols
-from text import cleaned_text_to_sequence, get_bert
-from text.cleaner import clean_text
+from infer import infer, latest_version, get_net_g
 import gradio as gr
 import webbrowser
 import numpy as np
+from config import config
+from tools.translate import translate
 
 net_g = None
 
-if sys.platform == "darwin" and torch.backends.mps.is_available():
-    device = "mps"
+device = config.webui_config.device
+if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-else:
-    device = "cuda"
 
 
-def get_text(text, language_str, hps):
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-
-    if hps.data.add_blank:
-        phone = commons.intersperse(phone, 0)
-        tone = commons.intersperse(tone, 0)
-        language = commons.intersperse(language, 0)
-        for i in range(len(word2ph)):
-            word2ph[i] = word2ph[i] * 2
-        word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str, device)
-    del word2ph
-    assert bert.shape[-1] == len(phone), phone
-
-    if language_str == "ZH":
-        bert = bert
-        ja_bert = torch.zeros(768, len(phone))
-    elif language_str == "JP":
-        ja_bert = bert
-        bert = torch.zeros(1024, len(phone))
-    else:
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(768, len(phone))
-
-    assert bert.shape[-1] == len(
-        phone
-    ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
-
-    phone = torch.LongTensor(phone)
-    tone = torch.LongTensor(tone)
-    language = torch.LongTensor(language)
-    return bert, ja_bert, phone, tone, language
-
-
-def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, language):
-    global net_g
-    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps)
-    with torch.no_grad():
-        x_tst = phones.to(device).unsqueeze(0)
-        tones = tones.to(device).unsqueeze(0)
-        lang_ids = lang_ids.to(device).unsqueeze(0)
-        bert = bert.to(device).unsqueeze(0)
-        ja_bert = ja_bert.to(device).unsqueeze(0)
-        x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
-        del phones
-        speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
-        audio = (
-            net_g.infer(
-                x_tst,
-                x_tst_lengths,
-                speakers,
-                tones,
-                lang_ids,
-                bert,
-                ja_bert,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise_scale,
-                noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
-            )[0][0, 0]
-            .data.cpu()
-            .float()
-            .numpy()
-        )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
-        torch.cuda.empty_cache()
-        return audio
-
-
-def tts_fn(
-    text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
+def generate_audio(
+    slices,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    speaker,
+    language,
 ):
-    slices = text.split("|")
     audio_list = []
+    silence = np.zeros(hps.data.sampling_rate // 2)
     with torch.no_grad():
-        for slice in slices:
+        for piece in slices:
             audio = infer(
-                slice,
+                piece,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
                 length_scale=length_scale,
                 sid=speaker,
                 language=language,
+                hps=hps,
+                net_g=net_g,
+                device=device,
             )
             audio_list.append(audio)
-            silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
             audio_list.append(silence)  # 将静音添加到列表中
+    return audio_list
+
+
+def tts_split(
+    text: str,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+    cut_by_sent,
+    interval_between_para,
+    interval_between_sent,
+):
+    if language == "mix":
+        return ("invalid", None)
+    while text.find("\n\n") != -1:
+        text = text.replace("\n\n", "\n")
+    para_list = re_matching.cut_para(text)
+    audio_list = []
+    if not cut_by_sent:
+        for p in para_list:
+            audio = infer(
+                p,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+                sid=speaker,
+                language=language,
+                hps=hps,
+                net_g=net_g,
+                device=device,
+            )
+            audio_list.append(audio)
+            silence = np.zeros((int)(44100 * interval_between_para))
+            audio_list.append(silence)
+    else:
+        for p in para_list:
+            sent_list = re_matching.cut_sent(p)
+            for s in sent_list:
+                audio = infer(
+                    s,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise_scale,
+                    noise_scale_w=noise_scale_w,
+                    length_scale=length_scale,
+                    sid=speaker,
+                    language=language,
+                    hps=hps,
+                    net_g=net_g,
+                    device=device,
+                )
+                audio_list.append(audio)
+                silence = np.zeros((int)(44100 * interval_between_sent))
+                audio_list.append(silence)
+            if (interval_between_para - interval_between_sent) > 0:
+                silence = np.zeros(
+                    (int)(44100 * (interval_between_para - interval_between_sent))
+                )
+                audio_list.append(silence)
+    audio_concat = np.concatenate(audio_list)
+    return ("Success", (44100, audio_concat))
+
+
+def tts_fn(
+    text: str,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+):
+    audio_list = []
+    if language == "mix":
+        bool_valid, str_valid = re_matching.validate_text(text)
+        if not bool_valid:
+            return str_valid, (
+                hps.data.sampling_rate,
+                np.concatenate([np.zeros(hps.data.sampling_rate // 2)]),
+            )
+        result = re_matching.text_matching(text)
+        for one in result:
+            _speaker = one.pop()
+            for lang, content in one:
+                audio_list.extend(
+                    generate_audio(
+                        content.split("|"),
+                        sdp_ratio,
+                        noise_scale,
+                        noise_scale_w,
+                        length_scale,
+                        _speaker + "_" + lang.lower(),
+                        lang,
+                    )
+                )
+    else:
+        audio_list.extend(
+            generate_audio(
+                text.split("|"),
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                speaker,
+                language,
+            )
+        )
+
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-m", "--model", default="./logs/as/G_8000.pth", help="path of your model"
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        default="./configs/config.json",
-        help="path of your config file",
-    )
-    parser.add_argument(
-        "--share", default=False, help="make link public", action="store_true"
-    )
-    parser.add_argument(
-        "-d", "--debug", action="store_true", help="enable DEBUG-LEVEL log"
-    )
-
-    args = parser.parse_args()
-    if args.debug:
+    if config.webui_config.debug:
         logger.info("Enable DEBUG-LEVEL log")
         logging.basicConfig(level=logging.DEBUG)
-    hps = utils.get_hparams_from_file(args.config)
-
-    device = (
-        "cuda:0"
-        if torch.cuda.is_available()
-        else (
-            "mps"
-            if sys.platform == "darwin" and torch.backends.mps.is_available()
-            else "cpu"
-        )
+    hps = utils.get_hparams_from_file(config.webui_config.config_path)
+    # 若config.json中未指定版本则默认为最新版本
+    version = hps.version if hasattr(hps, "version") else latest_version
+    net_g = get_net_g(
+        model_path=config.webui_config.model, version=version, device=device, hps=hps
     )
-    net_g = SynthesizerTrn(
-        len(symbols),
-        hps.data.filter_length // 2 + 1,
-        hps.train.segment_size // hps.data.hop_length,
-        n_speakers=hps.data.n_speakers,
-        **hps.model,
-    ).to(device)
-    _ = net_g.eval()
-
-    _ = utils.load_checkpoint(args.model, net_g, None, skip_optimizer=True)
-
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP"]
+    languages = ["ZH", "JP", "EN", "mix"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
                 text = gr.TextArea(
-                    label="Text",
-                    placeholder="Input Text Here",
-                    value="吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",
+                    label="输入文本内容",
+                    placeholder="""
+                    如果你选择语言为\'mix\'，必须按照格式输入，否则报错:
+                        格式举例(zh是中文，jp是日语，不区分大小写；说话人举例:gongzi):
+                         [说话人1]<zh>你好，こんにちは！ <jp>こんにちは，世界。
+                         [说话人2]<zh>你好吗？<jp>元気ですか？
+                         [说话人3]<zh>谢谢。<jp>どういたしまして。
+                         ...
+                    另外，所有的语言选项都可以用'|'分割长段实现分句生成。
+                    """,
                 )
+                trans = gr.Button("中翻日", variant="primary")
+                slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
-                    choices=speakers, value=speakers[0], label="Speaker"
+                    choices=speakers, value=speakers[0], label="选择说话人"
                 )
                 sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
+                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise Scale"
+                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="感情"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise Scale W"
+                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="音素长度"
                 )
                 length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=1, step=0.1, label="Length Scale"
+                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="语速"
                 )
                 language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="Language"
+                    choices=languages, value=languages[0], label="选择语言(新增mix混合选项)"
                 )
-                btn = gr.Button("Generate!", variant="primary")
+                btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
-                text_output = gr.Textbox(label="Message")
-                audio_output = gr.Audio(label="Output Audio")
-
+                with gr.Row():
+                    with gr.Column():
+                        interval_between_sent = gr.Slider(
+                            minimum=0,
+                            maximum=5,
+                            value=0.2,
+                            step=0.1,
+                            label="句间停顿(秒)，勾选按句切分才生效",
+                        )
+                        interval_between_para = gr.Slider(
+                            minimum=0,
+                            maximum=10,
+                            value=1,
+                            step=0.1,
+                            label="段间停顿(秒)，需要大于句间停顿才有效",
+                        )
+                        opt_cut_by_sent = gr.Checkbox(
+                            label="按句切分    在按段落切分的基础上再按句子切分文本"
+                        )
+                        slicer = gr.Button("切分生成", variant="primary")
+                text_output = gr.Textbox(label="状态信息")
+                audio_output = gr.Audio(label="输出音频")
+                # explain_image = gr.Image(
+                #     label="参数解释信息",
+                #     show_label=True,
+                #     show_share_button=False,
+                #     show_download_button=False,
+                #     value=os.path.abspath("./img/参数说明.png"),
+                # )
         btn.click(
             tts_fn,
             inputs=[
@@ -220,5 +265,28 @@ if __name__ == "__main__":
             outputs=[text_output, audio_output],
         )
 
-    webbrowser.open("http://127.0.0.1:7860")
-    app.launch(share=args.share)
+        trans.click(
+            translate,
+            inputs=[text],
+            outputs=[text],
+        )
+        slicer.click(
+            tts_split,
+            inputs=[
+                text,
+                speaker,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                language,
+                opt_cut_by_sent,
+                interval_between_para,
+                interval_between_sent,
+            ],
+            outputs=[text_output, audio_output],
+        )
+
+    print("推理页面已开启!")
+    webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
+    app.launch(share=config.webui_config.share, server_port=config.webui_config.port)

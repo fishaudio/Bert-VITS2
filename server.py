@@ -2,82 +2,17 @@ from flask import Flask, request, Response
 from io import BytesIO
 import torch
 from av import open as avopen
+from typing import Dict, List
 
-import commons
 import utils
-from models import SynthesizerTrn
-from text.symbols import symbols
-from text import cleaned_text_to_sequence, get_bert
-from text.cleaner import clean_text
+from infer import infer, get_net_g, latest_version
 from scipy.io import wavfile
+
+from config import config
 
 # Flask Init
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
-
-
-def get_text(text, language_str, hps):
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-
-    if hps.data.add_blank:
-        phone = commons.intersperse(phone, 0)
-        tone = commons.intersperse(tone, 0)
-        language = commons.intersperse(language, 0)
-        for i in range(len(word2ph)):
-            word2ph[i] = word2ph[i] * 2
-        word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str)
-    del word2ph
-    assert bert.shape[-1] == len(phone), phone
-
-    if language_str == "ZH":
-        bert = bert
-        ja_bert = torch.zeros(768, len(phone))
-    elif language_str == "JA":
-        ja_bert = bert
-        bert = torch.zeros(1024, len(phone))
-    else:
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(768, len(phone))
-    assert bert.shape[-1] == len(
-        phone
-    ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
-    phone = torch.LongTensor(phone)
-    tone = torch.LongTensor(tone)
-    language = torch.LongTensor(language)
-    return bert, ja_bert, phone, tone, language
-
-
-def infer(text, sdp_ratio, noise_scale, noise_scale_w, length_scale, sid, language):
-    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps)
-    with torch.no_grad():
-        x_tst = phones.to(dev).unsqueeze(0)
-        tones = tones.to(dev).unsqueeze(0)
-        lang_ids = lang_ids.to(dev).unsqueeze(0)
-        bert = bert.to(dev).unsqueeze(0)
-        ja_bert = ja_bert.to(device).unsqueeze(0)
-        x_tst_lengths = torch.LongTensor([phones.size(0)]).to(dev)
-        speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(dev)
-        audio = (
-            net_g.infer(
-                x_tst,
-                x_tst_lengths,
-                speakers,
-                tones,
-                lang_ids,
-                bert,
-                ja_bert,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise_scale,
-                noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
-            )[0][0, 0]
-            .data.cpu()
-            .float()
-            .numpy()
-        )
-        return audio
 
 
 def replace_punctuation(text, i=2):
@@ -106,26 +41,39 @@ def wav2(i, o, format):
     inp.close()
 
 
-# Load Generator
-hps = utils.get_hparams_from_file("./configs/config.json")
+net_g_List = []
+hps_List = []
+# 模型角色字典
+# 使用方法 chr_name = chrsMap[model_id][chr_id]
+chrsMap: List[Dict[int, str]] = list()
 
-dev = "cuda"
-net_g = SynthesizerTrn(
-    len(symbols),
-    hps.data.filter_length // 2 + 1,
-    hps.train.segment_size // hps.data.hop_length,
-    n_speakers=hps.data.n_speakers,
-    **hps.model,
-).to(dev)
-_ = net_g.eval()
-
-_ = utils.load_checkpoint("logs/G_649000.pth", net_g, None, skip_optimizer=True)
+# 加载模型
+models = config.server_config.models
+for model in models:
+    hps_List.append(utils.get_hparams_from_file(model["config"]))
+    # 添加角色字典
+    chrsMap.append(dict())
+    for name, cid in hps_List[-1].data.spk2id.items():
+        chrsMap[-1][cid] = name
+    version = (
+        hps_List[-1].version if hasattr(hps_List[-1], "version") else latest_version
+    )
+    net_g_List.append(
+        get_net_g(
+            model_path=model["model"],
+            version=version,
+            device=model["device"],
+            hps=hps_List[-1],
+        )
+    )
 
 
 @app.route("/")
 def main():
     try:
-        speaker = request.args.get("speaker")
+        model = int(request.args.get("model"))
+        speaker = request.args.get("speaker", "")  # 指定人物名
+        speaker_id = request.args.get("speaker_id", None)  # 直接指定id
         text = request.args.get("text").replace("/n", "")
         sdp_ratio = float(request.args.get("sdp_ratio", 0.2))
         noise = float(request.args.get("noise", 0.5))
@@ -141,24 +89,31 @@ def main():
             return "Missing Parameter"
         if fmt not in ("mp3", "wav", "ogg"):
             return "Invalid Format"
-        if language not in ("JA", "ZH"):
+        if language not in ("JP", "ZH"):
             return "Invalid language"
     except:
         return "Invalid Parameter"
 
+    if speaker_id is not None:
+        if speaker_id.isdigit():
+            speaker = chrsMap[model][int(speaker_id)]
+
     with torch.no_grad():
         audio = infer(
-            text,
+            text=text,
             sdp_ratio=sdp_ratio,
             noise_scale=noise,
             noise_scale_w=noisew,
             length_scale=length,
             sid=speaker,
-            language=language,
+            language=models[model]["language"],
+            hps=hps_List[model],
+            net_g=net_g_List[model],
+            device=models[model]["device"],
         )
 
     with BytesIO() as wav:
-        wavfile.write(wav, hps.data.sampling_rate, audio)
+        wavfile.write(wav, hps_List[model].data.sampling_rate, audio)
         torch.cuda.empty_cache()
         if fmt == "wav":
             return Response(wav.getvalue(), mimetype="audio/wav")
@@ -168,3 +123,7 @@ def main():
             return Response(
                 ofp.getvalue(), mimetype="audio/mpeg" if fmt == "mp3" else "audio/ogg"
             )
+
+
+if __name__ == "__main__":
+    app.run(port=config.server_config.port)

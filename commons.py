@@ -50,7 +50,13 @@ def slice_segments(x, ids_str, segment_size=4):
     for i in range(x.size(0)):
         idx_str = ids_str[i]
         idx_end = idx_str + segment_size
-        ret[i] = x[i, :, idx_str:idx_end]
+        if idx_str < 0:
+            i1 = x.size(2) + idx_str
+            r1 = x[i, :, i1:]
+            r2 = x[i, :, :idx_end]
+            ret[i] = torch.cat([r1, r2], dim=1)
+        else:
+            ret[i] = x[i, :, idx_str:idx_end]
     return ret
 
 

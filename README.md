@@ -10,16 +10,8 @@ VITS2 Backbone with bert
 [//]: # ()
 [//]: # (本仓库来源于之前朋友分享了ai峰哥的视频，本人被其中的效果惊艳，在自己尝试MassTTS以后发现fs在音质方面与vits有一定差距，并且training的pipeline比vits更复杂，因此按照其思路将bert)
 
-[//]: # (与vits结合起来以获得更好的韵律。本身我们是出于兴趣玩开源项目，用爱发电，我们本无意与任何人起冲突，然而[MaxMax2016]&#40;https://github.com/MaxMax2016&#41;)
-
-[//]: # (以及其organization[PlayVoice]&#40;https://github.com/PlayVoice&#41;几次三番前来碰瓷，说本项目抄袭了他们的代码，甚至上法院云云，因此在Readme中特别声明，本项目与)
-
-[//]: # ([PlayVoice/vits_chinese]&#40;https://github.com/PlayVoice/vits_chinese&#41;没有任何关系，结合bert的思路方面也是完全来源于MassTTS)
-
-
-[//]: # (附：对面认为本项目抄袭了他代码的证据，诸位可以自行查看并做出判断，[bert_vits2引用的MassTTS的实际代码]&#40;https://github.com/PlayVoice/vits_chinese/tree/4781241520c6b9fdcf090fca289148719272e89f#bert_vits2%E5%BC%95%E7%94%A8%E7%9A%84masstts%E7%9A%84%E5%AE%9E%E9%99%85%E4%BB%A3%E7%A0%81&#41; )
-
 ## 成熟的旅行者/开拓者/舰长/博士/sensei/猎魔人/喵喵露/V应当参阅代码自己学习如何训练。
+
 ### 严禁将此项目用于一切违反《中华人民共和国宪法》，《中华人民共和国刑法》，《中华人民共和国治安管理处罚法》和《中华人民共和国民法典》之用途。
 ### 严禁用于任何政治相关用途。
 #### Video:https://www.bilibili.com/video/BV1hp4y1K78E
@@ -30,6 +22,8 @@ VITS2 Backbone with bert
 + [p0p4k/vits2_pytorch](https://github.com/p0p4k/vits2_pytorch)
 + [svc-develop-team/so-vits-svc](https://github.com/svc-develop-team/so-vits-svc)
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
++ [emotional-vits](https://github.com/innnky/emotional-vits)
++ [Bert-VITS2-en](https://github.com/xwan07017/Bert-VITS2-en)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2"/>

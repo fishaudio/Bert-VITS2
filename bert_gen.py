@@ -6,14 +6,19 @@ from tqdm import tqdm
 from text import cleaned_text_to_sequence, get_bert
 import argparse
 import torch.multiprocessing as mp
+from config import config
 
 
 def process_line(line):
-    rank = mp.current_process()._identity
-    rank = rank[0] if len(rank) > 0 else 0
-    if torch.cuda.is_available():
-        gpu_id = rank % torch.cuda.device_count()
-        device = torch.device(f"cuda:{gpu_id}")
+    device = config.bert_gen_config.device
+    if config.bert_gen_config.use_multi_device:
+        rank = mp.current_process()._identity
+        rank = rank[0] if len(rank) > 0 else 0
+        if torch.cuda.is_available():
+            gpu_id = rank % torch.cuda.device_count()
+            device = torch.device(f"cuda:{gpu_id}")
+        else:
+            device = torch.device("cpu")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
     phone = phones.split(" ")
     tone = [int(i) for i in tone.split(" ")]
@@ -28,7 +33,7 @@ def process_line(line):
         word2ph[i] = word2ph[i] * 2
     word2ph[0] += 1
 
-    bert_path = wav_path.replace(".wav", ".bert.pt")
+    bert_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".bert.pt")
 
     try:
         bert = torch.load(bert_path)
@@ -39,11 +44,17 @@ def process_line(line):
         torch.save(bert, bert_path)
 
 
+preprocess_text_config = config.preprocess_text_config
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str, default="configs/config.json")
-    parser.add_argument("--num_processes", type=int, default=2)
-    args = parser.parse_args()
+    parser.add_argument(
+        "-c", "--config", type=str, default=config.bert_gen_config.config_path
+    )
+    parser.add_argument(
+        "--num_processes", type=int, default=config.bert_gen_config.num_processes
+    )
+    args, _ = parser.parse_known_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
     lines = []
@@ -52,8 +63,10 @@ if __name__ == "__main__":
 
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
+    if len(lines) != 0:
+        num_processes = args.num_processes
+        with Pool(processes=num_processes) as pool:
+            for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
+                pass
 
-    num_processes = args.num_processes
-    with Pool(processes=num_processes) as pool:
-        for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
-            pass
+    print(f"bert生成完毕!, 共有{len(lines)}个bert.pt生成!")

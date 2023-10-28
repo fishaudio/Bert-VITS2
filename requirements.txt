@@ -5,8 +5,6 @@ numba
 phonemizer
 scipy
 tensorboard
-torch
-torchvision
 Unidecode
 amfm_decompy
 jieba
@@ -21,3 +19,13 @@ unidic-lite
 cmudict
 fugashi
 num2words
+PyYAML
+requests
+pyopenjtalk; sys_platform == 'linux'
+openjtalk; sys_platform != 'linux'
+jaconv
+psutil
+GPUtil
+vector_quantize_pytorch
+g2p_en
+sentencepiece
