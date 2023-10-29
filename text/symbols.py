@@ -2,6 +2,69 @@ punctuation = ["!", "?", "…", ",", ".", "'", "-"]
 pu_symbols = punctuation + ["SP", "UNK"]
 pad = "_"
 
+# cjke
+cjke_symbols = [
+    "N",
+    "Q",
+    "a",
+    "b",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "ɑ",
+    "æ",
+    "ʃ",
+    "ʑ",
+    "ç",
+    "ɯ",
+    "ɪ",
+    "ɔ",
+    "ɛ",
+    "ɹ",
+    "ð",
+    "ə",
+    "ɫ",
+    "ɥ",
+    "ɸ",
+    "ʊ",
+    "ɾ",
+    "ʒ",
+    "θ",
+    "β",
+    "ŋ",
+    "ɦ",
+    "⁼",
+    "ʰ",
+    "`",
+    "^",
+    "#",
+    "*",
+    "=",
+    "ˈ",
+    "ˌ",
+    "→",
+    "↓",
+    "↑",
+]
+
 # chinese
 zh_symbols = [
     "E",
@@ -165,7 +228,8 @@ num_en_tones = 4
 
 # combine all symbols
 normal_symbols = sorted(set(zh_symbols + ja_symbols + en_symbols))
-symbols = [pad] + normal_symbols + pu_symbols
+# symbols = [pad] + normal_symbols + pu_symbols
+symbols = [pad] + sorted(set(cjke_symbols)) + pu_symbols
 sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
 
 # combine all tones

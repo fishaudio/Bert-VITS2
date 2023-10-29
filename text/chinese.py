@@ -1,10 +1,11 @@
 import os
 import re
 
+import jieba
 import cn2an
-from pypinyin import lazy_pinyin, Style
+from pypinyin import lazy_pinyin, Style, BOPOMOFO
 
-from text.symbols import punctuation
+from text.symbols import punctuation, cjke_symbols
 from text.tone_sandhi import ToneSandhi
 
 current_file_path = os.path.dirname(__file__)
@@ -16,20 +17,91 @@ pinyin_to_symbol_map = {
 import jieba.posseg as psg
 
 
+_bopomofo_to_ipa = [
+    (re.compile("%s" % x[0]), x[1])
+    for x in [
+        ("ㄅㄛ", "p⁼wo"),
+        ("ㄆㄛ", "pʰwo"),
+        ("ㄇㄛ", "mwo"),
+        ("ㄈㄛ", "fwo"),
+        ("ㄅ", "p⁼"),
+        ("ㄆ", "pʰ"),
+        ("ㄇ", "m"),
+        ("ㄈ", "f"),
+        ("ㄉ", "t⁼"),
+        ("ㄊ", "tʰ"),
+        ("ㄋ", "n"),
+        ("ㄌ", "l"),
+        ("ㄍ", "k⁼"),
+        ("ㄎ", "kʰ"),
+        ("ㄏ", "x"),
+        ("ㄐ", "tʃ⁼"),
+        ("ㄑ", "tʃʰ"),
+        ("ㄒ", "ʃ"),
+        ("ㄓ", "ts`⁼"),
+        ("ㄔ", "ts`ʰ"),
+        ("ㄕ", "s`"),
+        ("ㄖ", "ɹ`"),
+        ("ㄗ", "ts⁼"),
+        ("ㄘ", "tsʰ"),
+        ("ㄙ", "s"),
+        ("ㄚ", "a"),
+        ("ㄛ", "o"),
+        ("ㄜ", "ə"),
+        ("ㄝ", "ɛ"),
+        ("ㄞ", "aɪ"),
+        ("ㄟ", "eɪ"),
+        ("ㄠ", "ɑʊ"),
+        ("ㄡ", "oʊ"),
+        ("ㄧㄢ", "jɛn"),
+        ("ㄩㄢ", "ɥæn"),
+        ("ㄢ", "an"),
+        ("ㄧㄣ", "in"),
+        ("ㄩㄣ", "ɥn"),
+        ("ㄣ", "ən"),
+        ("ㄤ", "ɑŋ"),
+        ("ㄧㄥ", "iŋ"),
+        ("ㄨㄥ", "ʊŋ"),
+        ("ㄩㄥ", "jʊŋ"),
+        ("ㄥ", "əŋ"),
+        ("ㄦ", "əɻ"),
+        ("ㄧ", "i"),
+        ("ㄨ", "u"),
+        ("ㄩ", "ɥ"),
+        ("ˉ", "→"),
+        ("ˊ", "↑"),
+        ("ˇ", "↓↑"),
+        ("ˋ", "↓"),
+        ("˙", ""),
+        ("，", ","),
+        ("。", "."),
+        ("！", "!"),
+        ("？", "?"),
+        ("—", "-"),
+    ]
+]
+
+
 rep_map = {
     "：": ",",
     "；": ",",
     "，": ",",
+    ":": ",",
     "。": ".",
     "！": "!",
     "？": "?",
     "\n": ".",
-    "·": ",",
-    "、": ",",
+    "．": ".",
     "...": "…",
+    "···": "…",
+    "・・・": "…",
+    "·": ",",
+    "・": ",",
+    "、": ",",
     "$": ".",
     "“": "'",
     "”": "'",
+    '"': "'",
     "‘": "'",
     "’": "'",
     "（": "'",
@@ -43,11 +115,13 @@ rep_map = {
     "[": "'",
     "]": "'",
     "—": "-",
+    "−": "-",
     "～": "-",
     "~": "-",
     "「": "'",
     "」": "'",
 }
+
 
 tone_modifier = ToneSandhi()
 
@@ -66,15 +140,16 @@ def replace_punctuation(text):
 
 
 def g2p(text):
+    text = text_normalize(text)
     pattern = r"(?<=[{0}])\s*".format("".join(punctuation))
     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
-    phones, tones, word2ph = _g2p(sentences)
+    # phones, tones, word2ph = _g2p(sentences)
+    phones, word2ph = chinese_to_ipa(text)
     assert sum(word2ph) == len(phones)
-    assert len(word2ph) == len(text)  # Sometimes it will crash,you can add a try-catch.
-    phones = ["_"] + phones + ["_"]
-    tones = [0] + tones + [0]
-    word2ph = [1] + word2ph + [1]
-    return phones, tones, word2ph
+    assert (
+        len(word2ph) == len(text) + 2
+    )  # Sometimes it will crash,you can add a try-catch.
+    return phones, word2ph
 
 
 def _get_initials_finals(word):
@@ -179,6 +254,45 @@ def get_bert_feature(text, word2ph):
     from text import chinese_bert
 
     return chinese_bert.get_bert_feature(text, word2ph)
+
+
+def chinese_to_bopomofo(text):
+    words = jieba.lcut(text, cut_all=False)
+    text = []
+    for word in words:
+        bopomofos = lazy_pinyin(word, BOPOMOFO)
+        text += bopomofos
+    return text
+
+
+def bopomofo_to_ipa(text):
+    for i in range(len(text)):
+        for regex, replacement in _bopomofo_to_ipa:
+            text[i] = re.sub(regex, replacement, text[i])
+    return text
+
+
+def chinese_to_ipa(text):
+    text = text_normalize(text)
+    text = chinese_to_bopomofo(text)
+    # text = latin_to_bopomofo(text)
+    text = bopomofo_to_ipa(text)
+    for i in range(len(text)):
+        text[i] = re.sub("i([aoe])", r"j\1", text[i])
+        text[i] = re.sub("u([aoəe])", r"w\1", text[i])
+        text[i] = re.sub("([sɹ]`[⁼ʰ]?)([→↓↑ ]+|$)", r"\1ɹ`\2", text[i]).replace(
+            "ɻ", "ɹ`"
+        )
+        text[i] = re.sub("([s][⁼ʰ]?)([→↓↑ ]+|$)", r"\1ɹ\2", text[i])
+    word2ph = []
+    for i in text:
+        if any(j not in cjke_symbols for j in i):
+            word2ph += [1] * len(i)
+        else:
+            word2ph += [len(i)]
+    word2ph = [1] + word2ph + [1]
+    phones = ["_"] + [j for i in text for j in i] + ["_"]
+    return phones, word2ph
 
 
 if __name__ == "__main__":

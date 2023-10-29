@@ -108,7 +108,7 @@ def text2sep_kata(text: str) -> (list, list):
             else:
                 res.append(word)
         sep.append(word)
-    return sep, [hira2kata(i) for i in res], get_accent(parsed)
+    return sep, [hira2kata(i) for i in res]  # , get_accent(parsed)
 
 
 def get_accent(parsed):
@@ -257,6 +257,7 @@ rep_map = {
     "：": ",",
     "；": ",",
     "，": ",",
+    ":": ",",
     "。": ".",
     "！": "!",
     "？": "?",
@@ -271,6 +272,7 @@ rep_map = {
     "$": ".",
     "“": "'",
     "”": "'",
+    '"': "'",
     "‘": "'",
     "’": "'",
     "（": "'",
@@ -290,6 +292,50 @@ rep_map = {
     "「": "'",
     "」": "'",
 }
+
+
+# List of (consonant, sokuon) pairs:
+_real_sokuon = [
+    (re.compile("%s" % x[0]), x[1])
+    for x in [
+        (r"Q([↑↓]*[kg])", r"k#\1"),
+        (r"Q([↑↓]*[tdjʧ])", r"t#\1"),
+        (r"Q([↑↓]*[sʃ])", r"s\1"),
+        (r"Q([↑↓]*[pb])", r"p#\1"),
+    ]
+]
+
+
+# List of (consonant, hatsuon) pairs:
+_real_hatsuon = [
+    (re.compile("%s" % x[0]), x[1])
+    for x in [
+        (r"N([↑↓]*[pbm])", r"m\1"),
+        (r"N([↑↓]*[ʧʥj])", r"n^\1"),
+        (r"N([↑↓]*[tdn])", r"n\1"),
+        (r"N([↑↓]*[kg])", r"ŋ\1"),
+    ]
+]
+
+
+# List of (romaji, ipa2) pairs for marks:
+_romaji_to_ipa2 = [
+    (re.compile("%s" % x[0]), x[1])
+    for x in [
+        ("u", "ɯ"),
+        ("ʧ", "tʃ"),
+        ("j", "dʑ"),
+        ("y", "j"),
+        ("ni", "n^i"),
+        ("nj", "n^"),
+        ("hi", "çi"),
+        ("hj", "ç"),
+        ("f", "ɸ"),
+        ("I", "i*"),
+        ("U", "ɯ*"),
+        ("r", "ɾ"),
+    ]
+]
 
 
 def replace_punctuation(text):
@@ -326,6 +372,7 @@ def distribute_phone(n_phone, n_word):
 
 
 def handle_long(sep_phonemes):
+    # sep_phonemes = [list(i) for i in sep_phonemes]
     for i in range(len(sep_phonemes)):
         if sep_phonemes[i][0] == "ー":
             sep_phonemes[i][0] = sep_phonemes[i - 1][-1]
@@ -361,15 +408,71 @@ def align_tones(phones, tones):
     return res
 
 
+def get_real_sokuon(text):
+    for regex, replacement in _real_sokuon:
+        text = re.sub(regex, replacement, text)
+    return text
+
+
+def get_real_hatsuon(text):
+    for regex, replacement in _real_hatsuon:
+        text = re.sub(regex, replacement, text)
+    return text
+
+
+def japanese_to_romaji_with_accent(text):
+    """Reference https://r9y9.github.io/ttslearn/latest/notebooks/ch10_Recipe-Tacotron.html"""
+    # text = symbols_to_japanese(text)
+    if re.match(_MARKS, text):
+        return [text]
+    if text == "ー":
+        return ["ー"]
+    elif text.startswith("ー"):
+        return ["ー"] + japanese_to_romaji_with_accent(text[1:])
+    res = ""
+    labels = pyopenjtalk.extract_fullcontext(text)
+    for n, label in enumerate(labels):
+        phoneme = re.search(r"\-([^\+]*)\+", label).group(1)
+        if phoneme not in ["sil", "pau"]:
+            res += phoneme.replace("ch", "ʧ").replace("sh", "ʃ").replace("cl", "Q")
+        else:
+            continue
+        # n_moras = int(re.search(r'/F:(\d+)_', label).group(1))
+        a1 = int(re.search(r"/A:(\-?[0-9]+)\+", label).group(1))
+        a2 = int(re.search(r"\+(\d+)\+", label).group(1))
+        a3 = int(re.search(r"\+(\d+)/", label).group(1))
+        if re.search(r"\-([^\+]*)\+", labels[n + 1]).group(1) in ["sil", "pau"]:
+            a2_next = -1
+        else:
+            a2_next = int(re.search(r"\+(\d+)\+", labels[n + 1]).group(1))
+        # Accent phrase boundary
+        # if a3 == 1 and a2_next == 1:
+        #     res += " "
+        # Falling
+        if a1 == 0 and a2_next == a2 + 1:
+            res += "↓"
+        # Rising
+        elif a2 == 1 and a2_next == 2:
+            res += "↑"
+
+    res = get_real_sokuon(res)
+    res = get_real_hatsuon(res)
+    for regex, replacement in _romaji_to_ipa2:
+        res = re.sub(regex, replacement, res)
+    return list(res)
+
+
 def g2p(norm_text):
-    sep_text, sep_kata, acc = text2sep_kata(norm_text)
+    sep_text, sep_kata = text2sep_kata(norm_text)
+    # sep_kata = handle_long(sep_kata)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
-    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
+    sep_phonemes = handle_long([japanese_to_romaji_with_accent(i) for i in sep_text])
+
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
         for j in i:
-            assert j in symbols, (sep_text, sep_kata, sep_phonemes)
-    tones = align_tones(sep_phonemes, acc)
+            assert j in symbols, (sep_text, sep_phonemes)
+    # tones = align_tones(sep_phonemes, acc)
 
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
@@ -379,10 +482,10 @@ def g2p(norm_text):
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
     phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
-    tones = [0] + tones + [0]
+    # tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
-    assert len(phones) == len(tones)
-    return phones, tones, word2ph
+    # assert len(phones) == len(tones)
+    return phones, word2ph
 
 
 if __name__ == "__main__":
