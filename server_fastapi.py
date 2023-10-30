@@ -306,10 +306,12 @@ if __name__ == "__main__":
                     if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                         if os.path.isfile(relpath):
                             model_files.append(sub_file)
-                model_files = sorted(model_files,
-                                     key=lambda pth: int(pth.lstrip("G_").rstrip(".pth"))
-                                     if pth.lstrip("G_").rstrip(".pth").isdigit()
-                                     else 10**10)
+                model_files = sorted(
+                    model_files,
+                    key=lambda pth: int(pth.lstrip("G_").rstrip(".pth"))
+                    if pth.lstrip("G_").rstrip(".pth").isdigit()
+                    else 10**10,
+                )
                 result[file] = model_files
                 models_dir = os.path.join(sub_dir, "models")
                 model_files = []
@@ -322,10 +324,12 @@ if __name__ == "__main__":
                         if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                             if os.path.isfile(os.path.join(models_dir, sub_file)):
                                 model_files.append(f"models/{sub_file}")
-                    model_files = sorted(model_files,
-                                         key=lambda pth: int(pth.lstrip("models/G_").rstrip(".pth"))
-                                         if pth.lstrip("models/G_").rstrip(".pth").isdigit()
-                                         else 10**10)
+                    model_files = sorted(
+                        model_files,
+                        key=lambda pth: int(pth.lstrip("models/G_").rstrip(".pth"))
+                        if pth.lstrip("models/G_").rstrip(".pth").isdigit()
+                        else 10**10,
+                    )
                     result[file] += model_files
                 if len(result[file]) == 0:
                     result.pop(file)
