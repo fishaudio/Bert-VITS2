@@ -3,6 +3,7 @@ import os
 import logging
 import re_matching
 import argparse
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -171,13 +172,37 @@ def tts_fn(
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
 
-def file_infer(file,speaker,sdp_ratio,noise_scale,noise_scale_w,length_scale,language,cut_by_sent,interval_between_para,interval_between_sent):
+
+def file_infer(
+    file,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+    cut_by_sent,
+    interval_between_para,
+    interval_between_sent,
+):
     try:
-      with open(file.name, "r", encoding="utf-8") as file:
-         text = file.read()
-         return tts_split(text,speaker,sdp_ratio,noise_scale,noise_scale_w,length_scale,language,cut_by_sent,interval_between_para,interval_between_sent)
+        with open(file.name, "r", encoding="utf-8") as file:
+            text = file.read()
+            return tts_split(
+                text,
+                speaker,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                language,
+                cut_by_sent,
+                interval_between_para,
+                interval_between_sent,
+            )
     except Exception as error:
-        return error,None
+        return error, None
+
 
 if __name__ == "__main__":
     if config.webui_config.debug:
@@ -197,9 +222,7 @@ if __name__ == "__main__":
     hps = utils.get_hparams_from_file(args.config)
     # 若config.json中未指定版本则默认为最新版本
     version = hps.version if hasattr(hps, "version") else latest_version
-    net_g = get_net_g(
-        model_path=args.model, version=version, device=device, hps=hps
-    )
+    net_g = get_net_g(model_path=args.model, version=version, device=device, hps=hps)
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
     languages = ["ZH", "JP", "EN", "mix"]
@@ -258,7 +281,9 @@ if __name__ == "__main__":
                         opt_cut_by_sent = gr.Checkbox(
                             label="按句切分    在按段落切分的基础上再按句子切分文本"
                         )
-                        input_file = gr.Files(label="上传txt纯文本文件",file_types=['text'],file_count='single')
+                        input_file = gr.Files(
+                            label="上传txt纯文本文件", file_types=["text"], file_count="single"
+                        )
                         slicer = gr.Button("文本框切分生成", variant="primary")
                         slicer_txt_file = gr.Button("从文件切分生成", variant="primary")
                 text_output = gr.Textbox(label="状态信息")
@@ -308,7 +333,7 @@ if __name__ == "__main__":
         slicer_txt_file.click(
             file_infer,
             inputs=[
-                input_file,#text
+                input_file,  # text
                 speaker,
                 sdp_ratio,
                 noise_scale,
@@ -320,7 +345,7 @@ if __name__ == "__main__":
                 interval_between_sent,
             ],
             outputs=[text_output, audio_output],
-        )       
+        )
 
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
