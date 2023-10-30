@@ -1,5 +1,6 @@
 # flake8: noqa: E402
 
+import platform
 import os
 import torch
 from torch.nn import functional as F
@@ -53,8 +54,11 @@ def run():
             os.environ[env_name] = str(env_value)
 
     # 多卡训练设置
+    backend = "nccl"
+    if platform.system() == "Windows":
+        backend = "gloo"
     dist.init_process_group(
-        backend="nccl",
+        backend=backend,
         init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
