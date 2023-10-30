@@ -2,7 +2,7 @@
 api服务 多版本多模型 fastapi实现
 """
 import logging
-
+import gc
 import utils
 from fastapi import FastAPI, Query
 from fastapi.responses import Response, FileResponse
@@ -141,6 +141,7 @@ class Models:
         self.models.pop(index)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        gc.collect()
         return index
 
     def get_models(self):
@@ -291,7 +292,7 @@ if __name__ == "__main__":
 
     def _get_all_models(root_dir: str = "Data", only_unloaded: bool = False):
         result: Dict[str, List[str]] = dict()
-        files = os.listdir(root_dir)
+        files = os.listdir(root_dir) + ["."]
         for file in files:
             if os.path.isdir(os.path.join(root_dir, file)):
                 sub_dir = os.path.join(root_dir, file)
