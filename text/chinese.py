@@ -68,11 +68,6 @@ _bopomofo_to_ipa = [
         ("ㄧ", "i"),
         ("ㄨ", "u"),
         ("ㄩ", "ɥ"),
-        ("ˉ", "→"),
-        ("ˊ", "↑"),
-        ("ˇ", "↓↑"),
-        ("ˋ", "↓"),
-        ("˙", ""),
         ("，", ","),
         ("。", "."),
         ("！", "!"),
@@ -144,12 +139,12 @@ def g2p(text):
     pattern = r"(?<=[{0}])\s*".format("".join(punctuation))
     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
     # phones, tones, word2ph = _g2p(sentences)
-    phones, word2ph = chinese_to_ipa(text)
+    phones, tones, word2ph = chinese_to_ipa(text)
     assert sum(word2ph) == len(phones)
     assert (
         len(word2ph) == len(text) + 2
     )  # Sometimes it will crash,you can add a try-catch.
-    return phones, word2ph
+    return phones, tones, word2ph
 
 
 def _get_initials_finals(word):
@@ -257,26 +252,43 @@ def get_bert_feature(text, word2ph):
 
 
 def chinese_to_bopomofo(text):
-    words = jieba.lcut(text, cut_all=False)
+    words = psg.lcut(text)  # jieba.lcut(text, cut_all=False)
+    words = tone_modifier.pre_merge_for_modify(words)
     text = []
-    for word in words:
+    initials = []
+    finals = []
+    for word, pos in words:
         bopomofos = lazy_pinyin(word, BOPOMOFO)
         text += bopomofos
-    return text
+        sub_initials, sub_finals = _get_initials_finals(word)
+        sub_finals = tone_modifier.modified_tone(word, pos, sub_finals)
+        initials.append(sub_initials)
+        finals.append(sub_finals)
+    initials = sum(initials, [])
+    finals = sum(finals, [])
+    tones = []
+    for c, v in zip(initials, finals):
+        if c == v:
+            tone = "0"
+        else:
+            tone = v[-1]
+        tones.append(int(tone))
+    return text, tones
 
 
-def bopomofo_to_ipa(text):
+def bopomofo_to_ipa(text, tones):
     for i in range(len(text)):
+        text[i] = re.sub(r"[ˉˊˇˋ˙]", "", text[i])
         for regex, replacement in _bopomofo_to_ipa:
             text[i] = re.sub(regex, replacement, text[i])
-    return text
+    return text, tones
 
 
 def chinese_to_ipa(text):
     text = text_normalize(text)
-    text = chinese_to_bopomofo(text)
+    text, tones = chinese_to_bopomofo(text)
     # text = latin_to_bopomofo(text)
-    text = bopomofo_to_ipa(text)
+    text, ts = bopomofo_to_ipa(text, tones)
     for i in range(len(text)):
         text[i] = re.sub("i([aoe])", r"j\1", text[i])
         text[i] = re.sub("u([aoəe])", r"w\1", text[i])
@@ -285,14 +297,17 @@ def chinese_to_ipa(text):
         )
         text[i] = re.sub("([s][⁼ʰ]?)([→↓↑ ]+|$)", r"\1ɹ\2", text[i])
     word2ph = []
+    tones = []
     for i in text:
         if any(j not in cjke_symbols for j in i):
             word2ph += [1] * len(i)
         else:
             word2ph += [len(i)]
+        tones += [ts.pop(0)] * len(i)
     word2ph = [1] + word2ph + [1]
+    tones = [0] + tones + [0]
     phones = ["_"] + [j for i in text for j in i] + ["_"]
-    return phones, word2ph
+    return phones, tones, word2ph
 
 
 if __name__ == "__main__":

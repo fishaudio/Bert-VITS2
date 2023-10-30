@@ -482,10 +482,10 @@ def g2p(norm_text):
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
     phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
-    # tones = [0] + tones + [0]
+    tones = [0] * len(phones)
     word2ph = [1] + word2ph + [1]
     # assert len(phones) == len(tones)
-    return phones, word2ph
+    return phones, tones, word2ph
 
 
 if __name__ == "__main__":

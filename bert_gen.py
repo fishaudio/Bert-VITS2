@@ -19,13 +19,15 @@ def process_line(line):
             device = torch.device(f"cuda:{gpu_id}")
         else:
             device = torch.device("cpu")
-    wav_path, _, language_str, text, phones, word2ph = line.strip().split("|")
+    wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
     phone = phones.split(" ")
+    tone = [int(i) for i in tone.split(" ")]
     word2ph = [int(i) for i in word2ph.split(" ")]
     word2ph = [i for i in word2ph]
-    phone, language = cleaned_text_to_sequence(phone, language_str)
+    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 
     phone = commons.intersperse(phone, 0)
+    tone = commons.intersperse(tone, 0)
     language = commons.intersperse(language, 0)
     for i in range(len(word2ph)):
         word2ph[i] = word2ph[i] * 2

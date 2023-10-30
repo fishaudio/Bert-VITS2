@@ -180,7 +180,7 @@ ja_symbols = [
     "z",
     "zy",
 ]
-num_ja_tones = 2
+num_ja_tones = 1
 
 # English
 en_symbols = [
@@ -224,7 +224,7 @@ en_symbols = [
     "z",
     "zh",
 ]
-num_en_tones = 4
+num_en_tones = 1
 
 # combine all symbols
 normal_symbols = sorted(set(zh_symbols + ja_symbols + en_symbols))

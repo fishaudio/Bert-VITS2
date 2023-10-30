@@ -522,10 +522,10 @@ def g2p(text):
         #     word2ph.append(len(phns))
 
     phones = ["_"] + phones + ["_"]
-    # tones = [0] + tones + [0]
+    tones = [0] * len(phones)
     word2ph = [1] + word2ph + [1]
 
-    return phones, word2ph
+    return phones, tones, word2ph
 
 
 def get_bert_feature(text, word2ph):

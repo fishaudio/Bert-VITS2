@@ -319,6 +319,7 @@ def train_and_evaluate(
         y,
         y_lengths,
         speakers,
+        tone,
         language,
         bert,
         ja_bert,
@@ -340,6 +341,7 @@ def train_and_evaluate(
             rank, non_blocking=True
         )
         speakers = speakers.cuda(rank, non_blocking=True)
+        tone = tone.cuda(rank, non_blocking=True)
         language = language.cuda(rank, non_blocking=True)
         bert = bert.cuda(rank, non_blocking=True)
         ja_bert = ja_bert.cuda(rank, non_blocking=True)
@@ -361,6 +363,7 @@ def train_and_evaluate(
                 spec,
                 spec_lengths,
                 speakers,
+                tone,
                 language,
                 bert,
                 ja_bert,
@@ -555,6 +558,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             y,
             y_lengths,
             speakers,
+            tone,
             language,
             bert,
             ja_bert,
@@ -567,12 +571,14 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert = bert.cuda()
             ja_bert = ja_bert.cuda()
             en_bert = en_bert.cuda()
+            tone = tone.cuda()
             language = language.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
                     x_lengths,
                     speakers,
+                    tone,
                     language,
                     bert,
                     ja_bert,
