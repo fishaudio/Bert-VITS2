@@ -346,6 +346,8 @@ _arpa_to_ipa = {
     # Consonants - Semivowels
     "W": "w",
     "Y": "j",
+    # Unknown
+    "UNK": ",",
 }
 
 
@@ -406,6 +408,7 @@ def normalize_numbers(text):
     text = re.sub(_decimal_number_re, _expand_decimal_point, text)
     text = re.sub(_ordinal_re, _expand_ordinal, text)
     text = re.sub(_number_re, _expand_number, text)
+    text = text.replace("&", "and")
     return text
 
 
@@ -493,18 +496,23 @@ def g2p(text):
                 else:
                     temp_phones.append(ph)
                     temp_tone.append(0)
+        if len(temp_phones) == 0:
+            temp_phones = [post_replace_ph(word)]
+        if len(temp_tone) == 0:
+            temp_tone = [0] * len(temp_phones)
         # arpa_to_ipa
         for i in range(len(temp_phones)):
             if temp_phones[i] not in punctuation:
                 temp_phones[i] = _arpa_to_ipa[temp_phones[i]]
+                temp_phones[i] = re.sub(
+                    r"l([^aeiouæɑɔəɛɪʊ ]*(?: |$))",
+                    lambda x: "ɫ" + x.group(1),
+                    temp_phones[i],
+                )
+                for regex, replacement in _ipa_to_ipa2:
+                    temp_phones[i] = re.sub(regex, replacement, temp_phones[i])
             temp_tone[i] = [temp_tone[i]] * len(temp_phones[i])
 
-        temp_phones = "".join(temp_phones)
-        temp_phones = re.sub(
-            r"l([^aeiouæɑɔəɛɪʊ ]*(?: |$))", lambda x: "ɫ" + x.group(1), temp_phones
-        )
-        for regex, replacement in _ipa_to_ipa2:
-            temp_phones = re.sub(regex, replacement, temp_phones)
         temp_phones = [i for j in temp_phones for i in j]
         phns = [post_replace_ph(ph) for ph in temp_phones]
         assert all([ph in symbols for ph in phns]), (words, phns)
@@ -528,7 +536,6 @@ def g2p(text):
     phones = ["_"] + phones + ["_"]
     tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
-
     assert len(phones) == len(tones)
 
     return phones, tones, word2ph
