@@ -1,7 +1,6 @@
 import os
 import re
 
-import jieba
 import cn2an
 from pypinyin import lazy_pinyin, Style, BOPOMOFO
 
