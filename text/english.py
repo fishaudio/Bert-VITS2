@@ -248,65 +248,65 @@ _arpa_to_ipa = {
     # Vowels - Monophthongs
     "AO": "ɔ",
     "AO0": "ɔ",
-    "AO1": "ˈɔ",
-    "AO2": "ˌɔ",
+    "AO1": "ɔ",
+    "AO2": "ɔ",
     "AA": "ɑ",
     "AA0": "ɑ",
-    "AA1": "ˈɑ",
-    "AA2": "ˌɑ",
+    "AA1": "ɑ",
+    "AA2": "ɑ",
     "IY": "i",
     "IY0": "i",
-    "IY1": "ˈi",
-    "IY2": "ˌi",
+    "IY1": "i",
+    "IY2": "i",
     "UW": "u",
     "UW0": "u",
-    "UW1": "ˈu",
-    "UW2": "ˌu",
+    "UW1": "u",
+    "UW2": "u",
     "EH": "ɛ",
     "EH0": "ɛ",
-    "EH1": "ˈɛ",
-    "EH2": "ˌɛ",
+    "EH1": "ɛ",
+    "EH2": "ɛ",
     "IH": "ɪ",
     "IH0": "ɪ",
-    "IH1": "ˈɪ",
-    "IH2": "ˌɪ",
+    "IH1": "ɪ",
+    "IH2": "ɪ",
     "UH": "ʊ",
     "UH0": "ʊ",
-    "UH1": "ˈʊ",
-    "UH2": "ˌʊ",
+    "UH1": "ʊ",
+    "UH2": "ʊ",
     "AH": "ə",
     "AH0": "ə",
-    "AH1": "ˈə",
-    "AH2": "ˌə",
+    "AH1": "ə",
+    "AH2": "ə",
     "AE": "æ",
     "AE0": "æ",
-    "AE1": "ˈæ",
-    "AE2": "ˌæ",
+    "AE1": "æ",
+    "AE2": "æ",
     "AX": "ə",
     "AX0": "ə",
-    "AX1": "ˈə",
-    "AX2": "ˌə",
+    "AX1": "ə",
+    "AX2": "ə",
     # Vowels - Diphthongs
     "EY": "eɪ",
     "EY0": "eɪ",
-    "EY1": "ˈeɪ",
-    "EY2": "ˌeɪ",
+    "EY1": "eɪ",
+    "EY2": "eɪ",
     "AY": "aɪ",
     "AY0": "aɪ",
-    "AY1": "ˈaɪ",
-    "AY2": "ˌaɪ",
+    "AY1": "aɪ",
+    "AY2": "aɪ",
     "OW": "oʊ",
     "OW0": "oʊ",
-    "OW1": "ˈoʊ",
-    "OW2": "ˌoʊ",
+    "OW1": "oʊ",
+    "OW2": "oʊ",
     "AW": "aʊ",
     "AW0": "aʊ",
-    "AW1": "ˈaʊ",
-    "AW2": "ˌaʊ",
+    "AW1": "aʊ",
+    "AW2": "aʊ",
     "OY": "ɔɪ",
     "OY0": "ɔɪ",
-    "OY1": "ˈɔɪ",
-    "OY2": "ˌɔɪ",
+    "OY1": "ɔɪ",
+    "OY2": "ɔɪ",
     # Consonants - Stops
     "P": "p",
     "B": "b",
@@ -337,12 +337,12 @@ _arpa_to_ipa = {
     # Vowels - R-colored vowels
     "ER": "ər",
     "ER0": "ər",
-    "ER1": "ˈər",
-    "ER2": "ˌər",
+    "ER1": "ər",
+    "ER2": "ər",
     "AXR": "ər",
     "AXR0": "ər",
-    "AXR1": "ˈər",
-    "AXR2": "ˌər",
+    "AXR1": "ər",
+    "AXR2": "ər",
     # Consonants - Semivowels
     "W": "w",
     "Y": "j",
@@ -474,10 +474,11 @@ def g2p(text):
     # phn_list = ipa.convert(" ".join(temp)).split(" ")
     for word in words:
         temp_phones = []
+        temp_tone = []
         if word.upper() in eng_dict:
             phns, tns = refine_syllables(eng_dict[word.upper()])
             temp_phones += phns
-            tones += tns
+            temp_tone += tns
         else:
             try:
                 phone_list = list(filter(lambda p: p != " ", _g2p(word)))
@@ -488,14 +489,16 @@ def g2p(text):
                 if ph in arpa:
                     ph, tn = refine_ph(ph)
                     temp_phones.append(ph)
-                    tones.append(tn)
+                    temp_tone.append(tn)
                 else:
                     temp_phones.append(ph)
-                    tones.append(0)
+                    temp_tone.append(0)
         # arpa_to_ipa
         for i in range(len(temp_phones)):
             if temp_phones[i] not in punctuation:
                 temp_phones[i] = _arpa_to_ipa[temp_phones[i]]
+            temp_tone[i] = [temp_tone[i]] * len(temp_phones[i])
+
         temp_phones = "".join(temp_phones)
         temp_phones = re.sub(
             r"l([^aeiouæɑɔəɛɪʊ ]*(?: |$))", lambda x: "ɫ" + x.group(1), temp_phones
@@ -506,6 +509,7 @@ def g2p(text):
         phns = [post_replace_ph(ph) for ph in temp_phones]
         assert all([ph in symbols for ph in phns]), (words, phns)
         phones += phns
+        tones += [j for i in temp_tone for j in i]
         word2ph.append(len(phns))
         # if word in punctuation:
         #     phones.append(post_replace_ph(word))
@@ -522,8 +526,10 @@ def g2p(text):
         #     word2ph.append(len(phns))
 
     phones = ["_"] + phones + ["_"]
-    tones = [0] * len(phones)
+    tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
+
+    assert len(phones) == len(tones)
 
     return phones, tones, word2ph
 

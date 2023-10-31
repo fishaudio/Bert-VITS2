@@ -469,6 +469,28 @@ def g2p(norm_text):
     # sep_kata = handle_long(sep_kata)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = handle_long([japanese_to_romaji_with_accent(i) for i in sep_text])
+    sep_acc = []
+    for i in range(len(sep_phonemes)):
+        temp_phone = sep_phonemes[i].copy()
+        temp_acc = []
+        while len(temp_phone) > 0:
+            if temp_phone[0] == "↓":
+                temp_acc.append(temp_acc[-1] - 1)
+                temp_phone.pop(0)
+            elif temp_phone[0] == "↑":
+                temp_acc.append(temp_acc[-1] + 1)
+                temp_phone.pop(0)
+            else:
+                if len(temp_acc) == 0:
+                    temp_acc.append(0)
+                else:
+                    temp_acc.append(temp_acc[-1])
+            temp_phone.pop(0)
+        if -1 in temp_acc:
+            temp_acc = [j + 1 for j in temp_acc]
+        sep_acc.append(temp_acc)
+
+    sep_phonemes = [[j for j in i if j not in ["↑", "↓"]] for i in sep_phonemes]
 
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
@@ -484,9 +506,9 @@ def g2p(norm_text):
         aaa = distribute_phone(phone_len, word_len)
         word2ph += aaa
     phones = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]
-    tones = [0] * len(phones)
+    tones = [0] + [j for i in sep_acc for j in i] + [0]
     word2ph = [1] + word2ph + [1]
-    # assert len(phones) == len(tones)
+    assert len(phones) == len(tones)
     return phones, tones, word2ph
 
 
