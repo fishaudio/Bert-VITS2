@@ -3,7 +3,7 @@ import os
 import re
 from g2p_en import G2p
 
-from text import symbols
+from text import symbols, punctuation
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
@@ -86,7 +86,7 @@ arpa = {
 
 
 def post_replace_ph(ph):
-    rep_map = {
+    rep_map_post = {
         "：": ",",
         "；": ",",
         "，": ",",
@@ -97,10 +97,9 @@ def post_replace_ph(ph):
         "·": ",",
         "、": ",",
         "...": "…",
-        "v": "V",
     }
-    if ph in rep_map.keys():
-        ph = rep_map[ph]
+    if ph in rep_map_post.keys():
+        ph = rep_map_post[ph]
     if ph in symbols:
         return ph
     if ph not in symbols:
@@ -155,8 +154,7 @@ def refine_ph(phn):
     tone = 0
     if re.search(r"\d$", phn):
         tone = int(phn[-1]) + 1
-        phn = phn[:-1]
-    return phn.lower(), tone
+    return phn, tone
 
 
 def refine_syllables(syllables):
@@ -246,6 +244,113 @@ _ipa_to_ipa2 = [
 ]
 
 
+_arpa_to_ipa = {
+    # Vowels - Monophthongs
+    "AO": "ɔ",
+    "AO0": "ɔ",
+    "AO1": "ɔ",
+    "AO2": "ɔ",
+    "AA": "ɑ",
+    "AA0": "ɑ",
+    "AA1": "ɑ",
+    "AA2": "ɑ",
+    "IY": "i",
+    "IY0": "i",
+    "IY1": "i",
+    "IY2": "i",
+    "UW": "u",
+    "UW0": "u",
+    "UW1": "u",
+    "UW2": "u",
+    "EH": "ɛ",
+    "EH0": "ɛ",
+    "EH1": "ɛ",
+    "EH2": "ɛ",
+    "IH": "ɪ",
+    "IH0": "ɪ",
+    "IH1": "ɪ",
+    "IH2": "ɪ",
+    "UH": "ʊ",
+    "UH0": "ʊ",
+    "UH1": "ʊ",
+    "UH2": "ʊ",
+    "AH": "ə",
+    "AH0": "ə",
+    "AH1": "ə",
+    "AH2": "ə",
+    "AE": "æ",
+    "AE0": "æ",
+    "AE1": "æ",
+    "AE2": "æ",
+    "AX": "ə",
+    "AX0": "ə",
+    "AX1": "ə",
+    "AX2": "ə",
+    # Vowels - Diphthongs
+    "EY": "eɪ",
+    "EY0": "eɪ",
+    "EY1": "eɪ",
+    "EY2": "eɪ",
+    "AY": "aɪ",
+    "AY0": "aɪ",
+    "AY1": "aɪ",
+    "AY2": "aɪ",
+    "OW": "oʊ",
+    "OW0": "oʊ",
+    "OW1": "oʊ",
+    "OW2": "oʊ",
+    "AW": "aʊ",
+    "AW0": "aʊ",
+    "AW1": "aʊ",
+    "AW2": "aʊ",
+    "OY": "ɔɪ",
+    "OY0": "ɔɪ",
+    "OY1": "ɔɪ",
+    "OY2": "ɔɪ",
+    # Consonants - Stops
+    "P": "p",
+    "B": "b",
+    "T": "t",
+    "D": "d",
+    "K": "k",
+    "G": "g",
+    # Consonants - Affricates
+    "CH": "ʧ",
+    "JH": "ʤ",
+    # Consonants - Fricatives
+    "F": "f",
+    "V": "v",
+    "TH": "θ",
+    "DH": "ð",
+    "S": "s",
+    "Z": "z",
+    "SH": "ʃ",
+    "ZH": "ʒ",
+    "HH": "h",
+    # Consonants - Nasals
+    "M": "m",
+    "N": "n",
+    "NG": "ŋ",
+    # Consonants - Liquids
+    "L": "l",
+    "R": "r",
+    # Vowels - R-colored vowels
+    "ER": "ər",
+    "ER0": "ər",
+    "ER1": "ər",
+    "ER2": "ər",
+    "AXR": "ər",
+    "AXR0": "ər",
+    "AXR1": "ər",
+    "AXR2": "ər",
+    # Consonants - Semivowels
+    "W": "w",
+    "Y": "j",
+    # Unknown
+    "UNK": ",",
+}
+
+
 def _expand_dollars(m):
     match = m.group(1)
     parts = match.split(".")
@@ -303,11 +408,61 @@ def normalize_numbers(text):
     text = re.sub(_decimal_number_re, _expand_decimal_point, text)
     text = re.sub(_ordinal_re, _expand_ordinal, text)
     text = re.sub(_number_re, _expand_number, text)
+    text = text.replace("&", "and")
     return text
+
+
+rep_map = {
+    "：": ",",
+    "；": ",",
+    "，": ",",
+    ":": ",",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "\n": ".",
+    "．": ".",
+    "...": " …",
+    "···": " …",
+    "・・・": " …",
+    "·": ",",
+    "・": ",",
+    "、": ",",
+    "$": ".",
+    "“": "'",
+    "”": "'",
+    "‘": "'",
+    "’": "'",
+    '"': "'",
+    "（": "'",
+    "）": "'",
+    "(": "'",
+    ")": "'",
+    "《": "'",
+    "》": "'",
+    "【": "'",
+    "】": "'",
+    "[": "'",
+    "]": "'",
+    "—": "-",
+    "−": "-",
+    "～": "-",
+    "~": "-",
+    "「": "'",
+    "」": " '",
+}
+
+
+def replace_punctuation(text):
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+
+    replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
+    return replaced_text
 
 
 def text_normalize(text):
     text = normalize_numbers(text)
+    text = replace_punctuation(text)
     return text
 
 
@@ -315,31 +470,73 @@ def g2p(text):
     phones = []
     tones = []
     word2ph = []
+    text = text_normalize(text)
     words = re.split(r"([,;.\-\?\!\s+])", text)
     words = [word for word in words if word.strip() != ""]
+    # temp = [word for word in words if word not in punctuation]
+    # phn_list = ipa.convert(" ".join(temp)).split(" ")
     for word in words:
+        temp_phones = []
+        temp_tone = []
         if word.upper() in eng_dict:
             phns, tns = refine_syllables(eng_dict[word.upper()])
-            phones += phns
-            tones += tns
-            word2ph.append(len(phns))
+            temp_phones += phns
+            temp_tone += tns
         else:
-            phone_list = list(filter(lambda p: p != " ", _g2p(word)))
+            try:
+                phone_list = list(filter(lambda p: p != " ", _g2p(word)))
+            except Exception as e:
+                print(word)
+                raise e
             for ph in phone_list:
                 if ph in arpa:
                     ph, tn = refine_ph(ph)
-                    phones.append(ph)
-                    tones.append(tn)
+                    temp_phones.append(ph)
+                    temp_tone.append(tn)
                 else:
-                    phones.append(ph)
-                    tones.append(0)
-            word2ph.append(len(phone_list))
+                    temp_phones.append(ph)
+                    temp_tone.append(0)
+        if len(temp_phones) == 0:
+            temp_phones = [post_replace_ph(word)]
+        if len(temp_tone) == 0:
+            temp_tone = [0] * len(temp_phones)
+        # arpa_to_ipa
+        for i in range(len(temp_phones)):
+            if temp_phones[i] not in punctuation:
+                temp_phones[i] = _arpa_to_ipa[temp_phones[i]]
+                temp_phones[i] = re.sub(
+                    r"l([^aeiouæɑɔəɛɪʊ ]*(?: |$))",
+                    lambda x: "ɫ" + x.group(1),
+                    temp_phones[i],
+                )
+                for regex, replacement in _ipa_to_ipa2:
+                    temp_phones[i] = re.sub(regex, replacement, temp_phones[i])
+            temp_tone[i] = [temp_tone[i]] * len(temp_phones[i])
 
-    phones = [post_replace_ph(i) for i in phones]
+        temp_phones = [i for j in temp_phones for i in j]
+        phns = [post_replace_ph(ph) for ph in temp_phones]
+        assert all([ph in symbols for ph in phns]), (words, phns)
+        phones += phns
+        tones += [j for i in temp_tone for j in i]
+        word2ph.append(len(phns))
+        # if word in punctuation:
+        #     phones.append(post_replace_ph(word))
+        #     word2ph.append(1)
+        # else:
+        #     phns = phn_list.pop(0)  # ipa.convert(word.lower())
+        #     phns = re.sub(
+        #         r"l([^aeiouæɑɔəɛɪʊ ]*(?: |$))", lambda x: "ɫ" + x.group(1), phns
+        #     )
+        #     for regex, replacement in _ipa_to_ipa2:
+        #         phns = re.sub(regex, replacement, phns)
+        #     assert all([ph in symbols for ph in list(phns)]), (words, phns)
+        #     phones += list(phns)
+        #     word2ph.append(len(phns))
 
     phones = ["_"] + phones + ["_"]
     tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
+    assert len(phones) == len(tones)
 
     return phones, tones, word2ph
 

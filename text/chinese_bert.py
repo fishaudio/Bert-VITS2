@@ -27,7 +27,6 @@ def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
             inputs[i] = inputs[i].to(device)
         res = models[device](**inputs, output_hidden_states=True)
         res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
-
     assert len(word2ph) == len(text) + 2
     word2phone = word2ph
     phone_level_feature = []
