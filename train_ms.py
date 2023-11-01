@@ -55,8 +55,10 @@ def run():
     envs = config.train_ms_config.env
     for env_name, env_value in envs.items():
         if env_name not in os.environ.keys():
+            print("加载config中的配置{}".format(str(env_value)))
             os.environ[env_name] = str(env_value)
-
+    print("已经存在的变量{},{},{},{}".format(os.environ['MASTER_ADDR'],os.environ['MASTER_PORT'],os.environ['WORLD_SIZE'],os.environ['RANK']))
+    
     # 多卡训练设置
     backend = "nccl"
     if platform.system() == "Windows":
@@ -65,7 +67,8 @@ def run():
         backend=backend,
         init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
-    rank = dist.get_rank()
+    # rank = dist.get_rank()
+    rank=int(os.environ['LOCAL_RANK'])
     n_gpus = dist.get_world_size()
 
     # 命令行/config.yml配置解析
@@ -103,6 +106,7 @@ def run():
             f.write(data)
 
     torch.manual_seed(hps.train.seed)
+    print("++++++++++++++++++++++++++++++++++++++{}+++++++++++++++++++++++++++++++++++++++++++++++".format(rank))
     torch.cuda.set_device(rank)
     global global_step
     if rank == 0:
