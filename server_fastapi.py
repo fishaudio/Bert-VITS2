@@ -480,9 +480,9 @@ if __name__ == "__main__":
     @app.get("/tools/get_audio")
     def get_audio(path: str = Query(..., description="本地音频路径")):
         if not os.path.isfile(path):
-            return {"status": 18, "detail": f"指定音频不存在"}
+            return {"status": 18, "detail": "指定音频不存在"}
         if not path.endswith(".wav"):
-            return {"status": 19, "detail": f"非wav格式文件"}
+            return {"status": 19, "detail": "非wav格式文件"}
         return FileResponse(path=path)
 
     logger.warning("本地服务，请勿将服务端口暴露于外网")
