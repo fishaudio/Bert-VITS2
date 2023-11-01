@@ -1,6 +1,6 @@
 ---
 <<<<<<< HEAD
-language: 
+language:
 =======
 language:
 >>>>>>> a047def663e5323e534b337b071ebe2c6f87c59e
@@ -14,9 +14,9 @@ license: "apache-2.0"
 
 ## Chinese BERT with Whole Word Masking
 <<<<<<< HEAD
-For further accelerating Chinese natural language processing, we provide **Chinese pre-trained BERT with Whole Word Masking**. 
+For further accelerating Chinese natural language processing, we provide **Chinese pre-trained BERT with Whole Word Masking**.
 
-**[Pre-Training with Whole Word Masking for Chinese BERT](https://arxiv.org/abs/1906.08101)**  
+**[Pre-Training with Whole Word Masking for Chinese BERT](https://arxiv.org/abs/1906.08101)**
 =======
 For further accelerating Chinese natural language processing, we provide **Chinese pre-trained BERT with Whole Word Masking**.
 
@@ -57,7 +57,7 @@ If you find the technical report or resource is useful, please cite the followin
 }
 ```
 <<<<<<< HEAD
-- Secondary: https://arxiv.org/abs/1906.08101  
+- Secondary: https://arxiv.org/abs/1906.08101
 =======
 - Secondary: https://arxiv.org/abs/1906.08101
 >>>>>>> a047def663e5323e534b337b071ebe2c6f87c59e

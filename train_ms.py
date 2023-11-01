@@ -50,6 +50,7 @@ global_step = 0
 # os.environ['WORLD_SIZE'] = '2'
 # os.environ['RANK'] = '0'
 
+
 def run():
     # 环境变量解析
     envs = config.train_ms_config.env
@@ -57,8 +58,15 @@ def run():
         if env_name not in os.environ.keys():
             print("加载config中的配置{}".format(str(env_value)))
             os.environ[env_name] = str(env_value)
-    print("已经存在的变量{},{},{},{}".format(os.environ['MASTER_ADDR'],os.environ['MASTER_PORT'],os.environ['WORLD_SIZE'],os.environ['RANK']))
-    
+    print(
+        "已经存在的变量{},{},{},{}".format(
+            os.environ["MASTER_ADDR"],
+            os.environ["MASTER_PORT"],
+            os.environ["WORLD_SIZE"],
+            os.environ["RANK"],
+        )
+    )
+
     # 多卡训练设置
     backend = "nccl"
     if platform.system() == "Windows":
@@ -68,7 +76,7 @@ def run():
         init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
     # rank = dist.get_rank()
-    rank=int(os.environ['LOCAL_RANK'])
+    rank = int(os.environ["LOCAL_RANK"])
     n_gpus = dist.get_world_size()
 
     # 命令行/config.yml配置解析
@@ -106,7 +114,11 @@ def run():
             f.write(data)
 
     torch.manual_seed(hps.train.seed)
-    print("++++++++++++++++++++++++++++++++++++++{}+++++++++++++++++++++++++++++++++++++++++++++++".format(rank))
+    print(
+        "++++++++++++++++++++++++++++++++++++++{}+++++++++++++++++++++++++++++++++++++++++++++++".format(
+            rank
+        )
+    )
     torch.cuda.set_device(rank)
     global global_step
     if rank == 0:
@@ -253,7 +265,9 @@ def run():
 
         epoch_str = max(epoch_str, 1)
         global_step = (epoch_str - 1) * len(train_loader)
-        print(f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************")
+        print(
+            f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
+        )
     except Exception as e:
         print(e)
         epoch_str = 1
@@ -325,7 +339,7 @@ def train_and_evaluate(
     net_d.train()
     if net_dur_disc is not None:
         net_dur_disc.train()
-    
+
     for batch_idx, (
         x,
         x_lengths,

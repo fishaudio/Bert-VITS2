@@ -1,5 +1,5 @@
 ->进行标注（若已标注就跳过）-->预处理得到转录文件.list-->resample进行重采样 此时会得到dataset数据集
-—>preprocess_text.py得到.clean文件(字符？) 以及划分训练集和数据集(同时会更新config文件中的spk2id键值，存储对应的人物信息)，—>—> bert_gen在每个人物语音数据集文件夹中生成pt文件 
+—>preprocess_text.py得到.clean文件(字符？) 以及划分训练集和数据集(同时会更新config文件中的spk2id键值，存储对应的人物信息)，—>—> bert_gen在每个人物语音数据集文件夹中生成pt文件
 —> train_ms.py生成总的混合模型（结合底模进行微调）
 
 - 路径变了之后 需要改config.json 以及bert_gen.py之前的文件

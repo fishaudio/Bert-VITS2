@@ -1,10 +1,10 @@
-
 import streamlit as st
 import numpy as np
 import soundfile as sf
 import sys, os
 import logging
 import argparse
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -23,9 +23,9 @@ from models import SynthesizerTrn
 from text.symbols import symbols
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
-import gradio as gr
 import numpy as np
 import soundfile as sf
+
 net_g = None
 if sys.platform == "darwin" and torch.backends.mps.is_available():
     device = "mps"
@@ -124,13 +124,13 @@ def tts_fn(
             silence = np.zeros(hps.data.sampling_rate)  # 生成1秒的静音
             audio_list.append(silence)  # 将静音添加到列表中
     audio_concat = np.concatenate(audio_list)
-    
-       # 保存音频数据到本地文件
-    sf.write(out_wav, audio_concat, samplerate=hps.data.sampling_rate)  # 请替换YOUR_SAMPLERATE为实际的采样率
 
-    return "Success", (hps.data.sampling_rate,audio_concat )
+    # 保存音频数据到本地文件
+    sf.write(
+        out_wav, audio_concat, samplerate=hps.data.sampling_rate
+    )  # 请替换YOUR_SAMPLERATE为实际的采样率
 
-
+    return "Success", (hps.data.sampling_rate, audio_concat)
 
 
 def prepare(hps):
@@ -151,13 +151,12 @@ def prepare(hps):
         **hps.model,
     ).to(device)
     return net_g
-    
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(    
-    "-m", "--model_path", default="./logs/c1", help="path of your model"
+    parser.add_argument(
+        "-m", "--model_path", default="./logs/c1", help="path of your model"
     )
     parser.add_argument(
         "-c",
@@ -166,75 +165,88 @@ if __name__ == "__main__":
         help="path of your config file",
     )
     parser.add_argument(
-        "--out_wav", default="out/output_audio.wav", help="make link public", action="store_true"
+        "--out_wav",
+        default="out/output_audio.wav",
+        help="make link public",
+        action="store_true",
     )
-    
+
     st.set_page_config(
         page_title="鸿蒙Vits",
         page_icon="🧊",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
-            'About': 
-                """# 这是一个*非常*酷的应用！
+            "About": """# 这是一个*非常*酷的应用！
                     - 目前已经可以进行多角色推理
                 """  # 使用Markdown格式的字符串
-        }
+        },
     )
-    
+
     st.title("欢迎来到奇思妙想妙妙屋")
     args = parser.parse_args()
-    out_wav=args.out_wav    
-    model_path=args.model_path
-    if 'config_file' not in st.session_state:
-            st.session_state.config_file= ""
-    if 'model_file' not in st.session_state:
-            st.session_state.model_file= "" 
-    if 'hps' not in st.session_state:
-            st.session_state.hps= ""
-    if 'model_path' not in st.session_state:
-            st.session_state.model_path= ""
-    if 'net_g' not in st.session_state:
-            st.session_state.net_g= ""            
-            
-            
-    if args.config =="":
-        config_path="./configs"
-        flist=[it[:-5].split('_')[-1] for it in os.listdir(config_path)]
-        config_file=st.selectbox("选择配置",flist)
+    out_wav = args.out_wav
+    model_path = args.model_path
+    if "config_file" not in st.session_state:
+        st.session_state.config_file = ""
+    if "model_file" not in st.session_state:
+        st.session_state.model_file = ""
+    if "hps" not in st.session_state:
+        st.session_state.hps = ""
+    if "model_path" not in st.session_state:
+        st.session_state.model_path = ""
+    if "net_g" not in st.session_state:
+        st.session_state.net_g = ""
+
+    if args.config == "":
+        config_path = "./configs"
+        flist = [it[:-5].split("_")[-1] for it in os.listdir(config_path)]
+        config_file = st.selectbox("选择配置", flist)
         if config_file != st.session_state.config_file:
-            st.session_state.config_file=config_file
-            st.session_state.model_file= "" 
-            hps = utils.get_hparams_from_file(os.path.join(config_path,"config_"+config_file+".json")) 
-            st.session_state.hps=hps 
-            model_path=os.path.join("./logs",st.session_state.config_file)
-            st.session_state.model_path=model_path 
+            st.session_state.config_file = config_file
+            st.session_state.model_file = ""
+            hps = utils.get_hparams_from_file(
+                os.path.join(config_path, "config_" + config_file + ".json")
+            )
+            st.session_state.hps = hps
+            model_path = os.path.join("./logs", st.session_state.config_file)
+            st.session_state.model_path = model_path
             logger.info("更换配置***重新加载生成器.......................")
             # print("更换生成器")
-            net_g=prepare(hps)
-            st.session_state.net_g=net_g 
+            net_g = prepare(hps)
+            st.session_state.net_g = net_g
             _ = st.session_state.net_g.eval()
-    else: 
+    else:
         hps = utils.get_hparams_from_file(args.config)
-        net_g=prepare(hps) 
-        _ = net_g.eval() 
-    
-    
-    model_file = st.selectbox("选择模型",sorted([it for it in os.listdir(st.session_state.model_path) if it.endswith('.pth') and it[0]=="G"])[1:] )
+        net_g = prepare(hps)
+        _ = net_g.eval()
+
+    model_file = st.selectbox(
+        "选择模型",
+        sorted(
+            [
+                it
+                for it in os.listdir(st.session_state.model_path)
+                if it.endswith(".pth") and it[0] == "G"
+            ]
+        )[1:],
+    )
     if model_file != st.session_state.model_file:
-        logger.info("更换模型***重新加载模型.......................") 
+        logger.info("更换模型***重新加载模型.......................")
         st.session_state.model_file = model_file
         # print(os.path.join(model_path,model_file))
-        _ = utils.load_checkpoint(os.path.join(st.session_state.model_path,model_file), st.session_state.net_g, None, skip_optimizer=True)
+        _ = utils.load_checkpoint(
+            os.path.join(st.session_state.model_path, model_file),
+            st.session_state.net_g,
+            None,
+            skip_optimizer=True,
+        )
 
     speaker_ids = st.session_state.hps.data.spk2id
     speakers = list(speaker_ids.keys())
     languages = ["ZH", "JP"]
-    
 
-    text = st.text_area(
-        "Text", "欢迎来到奇思妙想妙妙屋~"
-    )
+    text = st.text_area("Text", "欢迎来到奇思妙想妙妙屋~")
     speaker = st.selectbox("Speaker", speakers)
     sdp_ratio = st.slider("SDP Ratio", 0.0, 1.0, 0.2, 0.01)
     noise_scale = st.slider("Noise Scale", 0.1, 2.0, 0.6, 0.01)
@@ -242,12 +254,12 @@ if __name__ == "__main__":
     length_scale = st.slider("Length Scale", 0.1, 2.0, 1.0, 0.01)
     language = st.selectbox("Language", languages)
 
-    message=None
+    message = None
     if st.button("Generate!"):
         message, audio_data = tts_fn(
             text, speaker, sdp_ratio, noise_scale, noise_scale_w, length_scale, language
         )
-        
+
         # 显示消息
     st.text("Message:")
     st.write(message)
@@ -255,4 +267,3 @@ if __name__ == "__main__":
     # 播放音频
     st.text("Generated Audio:")
     st.audio(out_wav, format="audio/wav")
-

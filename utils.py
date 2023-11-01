@@ -355,6 +355,8 @@ class HParams:
 
     def __repr__(self):
         return self.__dict__.__repr__()
+
+
 import os
 import glob
 import argparse
@@ -368,6 +370,7 @@ import torch
 MATPLOTLIB_FLAG = False
 
 logger = logging.getLogger(__name__)
+
 
 # TODO: 加载模型
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):
@@ -427,7 +430,8 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False
 
     return model, optimizer, learning_rate, iteration
 
-#todo 保存模型
+
+# todo 保存模型
 def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path):
     logger.info(
         "Saving model and optimizer state at iteration {} to {}".format(
@@ -448,7 +452,8 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
         checkpoint_path,
     )
 
-#todo 写入tensorboard
+
+# todo 写入tensorboard
 def summarize(
     writer,
     global_step,
@@ -474,7 +479,8 @@ def latest_checkpoint_path(dir_path, regex="G_*.pth"):
     x = f_list[-1]
     return x
 
-#TODO: 将频谱图通过matplotlib转换为RGB格式的numpy数组，传入tensorboard
+
+# TODO: 将频谱图通过matplotlib转换为RGB格式的numpy数组，传入tensorboard
 def plot_spectrogram_to_numpy(spectrogram):
     global MATPLOTLIB_FLAG
     if not MATPLOTLIB_FLAG:
@@ -493,7 +499,7 @@ def plot_spectrogram_to_numpy(spectrogram):
     plt.xlabel("Frames")
     plt.ylabel("Channels")
     plt.tight_layout()
-    #使用canvas将其保存到内存的画布中，然后再to RGB字符串格式，重新整形数据
+    # 使用canvas将其保存到内存的画布中，然后再to RGB字符串格式，重新整形数据
     fig.canvas.draw()
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
@@ -680,7 +686,8 @@ def get_logger(model_dir, filename="train.log"):
     logger.addHandler(h)
     return logger
 
-#TODO dict字典 对象化
+
+# TODO dict字典 对象化
 class HParams:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():

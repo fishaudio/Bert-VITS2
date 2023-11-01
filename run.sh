@@ -15,18 +15,18 @@ read go
 if [ $go -eq 1 ]
 then
     echo -----------------生成bert文件--------------------
-    # python bert_gen.py -c ./configs/config_c1.json 
+    # python bert_gen.py -c ./configs/config_c1.json
     echo -----------------开始训练-----------------
-    python train_ms.py -m c1 -c ./configs/config_c1.json 
+    python train_ms.py -m c1 -c ./configs/config_c1.json
     echo -----------------训练结束-----------------
 fi
 if [ $go -eq 2 ]
 then
     echo -----------------开始推理-----------------
-    # python webui.py -m "./logs/c1" -c "./configs/config.json"  
-    streamlit run stream_run.py #配置都写到文件里了 
+    # python webui.py -m "./logs/c1" -c "./configs/config.json"
+    streamlit run stream_run.py #配置都写到文件里了
 fi
 echo -----------------结束，退出程序-----------------
 
 
-#   python train_ms.py -m c1test -c ./configs/config_c1test.json 
+#   python train_ms.py -m c1test -c ./configs/config_c1test.json
