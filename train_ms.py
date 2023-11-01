@@ -1,5 +1,6 @@
 # flake8: noqa: E402
 
+import platform
 import os
 import torch
 from torch.nn import functional as F
@@ -10,6 +11,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import logging
+from config import config
+import argparse
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
@@ -42,19 +45,63 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
-os.environ['MASTER_ADDR'] = '127.0.0.1'
-os.environ['MASTER_PORT'] = '8880'
+# os.environ['MASTER_ADDR'] = '127.0.0.1'
+# os.environ['MASTER_PORT'] = '8880'
 # os.environ['WORLD_SIZE'] = '2'
 # os.environ['RANK'] = '0'
 
 def run():
+    # 环境变量解析
+    envs = config.train_ms_config.env
+    for env_name, env_value in envs.items():
+        if env_name not in os.environ.keys():
+            os.environ[env_name] = str(env_value)
+
+    # 多卡训练设置
+    backend = "nccl"
+    if platform.system() == "Windows":
+        backend = "gloo"
     dist.init_process_group(
-        backend="gloo",
-        init_method="env://",  # Due to some training problem,we proposed to use gloo instead of nccl.
+        backend=backend,
+        init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     n_gpus = dist.get_world_size()
-    hps = utils.get_hparams()
+
+    # 命令行/config.yml配置解析
+    # hps = utils.get_hparams()
+    parser = argparse.ArgumentParser()
+    # 非必要不建议使用命令行配置，请使用config.yml文件
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default=config.train_ms_config.config_path,
+        help="JSON file for configuration",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
+        default=config.dataset_path,
+    )
+    args = parser.parse_args()
+    model_dir = os.path.join(args.model, config.train_ms_config.model)
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    hps = utils.get_hparams_from_file(args.config)
+    hps.model_dir = model_dir
+    # 比较路径是否相同
+    if os.path.realpath(args.config) != os.path.realpath(
+        config.train_ms_config.config_path
+    ):
+        with open(args.config, "r", encoding="utf-8") as f:
+            data = f.read()
+        with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
+            f.write(data)
+
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(rank)
     global global_step
@@ -164,6 +211,7 @@ def run():
         optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
+    dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(net_dur_disc, device_ids=[rank], find_unused_parameters=True)
     try:
@@ -286,6 +334,7 @@ def train_and_evaluate(
         language,
         bert,
         ja_bert,
+        en_bert,
     ) in tqdm(enumerate(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -307,6 +356,7 @@ def train_and_evaluate(
         language = language.cuda(rank, non_blocking=True)
         bert = bert.cuda(rank, non_blocking=True)
         ja_bert = ja_bert.cuda(rank, non_blocking=True)
+        en_bert = en_bert.cuda(rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             (
@@ -328,6 +378,7 @@ def train_and_evaluate(
                 language,
                 bert,
                 ja_bert,
+                en_bert,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -522,6 +573,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             language,
             bert,
             ja_bert,
+            en_bert,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -529,6 +581,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             speakers = speakers.cuda()
             bert = bert.cuda()
             ja_bert = ja_bert.cuda()
+            en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
             for use_sdp in [True, False]:
@@ -540,6 +593,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     language,
                     bert,
                     ja_bert,
+                    en_bert,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
