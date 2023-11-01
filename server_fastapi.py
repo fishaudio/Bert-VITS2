@@ -3,6 +3,8 @@ api服务 多版本多模型 fastapi实现
 """
 import logging
 import gc
+import random
+
 import utils
 from fastapi import FastAPI, Query
 from fastapi.responses import Response, FileResponse
@@ -190,6 +192,7 @@ if __name__ == "__main__":
         noisew: float = Query(0.9, description="音素长度"),
         length: float = Query(1, description="语速"),
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
+        auto_translate: bool = Query(False, description="自动翻译"),
     ):
         """语音接口"""
 
@@ -209,6 +212,8 @@ if __name__ == "__main__":
             return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
         if language is None:
             language = loaded_models.models[model_id].language
+        if auto_translate:
+            text = trans.translate(Sentence=text, to_Language=language.lower())
         with torch.no_grad():
             audio = infer(
                 text=text,
@@ -338,12 +343,12 @@ if __name__ == "__main__":
         return result
 
     @app.get("/models/get_unloaded")
-    def get_unloaded_models_info(root_dir: str = "Data"):
+    def get_unloaded_models_info(root_dir: str = Query("Data", description="搜索根目录")):
         """获取未加载模型"""
         return _get_all_models(root_dir, only_unloaded=True)
 
     @app.get("/models/get_local")
-    def get_local_models_info(root_dir: str = "Data"):
+    def get_local_models_info(root_dir: str = Query("Data", description="搜索根目录")):
         """获取全部本地模型"""
         return _get_all_models(root_dir, only_unloaded=False)
 
@@ -384,11 +389,103 @@ if __name__ == "__main__":
         }
 
     @app.get("/tools/translate")
-    def translate(texts: str, to_language: str):
+    def translate(
+        texts: str = Query(..., description="待翻译文本"),
+        to_language: str = Query(..., description="翻译目标语言"),
+    ):
         """翻译"""
         return {"texts": trans.translate(Sentence=texts, to_Language=to_language)}
+
+    all_examples: Dict[str, Dict[str, List]] = dict()  # 存放示例
+
+    @app.get("/tools/random_example")
+    def random_example(
+        language: str = Query(None, description="指定语言，未指定则随机返回"),
+        root_dir: str = Query("Data", description="搜索根目录"),
+    ):
+        """
+        获取一个随机音频+文本，用于对比，音频会从本地目录随机选择。
+        """
+        global all_examples
+        # 数据初始化
+        if root_dir not in all_examples.keys():
+            all_examples[root_dir] = {"ZH": [], "JP": [], "EN": []}
+
+            examples = all_examples[root_dir]
+
+            # 从项目Data目录中搜索train/val.list
+            for root, directories, _files in os.walk("Data"):
+                for file in _files:
+                    if file in ["train.list", "val.list"]:
+                        print(file)
+                        with open(
+                            os.path.join(root, file), mode="r", encoding="utf-8"
+                        ) as f:
+                            lines = f.readlines()
+                            for line in lines:
+                                data = line.split("|")
+                                if len(data) != 7:
+                                    continue
+                                # 音频存在 且语言为ZH/EN/JP
+                                if os.path.isfile(data[0]) and data[2] in [
+                                    "ZH",
+                                    "JP",
+                                    "EN",
+                                ]:
+                                    examples[data[2]].append(
+                                        {
+                                            "text": data[3],
+                                            "audio": data[0],
+                                            "speaker": data[1],
+                                        }
+                                    )
+
+        examples = all_examples[root_dir]
+        if language is None:
+            if len(examples["ZH"]) + len(examples["JP"]) + len(examples["EN"]) == 0:
+                return {"status": 17, "detail": "没有加载任何示例数据"}
+            else:
+                # 随机选一个
+                rand_num = random.randint(
+                    0,
+                    len(examples["ZH"]) + len(examples["JP"]) + len(examples["EN"]) - 1,
+                )
+                # ZH
+                if rand_num < len(examples["ZH"]):
+                    return {"status": 0, "Data": examples["ZH"][rand_num]}
+                # JP
+                if rand_num < len(examples["ZH"]) + len(examples["JP"]):
+                    return {
+                        "status": 0,
+                        "Data": examples["JP"][rand_num - len(examples["ZH"])],
+                    }
+                # EN
+                return {
+                    "status": 0,
+                    "Data": examples["EN"][
+                        rand_num - len(examples["ZH"]) - len(examples["JP"])
+                    ],
+                }
+
+        else:
+            if len(examples[language]) == 0:
+                return {"status": 17, "detail": f"没有加载任何{language}数据"}
+            return {
+                "status": 0,
+                "Data": examples[language][
+                    random.randint(0, len(examples[language]) - 1)
+                ],
+            }
+
+    @app.get("/tools/get_audio")
+    def get_audio(path: str = Query(..., description="本地音频路径")):
+        if not os.path.isfile(path):
+            return {"status": 18, "detail": "指定音频不存在"}
+        if not path.endswith(".wav"):
+            return {"status": 19, "detail": "非wav格式文件"}
+        return FileResponse(path=path)
 
     logger.warning("本地服务，请勿将服务端口暴露于外网")
     print(f"api文档地址 http://127.0.0.1:{config.server_config.port}/docs")
     webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
-    uvicorn.run(app, port=config.server_config.port)
+    uvicorn.run(app, port=config.server_config.port, host="0.0.0.0")
