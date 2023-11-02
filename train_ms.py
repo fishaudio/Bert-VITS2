@@ -62,7 +62,7 @@ def run():
         init_method="env://",  # If Windows,switch to gloo backend.
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
-    local_rank=int(os.environ['LOCAL_RANK'])
+    local_rank = int(os.environ["LOCAL_RANK"])
     n_gpus = dist.get_world_size()
 
     # 命令行/config.yml配置解析
