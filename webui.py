@@ -158,7 +158,7 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        _speaker + "_" + lang.lower(),
+                        _speaker,
                         lang,
                     )
                 )
