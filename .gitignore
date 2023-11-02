@@ -166,7 +166,8 @@ cython_debug/
 filelists/*
 !/filelists/esd.list
 data/*
-/config.yml
+/*.yml
+!/default_config.yml
 /Web/
 /emotional/*/*.bin
 /bert/*/*.bin
@@ -176,5 +177,9 @@ data/*
 /bert/*/*.msgpack
 asr_transcript.py
 extract_list.py
+dataset
 /Data
+Model
+raw/
+logs/
 Data/*
