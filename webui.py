@@ -122,7 +122,9 @@ def tts_split(
                     (int)(44100 * (interval_between_para - interval_between_sent))
                 )
                 audio_list_sent.append(silence)
-            audio16bit = gr.processing_utils.convert_to_16_bit_wav(np.concatenate(audio_list_sent))  # 对完整句子做音量归一
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(
+                np.concatenate(audio_list_sent)
+            )  # 对完整句子做音量归一
             audio_list.append(audio16bit)
     audio_concat = np.concatenate(audio_list)
     return ("Success", (44100, audio_concat))
