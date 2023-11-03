@@ -1,20 +1,12 @@
 import sys
-from pathlib import Path
 
 import torch
-from huggingface_hub import hf_hub_download
 from transformers import DebertaV2Model, DebertaV2Tokenizer
 
 from config import config
 
-REPO_ID = "microsoft/deberta-v3-large"
+
 LOCAL_PATH = "./bert/deberta-v3-large"
-FILES = ["spm.model", "pytorch_model.bin"]
-for file in FILES:
-    if not Path(LOCAL_PATH).joinpath(file).exists():
-        hf_hub_download(
-            REPO_ID, file, local_dir=LOCAL_PATH, local_dir_use_symlinks=False
-        )
 
 tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 

@@ -1,20 +1,11 @@
 import sys
-from pathlib import Path
 
 import torch
-from huggingface_hub import hf_hub_download
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
 
-REPO_ID = "hfl/chinese-roberta-wwm-ext-large"
 LOCAL_PATH = "./bert/chinese-roberta-wwm-ext-large"
-FILES = ["pytorch_model.bin"]
-for file in FILES:
-    if not Path(LOCAL_PATH).joinpath(file).exists():
-        hf_hub_download(
-            REPO_ID, file, local_dir=LOCAL_PATH, local_dir_use_symlinks=False
-        )
 
 tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 

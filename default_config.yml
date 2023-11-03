@@ -5,7 +5,8 @@
 # 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
 # 不填或者填空则路径为相对于项目根目录的路径
 dataset_path: "Data/你的数据集"
-
+mirror: "openi" # 模型镜像源
+openi_token: "1145141919810"  # openi token
 
 # resample 音频重采样配置
 # 注意， “:” 后需要加空格
