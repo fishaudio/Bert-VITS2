@@ -1,9 +1,22 @@
-import torch
-from transformers import DebertaV2Model, DebertaV2Tokenizer
-from config import config
 import sys
+from pathlib import Path
 
-tokenizer = DebertaV2Tokenizer.from_pretrained("./bert/deberta-v3-large")
+import torch
+from huggingface_hub import hf_hub_download
+from transformers import DebertaV2Model, DebertaV2Tokenizer
+
+from config import config
+
+REPO_ID = "microsoft/deberta-v3-large"
+LOCAL_PATH = "./bert/deberta-v3-large"
+FILES = ["spm.model", "pytorch_model.bin"]
+for file in FILES:
+    if not Path(LOCAL_PATH).joinpath(file).exists():
+        hf_hub_download(
+            REPO_ID, file, local_dir=LOCAL_PATH, local_dir_use_symlinks=False
+        )
+
+tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
@@ -18,9 +31,7 @@ def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = DebertaV2Model.from_pretrained("./bert/deberta-v3-large").to(
-            device
-        )
+        models[device] = DebertaV2Model.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:

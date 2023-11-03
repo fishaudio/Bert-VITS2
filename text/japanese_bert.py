@@ -1,10 +1,23 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM
 import sys
-from text.japanese import text2sep_kata
-from config import config
+from pathlib import Path
 
-tokenizer = AutoTokenizer.from_pretrained("./bert/deberta-v2-large-japanese")
+import torch
+from huggingface_hub import hf_hub_download
+from transformers import AutoModelForMaskedLM, AutoTokenizer
+
+from config import config
+from text.japanese import text2sep_kata
+
+REPO_ID = "ku-nlp/deberta-v2-large-japanese"
+LOCAL_PATH = "./bert/deberta-v2-large-japanese"
+FILES = ["spm.model", "pytorch_model.bin"]
+for file in FILES:
+    if not Path(LOCAL_PATH).joinpath(file).exists():
+        hf_hub_download(
+            REPO_ID, file, local_dir=LOCAL_PATH, local_dir_use_symlinks=False
+        )
+
+tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
@@ -27,9 +40,7 @@ def get_bert_feature_with_token(tokens, word2ph, device=config.bert_gen_config.d
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(
-            "./bert/deberta-v2-large-japanese"
-        ).to(device)
+        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = torch.tensor(tokens).to(device).unsqueeze(0)
         token_type_ids = torch.zeros_like(inputs).to(device)
