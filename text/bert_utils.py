@@ -14,8 +14,6 @@ def _check_bert(repo_id, files, local_path):
             if MIRROR.lower() == "openi":
                 import openi
 
-                kwargs = {"token": config.openi_token} if config.openi_token else {}
-                openi.login(**kwargs)
                 openi.model.download_model(
                     "Stardust_minus/Bert-VITS2", repo_id.split("/")[-1], "./bert"
                 )
