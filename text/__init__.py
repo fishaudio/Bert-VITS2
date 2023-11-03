@@ -39,4 +39,3 @@ def check_bert_models():
         for k, v in models.items():
             local_path = Path("./bert").joinpath(k)
             _check_bert(v["repo_id"], v["files"], local_path)
-  
