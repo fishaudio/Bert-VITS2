@@ -1,5 +1,4 @@
 from text.symbols import *
-from text.bert_utils import check_bert_models
 
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
 
