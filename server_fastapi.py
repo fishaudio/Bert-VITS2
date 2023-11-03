@@ -97,7 +97,7 @@ class Models:
             m_id = next(iter(self.path2ids[model_path]))
             self.models[self.num] = self.models[m_id]
             self.path2ids[model_path].add(self.num)
-            logger.success(f"模型已存在，添加模型引用。")
+            logger.success("模型已存在，添加模型引用。")
         # 添加角色信息
         for speaker, speaker_id in self.models[self.num].spk2id.items():
             if speaker not in self.spk_info.keys():
