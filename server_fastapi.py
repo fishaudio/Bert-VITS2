@@ -26,6 +26,8 @@ import tools.translate as trans
 
 from config import config
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 
 class Model:
     """模型封装类"""
