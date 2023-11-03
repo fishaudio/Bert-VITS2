@@ -26,3 +26,17 @@ def get_bert(norm_text, word2ph, language, device):
     lang_bert_func_map = {"ZH": zh_bert, "EN": en_bert, "JP": jp_bert}
     bert = lang_bert_func_map[language](norm_text, word2ph, device)
     return bert
+
+
+def check_bert_models():
+    import json
+    from pathlib import Path
+
+    from .bert_utils import _check_bert
+
+    with open("./bert/bert_models.json", "r") as fp:
+        models = json.load(fp)
+        for k, v in models.items():
+            local_path = Path("./bert").joinpath(k)
+            _check_bert(v["repo_id"], v["files"], local_path)
+  
