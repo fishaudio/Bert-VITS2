@@ -360,13 +360,17 @@ def align_tones(phones, tones):
     assert not any([i < 0 for i in res]) and not any([i > 1 for i in res])
     return res
 
+
 import pykakasi
+
 kks = pykakasi.kakasi()
+
+
 def g2p(norm_text):
     result = kks.convert(norm_text)
     norm_text = ""
     for i in result:
-        norm_text += i['hira']
+        norm_text += i["hira"]
     sep_text, sep_kata, acc = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
