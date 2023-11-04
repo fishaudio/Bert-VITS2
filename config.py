@@ -195,7 +195,10 @@ class Config:
         with open(file=config_path, mode="r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
             dataset_path: str = yaml_config["dataset_path"]
+            openi_token: str = yaml_config["openi_token"]
             self.dataset_path: str = dataset_path
+            self.mirror: str = yaml_config["mirror"]
+            self.openi_token: str = openi_token
             self.resample_config: Resample_config = Resample_config.from_dict(
                 dataset_path, yaml_config["resample"]
             )

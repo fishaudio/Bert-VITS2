@@ -40,7 +40,7 @@ def generate_audio(
     language,
 ):
     audio_list = []
-    silence = np.zeros(hps.data.sampling_rate // 2)
+    silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
     with torch.no_grad():
         for piece in slices:
             audio = infer(
@@ -55,7 +55,8 @@ def generate_audio(
                 net_g=net_g,
                 device=device,
             )
-            audio_list.append(audio)
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+            audio_list.append(audio16bit)
             audio_list.append(silence)  # 将静音添加到列表中
     return audio_list
 
@@ -92,11 +93,13 @@ def tts_split(
                 net_g=net_g,
                 device=device,
             )
-            audio_list.append(audio)
-            silence = np.zeros((int)(44100 * interval_between_para))
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+            audio_list.append(audio16bit)
+            silence = np.zeros((int)(44100 * interval_between_para), dtype=np.int16)
             audio_list.append(silence)
     else:
         for p in para_list:
+            audio_list_sent = []
             sent_list = re_matching.cut_sent(p)
             for s in sent_list:
                 audio = infer(
@@ -111,14 +114,18 @@ def tts_split(
                     net_g=net_g,
                     device=device,
                 )
-                audio_list.append(audio)
+                audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
-                audio_list.append(silence)
+                audio_list_sent.append(silence)
             if (interval_between_para - interval_between_sent) > 0:
                 silence = np.zeros(
                     (int)(44100 * (interval_between_para - interval_between_sent))
                 )
-                audio_list.append(silence)
+                audio_list_sent.append(silence)
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(
+                np.concatenate(audio_list_sent)
+            )  # 对完整句子做音量归一
+            audio_list.append(audio16bit)
     audio_concat = np.concatenate(audio_list)
     return ("Success", (44100, audio_concat))
 
@@ -151,7 +158,7 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        _speaker + "_" + lang.lower(),
+                        _speaker,
                         lang,
                     )
                 )

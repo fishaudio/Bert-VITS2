@@ -1,0 +1,14 @@
+{
+    "deberta-v2-large-japanese": {
+        "repo_id": "ku-nlp/deberta-v2-large-japanese",
+        "files": ["spm.model", "pytorch_model.bin"]
+    },
+    "chinese-roberta-wwm-ext-large": {
+        "repo_id": "hfl/chinese-roberta-wwm-ext-large",
+        "files": ["pytorch_model.bin"]
+    },
+    "deberta-v3-large": {
+        "repo_id": "microsoft/deberta-v3-large",
+        "files": ["spm.model", "pytorch_model.bin"]
+    }
+}
