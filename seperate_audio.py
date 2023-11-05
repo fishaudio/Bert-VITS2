@@ -1,17 +1,17 @@
 import os
 import argparse
-import json
-import torchaudio
 from multiprocessing import Pool, cpu_count
 
 from tqdm import tqdm
 
 from config import config
 
+
 def get_filename(path):
     file_name = os.path.basename(path)
     file_name = os.path.splitext(file_name)[0]
     return file_name
+
 
 def process(items):
     temp_dir, file, args = items
@@ -34,6 +34,7 @@ def process(items):
     # 复制到outdir
     if not os.path.exists(out_file):
         os.system(f"cp {temp_dir}/{file_name}/vocals.wav {out_file}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
