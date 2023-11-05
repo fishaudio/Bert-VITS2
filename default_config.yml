@@ -67,6 +67,11 @@ train_ms:
     RANK: 0
     # 可以填写任意名的环境变量
     THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+  # 底模设置
+  base:
+    use_base_model: true
+    repo_id: "Stardust-minus/Bert-VITS2"
+    model_image: "Bert-VITS2中日底模"
   # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
   model: "models"
   # 配置文件路径

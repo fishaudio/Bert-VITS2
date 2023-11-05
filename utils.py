@@ -13,6 +13,22 @@ MATPLOTLIB_FLAG = False
 logger = logging.getLogger(__name__)
 
 
+def download_checkpoint(
+    dir_path, repo_config, token=None, regex="G_*.pth", mirror="openi"
+):
+    repo_id = repo_config["repo_id"]
+    model_image = repo_config["model_image"]
+    f_list = glob.glob(os.path.join(dir_path, regex))
+    if not f_list:
+        return
+    if mirror.lower() == "openi":
+        import openi
+
+        kwargs = {"token": token} if token else {}
+        openi.login(**kwargs)
+        openi.model.download_model(repo_id, model_image, dir_path)
+
+
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):
     assert os.path.isfile(checkpoint_path)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
