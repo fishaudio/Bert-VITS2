@@ -30,10 +30,10 @@ def download_checkpoint(
         openi.login(**kwargs)
         openi.model.download_model(repo_id, model_image, dir_path)
 
-        fs = glob.glob(os.path.join(dir_path, model_image, regex))
+        fs = glob.glob(os.path.join(dir_path, model_image, "*.pth"))
         for file in fs:
             shutil.move(file, dir_path)
-        os.rmdir(os.path.join(dir_path, model_image))
+        shutil.rmtree(os.path.join(dir_path, model_image))
 
 
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):
