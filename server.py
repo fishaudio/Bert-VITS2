@@ -177,4 +177,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(port=config.server_config.port)
+    app.run(port=config.server_config.port,server_name="0.0.0.0")
