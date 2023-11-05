@@ -3,6 +3,7 @@ import glob
 import argparse
 import logging
 import json
+import shutil
 import subprocess
 import numpy as np
 from scipy.io.wavfile import read
@@ -19,7 +20,8 @@ def download_checkpoint(
     repo_id = repo_config["repo_id"]
     model_image = repo_config["model_image"]
     f_list = glob.glob(os.path.join(dir_path, regex))
-    if not f_list:
+    if f_list:
+        print("Use existed model, skip downloading.")
         return
     if mirror.lower() == "openi":
         import openi
@@ -27,6 +29,11 @@ def download_checkpoint(
         kwargs = {"token": token} if token else {}
         openi.login(**kwargs)
         openi.model.download_model(repo_id, model_image, dir_path)
+
+        fs = glob.glob(os.path.join(dir_path, model_image, regex))
+        for file in fs:
+            shutil.move(file, dir_path)
+        os.rmdir(os.path.join(dir_path, model_image))
 
 
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):
