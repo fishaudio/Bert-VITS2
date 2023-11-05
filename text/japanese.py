@@ -54,7 +54,7 @@ def text2kata(text: str) -> str:
 
     res = []
     for parts in parsed:
-        word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
+        word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace("’", "")
         if yomi:
             if re.match(_MARKS, yomi):
                 if len(word) > 1:
