@@ -211,6 +211,16 @@ def run():
     dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(net_dur_disc, device_ids=[rank], find_unused_parameters=True)
+
+    # 下载底模
+    if config.train_ms_config.base["use_base_model"]:
+        utils.download_checkpoint(
+            hps.model_dir,
+            config.train_ms_config.base,
+            token=config.openi_token,
+            mirror=config.mirror,
+        )
+
     try:
         if net_dur_disc is not None:
             _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(

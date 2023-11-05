@@ -3,14 +3,44 @@ import glob
 import argparse
 import logging
 import json
+import shutil
 import subprocess
 import numpy as np
+from huggingface_hub import hf_hub_download
 from scipy.io.wavfile import read
 import torch
 
 MATPLOTLIB_FLAG = False
 
 logger = logging.getLogger(__name__)
+
+
+def download_checkpoint(
+    dir_path, repo_config, token=None, regex="G_*.pth", mirror="openi"
+):
+    repo_id = repo_config["repo_id"]
+    f_list = glob.glob(os.path.join(dir_path, regex))
+    if f_list:
+        print("Use existed model, skip downloading.")
+        return
+    if mirror.lower() == "openi":
+        import openi
+
+        kwargs = {"token": token} if token else {}
+        openi.login(**kwargs)
+
+        model_image = repo_config["model_image"]
+        openi.model.download_model(repo_id, model_image, dir_path)
+
+        fs = glob.glob(os.path.join(dir_path, model_image, "*.pth"))
+        for file in fs:
+            shutil.move(file, dir_path)
+        shutil.rmtree(os.path.join(dir_path, model_image))
+    else:
+        for file in ["DUR_0.pth", "D_0.pth", "G_0.pth"]:
+            hf_hub_download(
+                repo_id, file, local_dir=dir_path, local_dir_use_symlinks=False
+            )
 
 
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):

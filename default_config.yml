@@ -5,8 +5,10 @@
 # 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
 # 不填或者填空则路径为相对于项目根目录的路径
 dataset_path: "Data/你的数据集"
-mirror: "openi" # 模型镜像源
-openi_token: "1145141919810"  # openi token
+
+# 模型镜像源，默认huggingface，使用openi镜像源需指定openi_token
+mirror: ""
+openi_token: ""  # openi token
 
 # resample 音频重采样配置
 # 注意， “:” 后需要加空格
@@ -67,6 +69,11 @@ train_ms:
     RANK: 0
     # 可以填写任意名的环境变量
     THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+  # 底模设置
+  base:
+    use_base_model: false
+    repo_id: "Stardust_minus/Bert-VITS2"
+    model_image: "Bert-VITS2中日底模" # openi网页的模型名
   # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
   model: "models"
   # 配置文件路径
