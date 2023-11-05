@@ -54,7 +54,9 @@ def text2kata(text: str) -> str:
 
     res = []
     for parts in parsed:
-        word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace("’", "")
+        word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace(
+            "’", ""
+        )
         if yomi:
             if re.match(_MARKS, yomi):
                 if len(word) > 1:
@@ -85,7 +87,9 @@ def text2sep_kata(text: str) -> (list, list):
     res = []
     sep = []
     for parts in parsed:
-        word, yomi = replace_punctuation(parts["orig"]), parts["pron"].replace("’", "")
+        word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace(
+            "’", ""
+        )
         if yomi:
             if re.match(_MARKS, yomi):
                 if len(word) > 1:
@@ -361,16 +365,7 @@ def align_tones(phones, tones):
     return res
 
 
-import pykakasi
-
-kks = pykakasi.kakasi()
-
-
 def g2p(norm_text):
-    result = kks.convert(norm_text)
-    norm_text = ""
-    for i in result:
-        norm_text += i["hira"]
     sep_text, sep_kata, acc = text2sep_kata(norm_text)
     sep_tokenized = [tokenizer.tokenize(i) for i in sep_text]
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])

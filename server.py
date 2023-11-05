@@ -67,6 +67,7 @@ for model in models:
         )
     )
 
+
 def generate_audio(
     slices,
     sdp_ratio,
@@ -96,6 +97,7 @@ def generate_audio(
             audio_list.append(audio16bit)
             audio_list.append(silence)  # 将静音添加到列表中
     return audio_list
+
 
 @app.route("/")
 def main():
@@ -177,4 +179,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(port=config.server_config.port,server_name="0.0.0.0")
+    app.run(port=config.server_config.port, server_name="0.0.0.0")
