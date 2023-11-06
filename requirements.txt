@@ -30,3 +30,4 @@ vector_quantize_pytorch
 g2p_en
 sentencepiece
 pykakasi
+langid

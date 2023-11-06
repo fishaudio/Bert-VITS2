@@ -1,7 +1,9 @@
 # flake8: noqa: E402
 import os
 import logging
+
 import re_matching
+from tools.sentence import split_by_language, sentence_split
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
@@ -162,6 +164,25 @@ def tts_fn(
                         lang,
                     )
                 )
+    elif language.lower() == "auto":
+        sentences_list = split_by_language(text, target_languages=["zh", "ja", "en"])
+        for sentences, lang in sentences_list:
+            lang = lang.upper()
+            if lang == "JA":
+                lang = "JP"
+            sentences = sentence_split(sentences, max=250)
+            for content in sentences:
+                audio_list.extend(
+                    generate_audio(
+                        content.split("|"),
+                        sdp_ratio,
+                        noise_scale,
+                        noise_scale_w,
+                        length_scale,
+                        speaker,
+                        lang,
+                    )
+                )
     else:
         audio_list.extend(
             generate_audio(
@@ -191,7 +212,7 @@ if __name__ == "__main__":
     )
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP", "EN", "mix"]
+    languages = ["ZH", "JP", "EN", "mix", "auto"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
