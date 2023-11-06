@@ -7,28 +7,39 @@ from tools.classify_language import classify_language
 
 def check_is_none(item) -> bool:
     """none -> True, not none -> False"""
-    return item is None or (isinstance(item, str) and str(item).isspace()) or str(item) == ""
+    return (
+        item is None
+        or (isinstance(item, str) and str(item).isspace())
+        or str(item) == ""
+    )
 
 
 def markup_language(text: str, target_languages: list = None) -> str:
-    pattern = r'[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`' \
-              r'\！？。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」' \
-              r'『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+'
+    pattern = (
+        r"[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`"
+        r"\！？。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」"
+        r"『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+"
+    )
     sentences = re.split(pattern, text)
 
     pre_lang = ""
     p = 0
 
     for sentence in sentences:
-        if check_is_none(sentence): continue
+        if check_is_none(sentence):
+            continue
 
         lang = classify_language(sentence, target_languages)
 
         if pre_lang == "":
-            text = text[:p] + text[p:].replace(sentence, f"[{lang.upper()}]{sentence}", 1)
+            text = text[:p] + text[p:].replace(
+                sentence, f"[{lang.upper()}]{sentence}", 1
+            )
             p += len(f"[{lang.upper()}]")
         elif pre_lang != lang:
-            text = text[:p] + text[p:].replace(sentence, f"[{pre_lang.upper()}][{lang.upper()}]{sentence}", 1)
+            text = text[:p] + text[p:].replace(
+                sentence, f"[{pre_lang.upper()}][{lang.upper()}]{sentence}", 1
+            )
             p += len(f"[{pre_lang.upper()}][{lang.upper()}]")
         pre_lang = lang
         p += text[p:].index(sentence) + len(sentence)
@@ -38,9 +49,11 @@ def markup_language(text: str, target_languages: list = None) -> str:
 
 
 def split_by_language(text: str, target_languages: list = None) -> list:
-    pattern = r'[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`' \
-              r'\！？\。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」' \
-              r'『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+'
+    pattern = (
+        r"[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`"
+        r"\！？\。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」"
+        r"『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+"
+    )
     sentences = re.split(pattern, text)
 
     pre_lang = ""
@@ -49,7 +62,8 @@ def split_by_language(text: str, target_languages: list = None) -> list:
     sentences_list = []
 
     for sentence in sentences:
-        if check_is_none(sentence): continue
+        if check_is_none(sentence):
+            continue
 
         lang = classify_language(sentence, target_languages)
 
@@ -65,7 +79,7 @@ def split_by_language(text: str, target_languages: list = None) -> list:
 
 
 def sentence_split(text: str, max: int) -> list:
-    pattern = r'[!(),—+\-.:;?？。，、；：]+'
+    pattern = r"[!(),—+\-.:;?？。，、；：]+"
     sentences = re.split(pattern, text)
     discarded_chars = re.findall(pattern, text)
 
@@ -75,7 +89,7 @@ def sentence_split(text: str, max: int) -> list:
     for i, discarded_chars in enumerate(discarded_chars):
         count += len(sentences[i]) + len(discarded_chars)
         if count >= max:
-            sentences_list.append(text[p:p + count].strip())
+            sentences_list.append(text[p : p + count].strip())
             p += count
             count = 0
 
@@ -91,21 +105,27 @@ def sentence_split_and_markup(text, max=50, lang="auto", speaker_lang=None):
     if speaker_lang is not None and len(speaker_lang) == 1:
         if lang.upper() not in ["AUTO", "MIX"] and lang.lower() != speaker_lang[0]:
             logging.debug(
-                f"lang \"{lang}\" is not in speaker_lang {speaker_lang},automatically set lang={speaker_lang[0]}")
+                f'lang "{lang}" is not in speaker_lang {speaker_lang},automatically set lang={speaker_lang[0]}'
+            )
         lang = speaker_lang[0]
 
     sentences_list = []
     if lang.upper() != "MIX":
         if max <= 0:
             sentences_list.append(
-                markup_language(text,
-                                speaker_lang) if lang.upper() == "AUTO" else f"[{lang.upper()}]{text}[{lang.upper()}]")
+                markup_language(text, speaker_lang)
+                if lang.upper() == "AUTO"
+                else f"[{lang.upper()}]{text}[{lang.upper()}]"
+            )
         else:
             for i in sentence_split(text, max):
-                if check_is_none(i): continue
+                if check_is_none(i):
+                    continue
                 sentences_list.append(
-                    markup_language(i,
-                                    speaker_lang) if lang.upper() == "AUTO" else f"[{lang.upper()}]{i}[{lang.upper()}]")
+                    markup_language(i, speaker_lang)
+                    if lang.upper() == "AUTO"
+                    else f"[{lang.upper()}]{i}[{lang.upper()}]"
+                )
     else:
         sentences_list.append(text)
 
@@ -115,7 +135,7 @@ def sentence_split_and_markup(text, max=50, lang="auto", speaker_lang=None):
     return sentences_list
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     text = "这几天心里颇不宁静。今晚在院子里坐着乘凉，忽然想起日日走过的荷塘，在这满月的光里，总该另有一番样子吧。月亮渐渐地升高了，墙外马路上孩子们的欢笑，已经听不见了；妻在屋里拍着闰儿，迷迷糊糊地哼着眠歌。我悄悄地披了大衫，带上门出去。"
     print(markup_language(text, target_languages=None))
     print(sentence_split(text, max=50))

@@ -153,7 +153,9 @@ class Webui_config:
         self.port: int = port  # 是否开启debug模式
         self.share: bool = share  # 模型路径
         self.debug: bool = debug  # 配置文件路径
-        self.language_identification_library: str = language_identification_library  # 语种识别库
+        self.language_identification_library: str = (
+            language_identification_library  # 语种识别库
+        )
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
