@@ -5,6 +5,7 @@ import logging
 import gc
 import random
 
+import numpy as np
 import utils
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import Response, FileResponse
@@ -23,6 +24,8 @@ from urllib.parse import unquote
 
 from infer import infer, get_net_g, latest_version
 import tools.translate as trans
+from re_matching import cut_sent
+
 
 from config import config
 
@@ -183,6 +186,7 @@ if __name__ == "__main__":
         length: float = Query(1, description="语速"),
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
+        auto_split: bool = Query(False, description="自动切分"),
     ):
         """语音接口"""
         logger.info(
@@ -206,19 +210,41 @@ if __name__ == "__main__":
             language = loaded_models.models[model_id].language
         if auto_translate:
             text = trans.translate(Sentence=text, to_Language=language.lower())
-        with torch.no_grad():
-            audio = infer(
-                text=text,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise,
-                noise_scale_w=noisew,
-                length_scale=length,
-                sid=speaker_name,
-                language=language,
-                hps=loaded_models.models[model_id].hps,
-                net_g=loaded_models.models[model_id].net_g,
-                device=loaded_models.models[model_id].device,
-            )
+        if not auto_split:
+            with torch.no_grad():
+                audio = infer(
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noisew,
+                    length_scale=length,
+                    sid=speaker_name,
+                    language=language,
+                    hps=loaded_models.models[model_id].hps,
+                    net_g=loaded_models.models[model_id].net_g,
+                    device=loaded_models.models[model_id].device,
+                )
+        else:
+            texts = cut_sent(text)
+            audios = []
+            with torch.no_grad():
+                for t in texts:
+                    audios.append(
+                        infer(
+                            text=t,
+                            sdp_ratio=sdp_ratio,
+                            noise_scale=noise,
+                            noise_scale_w=noisew,
+                            length_scale=length,
+                            sid=speaker_name,
+                            language=language,
+                            hps=loaded_models.models[model_id].hps,
+                            net_g=loaded_models.models[model_id].net_g,
+                            device=loaded_models.models[model_id].device,
+                        )
+                    )
+                audios.append(np.zeros((int)(44100 * 0.3)))
+                audio = np.concatenate(audios)
         wavContent = BytesIO()
         wavfile.write(
             wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
@@ -308,7 +334,7 @@ if __name__ == "__main__":
                 model_files = []
                 for sub_file in sub_files:
                     relpath = os.path.realpath(os.path.join(sub_dir, sub_file))
-                    if only_unloaded and relpath in loaded_models.path2count.keys():
+                    if only_unloaded and relpath in loaded_models.path2ids.keys():
                         continue
                     if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                         if os.path.isfile(relpath):
@@ -327,7 +353,7 @@ if __name__ == "__main__":
                     sub_files = os.listdir(models_dir)
                     for sub_file in sub_files:
                         relpath = os.path.realpath(os.path.join(models_dir, sub_file))
-                        if only_unloaded and relpath in loaded_models.path2count.keys():
+                        if only_unloaded and relpath in loaded_models.path2ids.keys():
                             continue
                         if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                             if os.path.isfile(os.path.join(models_dir, sub_file)):
