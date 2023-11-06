@@ -22,13 +22,13 @@ def translate(Sentence: str, to_Language: str = "jp", from_Language: str = ""):
     if appid == "" or key == "":
         return "请开发者在config.yml中配置app_key与secret_key"
     url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
-    texts = Sentence.split("\n")
+    texts = Sentence.splitlines()
     outTexts = []
     for t in texts:
         if t != "":
             # 签名计算 参考文档 https://api.fanyi.baidu.com/product/113
             salt = str(random.randint(1, 100000))
-            signString = appid + Sentence + salt + key
+            signString = appid + t + salt + key
             hs = hashlib.md5()
             hs.update(signString.encode("utf-8"))
             signString = hs.hexdigest()
@@ -36,7 +36,7 @@ def translate(Sentence: str, to_Language: str = "jp", from_Language: str = ""):
                 from_Language = "auto"
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
             payload = {
-                "q": Sentence,
+                "q": t,
                 "from": from_Language,
                 "to": to_Language,
                 "appid": appid,

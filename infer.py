@@ -201,6 +201,5 @@ def infer(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
-        torch.cuda.empty_cache()
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
         return audio
