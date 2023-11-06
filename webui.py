@@ -1,7 +1,9 @@
 # flake8: noqa: E402
 import os
 import logging
+
 import re_matching
+from tools.sentence import split_by_language, sentence_split
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
@@ -31,13 +33,13 @@ if device == "mps":
 
 
 def generate_audio(
-    slices,
-    sdp_ratio,
-    noise_scale,
-    noise_scale_w,
-    length_scale,
-    speaker,
-    language,
+        slices,
+        sdp_ratio,
+        noise_scale,
+        noise_scale_w,
+        length_scale,
+        speaker,
+        language,
 ):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
@@ -62,16 +64,16 @@ def generate_audio(
 
 
 def tts_split(
-    text: str,
-    speaker,
-    sdp_ratio,
-    noise_scale,
-    noise_scale_w,
-    length_scale,
-    language,
-    cut_by_sent,
-    interval_between_para,
-    interval_between_sent,
+        text: str,
+        speaker,
+        sdp_ratio,
+        noise_scale,
+        noise_scale_w,
+        length_scale,
+        language,
+        cut_by_sent,
+        interval_between_para,
+        interval_between_sent,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -131,13 +133,13 @@ def tts_split(
 
 
 def tts_fn(
-    text: str,
-    speaker,
-    sdp_ratio,
-    noise_scale,
-    noise_scale_w,
-    length_scale,
-    language,
+        text: str,
+        speaker,
+        sdp_ratio,
+        noise_scale,
+        noise_scale_w,
+        length_scale,
+        language,
 ):
     audio_list = []
     if language == "mix":
@@ -159,6 +161,24 @@ def tts_fn(
                         noise_scale_w,
                         length_scale,
                         _speaker,
+                        lang,
+                    )
+                )
+    elif language.lower() == "auto":
+        sentences_list = split_by_language(text, target_languages=["zh", "ja", "en"])
+        for (sentences, lang) in sentences_list:
+            lang = lang.upper()
+            if lang == "JA": lang = "JP"
+            sentences = sentence_split(sentences, max=250)
+            for content in sentences:
+                audio_list.extend(
+                    generate_audio(
+                        content.split("|"),
+                        sdp_ratio,
+                        noise_scale,
+                        noise_scale_w,
+                        length_scale,
+                        speaker,
                         lang,
                     )
                 )
@@ -191,7 +211,7 @@ if __name__ == "__main__":
     )
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP", "EN", "mix"]
+    languages = ["ZH", "JP", "EN", "mix", "auto"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
