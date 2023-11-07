@@ -1,3 +1,5 @@
+import re
+
 from config import config
 
 LANGUAGE_IDENTIFICATION_LIBRARY = config.webui_config.language_identification_library
@@ -151,6 +153,12 @@ def classify_zh_ja(text: str) -> str:
                 return "ja"
 
     return "zh"
+
+
+def split_alpha_nonalpha(text):
+    return re.split(
+        r'(?:(?<=[\u4e00-\u9fff])|(?<=[\u3040-\u30FF]))(?=[a-zA-Z])|(?<=[a-zA-Z])(?:(?=[\u4e00-\u9fff])|(?=[\u3040-\u30FF]))',
+        text)
 
 
 if __name__ == "__main__":
