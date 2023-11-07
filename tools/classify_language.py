@@ -157,8 +157,9 @@ def classify_zh_ja(text: str) -> str:
 
 def split_alpha_nonalpha(text):
     return re.split(
-        r'(?:(?<=[\u4e00-\u9fff])|(?<=[\u3040-\u30FF]))(?=[a-zA-Z])|(?<=[a-zA-Z])(?:(?=[\u4e00-\u9fff])|(?=[\u3040-\u30FF]))',
-        text)
+        r"(?:(?<=[\u4e00-\u9fff])|(?<=[\u3040-\u30FF]))(?=[a-zA-Z])|(?<=[a-zA-Z])(?:(?=[\u4e00-\u9fff])|(?=[\u3040-\u30FF]))",
+        text,
+    )
 
 
 if __name__ == "__main__":

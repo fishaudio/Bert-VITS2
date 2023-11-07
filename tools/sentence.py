@@ -26,7 +26,7 @@ def markup_language(text: str, target_languages: list = None) -> str:
     p = 0
 
     sorted_target_languages = sorted(target_languages)
-    if sorted_target_languages in [['en', 'zh'], ['en', 'ja'], ['en', 'ja', 'zh']]:
+    if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
         new_sentences = []
         for sentence in sentences:
             new_sentences.extend(split_alpha_nonalpha(sentence))
@@ -69,7 +69,7 @@ def split_by_language(text: str, target_languages: list = None) -> list:
     sentences_list = []
 
     sorted_target_languages = sorted(target_languages)
-    if sorted_target_languages in [['en', 'zh'], ['en', 'ja'], ['en', 'ja', 'zh']]:
+    if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
         new_sentences = []
         for sentence in sentences:
             new_sentences.extend(split_alpha_nonalpha(sentence))
