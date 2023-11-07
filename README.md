@@ -1,7 +1,9 @@
 # Bert-VITS2
 
 VITS2 Backbone with bert
-
+# 紧急通知
+我们在2.0版本中发现了重大bug，该bug导致日文和英文bert被置0后训练，即失去bert效果。  
+我们将重炼2.0版本底模，已经开炉的建议关炉静候。  
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9)
 
