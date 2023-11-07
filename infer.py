@@ -85,22 +85,22 @@ def get_text(text, language_str, hps, device):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert = get_bert(norm_text, word2ph, language_str, device)
+    bert_ori = get_bert(norm_text, word2ph, language_str, device)
     del word2ph
-    assert bert.shape[-1] == len(phone), phone
+    assert bert_ori.shape[-1] == len(phone), phone
 
     if language_str == "ZH":
-        bert = bert
+        bert = bert_ori
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = torch.zeros(1024, len(phone))
     elif language_str == "JP":
         bert = torch.zeros(1024, len(phone))
-        ja_bert = bert
+        ja_bert = bert_ori
         en_bert = torch.zeros(1024, len(phone))
     elif language_str == "EN":
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(1024, len(phone))
-        en_bert = bert
+        en_bert = bert_ori
     else:
         raise ValueError("language_str should be ZH, JP or EN")
 
