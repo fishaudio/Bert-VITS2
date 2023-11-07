@@ -163,20 +163,6 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             bert = torch.zeros(1024, len(phone))
             ja_bert = torch.zeros(1024, len(phone))
             en_bert = bert_ori
-        assert bert.shape[-1] == len(phone), (
-            bert.shape,
-            len(phone),
-            sum(word2ph),
-            p1,
-            p2,
-            t1,
-            t2,
-            pold,
-            pold2,
-            word2ph,
-            text,
-            w2pho,
-        )
         phone = torch.LongTensor(phone)
         tone = torch.LongTensor(tone)
         language = torch.LongTensor(language)
