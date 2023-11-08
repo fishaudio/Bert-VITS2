@@ -70,4 +70,6 @@ def infer(
             .numpy()
         )
         del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         return audio
