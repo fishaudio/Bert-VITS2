@@ -26,10 +26,11 @@ from oldVersion.V101.text import symbols as V101symbols
 from oldVersion import V111, V110, V101
 
 # 当前版本信息
-latest_version = "2.0"
+latest_version = "2.1"
 
 # 版本兼容
 SynthesizerTrnMap = {
+    "2.0": V2SynthesizerTrn,
     "1.1.1-fix": V111SynthesizerTrn,
     "1.1.1": V111SynthesizerTrn,
     "1.1": V110SynthesizerTrn,
@@ -40,6 +41,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
+    "2.0": V2symbols
     "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
