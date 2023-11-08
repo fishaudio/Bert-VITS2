@@ -5,6 +5,7 @@ import logging
 import gc
 import random
 
+import gradio
 import numpy as np
 import utils
 from fastapi import FastAPI, Query, Request
@@ -245,6 +246,7 @@ if __name__ == "__main__":
                     )
                 audios.append(np.zeros((int)(44100 * 0.3)))
                 audio = np.concatenate(audios)
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         wavContent = BytesIO()
         wavfile.write(
             wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
