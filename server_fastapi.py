@@ -5,6 +5,7 @@ import logging
 import gc
 import random
 
+from pydantic import BaseModel
 import gradio
 import numpy as np
 import utils
@@ -172,10 +173,13 @@ if __name__ == "__main__":
     async def index():
         return FileResponse("./Web/index.html")
 
-    @app.get("/voice")
+    class Text(BaseModel):
+        text: str
+
+    @app.post("/voice")
     def voice(
         request: Request,  # fastapi自动注入
-        text: str = Query(..., description="输入文字"),
+        text: Text,
         model_id: int = Query(..., description="模型ID"),  # 模型序号
         speaker_name: str = Query(
             None, description="说话人名"
@@ -190,8 +194,9 @@ if __name__ == "__main__":
         auto_split: bool = Query(False, description="自动切分"),
     ):
         """语音接口"""
+        text = text.text
         logger.info(
-            f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
+            f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )} text={text}"
         )
         # 检查模型是否存在
         if model_id not in loaded_models.models.keys():
