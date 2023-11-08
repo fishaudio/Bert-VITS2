@@ -75,7 +75,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device):
+def get_text(text, reference_audio, emotion, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -89,7 +89,7 @@ def get_text(text, language_str, hps, device):
         word2ph[0] += 1
     bert_ori = get_bert(norm_text, word2ph, language_str, device)
     del word2ph
-    assert bert_ori.shape[-1] == len(phone), phone
+    assert bert.shape[-1] == len(phone), phone
 
     if language_str == "ZH":
         bert = bert_ori
@@ -106,6 +106,12 @@ def get_text(text, language_str, hps, device):
     else:
         raise ValueError("language_str should be ZH, JP or EN")
 
+    emo = (
+        torch.from_numpy(get_emo(reference_audio))
+        if reference_audio
+        else torch.Tensor([emotion])
+    )
+
     assert bert.shape[-1] == len(
         phone
     ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
@@ -113,11 +119,14 @@ def get_text(text, language_str, hps, device):
     phone = torch.LongTensor(phone)
     tone = torch.LongTensor(tone)
     language = torch.LongTensor(language)
-    return bert, ja_bert, en_bert, phone, tone, language
+    return bert, ja_bert, en_bert, emo, phone, tone, language
+
 
 
 def infer(
     text,
+    reference_audio,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -171,8 +180,8 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
-        text, language, hps, device
+    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
+        text, reference_audio, emotion, language, hps, device
     )
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
@@ -181,6 +190,7 @@ def infer(
         bert = bert.to(device).unsqueeze(0)
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
@@ -194,6 +204,7 @@ def infer(
                 bert,
                 ja_bert,
                 en_bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -203,7 +214,7 @@ def infer(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert, emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio
