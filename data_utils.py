@@ -148,8 +148,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             bert_ori = torch.load(bert_path)
             assert bert_ori.shape[-1] == len(phone)
         except Exception as e:
-            logger.warn("Bert load Failed")
-            logger.warn(e)
+            logger.warning("Bert load Failed")
+            logger.warning(e)
 
         if language_str == "ZH":
             bert = bert_ori
