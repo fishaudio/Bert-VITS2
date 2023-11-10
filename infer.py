@@ -30,7 +30,7 @@ latest_version = "2.1"
 
 # 版本兼容
 SynthesizerTrnMap = {
-    "2.0": V2SynthesizerTrn,
+    #"2.0": V2SynthesizerTrn,
     "1.1.1-fix": V111SynthesizerTrn,
     "1.1.1": V111SynthesizerTrn,
     "1.1": V110SynthesizerTrn,
@@ -41,7 +41,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    "2.0": V2symbols,
+    #"2.0": V2symbols,
     "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
