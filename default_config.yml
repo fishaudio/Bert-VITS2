@@ -67,6 +67,7 @@ train_ms:
     MASTER_PORT: 10086
     WORLD_SIZE: 1
     RANK: 0
+    LOCAL_RANK: 0
     # 可以填写任意名的环境变量
     THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
   # 底模设置
@@ -76,6 +77,8 @@ train_ms:
     model_image: "Bert-VITS2中日英底模-fix" # openi网页的模型名
   # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
   model: "models"
+  # 是否清理老的生成模型以节省空间
+  clean_model: true
   # 配置文件路径
   config_path: "config.json"
 
