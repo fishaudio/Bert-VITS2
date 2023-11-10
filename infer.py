@@ -41,7 +41,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    "2.0": V2symbols
+    "2.0": V2symbols,
     "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
