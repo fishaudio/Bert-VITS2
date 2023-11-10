@@ -546,13 +546,14 @@ def train_and_evaluate(
                         epoch,
                         os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
                     )
-                keep_ckpts = getattr(hps.train, "keep_ckpts", 5)
-                if keep_ckpts > 0:
-                    utils.clean_checkpoints(
-                        path_to_models=hps.model_dir,
-                        n_ckpts_to_keep=keep_ckpts,
-                        sort_by_time=True,
-                    )
+                if config.train_ms_config.clean_model:
+                    keep_ckpts = getattr(hps.train, "keep_ckpts", 5)
+                    if keep_ckpts > 0:
+                        utils.clean_checkpoints(
+                            path_to_models=hps.model_dir,
+                            n_ckpts_to_keep=keep_ckpts,
+                            sort_by_time=True,
+                        )
 
         global_step += 1
 
