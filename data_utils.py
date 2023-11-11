@@ -73,6 +73,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
+                print(audiopath)
         logger.info(
             "skipped: "
             + str(skipped)
