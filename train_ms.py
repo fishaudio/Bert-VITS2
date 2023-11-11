@@ -596,6 +596,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            emo = emo.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
