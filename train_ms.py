@@ -121,7 +121,7 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=32,  # 256G Memory config.
+        num_workers=24,  # 256G Memory config.
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
