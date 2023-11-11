@@ -110,25 +110,25 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
         if self.use_mel_spec_posterior:
             spec = mel_spectrogram_torch(
-                    audio_norm,
-                    self.filter_length,
-                    self.n_mel_channels,
-                    self.sampling_rate,
-                    self.hop_length,
-                    self.win_length,
-                    self.hparams.mel_fmin,
-                    self.hparams.mel_fmax,
-                    center=False,
-                )
+                audio_norm,
+                self.filter_length,
+                self.n_mel_channels,
+                self.sampling_rate,
+                self.hop_length,
+                self.win_length,
+                self.hparams.mel_fmin,
+                self.hparams.mel_fmax,
+                center=False,
+            )
         else:
             spec = spectrogram_torch(
-                    audio_norm,
-                    self.filter_length,
-                    self.sampling_rate,
-                    self.hop_length,
-                    self.win_length,
-                    center=False,
-                )
+                audio_norm,
+                self.filter_length,
+                self.sampling_rate,
+                self.hop_length,
+                self.win_length,
+                center=False,
+            )
         spec = torch.squeeze(spec, 0)
         return spec, audio_norm
 
@@ -254,7 +254,7 @@ class TextAudioSpeakerCollate:
 
             en_bert = row[8]
             en_bert_padded[i, :, : en_bert.size(1)] = en_bert
-            
+
             emo[i, :] = row[9]
 
         return (
