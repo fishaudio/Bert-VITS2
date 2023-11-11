@@ -2,6 +2,7 @@
 import os
 import logging
 import re_matching
+from tools.sentence import split_by_language, sentence_split
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
@@ -43,7 +44,7 @@ def generate_audio(
     emotion,
 ):
     audio_list = []
-    silence = np.zeros(hps.data.sampling_rate // 2)
+    silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
     with torch.no_grad():
         for piece in slices:
             audio = infer(
@@ -60,7 +61,8 @@ def generate_audio(
                 net_g=net_g,
                 device=device,
             )
-            audio_list.append(audio)
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+            audio_list.append(audio16bit)
             audio_list.append(silence)  # 将静音添加到列表中
     return audio_list
 
@@ -101,11 +103,13 @@ def tts_split(
                 net_g=net_g,
                 device=device,
             )
-            audio_list.append(audio)
-            silence = np.zeros((int)(44100 * interval_between_para))
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+            audio_list.append(audio16bit)
+            silence = np.zeros((int)(44100 * interval_between_para), dtype=np.int16)
             audio_list.append(silence)
     else:
         for p in para_list:
+            audio_list_sent = []
             sent_list = re_matching.cut_sent(p)
             for s in sent_list:
                 audio = infer(
@@ -122,14 +126,18 @@ def tts_split(
                     net_g=net_g,
                     device=device,
                 )
-                audio_list.append(audio)
+                audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
-                audio_list.append(silence)
+                audio_list_sent.append(silence)
             if (interval_between_para - interval_between_sent) > 0:
                 silence = np.zeros(
                     (int)(44100 * (interval_between_para - interval_between_sent))
                 )
-                audio_list.append(silence)
+                audio_list_sent.append(silence)
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(
+                np.concatenate(audio_list_sent)
+            )  # 对完整句子做音量归一
+            audio_list.append(audio16bit)
     audio_concat = np.concatenate(audio_list)
     return ("Success", (44100, audio_concat))
 
@@ -164,7 +172,28 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        _speaker + "_" + lang.lower(),
+                        _speaker,
+                        lang,
+                        reference_audio,
+                        emotion,
+                    )
+                )
+    elif language.lower() == "auto":
+        sentences_list = split_by_language(text, target_languages=["zh", "ja", "en"])
+        for sentences, lang in sentences_list:
+            lang = lang.upper()
+            if lang == "JA":
+                lang = "JP"
+            sentences = sentence_split(sentences, max=250)
+            for content in sentences:
+                audio_list.extend(
+                    generate_audio(
+                        content.split("|"),
+                        sdp_ratio,
+                        noise_scale,
+                        noise_scale_w,
+                        length_scale,
+                        _speaker,
                         lang,
                         reference_audio,
                         emotion,
@@ -201,7 +230,7 @@ if __name__ == "__main__":
     )
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    languages = ["ZH", "JP", "EN", "mix"]
+    languages = ["ZH", "JP", "EN", "mix","auto"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
@@ -220,25 +249,25 @@ if __name__ == "__main__":
                 trans = gr.Button("中翻日", variant="primary")
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
-                    choices=speakers, value=speakers[0], label="选择说话人"
+                    choices=speakers, value=speakers[0], label="Speaker"
                 )
                 emotion = gr.Slider(
-                    minimum=0, maximum=4, value=0, step=1, label="Emotion"
+                    minimum=0, maximum=9, value=0, step=1, label="Emotion"
                 )
                 sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
+                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="感情"
+                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="音素长度"
+                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise_W"
                 )
                 length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="语速"
+                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
                 )
                 language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="选择语言(新增mix混合选项)"
+                    choices=languages, value=languages[0], label="Language"
                 )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
