@@ -3,8 +3,8 @@ import random
 import torch
 import torch.utils.data
 from tqdm import tqdm
-from loguru import logger
 import numpy as np
+from tools.log import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
@@ -146,8 +146,8 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             bert_ori = torch.load(bert_path)
             assert bert_ori.shape[-1] == len(phone)
         except Exception as e:
-            logger.warn("Bert load Failed")
-            logger.warn(e)
+            logger.warning("Bert load Failed")
+            logger.warning(e)
 
         if language_str == "ZH":
             bert = bert_ori
