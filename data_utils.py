@@ -4,6 +4,7 @@ import torch
 import torch.utils.data
 from tqdm import tqdm
 from loguru import logger
+import numpy as np
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
