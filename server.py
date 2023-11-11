@@ -50,7 +50,7 @@ chrsMap: List[Dict[int, str]] = list()
 # 加载模型
 models = config.server_config.models
 for model in models:
-    hps_List.append(utils.get_hparams_from_file(model["config"]))
+    hps_List.append(utils.get_hparams_from_file(model["config_path"]))
     # 添加角色字典
     chrsMap.append(dict())
     for name, cid in hps_List[-1].data.spk2id.items():
