@@ -96,7 +96,9 @@ def post_replace_ph(ph):
         "\n": ".",
         "·": ",",
         "、": ",",
-        "...": "…",
+        "…": "...",
+        "···": "...",
+        "・・・": "...",
         "v": "V",
     }
     if ph in rep_map.keys():
@@ -106,6 +108,61 @@ def post_replace_ph(ph):
     if ph not in symbols:
         ph = "UNK"
     return ph
+
+
+rep_map = {
+    "：": ",",
+    "；": ",",
+    "，": ",",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "\n": ".",
+    "．": ".",
+    "…": "...",
+    "···": "...",
+    "・・・": "...",
+    "·": ",",
+    "・": ",",
+    "、": ",",
+    "$": ".",
+    "“": "'",
+    "”": "'",
+    "‘": "'",
+    "’": "'",
+    "（": "'",
+    "）": "'",
+    "(": "'",
+    ")": "'",
+    "《": "'",
+    "》": "'",
+    "【": "'",
+    "】": "'",
+    "[": "'",
+    "]": "'",
+    "—": "-",
+    "−": "-",
+    "～": "-",
+    "~": "-",
+    "「": "'",
+    "」": "'",
+}
+
+
+def replace_punctuation(text):
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+
+    replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
+
+    # replaced_text = re.sub(
+    #     r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005"
+    #     + "".join(punctuation)
+    #     + r"]+",
+    #     "",
+    #     replaced_text,
+    # )
+
+    return replaced_text
 
 
 def read_dict():
@@ -308,6 +365,7 @@ def normalize_numbers(text):
 
 def text_normalize(text):
     text = normalize_numbers(text)
+    text = replace_punctuation(text)
     return text
 
 
@@ -334,7 +392,6 @@ def g2p(text):
                     phones.append(ph)
                     tones.append(0)
             word2ph.append(len(phone_list))
-
     phones = [post_replace_ph(i) for i in phones]
 
     phones = ["_"] + phones + ["_"]
