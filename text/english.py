@@ -131,6 +131,7 @@ rep_map = {
     "$": ".",
     "“": "'",
     "”": "'",
+    '"': "'",
     "‘": "'",
     "’": "'",
     "（": "'",
@@ -369,6 +370,7 @@ def normalize_numbers(text):
 def text_normalize(text):
     text = normalize_numbers(text)
     text = replace_punctuation(text)
+    text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)
     return text
 
 
@@ -381,12 +383,17 @@ def distribute_phone(n_phone, n_word):
     return phones_per_word
 
 
+def sep_text(text):
+    words = re.split(r"([,;.\?\!\s+])", text)
+    words = [word for word in words if word.strip() != ""]
+    return words
+
+
 def g2p(text):
     phones = []
     tones = []
     # word2ph = []
-    words = re.split(r"([,;.\-\?\!\s+])", text)
-    words = [word for word in words if word.strip() != ""]
+    words = sep_text(text)
     tokens = [tokenizer.tokenize(i) for i in words]
     for word in words:
         if word.upper() in eng_dict:
