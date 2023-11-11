@@ -2,13 +2,16 @@ import pickle
 import os
 import re
 from g2p_en import G2p
+from transformers import DebertaV2Tokenizer
 
-from text import symbols
+from text import symbols, punctuation
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
 CACHE_PATH = os.path.join(current_file_path, "cmudict_cache.pickle")
 _g2p = G2p()
+LOCAL_PATH = "./bert/deberta-v3-large"
+tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 
 arpa = {
     "AH0",
@@ -369,34 +372,58 @@ def text_normalize(text):
     return text
 
 
+def distribute_phone(n_phone, n_word):
+    phones_per_word = [0] * n_word
+    for task in range(n_phone):
+        min_tasks = min(phones_per_word)
+        min_index = phones_per_word.index(min_tasks)
+        phones_per_word[min_index] += 1
+    return phones_per_word
+
+
 def g2p(text):
     phones = []
     tones = []
-    word2ph = []
+    # word2ph = []
     words = re.split(r"([,;.\-\?\!\s+])", text)
     words = [word for word in words if word.strip() != ""]
+    tokens = [tokenizer.tokenize(i) for i in words]
     for word in words:
         if word.upper() in eng_dict:
             phns, tns = refine_syllables(eng_dict[word.upper()])
-            phones += phns
-            tones += tns
-            word2ph.append(len(phns))
+            phones.append([post_replace_ph(i) for i in phns])
+            tones.append(tns)
+            # word2ph.append(len(phns))
         else:
             phone_list = list(filter(lambda p: p != " ", _g2p(word)))
+            phns = []
+            tns = []
             for ph in phone_list:
                 if ph in arpa:
                     ph, tn = refine_ph(ph)
-                    phones.append(ph)
-                    tones.append(tn)
+                    phns.append(ph)
+                    tns.append(tn)
                 else:
-                    phones.append(ph)
-                    tones.append(0)
-            word2ph.append(len(phone_list))
-    phones = [post_replace_ph(i) for i in phones]
+                    phns.append(ph)
+                    tns.append(0)
+            phones.append([post_replace_ph(i) for i in phns])
+            tones.append(tns)
+            # word2ph.append(len(phns))
+    # phones = [post_replace_ph(i) for i in phones]
 
-    phones = ["_"] + phones + ["_"]
-    tones = [0] + tones + [0]
+    word2ph = []
+    for token, phoneme in zip(tokens, phones):
+        phone_len = len(phoneme)
+        word_len = len(token)
+
+        aaa = distribute_phone(phone_len, word_len)
+        word2ph += aaa
+
+    phones = ["_"] + [j for i in phones for j in i] + ["_"]
+    tones = [0] + [j for i in tones for j in i] + [0]
     word2ph = [1] + word2ph + [1]
+    assert len(phones) == len(tones), text
+    assert len(phones) == sum(word2ph), text
 
     return phones, tones, word2ph
 
