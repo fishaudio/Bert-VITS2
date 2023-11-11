@@ -216,7 +216,7 @@ class TextAudioSpeakerCollate:
         text_padded.zero_()
         tone_padded.zero_()
         language_padded.zero_()
-        _padded.zero_()
+        spec_padded.zero_()
         wav_padded.zero_()
         bert_padded.zero_()
         ja_bert_padded.zero_()
