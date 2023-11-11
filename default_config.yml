@@ -69,15 +69,7 @@ emo_gen:
 # train 训练配置
 # 注意， “:” 后需要加空格
 train_ms:
-  # 需要加载的环境变量，多显卡训练时RANK请手动在环境变量填写
-  # 环境变量对应名称环境变量不存在时加载，也就是说手动添加的环境变量优先级更高，会覆盖本配置文件
-  env:
-    MASTER_ADDR: "localhost"
-    MASTER_PORT: 10086
-    WORLD_SIZE: 1
-    RANK: 0
-    # 可以填写任意名的环境变量
-    # THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+  # 多显卡训练时我们强烈推荐使用torchrun进行自动分配，这里不再提供环境变量选项。
   # 底模设置
   base:
     use_base_model: false
