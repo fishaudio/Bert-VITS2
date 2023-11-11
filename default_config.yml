@@ -55,7 +55,7 @@ bert_gen:
   device: "cuda"
   # 使用多卡推理
   use_multi_device: false
-
+  
 # emo_gen 相关配置
 # 注意， “:” 后需要加空格
 emo_gen:
