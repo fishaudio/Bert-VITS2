@@ -89,7 +89,7 @@ def get_text(text, reference_audio, emotion, language_str, hps, device):
         word2ph[0] += 1
     bert_ori = get_bert(norm_text, word2ph, language_str, device)
     del word2ph
-    assert bert.shape[-1] == len(phone), phone
+    assert bert_ori.shape[-1] == len(phone), phone
 
     if language_str == "ZH":
         bert = bert_ori
