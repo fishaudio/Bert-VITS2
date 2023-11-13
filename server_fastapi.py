@@ -163,7 +163,7 @@ if __name__ == "__main__":
     models_info = config.server_config.models
     for model_info in models_info:
         loaded_models.init_model(
-            config_path=model_info["config_path"],
+            config_path=model_info["config"],
             model_path=model_info["model"],
             device=model_info["device"],
             language=model_info["language"],
