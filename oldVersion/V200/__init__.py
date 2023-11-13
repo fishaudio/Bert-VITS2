@@ -5,7 +5,6 @@ import torch
 import commons
 from .text import cleaned_text_to_sequence, get_bert
 from .text.cleaner import clean_text
-from .models import SynthesizerTrn
 
 
 def get_text(text, language_str, hps, device):
