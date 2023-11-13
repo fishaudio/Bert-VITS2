@@ -49,8 +49,8 @@ def generate_audio(
         for piece in slices:
             audio = infer(
                 piece,
-                reference_audio,
-                emotion,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -91,8 +91,8 @@ def tts_split(
         for p in para_list:
             audio = infer(
                 p,
-                reference_audio,
-                emotion,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -114,8 +114,8 @@ def tts_split(
             for s in sent_list:
                 audio = infer(
                     s,
-                    reference_audio,
-                    emotion,
+                    reference_audio=reference_audio,
+                    emotion=emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,

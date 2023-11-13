@@ -17,6 +17,8 @@ import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
+from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
+from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
 from oldVersion.V111.text import symbols as V111symbols
 from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
@@ -24,14 +26,16 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101
+from oldVersion import V111, V110, V101, V200
 
 # 当前版本信息
 latest_version = "2.1"
 
 # 版本兼容
 SynthesizerTrnMap = {
-    # "2.0": V2SynthesizerTrn,
+    "2.0.2-fix": V200SynthesizerTrn,
+    "2.0.1": V200SynthesizerTrn,
+    "2.0": V200SynthesizerTrn,
     "1.1.1-fix": V111SynthesizerTrn,
     "1.1.1": V111SynthesizerTrn,
     "1.1": V110SynthesizerTrn,
@@ -42,7 +46,9 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    # "2.0": V2symbols,
+    "2.0.2-fix": V200symbols,
+    "2.0.1": V200symbols,
+    "2.0": V200symbols,
     "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
@@ -125,8 +131,6 @@ def get_text(text, reference_audio, emotion, language_str, hps, device):
 
 def infer(
     text,
-    reference_audio,
-    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -136,9 +140,14 @@ def infer(
     hps,
     net_g,
     device,
+    reference_audio=None,
+    emotion=None,
 ):
-    # 支持中日双语版本
+    # 支持中日英三语版本
     inferMap_V2 = {
+        "2.0.2-fix": V200.infer,
+        "2.0.1": V200.infer,
+        "2.0": V200.infer,
         "1.1.1-fix": V111.infer_fix,
         "1.1.1": V111.infer,
         "1.1": V110.infer,
