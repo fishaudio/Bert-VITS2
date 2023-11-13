@@ -11,6 +11,7 @@
 import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
+from emo_gen import get_emo
 from text.cleaner import clean_text
 import utils
 
