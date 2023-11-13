@@ -554,7 +554,7 @@ def train_and_evaluate(
                         epoch,
                         os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
                     )
-                keep_ckpts = getattr(hps.train, "keep_ckpts", 5)
+                keep_ckpts = getattr(hps.train, "keep_ckpts", 10)
                 if keep_ckpts > 0:
                     utils.clean_checkpoints(
                         path_to_models=hps.model_dir,
