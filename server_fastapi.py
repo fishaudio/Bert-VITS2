@@ -176,6 +176,80 @@ if __name__ == "__main__":
     class Text(BaseModel):
         text: str
 
+    def _voice(
+        text: str,
+        model_id: int,
+        speaker_name: str,
+        speaker_id: int,
+        sdp_ratio: float,
+        noise: float,
+        noisew: float,
+        length: float,
+        language: str,
+        auto_translate: bool,
+        auto_split: bool,
+    ) -> Response | Dict[str, any]:
+        # 检查模型是否存在
+        if model_id not in loaded_models.models.keys():
+            return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
+        # 检查是否提供speaker
+        if speaker_name is None and speaker_id is None:
+            return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
+        elif speaker_name is None:
+            # 检查speaker_id是否存在
+            if speaker_id not in loaded_models.models[model_id].id2spk.keys():
+                return {"status": 12, "detail": f"角色speaker_id={speaker_id}不存在"}
+            speaker_name = loaded_models.models[model_id].id2spk[speaker_id]
+        # 检查speaker_name是否存在
+        if speaker_name not in loaded_models.models[model_id].spk2id.keys():
+            return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
+        if language is None:
+            language = loaded_models.models[model_id].language
+        if auto_translate:
+            text = trans.translate(Sentence=text, to_Language=language.lower())
+        if not auto_split:
+            with torch.no_grad():
+                audio = infer(
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noisew,
+                    length_scale=length,
+                    sid=speaker_name,
+                    language=language,
+                    hps=loaded_models.models[model_id].hps,
+                    net_g=loaded_models.models[model_id].net_g,
+                    device=loaded_models.models[model_id].device,
+                )
+        else:
+            texts = cut_sent(text)
+            audios = []
+            with torch.no_grad():
+                for t in texts:
+                    audios.append(
+                        infer(
+                            text=t,
+                            sdp_ratio=sdp_ratio,
+                            noise_scale=noise,
+                            noise_scale_w=noisew,
+                            length_scale=length,
+                            sid=speaker_name,
+                            language=language,
+                            hps=loaded_models.models[model_id].hps,
+                            net_g=loaded_models.models[model_id].net_g,
+                            device=loaded_models.models[model_id].device,
+                        )
+                    )
+                    audios.append(np.zeros(int(44100 * 0.2)))
+                audio = np.concatenate(audios)
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
+        wavContent = BytesIO()
+        wavfile.write(
+            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+        )
+        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
+        return response
+
     @app.post("/voice")
     def voice(
         request: Request,  # fastapi自动注入
@@ -198,66 +272,19 @@ if __name__ == "__main__":
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )} text={text}"
         )
-        # 检查模型是否存在
-        if model_id not in loaded_models.models.keys():
-            return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
-        # 检查是否提供speaker
-        if speaker_name is None and speaker_id is None:
-            return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
-        elif speaker_name is None:
-            # 检查speaker_id是否存在
-            if speaker_id not in loaded_models.models[model_id].id2spk.keys():
-                return {"status": 12, "detail": f"角色speaker_id={speaker_id}不存在"}
-            speaker_name = loaded_models.models[model_id].id2spk[speaker_id]
-        # 检查speaker_name是否存在
-        if speaker_name not in loaded_models.models[model_id].spk2id.keys():
-            return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
-        if language is None:
-            language = loaded_models.models[model_id].language
-        if auto_translate:
-            text = trans.translate(Sentence=text, to_Language=language.lower())
-        if not auto_split:
-            with torch.no_grad():
-                audio = infer(
-                    text=text,
-                    sdp_ratio=sdp_ratio,
-                    noise_scale=noise,
-                    noise_scale_w=noisew,
-                    length_scale=length,
-                    sid=speaker_name,
-                    language=language,
-                    hps=loaded_models.models[model_id].hps,
-                    net_g=loaded_models.models[model_id].net_g,
-                    device=loaded_models.models[model_id].device,
-                )
-        else:
-            texts = cut_sent(text)
-            audios = []
-            with torch.no_grad():
-                for t in texts:
-                    audios.append(
-                        infer(
-                            text=t,
-                            sdp_ratio=sdp_ratio,
-                            noise_scale=noise,
-                            noise_scale_w=noisew,
-                            length_scale=length,
-                            sid=speaker_name,
-                            language=language,
-                            hps=loaded_models.models[model_id].hps,
-                            net_g=loaded_models.models[model_id].net_g,
-                            device=loaded_models.models[model_id].device,
-                        )
-                    )
-                audios.append(np.zeros((int)(44100 * 0.3)))
-                audio = np.concatenate(audios)
-                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
-        wavContent = BytesIO()
-        wavfile.write(
-            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+        return _voice(
+            text=text,
+            model_id=model_id,
+            speaker_name=speaker_name,
+            speaker_id=speaker_id,
+            sdp_ratio=sdp_ratio,
+            noise=noise,
+            noisew=noisew,
+            length=length,
+            language=language,
+            auto_translate=auto_translate,
+            auto_split=auto_split,
         )
-        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
-        return response
 
     @app.get("/voice")
     def voice(
@@ -280,66 +307,19 @@ if __name__ == "__main__":
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
-        # 检查模型是否存在
-        if model_id not in loaded_models.models.keys():
-            return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
-        # 检查是否提供speaker
-        if speaker_name is None and speaker_id is None:
-            return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
-        elif speaker_name is None:
-            # 检查speaker_id是否存在
-            if speaker_id not in loaded_models.models[model_id].id2spk.keys():
-                return {"status": 12, "detail": f"角色speaker_id={speaker_id}不存在"}
-            speaker_name = loaded_models.models[model_id].id2spk[speaker_id]
-        # 检查speaker_name是否存在
-        if speaker_name not in loaded_models.models[model_id].spk2id.keys():
-            return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
-        if language is None:
-            language = loaded_models.models[model_id].language
-        if auto_translate:
-            text = trans.translate(Sentence=text, to_Language=language.lower())
-        if not auto_split:
-            with torch.no_grad():
-                audio = infer(
-                    text=text,
-                    sdp_ratio=sdp_ratio,
-                    noise_scale=noise,
-                    noise_scale_w=noisew,
-                    length_scale=length,
-                    sid=speaker_name,
-                    language=language,
-                    hps=loaded_models.models[model_id].hps,
-                    net_g=loaded_models.models[model_id].net_g,
-                    device=loaded_models.models[model_id].device,
-                )
-        else:
-            texts = cut_sent(text)
-            audios = []
-            with torch.no_grad():
-                for t in texts:
-                    audios.append(
-                        infer(
-                            text=t,
-                            sdp_ratio=sdp_ratio,
-                            noise_scale=noise,
-                            noise_scale_w=noisew,
-                            length_scale=length,
-                            sid=speaker_name,
-                            language=language,
-                            hps=loaded_models.models[model_id].hps,
-                            net_g=loaded_models.models[model_id].net_g,
-                            device=loaded_models.models[model_id].device,
-                        )
-                    )
-                audios.append(np.zeros((int)(44100 * 0.3)))
-                audio = np.concatenate(audios)
-                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
-        wavContent = BytesIO()
-        wavfile.write(
-            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+        return _voice(
+            text=text,
+            model_id=model_id,
+            speaker_name=speaker_name,
+            speaker_id=speaker_id,
+            sdp_ratio=sdp_ratio,
+            noise=noise,
+            noisew=noisew,
+            length=length,
+            language=language,
+            auto_translate=auto_translate,
+            auto_split=auto_split,
         )
-        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
-        return response
 
     @app.get("/models/info")
     def get_loaded_models_info(request: Request):
