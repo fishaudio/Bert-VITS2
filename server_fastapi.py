@@ -240,7 +240,7 @@ if __name__ == "__main__":
                             device=loaded_models.models[model_id].device,
                         )
                     )
-                audios.append(np.zeros((int)(44100 * 0.3)))
+                    audios.append(np.zeros(int(44100 * 0.2)))
                 audio = np.concatenate(audios)
                 audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         wavContent = BytesIO()
