@@ -125,6 +125,8 @@ def infer(
     hps,
     net_g,
     device,
+    skip_start=False,
+    skip_end=False,
 ):
     # 支持中日双语版本
     inferMap_V2 = {
@@ -172,6 +174,20 @@ def infer(
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
     )
+    if skip_start:
+        phones = phones[1:]
+        tones = tones[1:]
+        lang_ids = lang_ids[1:]
+        bert = bert[:, 1:]
+        ja_bert = ja_bert[:, 1:]
+        en_bert = en_bert[:, 1:]
+    if skip_end:
+        phones = phones[:-1]
+        tones = tones[:-1]
+        lang_ids = lang_ids[:-1]
+        bert = bert[:, :-1]
+        ja_bert = ja_bert[:, :-1]
+        en_bert = en_bert[:, :-1]
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
