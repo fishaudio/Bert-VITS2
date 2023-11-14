@@ -385,3 +385,33 @@ class HParams:
 
     def __repr__(self):
         return self.__dict__.__repr__()
+
+def load_model(model_path, config_path):
+    from models import SynthesizerTrn
+    hps = get_hparams_from_file(config_path)
+    net = SynthesizerTrn(
+        108, # len(symbols),
+        hps.data.filter_length // 2 + 1,
+        hps.train.segment_size // hps.data.hop_length,
+        n_speakers=hps.data.n_speakers,
+        **hps.model).to('cpu')
+    _ = net.eval()
+    _ = load_checkpoint(model_path, net, None, skip_optimizer=True)
+    return net
+
+def mix_model(network1, network2, output_path, voice_ratio=(.5,.5), tone_ratio=(.5,.5)):
+    if hasattr(network1, 'module'):
+        state_dict1 = network1.module.state_dict()
+        state_dict2 = network2.module.state_dict()
+    else:
+        state_dict1 = network1.state_dict()
+        state_dict2 = network2.state_dict()
+    for k in state_dict1.keys():
+        if 'enc_p' in k:
+            state_dict1[k] = state_dict1[k].clone() * tone_ratio[0] + state_dict2[k].clone() * tone_ratio[1]
+        else:
+            state_dict1[k] = state_dict1[k].clone() * voice_ratio[0] + state_dict2[k].clone() * voice_ratio[1]
+    torch.save({'model': state_dict1,
+                'iteration': 0,
+                'optimizer': None,
+                'learning_rate': 0}, output_path)
