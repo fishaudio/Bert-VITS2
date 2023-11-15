@@ -18,12 +18,14 @@ logger = logging.getLogger(__name__)
 
 import torch
 import utils
-from infer import infer, latest_version, get_net_g
+from infer import infer, latest_version, get_net_g, infer_multilang
 import gradio as gr
 import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
+import re
+from text.symbols import punctuation
 
 net_g = None
 
@@ -57,6 +59,43 @@ def generate_audio(
                 length_scale=length_scale,
                 sid=speaker,
                 language=language,
+                hps=hps,
+                net_g=net_g,
+                device=device,
+                skip_start=skip_start,
+                skip_end=skip_end,
+            )
+            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+            audio_list.append(audio16bit)
+            # audio_list.append(silence)  # 将静音添加到列表中
+    return audio_list
+
+
+def generate_audio_multilang(
+    slices,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    speaker,
+    language,
+    skip_start=False,
+    skip_end=False,
+):
+    audio_list = []
+    # silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
+    with torch.no_grad():
+        for idx, piece in enumerate(slices):
+            skip_start = (idx != 0) and skip_start
+            skip_end = (idx != len(slices) - 1) and skip_end
+            audio = infer_multilang(
+                piece,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+                sid=speaker,
+                language=language[idx],
                 hps=hps,
                 net_g=net_g,
                 device=device,
@@ -148,6 +187,41 @@ def tts_split(
     return ("Success", (44100, audio_concat))
 
 
+rep_map = {
+    "：": ",",
+    "；": ",",
+    "，": ",",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "\n": ".",
+    "·": ",",
+    "、": ",",
+    "...": "…",
+    "$": ".",
+    "“": "'",
+    "”": "'",
+    "‘": "'",
+    "’": "'",
+    "（": "'",
+    "）": "'",
+    "(": "'",
+    ")": "'",
+    "《": "'",
+    "》": "'",
+    "【": "'",
+    "】": "'",
+    "[": "'",
+    "]": "'",
+    "—": "-",
+    "～": "-",
+    "~": "-",
+    "「": "'",
+    "」": "'",
+}
+replace_punc = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+
+
 def tts_fn(
     text: str,
     speaker,
@@ -166,51 +240,91 @@ def tts_fn(
                 np.concatenate([np.zeros(hps.data.sampling_rate // 2)]),
             )
         result = re_matching.text_matching(text)
-        for idx, one in enumerate(result):
-            skip_start = idx != 0
-            skip_end = idx != len(result) - 1
+        for i, one in enumerate(result):
+            skip_start = i != 0
+            skip_end = i != len(result) - 1
             _speaker = one.pop()
-            for idx, (lang, content) in enumerate(one):
+            idx = 0
+            while idx < len(one):
+                text_to_generate = []
+                lang_to_generate = []
+                while True:
+                    lang, content = one[idx]
+                    temp_text = content.split("|")
+                    if len(text_to_generate) > 0:
+                        text_to_generate[-1] += [temp_text.pop()]
+                        lang_to_generate[-1] += [lang]
+                    if len(temp_text) > 0:
+                        text_to_generate += [[i] for i in temp_text]
+                        lang_to_generate += [[lang]] * len(temp_text)
+                    content = replace_punc.sub(lambda x: rep_map[x.group()], content)
+                    if content[-1] not in [".", "?", "!"]:
+                        if idx + 1 < len(one):
+                            idx += 1
+                        else:
+                            break
+                    else:
+                        break
                 skip_start = (idx != 0) and skip_start
                 skip_end = (idx != len(one) - 1) and skip_end
+                print(text_to_generate, lang_to_generate)
                 audio_list.extend(
-                    generate_audio(
-                        content.split("|"),
+                    generate_audio_multilang(
+                        text_to_generate,
                         sdp_ratio,
                         noise_scale,
                         noise_scale_w,
                         length_scale,
                         _speaker,
-                        lang,
+                        lang_to_generate,
                         skip_start,
                         skip_end,
                     )
                 )
+                idx += 1
     elif language.lower() == "auto":
         sentences_list = split_by_language(text, target_languages=["zh", "ja", "en"])
-        for idx, (sentences, lang) in enumerate(sentences_list):
+        idx = 0
+        while idx < len(sentences_list):
+            text_to_generate = []
+            lang_to_generate = []
+            while True:
+                content, lang = sentences_list[idx]
+                temp_text = content.split("|")
+                lang = lang.upper()
+                if lang == "JA":
+                    lang = "JP"
+                if len(text_to_generate) > 0:
+                    text_to_generate[-1] += [temp_text.pop()]
+                    lang_to_generate[-1] += [lang]
+                if len(temp_text) > 0:
+                    text_to_generate += [[i] for i in temp_text]
+                    lang_to_generate += [[lang]] * len(temp_text)
+                content = replace_punc.sub(lambda x: rep_map[x.group()], content)
+                if content[-1] not in [".", "?", "!"]:
+                    if idx + 1 < len(sentences_list):
+                        idx += 1
+                    else:
+                        break
+                else:
+                    break
             skip_start = idx != 0
             skip_end = idx != len(sentences_list) - 1
-            lang = lang.upper()
-            if lang == "JA":
-                lang = "JP"
-            sentences = sentence_split(sentences, max=250)
-            for idx, content in enumerate(sentences):
-                skip_start = (idx != 0) and skip_start
-                skip_end = (idx != len(sentences) - 1) and skip_end
-                audio_list.extend(
-                    generate_audio(
-                        content.split("|"),
-                        sdp_ratio,
-                        noise_scale,
-                        noise_scale_w,
-                        length_scale,
-                        speaker,
-                        lang,
-                        skip_start,
-                        skip_end,
-                    )
+            print(text_to_generate, lang_to_generate)
+            audio_list.extend(
+                generate_audio_multilang(
+                    text_to_generate,
+                    sdp_ratio,
+                    noise_scale,
+                    noise_scale_w,
+                    length_scale,
+                    speaker,
+                    lang_to_generate,
+                    skip_start,
+                    skip_end,
                 )
+            )
+            idx += 1
     else:
         audio_list.extend(
             generate_audio(
