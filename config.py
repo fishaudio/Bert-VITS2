@@ -118,9 +118,11 @@ class Train_ms_config:
         self,
         config_path: str,
         env: Dict[str, any],
+        base: Dict[str, any],
         model: str,
     ):
         self.env = env  # 需要加载的环境变量
+        self.base = base  # 底模配置
         self.model = model  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
         self.config_path = config_path  # 配置文件路径
 
@@ -140,6 +142,7 @@ class Webui_config:
         device: str,
         model: str,
         config_path: str,
+        language_identification_library: str,
         port: int = 7860,
         share: bool = False,
         debug: bool = False,
@@ -150,6 +153,9 @@ class Webui_config:
         self.port: int = port  # 是否开启debug模式
         self.share: bool = share  # 模型路径
         self.debug: bool = debug  # 配置文件路径
+        self.language_identification_library: str = (
+            language_identification_library  # 语种识别库
+        )
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):

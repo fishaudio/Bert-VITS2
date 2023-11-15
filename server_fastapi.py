@@ -5,6 +5,9 @@ import logging
 import gc
 import random
 
+from pydantic import BaseModel
+import gradio
+import numpy as np
 import utils
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import Response, FileResponse
@@ -23,6 +26,8 @@ from urllib.parse import unquote
 
 from infer import infer, get_net_g, latest_version
 import tools.translate as trans
+from re_matching import cut_sent
+
 
 from config import config
 
@@ -168,6 +173,92 @@ if __name__ == "__main__":
     async def index():
         return FileResponse("./Web/index.html")
 
+    class Text(BaseModel):
+        text: str
+
+    @app.post("/voice")
+    def voice(
+        request: Request,  # fastapi自动注入
+        text: Text,
+        model_id: int = Query(..., description="模型ID"),  # 模型序号
+        speaker_name: str = Query(
+            None, description="说话人名"
+        ),  # speaker_name与 speaker_id二者选其一
+        speaker_id: int = Query(None, description="说话人id，与speaker_name二选一"),
+        sdp_ratio: float = Query(0.2, description="SDP/DP混合比"),
+        noise: float = Query(0.2, description="感情"),
+        noisew: float = Query(0.9, description="音素长度"),
+        length: float = Query(1, description="语速"),
+        language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
+        auto_translate: bool = Query(False, description="自动翻译"),
+        auto_split: bool = Query(False, description="自动切分"),
+    ):
+        """语音接口"""
+        text = text.text
+        logger.info(
+            f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )} text={text}"
+        )
+        # 检查模型是否存在
+        if model_id not in loaded_models.models.keys():
+            return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
+        # 检查是否提供speaker
+        if speaker_name is None and speaker_id is None:
+            return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
+        elif speaker_name is None:
+            # 检查speaker_id是否存在
+            if speaker_id not in loaded_models.models[model_id].id2spk.keys():
+                return {"status": 12, "detail": f"角色speaker_id={speaker_id}不存在"}
+            speaker_name = loaded_models.models[model_id].id2spk[speaker_id]
+        # 检查speaker_name是否存在
+        if speaker_name not in loaded_models.models[model_id].spk2id.keys():
+            return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
+        if language is None:
+            language = loaded_models.models[model_id].language
+        if auto_translate:
+            text = trans.translate(Sentence=text, to_Language=language.lower())
+        if not auto_split:
+            with torch.no_grad():
+                audio = infer(
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noisew,
+                    length_scale=length,
+                    sid=speaker_name,
+                    language=language,
+                    hps=loaded_models.models[model_id].hps,
+                    net_g=loaded_models.models[model_id].net_g,
+                    device=loaded_models.models[model_id].device,
+                )
+        else:
+            texts = cut_sent(text)
+            audios = []
+            with torch.no_grad():
+                for t in texts:
+                    audios.append(
+                        infer(
+                            text=t,
+                            sdp_ratio=sdp_ratio,
+                            noise_scale=noise,
+                            noise_scale_w=noisew,
+                            length_scale=length,
+                            sid=speaker_name,
+                            language=language,
+                            hps=loaded_models.models[model_id].hps,
+                            net_g=loaded_models.models[model_id].net_g,
+                            device=loaded_models.models[model_id].device,
+                        )
+                    )
+                audios.append(np.zeros((int)(44100 * 0.3)))
+                audio = np.concatenate(audios)
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
+        wavContent = BytesIO()
+        wavfile.write(
+            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+        )
+        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
+        return response
+
     @app.get("/voice")
     def voice(
         request: Request,  # fastapi自动注入
@@ -183,6 +274,7 @@ if __name__ == "__main__":
         length: float = Query(1, description="语速"),
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
+        auto_split: bool = Query(False, description="自动切分"),
     ):
         """语音接口"""
         logger.info(
@@ -206,19 +298,42 @@ if __name__ == "__main__":
             language = loaded_models.models[model_id].language
         if auto_translate:
             text = trans.translate(Sentence=text, to_Language=language.lower())
-        with torch.no_grad():
-            audio = infer(
-                text=text,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise,
-                noise_scale_w=noisew,
-                length_scale=length,
-                sid=speaker_name,
-                language=language,
-                hps=loaded_models.models[model_id].hps,
-                net_g=loaded_models.models[model_id].net_g,
-                device=loaded_models.models[model_id].device,
-            )
+        if not auto_split:
+            with torch.no_grad():
+                audio = infer(
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noisew,
+                    length_scale=length,
+                    sid=speaker_name,
+                    language=language,
+                    hps=loaded_models.models[model_id].hps,
+                    net_g=loaded_models.models[model_id].net_g,
+                    device=loaded_models.models[model_id].device,
+                )
+        else:
+            texts = cut_sent(text)
+            audios = []
+            with torch.no_grad():
+                for t in texts:
+                    audios.append(
+                        infer(
+                            text=t,
+                            sdp_ratio=sdp_ratio,
+                            noise_scale=noise,
+                            noise_scale_w=noisew,
+                            length_scale=length,
+                            sid=speaker_name,
+                            language=language,
+                            hps=loaded_models.models[model_id].hps,
+                            net_g=loaded_models.models[model_id].net_g,
+                            device=loaded_models.models[model_id].device,
+                        )
+                    )
+                audios.append(np.zeros((int)(44100 * 0.3)))
+                audio = np.concatenate(audios)
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         wavContent = BytesIO()
         wavfile.write(
             wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
@@ -308,7 +423,7 @@ if __name__ == "__main__":
                 model_files = []
                 for sub_file in sub_files:
                     relpath = os.path.realpath(os.path.join(sub_dir, sub_file))
-                    if only_unloaded and relpath in loaded_models.path2count.keys():
+                    if only_unloaded and relpath in loaded_models.path2ids.keys():
                         continue
                     if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                         if os.path.isfile(relpath):
@@ -327,7 +442,7 @@ if __name__ == "__main__":
                     sub_files = os.listdir(models_dir)
                     for sub_file in sub_files:
                         relpath = os.path.realpath(os.path.join(models_dir, sub_file))
-                        if only_unloaded and relpath in loaded_models.path2count.keys():
+                        if only_unloaded and relpath in loaded_models.path2ids.keys():
                             continue
                         if sub_file.endswith(".pth") and sub_file.startswith("G_"):
                             if os.path.isfile(os.path.join(models_dir, sub_file)):
@@ -435,7 +550,7 @@ if __name__ == "__main__":
             examples = all_examples[root_dir]
 
             # 从项目Data目录中搜索train/val.list
-            for root, directories, _files in os.walk("Data"):
+            for root, directories, _files in os.walk(root_dir):
                 for file in _files:
                     if file in ["train.list", "val.list"]:
                         with open(

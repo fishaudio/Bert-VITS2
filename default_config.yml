@@ -4,9 +4,11 @@
 # 拟提供通用路径配置，统一存放数据，避免数据放得很乱
 # 每个数据集与其对应的模型存放至统一路径下，后续所有的路径配置均为相对于datasetPath的路径
 # 不填或者填空则路径为相对于项目根目录的路径
-dataset_path: "Data/你的数据集"
-mirror: "openi" # 模型镜像源
-openi_token: "1145141919810"  # openi token
+dataset_path: "Data/"
+
+# 模型镜像源，默认huggingface，使用openi镜像源需指定openi_token
+mirror: ""
+openi_token: ""  # openi token
 
 # resample 音频重采样配置
 # 注意， “:” 后需要加空格
@@ -34,7 +36,7 @@ preprocess_text:
   # 配置文件路径
   config_path: "config.json"
   # 每个speaker的验证集条数
-  val_per_spk: 5
+  val_per_spk: 4
   # 验证集最大条数，多于的会被截断并放到训练集中
   max_val_total: 8
   # 是否进行数据清洗
@@ -66,11 +68,16 @@ train_ms:
     WORLD_SIZE: 1
     RANK: 0
     # 可以填写任意名的环境变量
-    THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+    # THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
+  # 底模设置
+  base:
+    use_base_model: false
+    repo_id: "Stardust_minus/Bert-VITS2"
+    model_image: "Bert-VITS2中日英底模-fix" # openi网页的模型名
   # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
   model: "models"
   # 配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
 
 
 # webui webui配置
@@ -79,15 +86,17 @@ webui:
   # 推理设备
   device: "cuda"
   # 模型路径
-  model: "models/G_8000.pth"
+  model: "genshin/models/G_8000.pth"
   # 配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
   # 端口号
   port: 7860
   # 是否公开部署，对外网开放
   share: false
   # 是否开启debug模式
   debug: false
+  # 语种识别库，可选langid, fastlid
+  language_identification_library: "langid"
 
 
 # server api配置

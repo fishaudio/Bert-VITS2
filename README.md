@@ -1,7 +1,6 @@
 # Bert-VITS2
 
-VITS2 Backbone with bert
-
+VITS2 Backbone with multipal-language bert
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9)
 
@@ -24,6 +23,7 @@ VITS2 Backbone with bert
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
 + [emotional-vits](https://github.com/innnky/emotional-vits)
 + [Bert-VITS2-en](https://github.com/xwan07017/Bert-VITS2-en)
++ [Bert-VITS2-UI](https://github.com/jiangyuxiaoxiao/Bert-VITS2-UI)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=fishaudio/Bert-VITS2"/>
