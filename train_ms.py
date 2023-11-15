@@ -220,7 +220,9 @@ def run():
     net_d = DDP(net_d, device_ids=[local_rank])
     dur_resume_lr = None
     if net_dur_disc is not None:
-        net_dur_disc = DDP(net_dur_disc, device_ids=[local_rank], find_unused_parameters=True)
+        net_dur_disc = DDP(
+            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
+        )
 
     # 下载底模
     if config.train_ms_config.base["use_base_model"]:
