@@ -11,11 +11,14 @@ from scipy.io import wavfile
 import gradio as gr
 from config import config
 from tools.sentence import split_by_language, sentence_split
+
 # Flask Init
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 config_path = config.bert_gen_config.config_path
 hps = utils.get_hparams_from_file(config_path)
+
+
 def replace_punctuation(text, i=2):
     punctuation = "，。？！"
     for char in punctuation:
@@ -126,7 +129,7 @@ def main():
             return "Missing Parameter"
         if fmt not in ("mp3", "wav", "ogg"):
             return "Invalid Format"
-        if language not in ("JP", "ZH", "EN", "mix","auto"):
+        if language not in ("JP", "ZH", "EN", "mix", "auto"):
             return "Invalid language"
     except:
         return "Invalid Parameter"
