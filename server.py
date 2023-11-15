@@ -1,5 +1,6 @@
 from flask import Flask, request, Response
 from io import BytesIO
+import numpy as np
 import torch
 from av import open as avopen
 from typing import Dict, List
@@ -9,12 +10,12 @@ from infer import infer, get_net_g, latest_version
 from scipy.io import wavfile
 import gradio as gr
 from config import config
-
+from tools.sentence import split_by_language, sentence_split
 # Flask Init
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
-
-
+config_path = config.bert_gen_config.config_path
+hps = utils.get_hparams_from_file(config_path)
 def replace_punctuation(text, i=2):
     punctuation = "，。？！"
     for char in punctuation:
@@ -69,6 +70,7 @@ for model in models:
 
 
 def generate_audio(
+    model,
     slices,
     sdp_ratio,
     noise_scale,
@@ -76,6 +78,8 @@ def generate_audio(
     length_scale,
     speaker,
     language,
+    skip_start=False,
+    skip_end=False,
 ):
     audio_list = []
     silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
@@ -90,8 +94,10 @@ def generate_audio(
                 sid=speaker,
                 language=language,
                 hps=hps,
-                net_g=net_g,
-                device=device,
+                net_g=net_g_List[model],
+                device=config.webui_config.device,
+                skip_start=False,
+                skip_end=False,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -120,7 +126,7 @@ def main():
             return "Missing Parameter"
         if fmt not in ("mp3", "wav", "ogg"):
             return "Invalid Format"
-        if language not in ("JP", "ZH", "EN", "mix"):
+        if language not in ("JP", "ZH", "EN", "mix","auto"):
             return "Invalid language"
     except:
         return "Invalid Parameter"
@@ -142,23 +148,51 @@ def main():
             for lang, content in one:
                 audio_list.extend(
                     generate_audio(
+                        model,
                         content.split("|"),
                         sdp_ratio,
-                        noise_scale,
-                        noise_scale_w,
-                        length_scale,
+                        noise,
+                        noisew,
+                        length,
                         _speaker,
                         lang,
+                    )
+                )
+    elif language.lower() == "auto":
+        sentences_list = split_by_language(text, target_languages=["zh", "ja", "en"])
+        for idx, (sentences, lang) in enumerate(sentences_list):
+            skip_start = idx != 0
+            skip_end = idx != len(sentences_list) - 1
+            lang = lang.upper()
+            if lang == "JA":
+                lang = "JP"
+            sentences = sentence_split(sentences, max=250)
+            for idx, content in enumerate(sentences):
+                skip_start = (idx != 0) and skip_start
+                skip_end = (idx != len(sentences) - 1) and skip_end
+                audio_list.extend(
+                    generate_audio(
+                        model,
+                        content.split("|"),
+                        sdp_ratio,
+                        noise,
+                        noisew,
+                        length,
+                        speaker,
+                        lang,
+                        skip_start,
+                        skip_end,
                     )
                 )
     else:
         audio_list.extend(
             generate_audio(
+                model,
                 text.split("|"),
                 sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
+                noise,
+                noisew,
+                length,
                 speaker,
                 language,
             )
@@ -179,4 +213,4 @@ def main():
 
 
 if __name__ == "__main__":
-    app.run(port=config.server_config.port, server_name="0.0.0.0")
+    app.run(port=config.server_config.port, host="0.0.0.0")
