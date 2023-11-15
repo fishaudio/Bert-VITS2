@@ -3,7 +3,7 @@ import os
 import logging
 
 import re_matching
-from tools.sentence import split_by_language, sentence_split
+from tools.sentence import split_by_language
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)
@@ -24,8 +24,6 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
-import re
-from text.symbols import punctuation
 
 net_g = None
 
