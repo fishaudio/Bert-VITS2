@@ -48,12 +48,6 @@ global_step = 0
 
 
 def run():
-    # 环境变量解析
-    envs = config.train_ms_config.env
-    for env_name, env_value in envs.items():
-        if env_name not in os.environ.keys():
-            os.environ[env_name] = str(env_value)
-
     # 多卡训练设置
     backend = "nccl"
     if platform.system() == "Windows":
