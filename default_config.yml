@@ -66,6 +66,7 @@ train_ms:
     MASTER_ADDR: "localhost"
     MASTER_PORT: 10086
     WORLD_SIZE: 1
+    LOCAL_RANK: 0
     RANK: 0
     # 可以填写任意名的环境变量
     # THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
