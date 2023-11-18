@@ -158,7 +158,7 @@ def run():
             3,
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
-        ).cuda(rank)
+        ).cuda(local_rank)
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
         and hps.model.use_spk_conditioned_encoder is True
@@ -178,9 +178,9 @@ def run():
         mas_noise_scale_initial=mas_noise_scale_initial,
         noise_scale_delta=noise_scale_delta,
         **hps.model,
-    ).cuda(rank)
+    ).cuda(local_rank)
 
-    net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(rank)
+    net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -202,11 +202,11 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[rank])
-    net_d = DDP(net_d, device_ids=[rank])
+    net_g = DDP(net_g, device_ids=[local_rank])
+    net_d = DDP(net_d, device_ids=[local_rank])
     dur_resume_lr = None
     if net_dur_disc is not None:
-        net_dur_disc = DDP(net_dur_disc, device_ids=[rank], find_unused_parameters=True)
+        net_dur_disc = DDP(net_dur_disc, device_ids=[local_rank], find_unused_parameters=True)
 
     # 下载底模
     if config.train_ms_config.base["use_base_model"]:
@@ -277,6 +277,7 @@ def run():
         if rank == 0:
             train_and_evaluate(
                 rank,
+                local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc],
@@ -290,6 +291,7 @@ def run():
         else:
             train_and_evaluate(
                 rank,
+                local_rank,
                 epoch,
                 hps,
                 [net_g, net_d, net_dur_disc],
@@ -307,7 +309,7 @@ def run():
 
 
 def train_and_evaluate(
-    rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers
+    rank, local_rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers
 ):
     net_g, net_d, net_dur_disc = nets
     optim_g, optim_d, optim_dur_disc = optims
@@ -344,22 +346,22 @@ def train_and_evaluate(
                 - net_g.module.noise_scale_delta * global_step
             )
             net_g.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
-        x, x_lengths = x.cuda(rank, non_blocking=True), x_lengths.cuda(
-            rank, non_blocking=True
+        x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
+            local_rank, non_blocking=True
         )
-        spec, spec_lengths = spec.cuda(rank, non_blocking=True), spec_lengths.cuda(
-            rank, non_blocking=True
+        spec, spec_lengths = spec.cuda(local_rank, non_blocking=True), spec_lengths.cuda(
+            local_rank, non_blocking=True
         )
-        y, y_lengths = y.cuda(rank, non_blocking=True), y_lengths.cuda(
-            rank, non_blocking=True
+        y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
+            local_rank, non_blocking=True
         )
-        speakers = speakers.cuda(rank, non_blocking=True)
-        tone = tone.cuda(rank, non_blocking=True)
-        language = language.cuda(rank, non_blocking=True)
-        bert = bert.cuda(rank, non_blocking=True)
-        ja_bert = ja_bert.cuda(rank, non_blocking=True)
-        en_bert = en_bert.cuda(rank, non_blocking=True)
-        emo = emo.cuda(rank, non_blocking=True)
+        speakers = speakers.cuda(local_rank, non_blocking=True)
+        tone = tone.cuda(local_rank, non_blocking=True)
+        language = language.cuda(local_rank, non_blocking=True)
+        bert = bert.cuda(local_rank, non_blocking=True)
+        ja_bert = ja_bert.cuda(local_rank, non_blocking=True)
+        en_bert = en_bert.cuda(local_rank, non_blocking=True)
+        emo = emo.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.fp16_run):
             (
