@@ -56,7 +56,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         # spec_length = wav_length // hop_length
 
         audiopaths_sid_text_new = []
-        lengths = []
+        # lengths = []
         skipped = 0
         logger.info("Init dataset...")
         for _id, spk, language, text, phones, tone, word2ph in tqdm(
@@ -70,7 +70,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 audiopaths_sid_text_new.append(
                     [audiopath, spk, language, text, phones, tone, word2ph]
                 )
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                #lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
         logger.info(
@@ -80,7 +80,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             + str(len(self.audiopaths_sid_text))
         )
         self.audiopaths_sid_text = audiopaths_sid_text_new
-        self.lengths = lengths
+        #self.lengths = lengths
 
     def get_audio_text_speaker_pair(self, audiopath_sid_text):
         # separate filename, speaker_id and text
