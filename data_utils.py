@@ -108,28 +108,32 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         spec_filename = filename.replace(".wav", ".spec.pt")
         if self.use_mel_spec_posterior:
             spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
-        if self.use_mel_spec_posterior:
-            spec = mel_spectrogram_torch(
-                audio_norm,
-                self.filter_length,
-                self.n_mel_channels,
-                self.sampling_rate,
-                self.hop_length,
-                self.win_length,
-                self.hparams.mel_fmin,
-                self.hparams.mel_fmax,
-                center=False,
-            )
-        else:
-            spec = spectrogram_torch(
-                audio_norm,
-                self.filter_length,
-                self.sampling_rate,
-                self.hop_length,
-                self.win_length,
-                center=False,
-            )
-        spec = torch.squeeze(spec, 0)
+        try:
+            spec = torch.load(spec_filename)
+        except:
+            if self.use_mel_spec_posterior:
+                spec = mel_spectrogram_torch(
+                    audio_norm,
+                    self.filter_length,
+                    self.n_mel_channels,
+                    self.sampling_rate,
+                    self.hop_length,
+                    self.win_length,
+                    self.hparams.mel_fmin,
+                    self.hparams.mel_fmax,
+                    center=False,
+                )
+            else:
+                spec = spectrogram_torch(
+                    audio_norm,
+                    self.filter_length,
+                    self.sampling_rate,
+                    self.hop_length,
+                    self.win_length,
+                    center=False,
+                )
+            spec = torch.squeeze(spec, 0)
+            torch.save(spec, spec_filename)
         return spec, audio_norm
 
     def get_text(self, text, word2ph, phone, tone, language_str, wav_path):
