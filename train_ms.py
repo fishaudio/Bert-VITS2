@@ -13,7 +13,7 @@ from tqdm import tqdm
 import logging
 from config import config
 import argparse
-#import datetime
+import datetime
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
@@ -55,7 +55,7 @@ def run():
     dist.init_process_group(
         backend=backend,
         init_method="env://",  # If Windows,switch to gloo backend.
-        #timeout=datetime.timedelta(seconds=300),
+        timeout=datetime.timedelta(seconds=300),
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -117,7 +117,7 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=24,  # 256G Memory config.
+        num_workers=16,  # 256G Memory config.
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
