@@ -80,6 +80,7 @@ train_ms:
   model: "models"
   # 配置文件路径
   config_path: "configs/config.json"
+  num_workers: 16
 
 
 # webui webui配置
