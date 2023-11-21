@@ -41,7 +41,10 @@ def download_checkpoint(
             hf_hub_download(
                 repo_id, file, local_dir=dir_path, local_dir_use_symlinks=False
             )
-
+            
+def find_rightmost_numbers(model_path):
+    matches = re.findall(r'\d+', model_path)
+    return matches[-1] if matches else None
 
 def load_checkpoint(checkpoint_path, model, optimizer=None, skip_optimizer=False):
     assert os.path.isfile(checkpoint_path)
