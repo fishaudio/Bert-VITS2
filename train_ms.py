@@ -50,10 +50,10 @@ def run():
     # 多卡训练设置
     backend = "nccl"
     if platform.system() == "Windows":
-        backend = "gloo"
+        backend = "gloo" # If Windows,switch to gloo backend.
     dist.init_process_group(
         backend=backend,
-        init_method="env://",  # If Windows,switch to gloo backend.
+        init_method="env://", 
         timeout=datetime.timedelta(seconds=120),
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
