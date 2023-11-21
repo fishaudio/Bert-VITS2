@@ -81,6 +81,7 @@ train_ms:
   # 配置文件路径
   config_path: "configs/config.json"
   num_workers: 16
+  spec_cache: True
 
 
 # webui webui配置
