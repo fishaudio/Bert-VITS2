@@ -54,7 +54,7 @@ def run():
     dist.init_process_group(
         backend=backend,
         init_method="env://",  # If Windows,switch to gloo backend.
-        timeout=datetime.timedelta(seconds=300),
+        timeout=datetime.timedelta(seconds=120),
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
     local_rank = int(os.environ["LOCAL_RANK"])
