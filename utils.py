@@ -42,7 +42,7 @@ def download_checkpoint(
                 repo_id, file, local_dir=dir_path, local_dir_use_symlinks=False
             )
             
-def find_rightmost_numbers(model_path):
+def get_steps(model_path):
     matches = re.findall(r'\d+', model_path)
     return matches[-1] if matches else None
 
