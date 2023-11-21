@@ -9,7 +9,7 @@ import numpy as np
 from huggingface_hub import hf_hub_download
 from scipy.io.wavfile import read
 import torch
-
+import re
 MATPLOTLIB_FLAG = False
 
 logger = logging.getLogger(__name__)
@@ -431,3 +431,7 @@ def mix_model(
         {"model": state_dict1, "iteration": 0, "optimizer": None, "learning_rate": 0},
         output_path,
     )
+
+def get_steps(model_path):
+    matches = re.findall(r'\d+', model_path)
+    return matches[-1] if matches else None

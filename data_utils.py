@@ -9,7 +9,7 @@ import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import cleaned_text_to_sequence
-
+import config as config
 """Multi speaker version"""
 
 
@@ -41,7 +41,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         self.add_blank = hparams.add_blank
         self.min_text_len = getattr(hparams, "min_text_len", 1)
-        self.max_text_len = getattr(hparams, "max_text_len", 512)
+        self.max_text_len = getattr(hparams, "max_text_len", 384)
 
         random.seed(1234)
         random.shuffle(self.audiopaths_sid_text)
@@ -108,28 +108,33 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         spec_filename = filename.replace(".wav", ".spec.pt")
         if self.use_mel_spec_posterior:
             spec_filename = spec_filename.replace(".spec.pt", ".mel.pt")
-        if self.use_mel_spec_posterior:
-            spec = mel_spectrogram_torch(
-                audio_norm,
-                self.filter_length,
-                self.n_mel_channels,
-                self.sampling_rate,
-                self.hop_length,
-                self.win_length,
-                self.hparams.mel_fmin,
-                self.hparams.mel_fmax,
-                center=False,
-            )
-        else:
-            spec = spectrogram_torch(
-                audio_norm,
-                self.filter_length,
-                self.sampling_rate,
-                self.hop_length,
-                self.win_length,
-                center=False,
-            )
-        spec = torch.squeeze(spec, 0)
+        try:
+            spec = torch.load(spec_filename)
+        except:
+            if self.use_mel_spec_posterior:
+                spec = mel_spectrogram_torch(
+                    audio_norm,
+                    self.filter_length,
+                    self.n_mel_channels,
+                    self.sampling_rate,
+                    self.hop_length,
+                    self.win_length,
+                    self.hparams.mel_fmin,
+                    self.hparams.mel_fmax,
+                    center=False,
+                )
+            else:
+                spec = spectrogram_torch(
+                    audio_norm,
+                    self.filter_length,
+                    self.sampling_rate,
+                    self.hop_length,
+                    self.win_length,
+                    center=False,
+                )
+            spec = torch.squeeze(spec, 0)
+            if config.train_ms.spec_cache:
+                torch.save(spec, spec_filename)
         return spec, audio_norm
 
     def get_text(self, text, word2ph, phone, tone, language_str, wav_path):
