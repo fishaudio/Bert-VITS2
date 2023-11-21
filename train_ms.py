@@ -251,7 +251,7 @@ def run():
 
         epoch_str = max(epoch_str, 1)
         #global_step = (epoch_str - 1) * len(train_loader)
-        global_step = utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"))
+        global_step = int(utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth")))
     except Exception as e:
         print(e)
         epoch_str = 1
