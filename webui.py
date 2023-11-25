@@ -81,6 +81,8 @@ def generate_audio_multilang(
     length_scale,
     speaker,
     language,
+    reference_audio,
+    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -92,6 +94,8 @@ def generate_audio_multilang(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer_multilang(
                 piece,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -271,7 +275,7 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        _speaker,
+                        speaker,
                         lang_to_generate,
                         reference_audio,
                         emotion,
@@ -319,10 +323,10 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        reference_audio,
-                        emotion,
                         speaker,
                         lang_to_generate,
+                        reference_audio,
+                        emotion,
                         skip_start,
                         skip_end,
                     )

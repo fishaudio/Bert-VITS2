@@ -9,7 +9,7 @@ import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import cleaned_text_to_sequence
-import config as config
+from config import config
 
 """Multi speaker version"""
 
@@ -134,7 +134,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                     center=False,
                 )
             spec = torch.squeeze(spec, 0)
-            if config.train_ms.spec_cache:
+            if config.train_ms_config.spec_cache:
                 torch.save(spec, spec_filename)
         return spec, audio_norm
 

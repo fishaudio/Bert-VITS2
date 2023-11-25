@@ -1,6 +1,10 @@
+<div align="center">
+
+<img alt="LOGO" src="https://cdn.jsdelivr.net/gh/fishaudio/fish-diffusion@main/images/logo_512x512.png" width="256" height="256" />
+
 # Bert-VITS2
 
-VITS2 Backbone with multipal-language bert
+VITS2 Backbone with multilingual bert
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9)
 
@@ -15,6 +19,7 @@ VITS2 Backbone with multipal-language bert
 ### 严禁用于任何政治相关用途。
 #### Video:https://www.bilibili.com/video/BV1hp4y1K78E
 #### Demo:https://www.bilibili.com/video/BV1TF411k78w
+#### QQ Group：815818430
 ## References
 + [anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS)
 + [jaywalnut310/vits](https://github.com/jaywalnut310/vits)
