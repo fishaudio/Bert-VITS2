@@ -134,7 +134,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                     center=False,
                 )
             spec = torch.squeeze(spec, 0)
-            if config.train_ms.spec_cache:
+            if config.train_ms_config.spec_cache:
                 torch.save(spec, spec_filename)
         return spec, audio_norm
 
