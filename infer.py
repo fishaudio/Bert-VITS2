@@ -11,11 +11,14 @@
 import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
+from emo_gen import get_emo
 from text.cleaner import clean_text
 import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
+from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
+from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
 from oldVersion.V111.text import symbols as V111symbols
 from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
@@ -23,13 +26,16 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101
+from oldVersion import V111, V110, V101, V200
 
 # 当前版本信息
-latest_version = "2.0"
+latest_version = "2.1"
 
 # 版本兼容
 SynthesizerTrnMap = {
+    "2.0.2-fix": V200SynthesizerTrn,
+    "2.0.1": V200SynthesizerTrn,
+    "2.0": V200SynthesizerTrn,
     "1.1.1-fix": V111SynthesizerTrn,
     "1.1.1": V111SynthesizerTrn,
     "1.1": V110SynthesizerTrn,
@@ -40,6 +46,9 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
+    "2.0.2-fix": V200symbols,
+    "2.0.1": V200symbols,
+    "2.0": V200symbols,
     "1.1.1-fix": V111symbols,
     "1.1.1": V111symbols,
     "1.1": V110symbols,
@@ -73,7 +82,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device):
+def get_text(text, reference_audio, emotion, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -104,6 +113,12 @@ def get_text(text, language_str, hps, device):
     else:
         raise ValueError("language_str should be ZH, JP or EN")
 
+    emo = (
+        torch.from_numpy(get_emo(reference_audio))
+        if reference_audio
+        else torch.Tensor([emotion])
+    )
+
     assert bert.shape[-1] == len(
         phone
     ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
@@ -111,7 +126,7 @@ def get_text(text, language_str, hps, device):
     phone = torch.LongTensor(phone)
     tone = torch.LongTensor(tone)
     language = torch.LongTensor(language)
-    return bert, ja_bert, en_bert, phone, tone, language
+    return bert, ja_bert, en_bert, emo, phone, tone, language
 
 
 def infer(
@@ -125,11 +140,16 @@ def infer(
     hps,
     net_g,
     device,
+    reference_audio=None,
+    emotion=None,
     skip_start=False,
     skip_end=False,
 ):
-    # 支持中日双语版本
+    # 支持中日英三语版本
     inferMap_V2 = {
+        "2.0.2-fix": V200.infer,
+        "2.0.1": V200.infer,
+        "2.0": V200.infer,
         "1.1.1-fix": V111.infer_fix,
         "1.1.1": V111.infer,
         "1.1": V110.infer,
@@ -171,8 +191,8 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
-        text, language, hps, device
+    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
+        text, reference_audio, emotion, language, hps, device
     )
     if skip_start:
         phones = phones[1:]
@@ -285,6 +305,7 @@ def infer_multilang(
         bert = bert.to(device).unsqueeze(0)
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
@@ -298,6 +319,7 @@ def infer_multilang(
                 bert,
                 ja_bert,
                 en_bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -307,7 +329,7 @@ def infer_multilang(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert, emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio

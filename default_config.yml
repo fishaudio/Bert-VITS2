@@ -56,12 +56,19 @@ bert_gen:
   # 使用多卡推理
   use_multi_device: false
 
+# emo_gen 相关配置
+# 注意， “:” 后需要加空格
+emo_gen:
+  # 训练数据集配置文件路径
+  config_path: "config.json"
+  # 并行数
+  num_processes: 2
+  # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
+  device: "cuda"
 
 # train 训练配置
 # 注意， “:” 后需要加空格
 train_ms:
-  # 需要加载的环境变量，多显卡训练时RANK请手动在环境变量填写
-  # 环境变量对应名称环境变量不存在时加载，也就是说手动添加的环境变量优先级更高，会覆盖本配置文件
   env:
     MASTER_ADDR: "localhost"
     MASTER_PORT: 10086
@@ -79,6 +86,10 @@ train_ms:
   model: "models"
   # 配置文件路径
   config_path: "configs/config.json"
+  # 训练使用的worker，不建议超过CPU核心数
+  num_workers: 16
+  # 关闭此项可以节约接近50%的磁盘空间，但是可能导致实际训练速度变慢和更高的CPU使用率。
+  spec_cache: True
 
 
 # webui webui配置

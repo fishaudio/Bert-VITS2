@@ -111,7 +111,7 @@ def get_emo(path):
     wav, sr = librosa.load(path, 16000)
     device = config.bert_gen_config.device
     return process_func(
-        np.expand_dims(wav, 0).astype(np.float),
+        np.expand_dims(wav, 0).astype(np.float64),
         sr,
         model,
         processor,

@@ -1,7 +1,6 @@
 # flake8: noqa: E402
 import os
 import logging
-
 import re_matching
 from tools.sentence import split_by_language
 
@@ -24,6 +23,7 @@ import webbrowser
 import numpy as np
 from config import config
 from tools.translate import translate
+import librosa
 
 net_g = None
 
@@ -40,6 +40,8 @@ def generate_audio(
     length_scale,
     speaker,
     language,
+    reference_audio,
+    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -51,6 +53,8 @@ def generate_audio(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer(
                 piece,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -117,6 +121,8 @@ def tts_split(
     cut_by_sent,
     interval_between_para,
     interval_between_sent,
+    reference_audio,
+    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -130,6 +136,8 @@ def tts_split(
             skip_end = idx != len(para_list) - 1
             audio = infer(
                 p,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -157,6 +165,8 @@ def tts_split(
                 skip_end = (idx != len(sent_list) - 1) and skip_end
                 audio = infer(
                     s,
+                    reference_audio=reference_audio,
+                    emotion=emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -193,6 +203,8 @@ def tts_fn(
     noise_scale_w,
     length_scale,
     language,
+    reference_audio,
+    emotion,
 ):
     audio_list = []
     if language == "mix":
@@ -261,6 +273,8 @@ def tts_fn(
                         length_scale,
                         _speaker,
                         lang_to_generate,
+                        reference_audio,
+                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -305,6 +319,8 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
+                        reference_audio,
+                        emotion,
                         speaker,
                         lang_to_generate,
                         skip_start,
@@ -322,6 +338,8 @@ def tts_fn(
                 length_scale,
                 speaker,
                 language,
+                reference_audio,
+                emotion,
             )
         )
 
@@ -360,22 +378,25 @@ if __name__ == "__main__":
                 trans = gr.Button("中翻日", variant="primary")
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
-                    choices=speakers, value=speakers[0], label="选择说话人"
+                    choices=speakers, value=speakers[0], label="Speaker"
+                )
+                emotion = gr.Slider(
+                    minimum=0, maximum=9, value=0, step=1, label="Emotion"
                 )
                 sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP/DP混合比"
+                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
                 )
                 noise_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="感情"
+                    minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="音素长度"
+                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise_W"
                 )
                 length_scale = gr.Slider(
-                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="语速"
+                    minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
                 )
                 language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="选择语言(新增mix混合选项)"
+                    choices=languages, value=languages[0], label="Language"
                 )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
@@ -408,6 +429,8 @@ if __name__ == "__main__":
                 #     show_download_button=False,
                 #     value=os.path.abspath("./img/参数说明.png"),
                 # )
+                reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
+                reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
         btn.click(
             tts_fn,
             inputs=[
@@ -418,6 +441,8 @@ if __name__ == "__main__":
                 noise_scale_w,
                 length_scale,
                 language,
+                reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
@@ -440,10 +465,17 @@ if __name__ == "__main__":
                 opt_cut_by_sent,
                 interval_between_para,
                 interval_between_sent,
+                reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
 
+        reference_audio.upload(
+            lambda x: librosa.load(x, 16000)[::-1],
+            inputs=[reference_audio],
+            outputs=[reference_audio],
+        )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
     app.launch(share=config.webui_config.share, server_port=config.webui_config.port)
