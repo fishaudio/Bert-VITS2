@@ -65,10 +65,10 @@ def run():
 
     backend = "nccl"
     if platform.system() == "Windows":
-        backend = "gloo" # If Windows,switch to gloo backend.
+        backend = "gloo"  # If Windows,switch to gloo backend.
     dist.init_process_group(
         backend=backend,
-        init_method="env://", 
+        init_method="env://",
         timeout=datetime.timedelta(seconds=300),
     )  # Use torchrun instead of mp.spawn
     rank = dist.get_rank()
@@ -131,7 +131,7 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=config.train_ms_config.num_workers,  
+        num_workers=config.train_ms_config.num_workers,
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
@@ -220,7 +220,9 @@ def run():
     net_d = DDP(net_d, device_ids=[local_rank])
     dur_resume_lr = None
     if net_dur_disc is not None:
-        net_dur_disc = DDP(net_dur_disc, device_ids=[local_rank], find_unused_parameters=True)
+        net_dur_disc = DDP(
+            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
+        )
 
     # 下载底模
     if config.train_ms_config.base["use_base_model"]:
@@ -265,8 +267,10 @@ def run():
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
 
         epoch_str = max(epoch_str, 1)
-        #global_step = (epoch_str - 1) * len(train_loader)
-        global_step = int(utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth")))
+        # global_step = (epoch_str - 1) * len(train_loader)
+        global_step = int(
+            utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"))
+        )
         print(
             f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
         )
@@ -327,7 +331,17 @@ def run():
 
 
 def train_and_evaluate(
-    rank, local_rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers
+    rank,
+    local_rank,
+    epoch,
+    hps,
+    nets,
+    optims,
+    schedulers,
+    scaler,
+    loaders,
+    logger,
+    writers,
 ):
     net_g, net_d, net_dur_disc = nets
     optim_g, optim_d, optim_dur_disc = optims
@@ -367,9 +381,9 @@ def train_and_evaluate(
         x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
             local_rank, non_blocking=True
         )
-        spec, spec_lengths = spec.cuda(local_rank, non_blocking=True), spec_lengths.cuda(
+        spec, spec_lengths = spec.cuda(
             local_rank, non_blocking=True
-        )
+        ), spec_lengths.cuda(local_rank, non_blocking=True)
         y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
             local_rank, non_blocking=True
         )

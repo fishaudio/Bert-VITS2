@@ -3,8 +3,21 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch
+
+
 class AudioProcessor:
-    def __init__(self, max_wav_value, use_mel_spec_posterior, filter_length, n_mel_channels, sampling_rate, hop_length, win_length, mel_fmin, mel_fmax):
+    def __init__(
+        self,
+        max_wav_value,
+        use_mel_spec_posterior,
+        filter_length,
+        n_mel_channels,
+        sampling_rate,
+        hop_length,
+        win_length,
+        mel_fmin,
+        mel_fmax,
+    ):
         self.max_wav_value = max_wav_value
         self.use_mel_spec_posterior = use_mel_spec_posterior
         self.filter_length = filter_length
@@ -50,8 +63,19 @@ class AudioProcessor:
             torch.save(spec, spec_filename)
         return spec, audio_norm
 
+
 # 使用示例
-processor = AudioProcessor(max_wav_value=32768.0, use_mel_spec_posterior=False, filter_length=2048, n_mel_channels=128, sampling_rate=44100, hop_length=512, win_length=2048, mel_fmin=0.0, mel_fmax="null")
+processor = AudioProcessor(
+    max_wav_value=32768.0,
+    use_mel_spec_posterior=False,
+    filter_length=2048,
+    n_mel_channels=128,
+    sampling_rate=44100,
+    hop_length=512,
+    win_length=2048,
+    mel_fmin=0.0,
+    mel_fmax="null",
+)
 
 with open("filelists/train.list", "r") as f:
     filepaths = [line.split("|")[0] for line in f]  # 取每一行的第一部分作为audiopath
