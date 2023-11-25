@@ -239,3 +239,4 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-y", "--yml_config", type=str, default="config.yml")
 args, _ = parser.parse_known_args()
 config = Config(args.yml_config)
+yml_config = args.yml_config
