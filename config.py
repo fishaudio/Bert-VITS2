@@ -122,6 +122,7 @@ class Train_ms_config:
         model: str,
         num_workers: int,
         spec_cache: bool,
+        keep_ckpts: int,
     ):
         self.env = env  # 需要加载的环境变量
         self.base = base  # 底模配置
@@ -129,6 +130,7 @@ class Train_ms_config:
         self.config_path = config_path  # 配置文件路径
         self.num_workers = num_workers  # worker数量
         self.spec_cache = spec_cache  # 是否启用spec缓存
+        self.keep_ckpts = keep_ckpts  # ckpt数量
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
