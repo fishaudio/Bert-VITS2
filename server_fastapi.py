@@ -530,7 +530,7 @@ if __name__ == "__main__":
             examples = all_examples[root_dir]
 
             # 从项目Data目录中搜索train/val.list
-            for root, directories, _files in os.walk("Data"):
+            for root, directories, _files in os.walk(root_dir):
                 for file in _files:
                     if file in ["train.list", "val.list"]:
                         with open(

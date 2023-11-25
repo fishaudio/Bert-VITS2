@@ -47,7 +47,22 @@ global_step = 0
 
 
 def run():
-    # 多卡训练设置
+    # 环境变量解析
+    envs = config.train_ms_config.env
+    for env_name, env_value in envs.items():
+        if env_name not in os.environ.keys():
+            print("加载config中的配置{}".format(str(env_value)))
+            os.environ[env_name] = str(env_value)
+    print(
+        "加载环境变量 \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
+            os.environ["MASTER_ADDR"],
+            os.environ["MASTER_PORT"],
+            os.environ["WORLD_SIZE"],
+            os.environ["RANK"],
+            os.environ["LOCAL_RANK"],
+        )
+    )
+
     backend = "nccl"
     if platform.system() == "Windows":
         backend = "gloo" # If Windows,switch to gloo backend.
@@ -116,7 +131,7 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=config.train_ms_config.num_workers,  # 256G Memory config.
+        num_workers=config.train_ms_config.num_workers,  
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
@@ -252,6 +267,9 @@ def run():
         epoch_str = max(epoch_str, 1)
         #global_step = (epoch_str - 1) * len(train_loader)
         global_step = int(utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth")))
+        print(
+            f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
+        )
     except Exception as e:
         print(e)
         epoch_str = 1

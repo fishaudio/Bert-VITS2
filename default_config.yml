@@ -70,7 +70,13 @@ emo_gen:
 # 注意， “:” 后需要加空格
 train_ms:
   env:
-  # 多显卡训练时我们强烈推荐使用torchrun进行自动分配，这里不再提供环境变量选项。
+    MASTER_ADDR: "localhost"
+    MASTER_PORT: 10086
+    WORLD_SIZE: 1
+    LOCAL_RANK: 0
+    RANK: 0
+    # 可以填写任意名的环境变量
+    # THE_ENV_VAR_YOU_NEED_TO_USE: "1234567"
   # 底模设置
   base:
     use_base_model: false

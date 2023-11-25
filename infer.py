@@ -142,6 +142,8 @@ def infer(
     device,
     reference_audio=None,
     emotion=None,
+    skip_start=False,
+    skip_end=False,
 ):
     # 支持中日英三语版本
     inferMap_V2 = {
@@ -192,6 +194,110 @@ def infer(
     bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
         text, reference_audio, emotion, language, hps, device
     )
+    if skip_start:
+        phones = phones[1:]
+        tones = tones[1:]
+        lang_ids = lang_ids[1:]
+        bert = bert[:, 1:]
+        ja_bert = ja_bert[:, 1:]
+        en_bert = en_bert[:, 1:]
+    if skip_end:
+        phones = phones[:-1]
+        tones = tones[:-1]
+        lang_ids = lang_ids[:-1]
+        bert = bert[:, :-1]
+        ja_bert = ja_bert[:, :-1]
+        en_bert = en_bert[:, :-1]
+    with torch.no_grad():
+        x_tst = phones.to(device).unsqueeze(0)
+        tones = tones.to(device).unsqueeze(0)
+        lang_ids = lang_ids.to(device).unsqueeze(0)
+        bert = bert.to(device).unsqueeze(0)
+        ja_bert = ja_bert.to(device).unsqueeze(0)
+        en_bert = en_bert.to(device).unsqueeze(0)
+        x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
+        del phones
+        speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
+        audio = (
+            net_g.infer(
+                x_tst,
+                x_tst_lengths,
+                speakers,
+                tones,
+                lang_ids,
+                bert,
+                ja_bert,
+                en_bert,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+            )[0][0, 0]
+            .data.cpu()
+            .float()
+            .numpy()
+        )
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        return audio
+
+
+def infer_multilang(
+    text,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    sid,
+    language,
+    hps,
+    net_g,
+    device,
+    skip_start=False,
+    skip_end=False,
+):
+    bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
+    # bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
+    #     text, language, hps, device
+    # )
+    for idx, (t, l) in enumerate(zip(text, language)):
+        skip_start = (idx != 0) or (skip_start and idx == 0)
+        skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
+        (
+            temp_bert,
+            temp_ja_bert,
+            temp_en_bert,
+            temp_phones,
+            temp_tones,
+            temp_lang_ids,
+        ) = get_text(t, l, hps, device)
+        if skip_start:
+            temp_bert = temp_bert[:, 1:]
+            temp_ja_bert = temp_ja_bert[:, 1:]
+            temp_en_bert = temp_en_bert[:, 1:]
+            temp_phones = temp_phones[1:]
+            temp_tones = temp_tones[1:]
+            temp_lang_ids = temp_lang_ids[1:]
+        if skip_end:
+            temp_bert = temp_bert[:, :-1]
+            temp_ja_bert = temp_ja_bert[:, :-1]
+            temp_en_bert = temp_en_bert[:, :-1]
+            temp_phones = temp_phones[:-1]
+            temp_tones = temp_tones[:-1]
+            temp_lang_ids = temp_lang_ids[:-1]
+        bert.append(temp_bert)
+        ja_bert.append(temp_ja_bert)
+        en_bert.append(temp_en_bert)
+        phones.append(temp_phones)
+        tones.append(temp_tones)
+        lang_ids.append(temp_lang_ids)
+    bert = torch.concatenate(bert, dim=1)
+    ja_bert = torch.concatenate(ja_bert, dim=1)
+    en_bert = torch.concatenate(en_bert, dim=1)
+    phones = torch.concatenate(phones, dim=0)
+    tones = torch.concatenate(tones, dim=0)
+    lang_ids = torch.concatenate(lang_ids, dim=0)
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
