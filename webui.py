@@ -41,7 +41,6 @@ def generate_audio(
     speaker,
     language,
     reference_audio,
-    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -54,7 +53,6 @@ def generate_audio(
             audio = infer(
                 piece,
                 reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -122,7 +120,6 @@ def tts_split(
     interval_between_para,
     interval_between_sent,
     reference_audio,
-    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -137,7 +134,6 @@ def tts_split(
             audio = infer(
                 p,
                 reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -166,7 +162,6 @@ def tts_split(
                 audio = infer(
                     s,
                     reference_audio=reference_audio,
-                    emotion=emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -204,7 +199,6 @@ def tts_fn(
     length_scale,
     language,
     reference_audio,
-    emotion,
 ):
     audio_list = []
     if language == "mix":
@@ -274,7 +268,6 @@ def tts_fn(
                         _speaker,
                         lang_to_generate,
                         reference_audio,
-                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -320,7 +313,6 @@ def tts_fn(
                         noise_scale_w,
                         length_scale,
                         reference_audio,
-                        emotion,
                         speaker,
                         lang_to_generate,
                         skip_start,
@@ -339,7 +331,6 @@ def tts_fn(
                 speaker,
                 language,
                 reference_audio,
-                emotion,
             )
         )
 
@@ -379,9 +370,6 @@ if __name__ == "__main__":
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
-                )
-                emotion = gr.Slider(
-                    minimum=0, maximum=9, value=0, step=1, label="Emotion"
                 )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
@@ -442,7 +430,6 @@ if __name__ == "__main__":
                 length_scale,
                 language,
                 reference_audio,
-                emotion,
             ],
             outputs=[text_output, audio_output],
         )
@@ -466,7 +453,6 @@ if __name__ == "__main__":
                 interval_between_para,
                 interval_between_sent,
                 reference_audio,
-                emotion,
             ],
             outputs=[text_output, audio_output],
         )
