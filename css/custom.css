@@ -1,0 +1,18 @@
+
+#yml_code {
+    height: 600px;
+    flex-grow: inherit;
+    overflow-y: auto;
+}
+
+#json_code {
+    height: 600px;
+    flex-grow: inherit;
+    overflow-y: auto;
+}
+
+#gpu_code {
+    height: 300px;
+    flex-grow: inherit;
+    overflow-y: auto;
+}
