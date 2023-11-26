@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 import torch
 import utils
 from infer import infer, latest_version, get_net_g, infer_multilang
-from text import check_bert_models
 import gradio as gr
 import webbrowser
 import numpy as np
