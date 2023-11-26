@@ -6,7 +6,7 @@
 特殊版本说明：
     1.1.1-fix： 1.1.1版本训练的模型，但是在推理时使用dev的日语修复
     1.1.1-dev： dev开发
-    2.1：当前版本
+    2.2：当前版本
 """
 import torch
 import commons
@@ -17,6 +17,8 @@ import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
+from oldVersion.V201.models import SynthesizerTrn as V200SynthesizerTrn
+from oldVersion.V201.text import symbols as V200symbols
 from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
 from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
@@ -29,7 +31,7 @@ from oldVersion.V101.text import symbols as V101symbols
 from oldVersion import V111, V110, V101, V200
 
 # 当前版本信息
-latest_version = "2.1"
+latest_version = "2.2"
 
 # 版本兼容
 SynthesizerTrnMap = {
@@ -82,7 +84,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, reference_audio, emotion, language_str, hps, device):
+def get_text(text, reference_audio, language_str, hps, device):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -115,8 +117,6 @@ def get_text(text, reference_audio, emotion, language_str, hps, device):
 
     emo = (
         torch.from_numpy(get_emo(reference_audio))
-        if reference_audio
-        else torch.Tensor([emotion])
     )
 
     assert bert.shape[-1] == len(
@@ -141,7 +141,6 @@ def infer(
     net_g,
     device,
     reference_audio=None,
-    emotion=None,
     skip_start=False,
     skip_end=False,
 ):
@@ -192,7 +191,7 @@ def infer(
             )
     # 在此处实现当前版本的推理
     bert, ja_bert, en_bert, emo, phones, tones, lang_ids = get_text(
-        text, reference_audio, emotion, language, hps, device
+        text, reference_audio, language, hps, device
     )
     if skip_start:
         phones = phones[1:]
