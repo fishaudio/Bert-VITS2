@@ -1,19 +1,21 @@
+import argparse
+import os
+from pathlib import Path
+
+import librosa
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 from transformers import Wav2Vec2Processor
 from transformers.models.wav2vec2.modeling_wav2vec2 import (
     Wav2Vec2Model,
     Wav2Vec2PreTrainedModel,
 )
-import librosa
-import numpy as np
-import argparse
-from config import config
+
 import utils
-import os
-from tqdm import tqdm
+from config import config
 
 
 class RegressionHead(nn.Module):
@@ -78,11 +80,6 @@ class AudioDataset(Dataset):
         return torch.from_numpy(processed_data)
 
 
-model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-processor = Wav2Vec2Processor.from_pretrained(model_name)
-model = EmotionModel.from_pretrained(model_name)
-
-
 def process_func(
     x: np.ndarray,
     sampling_rate: int,
@@ -135,16 +132,12 @@ if __name__ == "__main__":
     device = config.bert_gen_config.device
 
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-    processor = (
-        Wav2Vec2Processor.from_pretrained(model_name)
-        if processor is None
-        else processor
-    )
-    model = (
-        EmotionModel.from_pretrained(model_name).to(device)
-        if model is None
-        else model.to(device)
-    )
+    REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    if not Path(model_name).joinpath("pytorch_model.bin").exists():
+        utils.download_emo_models(config.mirror, model_name, REPO_ID)
+
+    processor = Wav2Vec2Processor.from_pretrained(model_name)
+    model = EmotionModel.from_pretrained(model_name).to(device)
 
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
