@@ -83,7 +83,7 @@ class AudioDataset(Dataset):
 
 model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-if not Path(model_name).join("pytorch_model.bin").exists():
+if not Path(model_name).joinpath("pytorch_model.bin").exists():
     hf_hub_download(
         REPO_ID,
         "pytorch_model.bin",
