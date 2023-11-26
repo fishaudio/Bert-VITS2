@@ -261,7 +261,7 @@ def infer_multilang(
     skip_start=False,
     skip_end=False,
 ):
-    bert, ja_bert, en_bert, emo, phones, tones, lang_ids  = [], [], [], [], [], [], []
+    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = [], [], [], [], [], [], []
     # bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
     #     text, language, hps, device
     # )
