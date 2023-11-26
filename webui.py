@@ -381,6 +381,11 @@ if __name__ == "__main__":
     )
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
+    load_class_info()
+    classes_list=[]
+    choose_class(speakers[0],True)
+    wav_in_class=[]
+    choose_wav_in_class(speakers[0],classes_list[0],True)
     languages = ["ZH", "JP", "EN", "mix", "auto"]
     with gr.Blocks() as app:
         with gr.Row():
