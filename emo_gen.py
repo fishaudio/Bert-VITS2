@@ -6,7 +6,6 @@ import librosa
 import numpy as np
 import torch
 import torch.nn as nn
-from huggingface_hub import hf_hub_download
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from transformers import Wav2Vec2Processor
@@ -134,18 +133,11 @@ if __name__ == "__main__":
 
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
     REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-    utils.download_emo_models(config.mirror, model_name, REPO_ID)
+    if not Path(model_name).joinpath("pytorch_model.bin").exists():
+        utils.download_emo_models(config.mirror, model_name, REPO_ID)
 
-    processor = (
-        Wav2Vec2Processor.from_pretrained(model_name)
-        if processor is None
-        else processor
-    )
-    model = (
-        EmotionModel.from_pretrained(model_name).to(device)
-        if model is None
-        else model.to(device)
-    )
+    processor = Wav2Vec2Processor.from_pretrained(model_name)
+    model = EmotionModel.from_pretrained(model_name).to(device)
 
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
