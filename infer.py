@@ -296,7 +296,7 @@ def infer_multilang(
         bert.append(temp_bert)
         ja_bert.append(temp_ja_bert)
         en_bert.append(temp_en_bert)
-        emo.append(temo_emo)
+        emo.append(temp_emo)
         phones.append(temp_phones)
         tones.append(temp_tones)
         lang_ids.append(temp_lang_ids)
