@@ -359,7 +359,6 @@ if __name__ == "__main__":
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
     # 若config.json中未指定版本则默认为最新版本
     version = hps.version if hasattr(hps, "version") else latest_version
-    check_bert_models()
     net_g = get_net_g(
         model_path=config.webui_config.model, version=version, device=device, hps=hps
     )
