@@ -24,6 +24,7 @@ import numpy as np
 from config import config
 from tools.translate import translate
 import librosa
+import yaml
 
 net_g = None
 
@@ -336,7 +337,37 @@ def tts_fn(
 
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
+    
+def load_class_info():
+    global class_info
+    global speakers
+    try:
+        class_info=yaml.load(open(os.path.join(config.dataset_path,'emo_clustering.yml')),Loader=yaml.FullLoader)
+        #print(class_info)
+    except:
+        for spk in speakers:
+           class_info={}
+           class_info[spk]={'null':[]}
 
+def choose_class(speaker,init=None):
+    global class_info
+    global classes_list
+    classes_list=list(class_info[speaker])
+    if init is None:
+       return classes.update(choices=classes_list,value=classes_list[0])
+
+def choose_wav_in_class(speaker,class_name,init=None):
+    global wav_in_class
+    global class_info
+    wav_in_class=class_info[speaker][class_name]
+    if init is None:
+       return choose_wav.update(choices=wav_in_class,value=wav_in_class[0])
+
+def load_chosen_audio(speaker,audio_name):
+    if audio_name=='null' or audio_name=="":
+        return None,'请选择参考音频'
+    audio_path=os.path.join(config.resample_config.out_dir,speaker,audio_name)
+    return librosa.load(audio_path, sr=16000)[::-1],'已加载参考音频'
 
 if __name__ == "__main__":
     if config.webui_config.debug:
@@ -367,7 +398,6 @@ if __name__ == "__main__":
                     """,
                 )
                 trans = gr.Button("中翻日", variant="primary")
-                slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
@@ -419,6 +449,12 @@ if __name__ == "__main__":
                 # )
                 reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
                 reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
+                with gr.Row():
+                    classes = gr.Dropdown(choices=classes_list, value='null' if not classes_list else classes_list[0], label="选择类别",interactive=True)
+                    choose_wav=gr.Dropdown(choices=wav_in_class, value='null' if not wav_in_class else wav_in_class[0], label="选择音频",interactive=True)
+                    submit_audio_choice=gr.Button("加载音频", variant="primary")
+        speaker.change(choose_class,inputs=[speaker],outputs=[classes])
+        classes.change(choose_wav_in_class,inputs=[speaker,classes],outputs=[choose_wav])
         btn.click(
             tts_fn,
             inputs=[
@@ -438,6 +474,11 @@ if __name__ == "__main__":
             translate,
             inputs=[text],
             outputs=[text],
+        )
+        submit_audio_choice.click(
+            load_chosen_audio,
+            inputs=[speaker,choose_wav],
+            outputs=[reference_audio,text_output],
         )
         slicer.click(
             tts_split,
