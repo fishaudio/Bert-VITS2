@@ -130,7 +130,7 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=config.train_ms_config.num_workers,
+        num_workers=min(config.train_ms_config.num_workers, os.cpu_count()-1),
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
