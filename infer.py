@@ -276,7 +276,7 @@ def infer_multilang(
             temp_phones,
             temp_tones,
             temp_lang_ids,
-        ) = get_text(txt, ref, emotion, language, hps, device)
+        ) = get_text(txt, reference_audio, emotion, language, hps, device)
         if skip_start:
             temp_bert = temp_bert[:, 1:]
             temp_ja_bert = temp_ja_bert[:, 1:]
