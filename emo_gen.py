@@ -81,19 +81,6 @@ class AudioDataset(Dataset):
         return torch.from_numpy(processed_data)
 
 
-model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-if not Path(model_name).joinpath("pytorch_model.bin").exists():
-    hf_hub_download(
-        REPO_ID,
-        "pytorch_model.bin",
-        local_dir=model_name,
-        local_dir_use_symlinks=False,
-    )
-processor = Wav2Vec2Processor.from_pretrained(model_name)
-model = EmotionModel.from_pretrained(model_name)
-
-
 def process_func(
     x: np.ndarray,
     sampling_rate: int,
@@ -146,6 +133,9 @@ if __name__ == "__main__":
     device = config.bert_gen_config.device
 
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    utils.download_emo_models(config.mirror, model_name, REPO_ID)
+
     processor = (
         Wav2Vec2Processor.from_pretrained(model_name)
         if processor is None
