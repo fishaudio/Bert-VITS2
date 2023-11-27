@@ -276,12 +276,11 @@ def infer_multilang(
             temp_phones,
             temp_tones,
             temp_lang_ids,
-        ) = get_text(txt, reference_audio, emotion, language, hps, device)
+        ) = get_text(txt, reference_audio, emotion, lang, hps, device)
         if skip_start:
             temp_bert = temp_bert[:, 1:]
             temp_ja_bert = temp_ja_bert[:, 1:]
             temp_en_bert = temp_en_bert[:, 1:]
-            temp_emo = temp_emo[:, 1:]
             temp_phones = temp_phones[1:]
             temp_tones = temp_tones[1:]
             temp_lang_ids = temp_lang_ids[1:]
@@ -289,7 +288,6 @@ def infer_multilang(
             temp_bert = temp_bert[:, :-1]
             temp_ja_bert = temp_ja_bert[:, :-1]
             temp_en_bert = temp_en_bert[:, :-1]
-            temp_emo = temp_emo[:, :-1]
             temp_phones = temp_phones[:-1]
             temp_tones = temp_tones[:-1]
             temp_lang_ids = temp_lang_ids[:-1]
