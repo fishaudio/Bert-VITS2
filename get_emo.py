@@ -1,4 +1,4 @@
-from emo_gen import RegressionHead, EmotionModel, AudioDataset, process_func
+from emo_gen import EmotionModel, process_func
 
 import librosa
 import numpy as np
