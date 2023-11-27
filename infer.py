@@ -261,7 +261,7 @@ def infer_multilang(
     skip_start=False,
     skip_end=False,
 ):
-    bert, ja_bert, en_bert, emo, phones, tones, lang_ids = [], [], [], [], [], [], []
+    bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
     # bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
     #     text, language, hps, device
     # )
@@ -294,14 +294,14 @@ def infer_multilang(
         bert.append(temp_bert)
         ja_bert.append(temp_ja_bert)
         en_bert.append(temp_en_bert)
-        emo.append(temp_emo)
+        emo = temp_emo
         phones.append(temp_phones)
         tones.append(temp_tones)
         lang_ids.append(temp_lang_ids)
     bert = torch.concatenate(bert, dim=1)
     ja_bert = torch.concatenate(ja_bert, dim=1)
     en_bert = torch.concatenate(en_bert, dim=1)
-    emo = torch.concatenate(emo, dim=1)
+    # emo = torch.concatenate(emo, dim=1)
     phones = torch.concatenate(phones, dim=0)
     tones = torch.concatenate(tones, dim=0)
     lang_ids = torch.concatenate(lang_ids, dim=0)
