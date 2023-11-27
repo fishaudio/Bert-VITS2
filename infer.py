@@ -123,7 +123,7 @@ def get_text(text, language_str, hps, device):
     return bert, ja_bert, en_bert, phone, tone, language
 
 
-def get_emo(reference_audio, emotion):
+def get_emo_(reference_audio, emotion):
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio
@@ -197,7 +197,7 @@ def infer(
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
     )
-    emo = get_emo(reference_audio, emotion)
+    emo = get_emo_(reference_audio, emotion)
     if skip_start:
         phones = phones[1:]
         tones = tones[1:]
@@ -266,7 +266,7 @@ def infer_multilang(
     skip_end=False,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    emo = get_emo(reference_audio, emotion)
+    emo = get_emo_(reference_audio, emotion)
     for idx, (txt, lang) in enumerate(zip(text, language)):
         skip_start = (idx != 0) or (skip_start and idx == 0)
         skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
