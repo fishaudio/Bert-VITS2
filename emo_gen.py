@@ -6,6 +6,7 @@ import librosa
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from transformers import Wav2Vec2Processor
@@ -108,7 +109,7 @@ def get_emo(path):
     wav, sr = librosa.load(path, 16000)
     device = config.bert_gen_config.device
     return process_func(
-        np.expand_dims(wav, 0).astype(np.float64),
+        np.expand_dims(wav, 0).astype(np.float),
         sr,
         model,
         processor,
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
     REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
     if not Path(model_name).joinpath("pytorch_model.bin").exists():
-        utils.download_emo_models(config.mirror, model_name, REPO_ID)
+        utils.download_emo_models(config.mirror, REPO_ID, model_name)
 
     processor = Wav2Vec2Processor.from_pretrained(model_name)
     model = EmotionModel.from_pretrained(model_name).to(device)
