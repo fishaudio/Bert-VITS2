@@ -1,6 +1,6 @@
 {
-    "deberta-v2-large-japanese": {
-        "repo_id": "ku-nlp/deberta-v2-large-japanese",
+    "deberta-v2-large-japanese-char-wwm": {
+        "repo_id": "ku-nlp/deberta-v2-large-japanese-char-wwm",
         "files": ["pytorch_model.bin"]
     },
     "chinese-roberta-wwm-ext-large": {
