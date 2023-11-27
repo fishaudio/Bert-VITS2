@@ -66,7 +66,7 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
     if len(lines) != 0:
-        num_processes = min(args.num_processes, cpu_count() - 1)
+        num_processes = min(args.num_processes, cpu_count())
         with Pool(processes=num_processes) as pool:
             for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
                 pass
