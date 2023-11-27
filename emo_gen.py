@@ -105,19 +105,6 @@ def process_func(
     return y
 
 
-def get_emo(path):
-    wav, sr = librosa.load(path, 16000)
-    device = config.bert_gen_config.device
-    return process_func(
-        np.expand_dims(wav, 0).astype(np.float),
-        sr,
-        model,
-        processor,
-        device,
-        embeddings=True,
-    ).squeeze(0)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
