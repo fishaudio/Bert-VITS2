@@ -215,12 +215,12 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[local_rank])
-    net_d = DDP(net_d, device_ids=[local_rank])
+    net_g = DDP(net_g, device_ids=[local_rank],bucket_cap_mb=512)
+    net_d = DDP(net_d, device_ids=[local_rank],bucket_cap_mb=512)
     dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
-            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
+            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True,bucket_cap_mb=512
         )
 
     # 下载底模
