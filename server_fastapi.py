@@ -19,7 +19,7 @@ import torch
 import webbrowser
 import psutil
 import GPUtil
-from typing import Dict, Optional, List, Set
+from typing import Dict, Optional, List, Set, Union
 import os
 from tools.log import logger
 from urllib.parse import unquote
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         language: str,
         auto_translate: bool,
         auto_split: bool,
-    ) -> Response | Dict[str, any]:
+    ) -> Union[Response, Dict[str, any]]:
         # 检查模型是否存在
         if model_id not in loaded_models.models.keys():
             return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
@@ -243,12 +243,12 @@ if __name__ == "__main__":
                     audios.append(np.zeros(int(44100 * 0.2)))
                 audio = np.concatenate(audios)
                 audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
-        wavContent = BytesIO()
-        wavfile.write(
-            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
-        )
-        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
-        return response
+        with BytesIO() as wavContent:
+            wavfile.write(
+                wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+            )
+            response = Response(content=wavContent.getvalue(), media_type="audio/wav")
+            return response
 
     @app.post("/voice")
     def voice(
