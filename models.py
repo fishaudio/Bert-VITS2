@@ -343,7 +343,7 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.emo_proj = nn.Linear(1024, 1024)
+        self.emo_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
