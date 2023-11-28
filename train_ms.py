@@ -404,7 +404,6 @@ def train_and_evaluate(
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_),
-                loss_commit,
             ) = net_g(
                 x,
                 x_lengths,
