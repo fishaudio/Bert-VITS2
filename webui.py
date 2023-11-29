@@ -275,7 +275,7 @@ def tts_fn(
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        speaker,
+                        _speaker,
                         lang_to_generate,
                         reference_audio,
                         emotion,
