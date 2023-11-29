@@ -144,6 +144,7 @@ def modify_preprocess_param(trans_path, cfg_path, val_per_spk, max_val_total):
     whole_path = os.path.join(data_path, cfg_path).replace("\\", "/")
     logger.info("预处理配置: ", whole_path)
     if not os.path.exists(whole_path):
+        os.makedirs(os.path.dirname(whole_path), exist_ok=True)
         shutil.copy("configs/config.json", os.path.dirname(whole_path))
     return gr.Dropdown(value=trans_path), gr.Code(value=load_yaml_data_in_raw())
 
@@ -171,6 +172,7 @@ def modify_bert_config(cfg_path, nps, dev, multi):
     whole_path = os.path.join(data_path, cfg_path).replace("\\", "/")
     logger.info("bert配置路径: ", whole_path)
     if not os.path.exists(whole_path):
+        os.makedirs(os.path.dirname(whole_path), exist_ok=True)
         shutil.copy("configs/config.json", os.path.dirname(whole_path))
     return gr.Textbox(value=cfg_path), gr.Slider(value=int(nps)), \
         gr.Dropdown(value=dev), gr.Radio(value=multi), gr.Code(value=load_yaml_data_in_raw())
@@ -195,6 +197,7 @@ def modify_train_param(bs, nc, li, ei, ep, lr, ver):
     whole_path = os.path.join(data_path, cfg_path).replace("\\", "/")
     logger.info("config_path: ", whole_path)
     if not os.path.exists(whole_path):
+        os.makedirs(os.path.dirname(whole_path), exist_ok=True)
         shutil.copy("configs/config.json", os.path.dirname(whole_path))
     if os.path.exists(whole_path) and os.path.isfile(whole_path):
         ok = True
