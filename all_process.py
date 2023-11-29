@@ -412,6 +412,35 @@ def do_bert_gen():
     return gr.Textbox(value=msg)
 
 
+def modify_emo_gen(emo_cfg, emo_nps, emo_device):
+    yml = load_yaml_data_in_fact()
+    data_path = yml['dataset_path']
+    yml['emo_gen']['config_path'] = emo_cfg
+    yml['emo_gen']['num_processes'] = emo_nps
+    yml['emo_gen']['device'] = emo_device
+    write_yaml_data_in_fact(yml)
+    comp_emo_cfg = os.path.join(os.path.abspath(data_path), emo_cfg).replace('\\', '/')
+    msg = f"修改emo配置参数: [配置路径:{comp_emo_cfg}, 处理数:{emo_nps}, 设备:{emo_device}]"
+    logger.info(msg)
+    return gr.Textbox(value=msg), gr.Code(value=load_yaml_data_in_raw())
+
+
+def do_emo_gen():
+    yml = load_yaml_data_in_fact()
+    data_path = yml['dataset_path']
+    emo_config_path = yml['emo_gen']['config_path']
+    comp_emo_path = os.path.join(os.path.abspath(data_path), emo_config_path).replace('\\', '/')
+    if os.path.exists(comp_emo_path) and os.path.isfile(comp_emo_path):
+        subprocess.run('python emo_gen.py', shell=True)
+        msg = "emo.npy文件生成完成!"
+        logger.info(msg)
+    else:
+        msg = f'选定路径下未找到配置文件!\n需要的config路径 : {comp_emo_path}'
+        logger.error(msg)
+
+    return gr.Textbox(value=msg)
+
+
 def do_my_train():
     yml = load_yaml_data_in_fact()
     n_gpus = torch.cuda.device_count()
@@ -472,6 +501,15 @@ def do_webui_infer():
     return gr.Textbox(value=msg)
 
 
+def compress_model(cfg_path, in_path, out_path):
+    subprocess.Popen("python compress_model.py"
+                     f" -c {cfg_path}"
+                     f" -i {in_path}", shell=True)
+    msg = "到控制台中查看压缩结果"
+    logger.info(msg)
+    return gr.Textbox(value=msg)
+
+
 def kill_specific_process_linux(cmd):
     try:
         output = subprocess.check_output(["pgrep", "-f", cmd], text=True)
@@ -481,7 +519,7 @@ def kill_specific_process_linux(cmd):
             if pid:
                 logger.critical(f"终止进程: {pid}")
                 os.kill(int(pid), signal.SIGTERM)
-                # os.kill(int(pid), signal.SIGKILL) 
+                # os.kill(int(pid), signal.SIGKILL)
     except subprocess.CalledProcessError:
         logger.error("没有找到匹配的进程。")
     except Exception as e:
@@ -595,7 +633,7 @@ if __name__ == '__main__':
                     with gr.Row():
                         dropdown_data_path = gr.Dropdown(
                             label="选择数据集存放路径 (右侧的dataset_path)",
-                            info="详情可见config.yml，点击下方按钮即可更改",
+                            info="详细说明可见右侧带注释的yaml文件",
                             interactive=True,
                             allow_custom_value=True,
                             choices=[init_yml['dataset_path']],
@@ -796,6 +834,44 @@ if __name__ == '__main__':
                                 bert_status = gr.Textbox(
                                     label="状态信息"
                                 )
+                        with gr.TabItem("5. emo_gen"):
+                            with gr.Row():
+                                emo_config_box = gr.Textbox(
+                                    label="emo_gen配置文件路径",
+                                    info="找一找你的config.json路径,相对于数据集路径",
+                                    value=init_yml['emo_gen']['config_path'],
+                                    lines=1,
+                                    interactive=True,
+                                    scale=10
+                                )
+                            with gr.Row():
+                                slider_emo_nps = gr.Slider(
+                                    label="emo_gen并行处理数",
+                                    info="最好预留2个以上的核数空闲，防卡死",
+                                    minimum=1,
+                                    maximum=32,
+                                    step=1,
+                                    value=init_yml['emo_gen']['num_processes']
+                                )
+                                dropdown_emo_device = gr.Dropdown(
+                                    label="emo_gen使用设备",
+                                    info="可选cpu或cuda",
+                                    choices=['cpu', 'cuda'],
+                                    value='cuda'
+                                )
+                            with gr.Row():
+                                emo_config_btn = gr.Button(
+                                    value="更新emo配置"
+                                )
+                                emo_gen_btn = gr.Button(
+                                    value="Emo Gen!",
+                                    variant="primary"
+                                )
+                            with gr.Row():
+                                emo_status = gr.Textbox(
+                                    label="状态信息"
+                                )
+
                 with gr.TabItem("训练界面"):
                     with gr.Tabs():
                         with gr.TabItem("训练配置文件路径"):
@@ -968,6 +1044,34 @@ if __name__ == '__main__':
                                     label="提示信息",
                                     interactive=False
                                 )
+
+                        with gr.TabItem("模型压缩"):
+                            with gr.Row():
+                                compress_config = gr.Textbox(
+                                    label="压缩配置文件",
+                                    info="模型对应的config.json"
+                                )
+                            with gr.Row():
+                                compress_input_path = gr.Textbox(
+                                    label="待压缩模型路径",
+                                    info="所谓的模型是：G_{步数}.pth"
+                                )
+                            with gr.Row():
+                                compress_output_path = gr.Textbox(
+                                    label="输出模型路径",
+                                    info="输出为：G_{步数}_release.pth",
+                                    value="在待压缩模型路径的同一文件夹下",
+                                    interactive=False
+                                )
+                            with gr.Row():
+                                compress_btn = gr.Button(
+                                    value="压缩模型",
+                                    variant="primary"
+                                )
+                            with gr.Row():
+                                compress_status = gr.Textbox(
+                                    label="状态信息"
+                                )
             with gr.Tabs():
                 with gr.TabItem("yaml配置文件状态"):
                     code_config_yml = gr.Code(
@@ -1055,6 +1159,12 @@ if __name__ == '__main__':
         bert_gen_btn.click(fn=do_bert_gen,
                            inputs=[],
                            outputs=[bert_status])
+        emo_config_btn.click(fn=modify_emo_gen,
+                             inputs=[emo_config_box, slider_emo_nps, dropdown_emo_device],
+                             outputs=[emo_status, code_config_yml])
+        emo_gen_btn.click(fn=do_emo_gen,
+                          inputs=[],
+                          outputs=[emo_status])
         train_ms_load_btn.click(fn=load_train_param,
                                 inputs=[train_config_box],
                                 outputs=[train_output_box, code_train_config_json,
@@ -1099,6 +1209,11 @@ if __name__ == '__main__':
             fn=do_webui_infer,
             inputs=[],
             outputs=[infer_webui_box]
+        )
+        compress_btn.click(
+            fn=compress_model,
+            inputs=[compress_config, compress_input_path, compress_output_path],
+            outputs=[compress_status]
         )
         stop_infer_btn.click(
             fn=stop_webui_infer,
