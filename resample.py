@@ -60,7 +60,7 @@ if __name__ == "__main__":
         if not os.path.isdir(spk_dir_out):
             os.makedirs(spk_dir_out, exist_ok=True)
         for filename in filenames:
-            if filename.endswith(".wav"):
+            if filename.lower().endswith(".wav"):
                 twople = (spk_dir, filename, args)
                 tasks.append(twople)
 
