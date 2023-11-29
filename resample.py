@@ -12,7 +12,7 @@ from config import config
 def process(item):
     spkdir, wav_name, args = item
     wav_path = os.path.join(args.in_dir, spkdir, wav_name)
-    if os.path.exists(wav_path) and ".wav" in wav_path:
+    if os.path.exists(wav_path) and wav_path.lower().endswith(".wav"):
         wav, sr = librosa.load(wav_path, sr=args.sr)
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
