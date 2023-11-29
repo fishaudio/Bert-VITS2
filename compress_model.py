@@ -1,10 +1,10 @@
 from collections import OrderedDict
 from text.symbols import symbols
 import torch
-
+from tools.log import logger
 import utils
 from models import SynthesizerTrn
-
+import os
 
 def copyStateDict(state_dict):
     if list(state_dict.keys())[0].startswith('module'):
@@ -74,3 +74,4 @@ if __name__ == "__main__":
         output = filename + "_release" + half + ext
 
     removeOptimizer(args.config, args.input, args.half, output)
+    logger.info(f"压缩模型成功, 输出模型: {os.path.abspath(output)}")

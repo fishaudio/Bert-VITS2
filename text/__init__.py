@@ -49,9 +49,10 @@ def check_bert_models():
 
 
 def init_openjtalk():
-    import pyopenjtalk
-
-    pyopenjtalk.g2p("こんにちは，世界。")
+    import platform
+    if platform.platform() == 'Linux':
+        import pyopenjtalk
+        pyopenjtalk.g2p("こんにちは，世界。")
 
 
 init_openjtalk()
