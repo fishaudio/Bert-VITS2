@@ -16,12 +16,9 @@ from config import yml_config
 from tools.log import logger
 
 bert_model_paths = [
-    "./bert/bert-base-japanese-v3/pytorch_model.bin",
-    "./bert/bert-large-japanese-v2/pytorch_model.bin",
     "./bert/chinese-roberta-wwm-ext-large/pytorch_model.bin",
-    "./bert/deberta-v2-large-japanese/pytorch_model.bin",
+    "./bert/deberta-v2-large-japanese-char-wwm/pytorch_model.bin",
     "./bert/deberta-v3-large/pytorch_model.bin",
-    "./bert/deberta-v3-large/pytorch_model.generator.bin",
     "./bert/deberta-v3-large/spm.model",
 ]
 
@@ -36,6 +33,7 @@ train_base_model_paths = [
 ]
 default_yaml_path = "default_config.yml"
 default_config_path = "configs/config.json"
+
 
 
 def load_yaml_data_in_raw(yml_path=yml_config):
@@ -64,6 +62,15 @@ def load_yaml_data_in_fact(yml_path=yml_config):
         # data = file.read()
     return yml
 
+
+def fill_openi_token(token: str):
+    yml = load_yaml_data_in_fact()
+    yml['mirror'] = 'openi'
+    yml['openi_token'] = token
+    write_yaml_data_in_fact(yml)
+    msg = 'openi 令牌已填写完成'
+    logger.info(msg)
+    return gr.Textbox(value=msg), gr.Code(value=load_yaml_data_in_raw())
 
 def load_train_param(cfg_path):
     yml = load_yaml_data_in_fact()
@@ -145,7 +152,7 @@ def modify_preprocess_param(trans_path, cfg_path, val_per_spk, max_val_total):
     logger.info("预处理配置: ", whole_path)
     if not os.path.exists(whole_path):
         os.makedirs(os.path.dirname(whole_path), exist_ok=True)
-        shutil.copy("configs/config.json", os.path.dirname(whole_path))
+        shutil.copy(default_config_path, os.path.dirname(whole_path))
     return gr.Dropdown(value=trans_path), gr.Code(value=load_yaml_data_in_raw())
 
 
@@ -173,7 +180,7 @@ def modify_bert_config(cfg_path, nps, dev, multi):
     logger.info("bert配置路径: ", whole_path)
     if not os.path.exists(whole_path):
         os.makedirs(os.path.dirname(whole_path), exist_ok=True)
-        shutil.copy("configs/config.json", os.path.dirname(whole_path))
+        shutil.copy(default_config_path, os.path.dirname(whole_path))
     return gr.Textbox(value=cfg_path), gr.Slider(value=int(nps)), \
         gr.Dropdown(value=dev), gr.Radio(value=multi), gr.Code(value=load_yaml_data_in_raw())
 
@@ -198,7 +205,7 @@ def modify_train_param(bs, nc, li, ei, ep, lr, ver):
     logger.info("config_path: ", whole_path)
     if not os.path.exists(whole_path):
         os.makedirs(os.path.dirname(whole_path), exist_ok=True)
-        shutil.copy("configs/config.json", os.path.dirname(whole_path))
+        shutil.copy(default_config_path, os.path.dirname(whole_path))
     if os.path.exists(whole_path) and os.path.isfile(whole_path):
         ok = True
         with open(whole_path, 'r', encoding='utf-8') as file:
@@ -615,10 +622,26 @@ if __name__ == '__main__':
                         Made with [contrib.rocks](https://contrib.rocks).
 
                     """)
+                with gr.TabItem("填入openi token"):
+                    with gr.Row():
+                        gr.Markdown("""
+                        ### 去openi官网注册并登录后:
+                        ### [点击此处跳转到openi官网](https://openi.pcl.ac.cn/)
+                        ### , 点击右上角`个人头像`-> `设置` -> `应用`, 生成令牌(token)
+                        """)
+                    with gr.Row():
+                        openi_token_box = gr.Textbox(label="填入openi token",
+                                                     value=init_yml['openi_token'])
+                    with gr.Row():
+                        openi_token_btn = gr.Button(value="确认填写",
+                                                    variant="primary")
+                    with gr.Row():
+                        openi_token_status = gr.Textbox(label='状态信息')
+
                 with gr.TabItem("模型检测"):
                     CheckboxGroup_bert_models = gr.CheckboxGroup(
                         label="检测bert模型状态",
-                        info="对应文件夹下必须有对应的模型文件 (前2个是兼容旧模型的，也可以不下载)",
+                        info="对应文件夹下必须有对应的模型文件(填入openi token后，则后续步骤中会自动下载)",
                         choices=bert_model_paths,
                         value=check_if_exists_model(bert_model_paths),
                         interactive=False
@@ -1118,6 +1141,9 @@ if __name__ == '__main__':
                         value="刷新本机状态"
                     )
 
+        openi_token_btn.click(fn=fill_openi_token,
+                              inputs=[openi_token_box],
+                              outputs=[openi_token_status, code_config_yml])
         check_pth_btn1.click(fn=check_bert_models,
                              inputs=[],
                              outputs=[CheckboxGroup_bert_models])
