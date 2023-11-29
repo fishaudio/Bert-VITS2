@@ -94,8 +94,11 @@ def preprocess(
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
+            language_counts = {"ZH": 0, "JP": 0, "EN": 0}
+            # 在遇到语言代码时
+            if language in language_counts:
+                language_counts[language] += 1
             spk_utt_map[spk].append(line)
-
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
@@ -125,6 +128,10 @@ def preprocess(
     json_config["data"]["spk2id"] = spk_id_map
     # 新增写入：写入训练版本、数据集路径
     json_config["version"] = latest_version
+    lang_list = ["ZH", "JP", "EN"]
+    for lang in lang_list:
+        if language_counts[lang] == 0:
+            json_config["train"][f"freeze_{lang}_bert"] = True
     json_config["data"]["training_files"] = os.path.normpath(train_path).replace(
         "\\", "/"
     )
