@@ -218,6 +218,18 @@ def run():
     net_g = DDP(net_g, device_ids=[local_rank],bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank],bucket_cap_mb=512)
     dur_resume_lr = None
+    if getattr(hps.train, "freeze_ZH_bert", False):
+        print("No Chinese data detected,freeze ZH bert encoder !!!")
+        for param in net_g.enc_p.bert_proj.parameters():
+            param.requires_grad = False
+    elif getattr(hps.train, "freeze_EN_bert", False):
+        print("No English data detected,freeze EN bert encoder !!!")
+        for param in net_g.enc_p.bert_en_proj.parameters():
+            param.requires_grad = False
+    elif getattr(hps.train, "freeze_JP_bert", False):
+        print("No Japanese data detected,freeze JP bert encoder !!!")
+        for param in net_g.enc_p.bert_jp_proj.parameters():
+            param.requires_grad = False
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc, device_ids=[local_rank], find_unused_parameters=True,bucket_cap_mb=512
