@@ -34,7 +34,7 @@ preprocess_text:
   # 验证集路径
   val_path: "filelists/val.list"
   # 配置文件路径
-  config_path: "configs/config.json"
+  config_path: "config.json"
   # 每个speaker的验证集条数
   val_per_spk: 4
   # 验证集最大条数，多于的会被截断并放到训练集中
@@ -47,7 +47,7 @@ preprocess_text:
 # 注意， “:” 后需要加空格
 bert_gen:
   # 训练数据集配置文件路径
-  config_path: "configs/config.json"
+  config_path: "config.json"
   # 并行数
   num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
@@ -60,7 +60,7 @@ bert_gen:
 # 注意， “:” 后需要加空格
 emo_gen:
   # 训练数据集配置文件路径
-  config_path: "configs/config.json"
+  config_path: "config.json"
   # 并行数
   num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
@@ -85,7 +85,7 @@ train_ms:
   # 训练模型存储目录：与旧版本的区别，原先数据集是存放在logs/model_name下的，现在改为统一存放在Data/你的数据集/models下
   model: "models"
   # 配置文件路径
-  config_path: "configs/config.json"
+  config_path: "config.json"
   # 训练使用的worker，不建议超过CPU核心数
   num_workers: 16
   # 关闭此项可以节约接近50%的磁盘空间，但是可能导致实际训练速度变慢和更高的CPU使用率。
@@ -102,7 +102,7 @@ webui:
   # 模型路径
   model: "genshin/models/G_8000.pth"
   # 配置文件路径
-  config_path: "configs/config.json"
+  config_path: "config.json"
   # 端口号
   port: 7860
   # 是否公开部署，对外网开放
