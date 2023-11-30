@@ -2,6 +2,7 @@ import argparse
 import os
 from loguru import logger
 
+
 def extract_list(folder_path, language, name, transcript_txt_file):
     logger.info(f"extracting list: {folder_path}|{name}|{language}")
     current_dir = os.getcwd()
@@ -20,35 +21,33 @@ def extract_list(folder_path, language, name, transcript_txt_file):
                     if len(transcription) == 0:
                         continue
                     # 获取对应的 WAV 文件路径
-                    # ./Data/宵宫/audios/raw 
+                    # ./Data/宵宫/audios/raw
                     # ./Data/宵宫/audios/wavs
                     wav_file_path = os.path.splitext(lab_file_path)[0] + ".wav"
                     if os.path.isfile(wav_file_path):
-                        wav_file_path = wav_file_path.replace("\\", "/").replace("/raw", "/wavs")
+                        wav_file_path = wav_file_path.replace("\\", "/").replace(
+                            "/raw", "/wavs"
+                        )
                         # 写入数据到总的转写文本文件
                         line = f"{wav_file_path}|{name}|{language}|{transcription}\n"
                         f.write(line)
                     else:
                         print("not exists!")
     return f"转写文本 {transcript_txt_file} 生成完成"
-    
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-f", "--filepath", required=True, 
-        help="path of your rawaudios, e.g. ./Data/xxx/audios/raw"
+        "-f",
+        "--filepath",
+        required=True,
+        help="path of your rawaudios, e.g. ./Data/xxx/audios/raw",
     )
-    parser.add_argument(
-        "-l", "--language", default='ZH', help="language"
-    )
-    parser.add_argument(
-        "-n", "--name", required=True, help="name of the character"
-    )
-    parser.add_argument(
-        "-o", "--outfile", required=True, help="outfile"
-    )
+    parser.add_argument("-l", "--language", default="ZH", help="language")
+    parser.add_argument("-n", "--name", required=True, help="name of the character")
+    parser.add_argument("-o", "--outfile", required=True, help="outfile")
     args = parser.parse_args()
 
     status_str = extract_list(args.filepath, args.language, args.name, args.outfile)
     logger.critical(status_str)
-
