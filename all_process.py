@@ -470,7 +470,7 @@ def modify_emo_gen(emo_cfg, emo_nps, emo_device):
     yml["emo_gen"]["num_processes"] = emo_nps
     yml["emo_gen"]["device"] = emo_device
     write_yaml_data_in_fact(yml)
-    comp_emo_cfg = os.path.join(os.path.abspath(data_path), emo_cfg).replace('\\', '/')
+    comp_emo_cfg = os.path.join(os.path.abspath(data_path), emo_cfg).replace("\\", "/")
     if not os.path.exists(comp_emo_cfg):
         os.makedirs(os.path.dirname(comp_emo_cfg), exist_ok=True)
         shutil.copy(default_config_path, os.path.dirname(comp_emo_cfg))
