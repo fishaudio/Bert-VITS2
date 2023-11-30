@@ -345,8 +345,8 @@ def load_class_info():
         class_info=yaml.load(open(os.path.join(config.dataset_path,'emo_clustering.yml')),Loader=yaml.FullLoader)
         #print(class_info)
     except:
-        for spk in speakers:
-           class_info={}
+        class_info={}
+        for spk in speakers:           
            class_info[spk]={'null':[]}
 
 def choose_class(speaker,init=None):
