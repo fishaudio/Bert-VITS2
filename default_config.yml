@@ -34,7 +34,7 @@ preprocess_text:
   # 验证集路径
   val_path: "filelists/val.list"
   # 配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
   # 每个speaker的验证集条数
   val_per_spk: 4
   # 验证集最大条数，多于的会被截断并放到训练集中
@@ -47,7 +47,7 @@ preprocess_text:
 # 注意， “:” 后需要加空格
 bert_gen:
   # 训练数据集配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
   # 并行数
   num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
@@ -60,7 +60,7 @@ bert_gen:
 # 注意， “:” 后需要加空格
 emo_gen:
   # 训练数据集配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
   # 并行数
   num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
