@@ -194,15 +194,15 @@ def run():
     ).cuda(local_rank)
     if getattr(hps.train, "freeze_ZH_bert", False):
         print("No Chinese data detected,freeze ZH bert encoder !!!")
-        for param in net_g.enc_p.bert_proj.parameters():
+        for param in net_g.bert_proj.parameters():
             param.requires_grad = False
     elif getattr(hps.train, "freeze_EN_bert", False):
         print("No English data detected,freeze EN bert encoder !!!")
-        for param in net_g.enc_p.bert_en_proj.parameters():
+        for param in net_g.bert_en_proj.parameters():
             param.requires_grad = False
     elif getattr(hps.train, "freeze_JP_bert", False):
         print("No Japanese data detected,freeze JP bert encoder !!!")
-        for param in net_g.enc_p.bert_jp_proj.parameters():
+        for param in net_g.bert_jp_proj.parameters():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
