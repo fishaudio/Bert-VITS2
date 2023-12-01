@@ -55,10 +55,14 @@ if __name__ == "__main__":
            classes[y_predict[idx]].append(wavname)
 
        for i in range(y_predict.max()+1):
-         print("类别:", i, "本类中样本数量:", len(classes[i]))
+         class_length=len(classes[i])
+         print("类别:", i, "本类中样本数量:", class_length)
          yml_result[speaker][f"class{i}"]=[]
          for j in range(args.range):
+            if j >=class_length:
+               break
             print(classes[i][j])  
             yml_result[speaker][f"class{i}"].append(classes[i][j])
+
     with open(os.path.join(config.dataset_path,'emo_clustering.yml'), 'w', encoding='utf-8') as f:
-          yaml.dump(yml_result, f)             
+          yaml.dump(yml_result, f)
