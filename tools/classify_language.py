@@ -1,8 +1,11 @@
-import re
+import regex as re
 
-from config import config
+try:
+    from config import config
 
-LANGUAGE_IDENTIFICATION_LIBRARY = config.webui_config.language_identification_library
+    LANGUAGE_IDENTIFICATION_LIBRARY = config.webui_config.language_identification_library
+except:
+    LANGUAGE_IDENTIFICATION_LIBRARY = "langid"
 
 module = LANGUAGE_IDENTIFICATION_LIBRARY.lower()
 
@@ -148,18 +151,22 @@ def classify_zh_ja(text: str) -> str:
             next_char = text[idx + 1] if idx + 1 < len(text) else None
 
             if next_char and (
-                0x3040 <= ord(next_char) <= 0x309F or 0x30A0 <= ord(next_char) <= 0x30FF
+                    0x3040 <= ord(next_char) <= 0x309F or 0x30A0 <= ord(next_char) <= 0x30FF
             ):
                 return "ja"
 
     return "zh"
 
 
-def split_alpha_nonalpha(text):
-    return re.split(
-        r"(?:(?<=[\u4e00-\u9fff])|(?<=[\u3040-\u30FF]))(?=[a-zA-Z])|(?<=[a-zA-Z])(?:(?=[\u4e00-\u9fff])|(?=[\u3040-\u30FF]))",
-        text,
-    )
+def split_alpha_nonalpha(text, mode=1):
+    if mode == 1:
+        pattern = r'(?<=[\u4e00-\u9fff\u3040-\u30FF\d])(?=[\p{Latin}])|(?<=[\p{Latin}])(?=[\u4e00-\u9fff\u3040-\u30FF\d])'
+    elif mode == 2:
+        pattern = r'(?<=[\u4e00-\u9fff\u3040-\u30FF])(?=[\p{Latin}\d])|(?<=[\p{Latin}\d])(?=[\u4e00-\u9fff\u3040-\u30FF])'
+    else:
+        raise ValueError("Invalid mode. Supported modes are 1 and 2.")
+
+    return re.split(pattern, text)
 
 
 if __name__ == "__main__":
@@ -170,3 +177,11 @@ if __name__ == "__main__":
     text = "これはテストテキストです"
     print(classify_language(text))
     print(classify_zh_ja(text))  # "ja"
+
+    text = "vits和Bert-VITS2是tts模型。花费3days.花费3天。Take 3 days"
+    
+    print(split_alpha_nonalpha(text, mode=1))
+    # output: ['vits', '和', 'Bert-VITS', '2是', 'tts', '模型。花费3', 'days.花费3天。Take 3 days']
+    
+    print(split_alpha_nonalpha(text, mode=2))
+    # output: ['vits', '和', 'Bert-VITS2', '是', 'tts', '模型。花费', '3days.花费', '3', '天。Take 3 days']

@@ -25,12 +25,13 @@ def markup_language(text: str, target_languages: list = None) -> str:
     pre_lang = ""
     p = 0
 
-    sorted_target_languages = sorted(target_languages)
-    if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
-        new_sentences = []
-        for sentence in sentences:
-            new_sentences.extend(split_alpha_nonalpha(sentence))
-        sentences = new_sentences
+    if target_languages is not None:
+        sorted_target_languages = sorted(target_languages)
+        if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
+            new_sentences = []
+            for sentence in sentences:
+                new_sentences.extend(split_alpha_nonalpha(sentence))
+            sentences = new_sentences
 
     for sentence in sentences:
         if check_is_none(sentence):
@@ -68,12 +69,13 @@ def split_by_language(text: str, target_languages: list = None) -> list:
     end = 0
     sentences_list = []
 
-    sorted_target_languages = sorted(target_languages)
-    if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
-        new_sentences = []
-        for sentence in sentences:
-            new_sentences.extend(split_alpha_nonalpha(sentence))
-        sentences = new_sentences
+    if target_languages is not None:
+        sorted_target_languages = sorted(target_languages)
+        if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
+            new_sentences = []
+            for sentence in sentences:
+                new_sentences.extend(split_alpha_nonalpha(sentence))
+            sentences = new_sentences
 
     for sentence in sentences:
         if check_is_none(sentence):
@@ -154,5 +156,14 @@ if __name__ == "__main__":
     print(markup_language(text, target_languages=None))
     print(sentence_split(text, max=50))
     print(sentence_split_and_markup(text, max=50, lang="auto", speaker_lang=None))
+    
     text = "你好，这是一段用来测试自动标注的文本。こんにちは,これは自動ラベリングのテスト用テキストです.Hello, this is a piece of text to test autotagging.你好！今天我们要介绍VITS项目，其重点是使用了GAN Duration predictor和transformer flow,并且接入了Bert模型来提升韵律。Bert embedding会在稍后介绍。"
     print(split_by_language(text, ["zh", "ja", "en"]))
+    
+    text = "vits和Bert-VITS2是tts模型。花费3days.花费3天。Take 3 days"
+    
+    print(split_by_language(text, ["zh", "ja", "en"]))
+    # output: [('vits', 'en'), ('和', 'ja'), ('Bert-VITS', 'en'), ('2是', 'zh'), ('tts', 'en'), ('模型。花费3', 'zh'), ('days.', 'en'), ('花费3天。', 'zh'), ('Take 3 days', 'en')]
+    
+    print(split_by_language(text, ["zh", "en"]))
+    # output: [('vits', 'en'), ('和', 'zh'), ('Bert-VITS', 'en'), ('2是', 'zh'), ('tts', 'en'), ('模型。花费3', 'zh'), ('days.', 'en'), ('花费3天。', 'zh'), ('Take 3 days', 'en')]
