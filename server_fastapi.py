@@ -149,17 +149,24 @@ if __name__ == "__main__":
     app = FastAPI()
     app.logger = logger
     # 挂载静态文件
+    logger.info("开始挂载网页页面")
     StaticDir: str = "./Web"
-    dirs = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
-    files = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
-    for dirName in dirs:
-        app.mount(
-            f"/{dirName}",
-            StaticFiles(directory=f"./{StaticDir}/{dirName}"),
-            name=dirName,
+    if not os.path.isdir(StaticDir):
+        logger.warning(
+            "缺少网页资源，无法开启网页页面，如有需要请在 https://github.com/jiangyuxiaoxiao/Bert-VITS2-UI 或者Bert-VITS对应版本的release页面下载"
         )
+    else:
+        dirs = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
+        files = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
+        for dirName in dirs:
+            app.mount(
+                f"/{dirName}",
+                StaticFiles(directory=f"./{StaticDir}/{dirName}"),
+                name=dirName,
+            )
     loaded_models = Models()
     # 加载模型
+    logger.info("开始加载模型")
     models_info = config.server_config.models
     for model_info in models_info:
         loaded_models.init_model(
@@ -605,7 +612,8 @@ if __name__ == "__main__":
 
     logger.warning("本地服务，请勿将服务端口暴露于外网")
     logger.info(f"api文档地址 http://127.0.0.1:{config.server_config.port}/docs")
-    webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
+    if os.path.isdir(StaticDir):
+        webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
     uvicorn.run(
         app, port=config.server_config.port, host="0.0.0.0", log_level="warning"
     )
