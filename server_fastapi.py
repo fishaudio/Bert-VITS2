@@ -5,7 +5,6 @@ import logging
 import gc
 import random
 
-from pydantic import BaseModel
 import gradio
 import numpy as np
 import utils
