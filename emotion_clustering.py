@@ -16,7 +16,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     filelist_dict={}
     yml_result={}
-    with open(config.preprocess_text_config.cleaned_path, mode="r", encoding="utf-8") as f:
+    with open(config.preprocess_text_config.train_path, mode="r", encoding="utf-8") as f:
       for line in f:
          speaker=line.split("|")[1]
          if speaker not in filelist_dict:
