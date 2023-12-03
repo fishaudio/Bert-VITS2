@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("-r","--range", default=4,help="number of files in a class",type=int)
     args = parser.parse_args()
     filelist_dict={}
-    with open(config.preprocess_text_config.cleaned_path, mode="r", encoding="utf-8") as f:
+    with open(config.preprocess_text_config.train_path, mode="r", encoding="utf-8") as f:
         for line in f:
             speaker=line.split("|")[1]
             if speaker not in filelist_dict:
