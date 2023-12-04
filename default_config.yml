@@ -66,6 +66,16 @@ emo_gen:
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
   device: "cuda"
 
+emo_cluster:
+  # 聚类方法，可选k,b,s,a
+  method: "k"
+  # 聚类数量
+  n_clusters: 5
+  # 每类的数量
+  n_samples: 10
+  # 是否保存center
+  save_center: True
+  
 # train 训练配置
 # 注意， “:” 后需要加空格
 train_ms:

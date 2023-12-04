@@ -49,7 +49,7 @@ def process_speaker(speaker):
                 break
             print(classes[i][j])  
             yml_result[speaker][f"class{i}"].append(classes[i][j])
-    if hasattr(model, 'cluster_centers_') and args.center:
+    if hasattr(model, 'cluster_centers_') and config.emo_cluster.save_center:
         centers = model.cluster_centers_
         os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
         for i in range(centers.shape[0]):
@@ -64,7 +64,6 @@ if __name__ == "__main__":
     parser.add_argument("-a","--algorithm", default="k",help="choose algorithm",type=str)
     parser.add_argument("-n","--num_clusters", default=3,help="number of clusters",type=int)
     parser.add_argument("-r","--range", default=4,help="number of files in a class",type=int)
-    parser.add_argument("-c","--center",default=True,help="whether to use center",type=bool)
     args = parser.parse_args()
     filelist_dict={}
     with open(config.preprocess_text_config.train_path, mode="r", encoding="utf-8") as f:

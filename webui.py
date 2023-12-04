@@ -369,6 +369,12 @@ def load_chosen_audio(speaker,audio_name):
     audio_path=os.path.join(config.resample_config.out_dir,speaker,audio_name)
     return librosa.load(audio_path, sr=16000)[::-1],'已加载参考音频'
 
+def load_cluster_center(cluster,speaker):
+    center = []
+    filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{cluster}.npy')
+    center = np.load(filename)
+    center = np.array(center)
+    return center
 if __name__ == "__main__":
     if config.webui_config.debug:
         logger.info("Enable DEBUG-LEVEL log")

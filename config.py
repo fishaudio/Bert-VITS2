@@ -110,6 +110,27 @@ class Emo_gen_config:
 
         return cls(**data)
 
+class Emo_cluster_config:
+    """emo_cluster 配置"""
+
+    def __init__(
+        self,
+        method: str,
+        n_clusters: int = 5,
+        n_samples: int = 10,
+        save_center: bool = True,
+    ):
+        self.method = method
+        self.n_clusters = n_clusters
+        self.n_samples = n_samples
+        self.save_center = save_center
+
+    @classmethod
+    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+        data["config_path"] = os.path.join(dataset_path, data["config_path"])
+
+        return cls(**data)
+
 
 class Train_ms_config:
     """训练配置"""
@@ -221,6 +242,12 @@ class Config:
             )
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
+            )
+            self.emotion_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
+                dataset_path, yaml_config["emotion_gen"]
+            )
+            self.emo_clustering_config: Emo_cluster_config = Emo_cluster_config.from_dict(
+                dataset_path, yaml_config["emo_cluster"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
