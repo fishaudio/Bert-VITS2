@@ -32,7 +32,7 @@ def process_speaker(speaker):
     else: 
         model = KMeans(n_clusters=n_clusters, random_state=10)
     # 可以自行尝试各种不同的聚类算法
-    y_predict = model.fit_predict(x)    
+    y_predict = model.fit_predict(x)
     classes=[[] for i in range(y_predict.max()+1)]
 
     for idx, wavname in enumerate(wavnames):
@@ -49,6 +49,14 @@ def process_speaker(speaker):
                 break
             print(classes[i][j])  
             yml_result[speaker][f"class{i}"].append(classes[i][j])
+    if hasattr(model, 'cluster_centers_') and args.center:
+        centers = model.cluster_centers_
+        os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
+        for i in range(centers.shape[0]):
+            # 为每个中心创建一个文件名
+            filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
+        # 保存中心
+        np.save(filename, centers[i])
     return yml_result
 
 if __name__ == "__main__":
@@ -56,6 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("-a","--algorithm", default="k",help="choose algorithm",type=str)
     parser.add_argument("-n","--num_clusters", default=3,help="number of clusters",type=int)
     parser.add_argument("-r","--range", default=4,help="number of files in a class",type=int)
+    parser.add_argument("-c","--center",default=True,help="whether to use center",type=bool)
     args = parser.parse_args()
     filelist_dict={}
     with open(config.preprocess_text_config.train_path, mode="r", encoding="utf-8") as f:
