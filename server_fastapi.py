@@ -214,11 +214,34 @@ if __name__ == "__main__":
         if auto_translate:
             text = trans.translate(Sentence=text, to_Language=language.lower())
         if reference_audio is not None:
-            with BytesIO(await reference_audio.read()) as ref_audio:
-                if not auto_split:
-                    with torch.no_grad():
-                        audio = infer(
-                            text=text,
+            ref_audio = BytesIO(await reference_audio.read())
+        else:
+            ref_audio = reference_audio
+        if not auto_split:
+            with torch.no_grad():
+                audio = infer(
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noisew,
+                    length_scale=length,
+                    sid=speaker_name,
+                    language=language,
+                    hps=loaded_models.models[model_id].hps,
+                    net_g=loaded_models.models[model_id].net_g,
+                    device=loaded_models.models[model_id].device,
+                    emotion=emotion,
+                    reference_audio=ref_audio,
+                )
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
+        else:
+            texts = cut_sent(text)
+            audios = []
+            with torch.no_grad():
+                for t in texts:
+                    audios.append(
+                        infer(
+                            text=t,
                             sdp_ratio=sdp_ratio,
                             noise_scale=noise,
                             noise_scale_w=noisew,
@@ -231,31 +254,10 @@ if __name__ == "__main__":
                             emotion=emotion,
                             reference_audio=ref_audio,
                         )
-                        audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
-                else:
-                    texts = cut_sent(text)
-                    audios = []
-                    with torch.no_grad():
-                        for t in texts:
-                            audios.append(
-                                infer(
-                                    text=t,
-                                    sdp_ratio=sdp_ratio,
-                                    noise_scale=noise,
-                                    noise_scale_w=noisew,
-                                    length_scale=length,
-                                    sid=speaker_name,
-                                    language=language,
-                                    hps=loaded_models.models[model_id].hps,
-                                    net_g=loaded_models.models[model_id].net_g,
-                                    device=loaded_models.models[model_id].device,
-                                    emotion=emotion,
-                                    reference_audio=ref_audio,
-                                )
-                            )
-                            audios.append(np.zeros(int(44100 * 0.2)))
-                        audio = np.concatenate(audios)
-                        audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
+                    )
+                    audios.append(np.zeros(int(44100 * 0.2)))
+                audio = np.concatenate(audios)
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         with BytesIO() as wavContent:
             wavfile.write(
                 wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
