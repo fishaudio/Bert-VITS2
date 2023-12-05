@@ -119,11 +119,13 @@ class Emo_cluster_config:
         n_clusters: int = 5,
         n_samples: int = 10,
         save_center: bool = True,
+        config_path: str,
     ):
         self.method = method
         self.n_clusters = n_clusters
         self.n_samples = n_samples
         self.save_center = save_center
+        self.config_path = config_path
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
