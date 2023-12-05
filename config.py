@@ -245,10 +245,10 @@ class Config:
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
             )
-            self.emotion_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
+            self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
                 dataset_path, yaml_config["emo_gen"]
             )
-            self.emo_clustering_config: Emo_cluster_config = Emo_cluster_config.from_dict(
+            self.emo_cluster_config: Emo_cluster_config = Emo_cluster_config.from_dict(
                 dataset_path, yaml_config["emo_cluster"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
