@@ -342,7 +342,7 @@ def load_class_info():
     global class_info
     global speakers
     try:
-        class_info=yaml.load(open(os.path.join(config.dataset_path,'emo_clustering.yml')),Loader=yaml.FullLoader)
+        class_info=yaml.load(open(os.path.join(config.dataset_path,'emo_clustering/emo_clustering.yml')),Loader=yaml.FullLoader)
         #print(class_info)
     except:
         class_info={}
