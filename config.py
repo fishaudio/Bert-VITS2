@@ -116,10 +116,10 @@ class Emo_cluster_config:
     def __init__(
         self,
         method: str,
+        config_path: str,
         n_clusters: int = 5,
         n_samples: int = 10,
         save_center: bool = True,
-        config_path: str,
     ):
         self.method = method
         self.n_clusters = n_clusters
