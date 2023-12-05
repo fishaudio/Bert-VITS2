@@ -40,6 +40,7 @@ def process_speaker(speaker):
 
     yml_result = {}
     yml_result[speaker]={}
+    os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
     for i in range(y_predict.max()+1):
         class_length=len(classes[i])
         print("类别:", i, "本类中样本数量:", class_length)
@@ -51,7 +52,6 @@ def process_speaker(speaker):
             yml_result[speaker][f"class{i}"].append(classes[i][j])
         if hasattr(model, 'cluster_centers_') and config.emo_cluster_config.save_center:
             centers = model.cluster_centers_
-            os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
             for i in range(centers.shape[0]):
                 # 为每个中心创建一个文件名
                 filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
@@ -80,5 +80,5 @@ if __name__ == "__main__":
     for result in results:
         yml_result.update(result)
 
-    with open(os.path.join(config.dataset_path,'emo_clustering.yml'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(config.dataset_path,'emo_clustering/emo_clustering.yml'), 'w', encoding='utf-8') as f:
         yaml.dump(yml_result, f)
