@@ -49,7 +49,7 @@ def process_speaker(speaker):
                 break
             print(classes[i][j])  
             yml_result[speaker][f"class{i}"].append(classes[i][j])
-    if hasattr(model, 'cluster_centers_') and config.emo_cluster.save_center:
+    if hasattr(model, 'cluster_centers_') and config.emo_cluster_config.save_center:
         centers = model.cluster_centers_
         os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
         for i in range(centers.shape[0]):
