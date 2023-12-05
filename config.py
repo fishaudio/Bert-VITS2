@@ -244,7 +244,7 @@ class Config:
                 dataset_path, yaml_config["bert_gen"]
             )
             self.emotion_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
-                dataset_path, yaml_config["emotion_gen"]
+                dataset_path, yaml_config["emo_gen"]
             )
             self.emo_clustering_config: Emo_cluster_config = Emo_cluster_config.from_dict(
                 dataset_path, yaml_config["emo_cluster"]
