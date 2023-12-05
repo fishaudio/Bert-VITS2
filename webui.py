@@ -35,6 +35,7 @@ if device == "mps":
 
 def generate_audio(
     slices,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -53,7 +54,7 @@ def generate_audio(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer(
                 piece,
-                reference_audio=reference_audio,
+                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -63,6 +64,7 @@ def generate_audio(
                 hps=hps,
                 net_g=net_g,
                 device=device,
+                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -74,6 +76,8 @@ def generate_audio(
 
 def generate_audio_multilang(
     slices,
+    emotion,
+    reference_audio,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -91,6 +95,7 @@ def generate_audio_multilang(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer_multilang(
                 piece,
+                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -100,6 +105,7 @@ def generate_audio_multilang(
                 hps=hps,
                 net_g=net_g,
                 device=device,
+                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -134,7 +140,7 @@ def tts_split(
             skip_end = idx != len(para_list) - 1
             audio = infer(
                 p,
-                reference_audio=reference_audio,
+                emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -144,6 +150,7 @@ def tts_split(
                 hps=hps,
                 net_g=net_g,
                 device=device,
+                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -162,7 +169,7 @@ def tts_split(
                 skip_end = (idx != len(sent_list) - 1) and skip_end
                 audio = infer(
                     s,
-                    reference_audio=reference_audio,
+                    emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -172,6 +179,7 @@ def tts_split(
                     hps=hps,
                     net_g=net_g,
                     device=device,
+                    reference_audio=reference_audio if emotion == -1 else None,
                     skip_start=skip_start,
                     skip_end=skip_end,
                 )
@@ -194,6 +202,7 @@ def tts_split(
 def tts_fn(
     text: str,
     speaker,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -262,13 +271,14 @@ def tts_fn(
                 audio_list.extend(
                     generate_audio_multilang(
                         text_to_generate,
+                        emotion,
+                        reference_audio if emotion == -1 else None,
                         sdp_ratio,
                         noise_scale,
                         noise_scale_w,
                         length_scale,
                         _speaker,
                         lang_to_generate,
-                        reference_audio,
                         skip_start,
                         skip_end,
                     )
@@ -309,11 +319,12 @@ def tts_fn(
                 audio_list.extend(
                     generate_audio_multilang(
                         text_to_generate,
+                        emotion,
+                        reference_audio if emotion == -1 else None,
                         sdp_ratio,
                         noise_scale,
                         noise_scale_w,
                         length_scale,
-                        reference_audio,
                         speaker,
                         lang_to_generate,
                         skip_start,
@@ -325,13 +336,14 @@ def tts_fn(
         audio_list.extend(
             generate_audio(
                 text.split("|"),
+                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
                 length_scale,
                 speaker,
                 language,
-                reference_audio,
+                reference_audio if emotion == -1 else None,
             )
         )
 
@@ -474,6 +486,7 @@ if __name__ == "__main__":
             inputs=[
                 text,
                 speaker,
+                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
@@ -499,6 +512,7 @@ if __name__ == "__main__":
             inputs=[
                 text,
                 speaker,
+                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
