@@ -24,13 +24,13 @@ def process_speaker(speaker):
     n_clusters = config.emo_cluster_config.n_clusters
     method = config.emo_cluster_config.method
     if method=="b":
-        model = Birch(n_clusters= n_clusters, threshold= 0.2)
+        model = Birch(n_clusters= n_clusters, threshold=0.2)
     elif method=="s":
         model = SpectralClustering(n_clusters=n_clusters)
     elif method=="a":
         model = AgglomerativeClustering(n_clusters= n_clusters)
     else: 
-        model = KMeans(n_clusters=n_clusters, random_state=10)
+        model = KMeans(n_clusters=n_clusters, random_state=42)
     # 可以自行尝试各种不同的聚类算法
     y_predict = model.fit_predict(x)
     classes=[[] for i in range(y_predict.max()+1)]
