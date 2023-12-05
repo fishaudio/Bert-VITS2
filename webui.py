@@ -412,8 +412,8 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
-                sdp_ratio = gr.Slider(
-                    minimum=0, maximum=9, value=0, step=1, label="Emotion"
+                emotion = gr.Slider(
+                    minimum=-1, maximum=9, value=0, step=1, label="Emotion"
                 )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
