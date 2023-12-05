@@ -5,7 +5,6 @@ import os
 import numpy as np
 from config import config
 import yaml
-import argparse
 from multiprocessing import Pool
 from tqdm import tqdm
 
@@ -22,12 +21,13 @@ def process_speaker(speaker):
     x = np.concatenate(embs,axis=0)
     x = np.squeeze(x)
     # 聚类算法类的数量
-    n_clusters = args.num_clusters
-    if args.algorithm=="b":
+    n_clusters = config.emo_cluster_config.n_clusters
+    method = config.emo_cluster_config.method
+    if method=="b":
         model = Birch(n_clusters= n_clusters, threshold= 0.2)
-    elif args.algorithm=="s":
+    elif method=="s":
         model = SpectralClustering(n_clusters=n_clusters)
-    elif  args.algorithm=="a":
+    elif method=="a":
         model = AgglomerativeClustering(n_clusters= n_clusters)
     else: 
         model = KMeans(n_clusters=n_clusters, random_state=10)
@@ -45,7 +45,7 @@ def process_speaker(speaker):
         class_length=len(classes[i])
         print("类别:", i, "本类中样本数量:", class_length)
         yml_result[speaker][f"class{i}"]=[]
-        for j in range(args.range):
+        for j in range(config.emo_cluster_config.n_samples):
             if j >=class_length:
                 break
             print(classes[i][j])  
@@ -60,11 +60,6 @@ def process_speaker(speaker):
     return yml_result
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-a","--algorithm", default="k",help="choose algorithm",type=str)
-    parser.add_argument("-n","--num_clusters", default=3,help="number of clusters",type=int)
-    parser.add_argument("-r","--range", default=4,help="number of files in a class",type=int)
-    args = parser.parse_args()
     filelist_dict={}
     with open(config.preprocess_text_config.train_path, mode="r", encoding="utf-8") as f:
         for line in f:
