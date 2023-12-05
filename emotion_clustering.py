@@ -52,9 +52,7 @@ def process_speaker(speaker):
             yml_result[speaker][f"class{i}"].append(classes[i][j])
         if hasattr(model, 'cluster_centers_') and config.emo_cluster_config.save_center:
             centers = model.cluster_centers_
-            for i in range(centers.shape[0]):
-                # 为每个中心创建一个文件名
-                filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
+            filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
             # 保存中心
             np.save(filename, centers[i])
     return yml_result
