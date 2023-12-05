@@ -49,14 +49,14 @@ def process_speaker(speaker):
                 break
             print(classes[i][j])  
             yml_result[speaker][f"class{i}"].append(classes[i][j])
-    if hasattr(model, 'cluster_centers_') and config.emo_cluster_config.save_center:
-        centers = model.cluster_centers_
-        os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
-        for i in range(centers.shape[0]):
-            # 为每个中心创建一个文件名
-            filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
-        # 保存中心
-        np.save(filename, centers[i])
+        if hasattr(model, 'cluster_centers_') and config.emo_cluster_config.save_center:
+            centers = model.cluster_centers_
+            os.makedirs(os.path.join(config.dataset_path, f'emo_clustering/{speaker}'), exist_ok=True)
+            for i in range(centers.shape[0]):
+                # 为每个中心创建一个文件名
+                filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
+            # 保存中心
+            np.save(filename, centers[i])
     return yml_result
 
 if __name__ == "__main__":
