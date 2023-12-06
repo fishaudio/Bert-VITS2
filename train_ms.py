@@ -194,19 +194,19 @@ def run():
     ).cuda(local_rank)
     
     if getattr(hps.train, "freeze_ZH_bert", False):
-    print("Freezing ZH bert encoder !!!")
-    for param in net_g.enc_p.bert_proj.parameters():
-        param.requires_grad = False
+        print("Freezing ZH bert encoder !!!")
+        for param in net_g.enc_p.bert_proj.parameters():
+            param.requires_grad = False
 
-   if getattr(hps.train, "freeze_EN_bert", False):
-    print("Freezing EN bert encoder !!!")
-    for param in net_g.enc_p.en_bert_proj.parameters():
-        param.requires_grad = False
+    if getattr(hps.train, "freeze_EN_bert", False):
+        print("Freezing EN bert encoder !!!")
+        for param in net_g.enc_p.en_bert_proj.parameters():
+            param.requires_grad = False
 
-   if getattr(hps.train, "freeze_JP_bert", False):
-    print("Freezing JP bert encoder !!!")
-    for param in net_g.enc_p.jp_bert_proj.parameters():
-        param.requires_grad = False
+    if getattr(hps.train, "freeze_JP_bert", False):
+        print("Freezing JP bert encoder !!!")
+        for param in net_g.enc_p.jp_bert_proj.parameters():
+            param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
