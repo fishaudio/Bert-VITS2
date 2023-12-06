@@ -55,7 +55,7 @@ def process_speaker(speaker):
             filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
             # 保存中心
             np.save(filename, centers[i])
-        else:
+        elif config.emo_cluster_config.save_center:
             labels = model.labels_
             centers = np.array([X[labels == i].mean(0) for i in range(n_clusters)])
             filename = os.path.join(config.dataset_path, f'emo_clustering/{speaker}/cluster_center_{i}.npy')
