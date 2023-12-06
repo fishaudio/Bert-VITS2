@@ -87,6 +87,16 @@ class Models:
         :param device: 模型推理使用设备
         :param language: 模型推理默认语言
         """
+        # 若文件不存在则不进行加载
+        if not os.path.isfile(model_path):
+            if model_path != "":
+                logger.warning(f"模型文件{model_path} 不存在，不进行初始化")
+            return self.num
+        if not os.path.isfile(config_path):
+            if config_path != "":
+                logger.warning(f"配置文件{config_path} 不存在，不进行初始化")
+            return self.num
+
         # 若路径中的模型已存在，则不添加模型，若不存在，则进行初始化。
         model_path = os.path.realpath(model_path)
         if model_path not in self.path2ids.keys():
