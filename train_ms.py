@@ -205,7 +205,7 @@ def run():
 
     if getattr(hps.train, "freeze_JP_bert", False):
         print("Freezing JP bert encoder !!!")
-        for param in net_g.enc_p.jp_bert_proj.parameters():
+        for param in net_g.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
