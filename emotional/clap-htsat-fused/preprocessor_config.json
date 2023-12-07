@@ -1,0 +1,22 @@
+{
+  "chunk_length_s": 10,
+  "feature_extractor_type": "ClapFeatureExtractor",
+  "feature_size": 64,
+  "fft_window_size": 1024,
+  "frequency_max": 14000,
+  "frequency_min": 50,
+  "hop_length": 480,
+  "max_length_s": 10,
+  "n_fft": 1024,
+  "nb_frequency_bins": 513,
+  "nb_max_frames": 1000,
+  "nb_max_samples": 480000,
+  "padding": "repeatpad",
+  "padding_side": "right",
+  "padding_value": 0.0,
+  "processor_class": "ClapProcessor",
+  "return_attention_mask": false,
+  "sampling_rate": 48000,
+  "top_db": null,
+  "truncation": "fusion"
+}

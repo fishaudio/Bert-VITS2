@@ -24,7 +24,6 @@ import numpy as np
 from config import config
 from tools.translate import translate
 import librosa
-import yaml
 
 net_g = None
 
@@ -35,7 +34,6 @@ if device == "mps":
 
 def generate_audio(
     slices,
-    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -43,6 +41,7 @@ def generate_audio(
     speaker,
     language,
     reference_audio,
+    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -54,7 +53,8 @@ def generate_audio(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer(
                 piece,
-                emotion,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -64,7 +64,6 @@ def generate_audio(
                 hps=hps,
                 net_g=net_g,
                 device=device,
-                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -76,14 +75,14 @@ def generate_audio(
 
 def generate_audio_multilang(
     slices,
-    emotion,
-    reference_audio,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
     length_scale,
     speaker,
     language,
+    reference_audio,
+    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -95,7 +94,8 @@ def generate_audio_multilang(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer_multilang(
                 piece,
-                emotion,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -105,7 +105,6 @@ def generate_audio_multilang(
                 hps=hps,
                 net_g=net_g,
                 device=device,
-                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -127,6 +126,7 @@ def tts_split(
     interval_between_para,
     interval_between_sent,
     reference_audio,
+    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -140,7 +140,8 @@ def tts_split(
             skip_end = idx != len(para_list) - 1
             audio = infer(
                 p,
-                emotion,
+                reference_audio=reference_audio,
+                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -150,7 +151,6 @@ def tts_split(
                 hps=hps,
                 net_g=net_g,
                 device=device,
-                reference_audio=reference_audio if emotion == -1 else None,
                 skip_start=skip_start,
                 skip_end=skip_end,
             )
@@ -169,7 +169,8 @@ def tts_split(
                 skip_end = (idx != len(sent_list) - 1) and skip_end
                 audio = infer(
                     s,
-                    emotion,
+                    reference_audio=reference_audio,
+                    emotion=emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -179,7 +180,6 @@ def tts_split(
                     hps=hps,
                     net_g=net_g,
                     device=device,
-                    reference_audio=reference_audio if emotion == -1 else None,
                     skip_start=skip_start,
                     skip_end=skip_end,
                 )
@@ -202,13 +202,13 @@ def tts_split(
 def tts_fn(
     text: str,
     speaker,
-    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
     length_scale,
     language,
     reference_audio,
+    emotion,
 ):
     audio_list = []
     if language == "mix":
@@ -271,14 +271,14 @@ def tts_fn(
                 audio_list.extend(
                     generate_audio_multilang(
                         text_to_generate,
-                        emotion,
-                        reference_audio if emotion == -1 else None,
                         sdp_ratio,
                         noise_scale,
                         noise_scale_w,
                         length_scale,
                         _speaker,
                         lang_to_generate,
+                        reference_audio,
+                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -319,14 +319,14 @@ def tts_fn(
                 audio_list.extend(
                     generate_audio_multilang(
                         text_to_generate,
-                        emotion,
-                        reference_audio if emotion == -1 else None,
                         sdp_ratio,
                         noise_scale,
                         noise_scale_w,
                         length_scale,
                         speaker,
                         lang_to_generate,
+                        reference_audio,
+                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -336,69 +336,19 @@ def tts_fn(
         audio_list.extend(
             generate_audio(
                 text.split("|"),
-                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
                 length_scale,
                 speaker,
                 language,
-                reference_audio if emotion == -1 else None,
+                reference_audio,
+                emotion,
             )
         )
 
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
-
-
-def load_class_info():
-    global class_info
-    global speakers
-    try:
-        class_info = yaml.load(
-            open(
-                os.path.join(config.dataset_path, "emo_clustering/emo_clustering.yml")
-            ),
-            Loader=yaml.FullLoader,
-        )
-        # print(class_info)
-    except:
-        class_info = {}
-        for spk in speakers:
-            class_info[spk] = {"null": []}
-
-
-def choose_class(speaker, init=None):
-    global class_info
-    global classes_list
-    classes_list = list(class_info[speaker])
-    if init is None:
-        return classes.update(choices=classes_list, value=classes_list[0])
-
-
-def choose_wav_in_class(speaker, class_name, init=None):
-    global wav_in_class
-    global class_info
-    wav_in_class = class_info[speaker][class_name]
-    if init is None:
-        return choose_wav.update(choices=wav_in_class, value=wav_in_class[0])
-
-
-def load_chosen_audio(speaker, audio_name):
-    if audio_name == "null" or audio_name == "":
-        return None, "请选择参考音频"
-    audio_path = os.path.join(config.resample_config.out_dir, speaker, audio_name)
-    return librosa.load(audio_path, sr=16000)[::-1], "已加载参考音频"
-
-
-def load_cluster_center(cluster, speaker):
-    center = []
-    filename = os.path.join(
-        config.dataset_path, f"emo_clustering/{speaker}/cluster_center_{cluster}.npy"
-    )
-    center = np.load(filename)
-    center = np.array(center)
-    return center
 
 
 if __name__ == "__main__":
@@ -413,11 +363,6 @@ if __name__ == "__main__":
     )
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
-    load_class_info()
-    classes_list = []
-    choose_class(speakers[0], True)
-    wav_in_class = []
-    choose_wav_in_class(speakers[0], classes_list[0], True)
     languages = ["ZH", "JP", "EN", "mix", "auto"]
     with gr.Blocks() as app:
         with gr.Row():
@@ -435,16 +380,11 @@ if __name__ == "__main__":
                     """,
                 )
                 trans = gr.Button("中翻日", variant="primary")
+                slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
-                emotion = gr.Slider(
-                    minimum=-1,
-                    maximum=config.emo_cluster_config.n_clusters - 1,
-                    value=0,
-                    step=1,
-                    label="Emotion",
-                )
+                emotion = gr.Textbox(placeholder="用文字描述生成风格。")
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
                 )
@@ -493,36 +433,18 @@ if __name__ == "__main__":
                 # )
                 reference_text = gr.Markdown(value="## 情感参考音频（WAV 格式）：用于生成语音的情感参考。")
                 reference_audio = gr.Audio(label="情感参考音频（WAV 格式）", type="filepath")
-                with gr.Row():
-                    classes = gr.Dropdown(
-                        choices=classes_list,
-                        value="null" if not classes_list else classes_list[0],
-                        label="选择类别",
-                        interactive=True,
-                    )
-                    choose_wav = gr.Dropdown(
-                        choices=wav_in_class,
-                        value="null" if not wav_in_class else wav_in_class[0],
-                        label="选择音频",
-                        interactive=True,
-                    )
-                    submit_audio_choice = gr.Button("加载音频", variant="primary")
-        speaker.change(choose_class, inputs=[speaker], outputs=[classes])
-        classes.change(
-            choose_wav_in_class, inputs=[speaker, classes], outputs=[choose_wav]
-        )
         btn.click(
             tts_fn,
             inputs=[
                 text,
                 speaker,
-                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
                 length_scale,
                 language,
                 reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
@@ -532,17 +454,11 @@ if __name__ == "__main__":
             inputs=[text],
             outputs=[text],
         )
-        submit_audio_choice.click(
-            load_chosen_audio,
-            inputs=[speaker, choose_wav],
-            outputs=[reference_audio, text_output],
-        )
         slicer.click(
             tts_split,
             inputs=[
                 text,
                 speaker,
-                emotion,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
@@ -552,12 +468,13 @@ if __name__ == "__main__":
                 interval_between_para,
                 interval_between_sent,
                 reference_audio,
+                emotion,
             ],
             outputs=[text_output, audio_output],
         )
 
         reference_audio.upload(
-            lambda x: librosa.load(x, 16000)[::-1],
+            lambda x: librosa.resample(librosa.load(x, 44100), 44100, 48000),
             inputs=[reference_audio],
             outputs=[reference_audio],
         )

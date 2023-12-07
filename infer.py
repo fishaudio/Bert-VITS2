@@ -10,7 +10,7 @@
 import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
-from get_emo import get_emo
+from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
 from text.cleaner import clean_text
 import utils
 import numpy as np
@@ -63,15 +63,15 @@ symbolsMap = {
 }
 
 
-def get_emo_(reference_audio, emotion, sid):
-    emo = (
-        torch.from_numpy(get_emo(reference_audio))
-        if reference_audio and emotion == -1
-        else torch.FloatTensor(
-            np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy")
-        )
-    )
-    return emo
+# def get_emo_(reference_audio, emotion, sid):
+#     emo = (
+#         torch.from_numpy(get_emo(reference_audio))
+#         if reference_audio and emotion == -1
+#         else torch.FloatTensor(
+#             np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy")
+#         )
+#     )
+#     return emo
 
 
 def get_net_g(model_path: str, version: str, device: str, hps):
@@ -222,7 +222,11 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    emo = get_emo_(reference_audio, emotion, sid)
+    # emo = get_emo_(reference_audio, emotion, sid)
+    if reference_audio:
+        emo = get_clap_audio_feature(reference_audio, device)
+    else:
+        emo = get_clap_text_feature(emotion, device)
 
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
@@ -295,7 +299,11 @@ def infer_multilang(
     skip_end=False,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    emo = get_emo_(reference_audio, emotion, sid)
+    # emo = get_emo_(reference_audio, emotion, sid)
+    if reference_audio:
+        emo = get_clap_audio_feature(reference_audio, device)
+    else:
+        emo = get_clap_text_feature(emotion, device)
     for idx, (txt, lang) in enumerate(zip(text, language)):
         skip_start = (idx != 0) or (skip_start and idx == 0)
         skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
