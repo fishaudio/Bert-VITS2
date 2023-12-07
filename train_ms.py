@@ -388,7 +388,7 @@ def train_and_evaluate(
         ja_bert,
         en_bert,
         emo,
-    ) in tqdm(enumerate(train_loader)):
+    ) in enumerate(tqdm(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial
