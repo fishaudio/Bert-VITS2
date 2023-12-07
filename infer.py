@@ -17,8 +17,8 @@ import numpy as np
 
 from models import SynthesizerTrn
 from text.symbols import symbols
-from oldVersion.V201.models import SynthesizerTrn as V201SynthesizerTrn
-from oldVersion.V201.text import symbols as V201symbols
+from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
+from oldVersion.V210.text import symbols as V210symbols
 from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
 from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
@@ -28,14 +28,14 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200, V201
+from oldVersion import V111, V110, V101, V200, V210
 
 # 当前版本信息
 latest_version = "2.2"
 
 # 版本兼容
 SynthesizerTrnMap = {
-    "2.1": V201SynthesizerTrn,
+    "2.1": V210SynthesizerTrn,
     "2.0.2-fix": V200SynthesizerTrn,
     "2.0.1": V200SynthesizerTrn,
     "2.0": V200SynthesizerTrn,
@@ -49,7 +49,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    "2.1": V201symbols
+    "2.1": V210symbols,
     "2.0.2-fix": V200symbols,
     "2.0.1": V200symbols,
     "2.0": V200symbols,
@@ -62,14 +62,17 @@ symbolsMap = {
     "1.0.0": V101symbols,
 }
 
+
 def get_emo_(reference_audio, emotion, sid):
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio and emotion != -1
-        else
-        torch.FloatTensor(np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy"))
+        else torch.FloatTensor(
+            np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy")
+        )
     )
     return emo
+
 
 def get_net_g(model_path: str, version: str, device: str, hps):
     if version != latest_version:
@@ -134,6 +137,7 @@ def get_text(text, language_str, hps, device):
     language = torch.LongTensor(language)
     return bert, ja_bert, en_bert, phone, tone, language
 
+
 def infer(
     text,
     emotion,
@@ -150,6 +154,11 @@ def infer(
     skip_start=False,
     skip_end=False,
 ):
+    # 2.2版本参数位置变了
+    # 2.1 参数新增 emotion reference_audio skip_start skip_end
+    inferMap_V3 = {
+        "2.1": V210.infer,
+    }
     # 支持中日英三语版本
     inferMap_V2 = {
         "2.0.2-fix": V200.infer,
@@ -170,6 +179,23 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
+        if version in inferMap_V3.keys():
+            return inferMap_V3[version](
+                text,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
+                language,
+                hps,
+                net_g,
+                device,
+                reference_audio,
+                emotion,
+                skip_start,
+                skip_end,
+            )
         if version in inferMap_V2.keys():
             return inferMap_V2[version](
                 text,
@@ -198,7 +224,7 @@ def infer(
     # 在此处实现当前版本的推理
     emo = get_emo_(reference_audio, emotion, sid)
 
-    bert, ja_bert, en_bert, phones, tones, lang_ids= get_text(
+    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
     )
     if skip_start:
