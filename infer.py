@@ -17,8 +17,9 @@ import numpy as np
 
 from models import SynthesizerTrn
 from text.symbols import symbols
-from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
-from oldVersion.V210.text import symbols as V210symbols
+
+# from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
+# from oldVersion.V210.text import symbols as V210symbols
 from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
 from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
@@ -28,14 +29,14 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200, V210
+from oldVersion import V111, V110, V101, V200  # , V210
 
 # 当前版本信息
 latest_version = "2.2"
 
 # 版本兼容
 SynthesizerTrnMap = {
-    "2.1": V210SynthesizerTrn,
+    # "2.1": V210SynthesizerTrn,
     "2.0.2-fix": V200SynthesizerTrn,
     "2.0.1": V200SynthesizerTrn,
     "2.0": V200SynthesizerTrn,
@@ -49,7 +50,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    "2.1": V210symbols,
+    # "2.1": V210symbols,
     "2.0.2-fix": V200symbols,
     "2.0.1": V200symbols,
     "2.0": V200symbols,
@@ -156,9 +157,9 @@ def infer(
 ):
     # 2.2版本参数位置变了
     # 2.1 参数新增 emotion reference_audio skip_start skip_end
-    inferMap_V3 = {
-        "2.1": V210.infer,
-    }
+    # inferMap_V3 = {
+    #     "2.1": V210.infer,
+    # }
     # 支持中日英三语版本
     inferMap_V2 = {
         "2.0.2-fix": V200.infer,
@@ -179,23 +180,23 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
-        if version in inferMap_V3.keys():
-            return inferMap_V3[version](
-                text,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                sid,
-                language,
-                hps,
-                net_g,
-                device,
-                reference_audio,
-                emotion,
-                skip_start,
-                skip_end,
-            )
+        # if version in inferMap_V3.keys():
+        #     return inferMap_V3[version](
+        #         text,
+        #         sdp_ratio,
+        #         noise_scale,
+        #         noise_scale_w,
+        #         length_scale,
+        #         sid,
+        #         language,
+        #         hps,
+        #         net_g,
+        #         device,
+        #         reference_audio,
+        #         emotion,
+        #         skip_start,
+        #         skip_end,
+        #     )
         if version in inferMap_V2.keys():
             return inferMap_V2[version](
                 text,
@@ -223,10 +224,11 @@ def infer(
             )
     # 在此处实现当前版本的推理
     # emo = get_emo_(reference_audio, emotion, sid)
-    if reference_audio:
+    if reference_audio and emotion == -1:
         emo = get_clap_audio_feature(reference_audio, device)
     else:
         emo = get_clap_text_feature(emotion, device)
+    emo = torch.squeeze(emo, dim=1)
 
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
@@ -300,10 +302,11 @@ def infer_multilang(
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
     # emo = get_emo_(reference_audio, emotion, sid)
-    if reference_audio:
+    if reference_audio and emotion == -1:
         emo = get_clap_audio_feature(reference_audio, device)
     else:
         emo = get_clap_text_feature(emotion, device)
+    emo = torch.squeeze(emo, dim=1)
     for idx, (txt, lang) in enumerate(zip(text, language)):
         skip_start = (idx != 0) or (skip_start and idx == 0)
         skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
