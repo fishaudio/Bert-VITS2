@@ -345,18 +345,14 @@ class TextEncoder(nn.Module):
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.emo_proj = nn.Linear(1024, 1024)
-        self.emo_quantizer = nn.ModuleList()
-        for i in range(0, n_speakers):
-            self.emo_quantizer.append(
-                VectorQuantize(
-                    dim=1024,
-                    codebook_size=10,
-                    decay=0.8,
-                    commitment_weight=1.0,
-                    learnable_codebook=True,
-                    ema_update=False,
-                )
-            )
+        self.emo_quantizer = VectorQuantize(
+            dim=1024,
+            codebook_size=10,
+            decay=0.8,
+            commitment_weight=1.0,
+            learnable_codebook=True,
+            ema_update=False,
+        )
         self.emo_q_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
@@ -373,17 +369,16 @@ class TextEncoder(nn.Module):
     def forward(
         self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=None
     ):
-        sid = sid.cpu()
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
         if emo.size(-1) == 1024:
             emo_emb = self.emo_proj(emo.unsqueeze(1))
-            emo_commit_loss = torch.zeros(1)
+            emo_commit_loss = torch.zeros(1).to(emo_emb.device)
             emo_emb_ = []
             for i in range(emo_emb.size(0)):
-                temp_emo_emb, _, temp_emo_commit_loss = self.emo_quantizer[sid[i]](
-                    emo_emb[i].unsqueeze(0).cpu()
+                temp_emo_emb, _, temp_emo_commit_loss = self.emo_quantizer(
+                    emo_emb[i].unsqueeze(0)
                 )
                 emo_commit_loss += temp_emo_commit_loss
                 emo_emb_.append(temp_emo_emb)
@@ -391,8 +386,7 @@ class TextEncoder(nn.Module):
             emo_commit_loss = emo_commit_loss.to(emo_emb.device)
         else:
             emo_emb = (
-                self.emo_quantizer[sid[0]]
-                .get_output_from_indices(emo.to(torch.int).cpu())
+                self.emo_quantizer.get_output_from_indices(emo.to(torch.int))
                 .unsqueeze(0)
                 .to(emo.device)
             )
