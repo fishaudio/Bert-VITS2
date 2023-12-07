@@ -24,13 +24,15 @@ def process_line(line):
             device = torch.device("cpu")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
 
+    clap_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".emo.npy")
+    if os.path.isfile(clap_path):
+        return
+
     audio = librosa.load(wav_path, 44100)[0]
     audio = librosa.resample(audio, 44100, 48000)
 
-    clap_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".emo.npy")
-
     clap = get_clap_audio_feature(audio, device)
-    torch.save(clap.detach().cpu().numpy(), clap_path)
+    torch.save(clap, clap_path)
 
 
 if __name__ == "__main__":
