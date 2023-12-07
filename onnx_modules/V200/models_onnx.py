@@ -832,39 +832,43 @@ class SynthesizerTrn(nn.Module):
         noise_scale = 0.667
         length_scale = 1
         noise_scale_w = 0.8
-        x = torch.LongTensor(
-            [
-                0,
-                97,
-                0,
-                8,
-                0,
-                78,
-                0,
-                8,
-                0,
-                76,
-                0,
-                37,
-                0,
-                40,
-                0,
-                97,
-                0,
-                8,
-                0,
-                23,
-                0,
-                8,
-                0,
-                74,
-                0,
-                26,
-                0,
-                104,
-                0,
-            ]
-        ).unsqueeze(0).cpu()
+        x = (
+            torch.LongTensor(
+                [
+                    0,
+                    97,
+                    0,
+                    8,
+                    0,
+                    78,
+                    0,
+                    8,
+                    0,
+                    76,
+                    0,
+                    37,
+                    0,
+                    40,
+                    0,
+                    97,
+                    0,
+                    8,
+                    0,
+                    23,
+                    0,
+                    8,
+                    0,
+                    74,
+                    0,
+                    26,
+                    0,
+                    104,
+                    0,
+                ]
+            )
+            .unsqueeze(0)
+            .cpu()
+        )
         tone = torch.zeros_like(x).cpu()
         language = torch.zeros_like(x).cpu()
         x_lengths = torch.LongTensor([x.shape[1]]).cpu()

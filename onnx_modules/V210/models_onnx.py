@@ -302,7 +302,7 @@ class TextEncoder(nn.Module):
         self.emo_quantizer = nn.ModuleList()
         for i in range(0, n_speakers):
             self.emo_quantizer.append(
-                    VectorQuantize(
+                VectorQuantize(
                     dim=1024,
                     codebook_size=10,
                     decay=0.8,
@@ -330,10 +330,24 @@ class TextEncoder(nn.Module):
         self.emb_vq_weight = torch.zeros(10 * self.n_speakers, 1024).float()
         for i in range(self.n_speakers):
             for j in range(10):
-                self.emb_vq_weight[i * 10 + j] = self.emo_quantizer[i].get_output_from_indices(torch.LongTensor([j]))
+                self.emb_vq_weight[i * 10 + j] = self.emo_quantizer[
+                    i
+                ].get_output_from_indices(torch.LongTensor([j]))
         self.emb_vq.weight = nn.Parameter(self.emb_vq_weight.clone())
 
-    def forward(self, x, x_lengths, tone, language, bert, ja_bert, en_bert, g=None, vqidx=None, sid=None):
+    def forward(
+        self,
+        x,
+        x_lengths,
+        tone,
+        language,
+        bert,
+        ja_bert,
+        en_bert,
+        g=None,
+        vqidx=None,
+        sid=None,
+    ):
         x_mask = torch.ones_like(x).unsqueeze(0)
         bert_emb = self.bert_proj(bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert.transpose(0, 1).unsqueeze(0)).transpose(
@@ -343,7 +357,9 @@ class TextEncoder(nn.Module):
             1, 2
         )
 
-        emb_vq_idx = torch.clamp((sid * 10) + vqidx, min = 0, max = (self.n_speakers * 10) - 1)
+        emb_vq_idx = torch.clamp(
+            (sid * 10) + vqidx, min=0, max=(self.n_speakers * 10) - 1
+        )
 
         vqval = self.emb_vq(emb_vq_idx)
 
@@ -864,39 +880,43 @@ class SynthesizerTrn(nn.Module):
         noise_scale = 0.667
         length_scale = 1
         noise_scale_w = 0.8
-        x = torch.LongTensor(
-            [
-                0,
-                97,
-                0,
-                8,
-                0,
-                78,
-                0,
-                8,
-                0,
-                76,
-                0,
-                37,
-                0,
-                40,
-                0,
-                97,
-                0,
-                8,
-                0,
-                23,
-                0,
-                8,
-                0,
-                74,
-                0,
-                26,
-                0,
-                104,
-                0,
-            ]
-        ).unsqueeze(0).cpu()
+        x = (
+            torch.LongTensor(
+                [
+                    0,
+                    97,
+                    0,
+                    8,
+                    0,
+                    78,
+                    0,
+                    8,
+                    0,
+                    76,
+                    0,
+                    37,
+                    0,
+                    40,
+                    0,
+                    97,
+                    0,
+                    8,
+                    0,
+                    23,
+                    0,
+                    8,
+                    0,
+                    74,
+                    0,
+                    26,
+                    0,
+                    104,
+                    0,
+                ]
+            )
+            .unsqueeze(0)
+            .cpu()
+        )
         tone = torch.zeros_like(x).cpu()
         language = torch.zeros_like(x).cpu()
         x_lengths = torch.LongTensor([x.shape[1]]).cpu()
@@ -934,7 +954,7 @@ class SynthesizerTrn(nn.Module):
                 "bert_2",
                 "g",
                 "vqidx",
-                "sid"
+                "sid",
             ],
             output_names=["xout", "m_p", "logs_p", "x_mask"],
             dynamic_axes={
@@ -956,7 +976,7 @@ class SynthesizerTrn(nn.Module):
         x, m_p, logs_p, x_mask = self.enc_p(
             x, x_lengths, tone, language, bert, ja_bert, en_bert, g, sid, sid
         )
-        
+
         zinput = (
             torch.randn(x.size(0), 2, x.size(2)).to(device=x.device, dtype=x.dtype)
             * noise_scale_w

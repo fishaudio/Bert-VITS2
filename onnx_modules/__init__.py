@@ -1,14 +1,14 @@
-
 from utils import get_hparams_from_file, load_checkpoint
-import os
 import json
 
 
 def export_onnx(export_path, model_path, config_path):
     hps = get_hparams_from_file(config_path)
     version = hps.version[0:3]
-    if version == "2.0": from .V200 import SynthesizerTrn, symbols
-    elif version == "2.1": from .V210 import SynthesizerTrn, symbols
+    if version == "2.0":
+        from .V200 import SynthesizerTrn, symbols
+    elif version == "2.1":
+        from .V210 import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
