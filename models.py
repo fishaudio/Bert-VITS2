@@ -348,7 +348,7 @@ class TextEncoder(nn.Module):
         self.emo_quantizer = nn.ModuleList()
         for i in range(0, n_speakers):
             self.emo_quantizer.append(
-                    VectorQuantize(
+                VectorQuantize(
                     dim=1024,
                     codebook_size=10,
                     decay=0.8,
