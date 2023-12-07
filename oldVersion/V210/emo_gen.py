@@ -1,7 +1,3 @@
-import argparse
-import os
-from pathlib import Path
-
 import librosa
 import numpy as np
 import torch
@@ -81,6 +77,12 @@ class AudioDataset(Dataset):
         return torch.from_numpy(processed_data)
 
 
+device = config.emo_gen_config.device
+model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+processor = Wav2Vec2Processor.from_pretrained(model_name)
+model = EmotionModel.from_pretrained(model_name).to(device)
+
+
 def process_func(
     x: np.ndarray,
     sampling_rate: int,
@@ -107,57 +109,11 @@ def process_func(
 
 def get_emo(path):
     wav, sr = librosa.load(path, 16000)
-    device = config.bert_gen_config.device
     return process_func(
-        np.expand_dims(wav, 0).astype(np.float),
+        np.expand_dims(wav, 0).astype(np.float64),
         sr,
         model,
         processor,
         device,
         embeddings=True,
     ).squeeze(0)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-c", "--config", type=str, default=config.bert_gen_config.config_path
-    )
-    parser.add_argument(
-        "--num_processes", type=int, default=config.bert_gen_config.num_processes
-    )
-    args, _ = parser.parse_known_args()
-    config_path = args.config
-    hps = utils.get_hparams_from_file(config_path)
-
-    device = config.bert_gen_config.device
-
-    model_name = "./emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-    REPO_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
-    if not Path(model_name).joinpath("pytorch_model.bin").exists():
-        utils.download_emo_models(config.mirror, REPO_ID, model_name)
-
-    processor = Wav2Vec2Processor.from_pretrained(model_name)
-    model = EmotionModel.from_pretrained(model_name).to(device)
-
-    lines = []
-    with open(hps.data.training_files, encoding="utf-8") as f:
-        lines.extend(f.readlines())
-
-    with open(hps.data.validation_files, encoding="utf-8") as f:
-        lines.extend(f.readlines())
-
-    wavnames = [line.split("|")[0] for line in lines]
-    dataset = AudioDataset(wavnames, 16000, processor)
-    data_loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=16)
-
-    with torch.no_grad():
-        for i, data in tqdm(enumerate(data_loader), total=len(data_loader)):
-            wavname = wavnames[i]
-            emo_path = wavname.replace(".wav", ".emo.npy")
-            if os.path.exists(emo_path):
-                continue
-            emb = model(data.to(device))[0].detach().cpu().numpy()
-            np.save(emo_path, emb)
-
-    print("Emo vec 生成完毕!")
