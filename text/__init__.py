@@ -46,3 +46,16 @@ def check_bert_models():
         for k, v in models.items():
             local_path = Path("./bert").joinpath(k)
             _check_bert(v["repo_id"], v["files"], local_path)
+
+
+def init_openjtalk():
+    import platform
+
+    if platform.platform() == "Linux":
+        import pyopenjtalk
+
+        pyopenjtalk.g2p("こんにちは，世界。")
+
+
+init_openjtalk()
+check_bert_models()

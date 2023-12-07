@@ -5,11 +5,10 @@ import logging
 import gc
 import random
 
-from pydantic import BaseModel
 import gradio
 import numpy as np
 import utils
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, File, UploadFile, Form
 from fastapi.responses import Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from io import BytesIO
@@ -19,7 +18,7 @@ import torch
 import webbrowser
 import psutil
 import GPUtil
-from typing import Dict, Optional, List, Set
+from typing import Dict, Optional, List, Set, Union
 import os
 from tools.log import logger
 from urllib.parse import unquote
@@ -88,6 +87,16 @@ class Models:
         :param device: 模型推理使用设备
         :param language: 模型推理默认语言
         """
+        # 若文件不存在则不进行加载
+        if not os.path.isfile(model_path):
+            if model_path != "":
+                logger.warning(f"模型文件{model_path} 不存在，不进行初始化")
+            return self.num
+        if not os.path.isfile(config_path):
+            if config_path != "":
+                logger.warning(f"配置文件{config_path} 不存在，不进行初始化")
+            return self.num
+
         # 若路径中的模型已存在，则不添加模型，若不存在，则进行初始化。
         model_path = os.path.realpath(model_path)
         if model_path not in self.path2ids.keys():
@@ -149,17 +158,24 @@ if __name__ == "__main__":
     app = FastAPI()
     app.logger = logger
     # 挂载静态文件
+    logger.info("开始挂载网页页面")
     StaticDir: str = "./Web"
-    dirs = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
-    files = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
-    for dirName in dirs:
-        app.mount(
-            f"/{dirName}",
-            StaticFiles(directory=f"./{StaticDir}/{dirName}"),
-            name=dirName,
+    if not os.path.isdir(StaticDir):
+        logger.warning(
+            "缺少网页资源，无法开启网页页面，如有需要请在 https://github.com/jiangyuxiaoxiao/Bert-VITS2-UI 或者Bert-VITS对应版本的release页面下载"
         )
+    else:
+        dirs = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
+        files = [fir.name for fir in os.scandir(StaticDir) if fir.is_dir()]
+        for dirName in dirs:
+            app.mount(
+                f"/{dirName}",
+                StaticFiles(directory=f"./{StaticDir}/{dirName}"),
+                name=dirName,
+            )
     loaded_models = Models()
     # 加载模型
+    logger.info("开始加载模型")
     models_info = config.server_config.models
     for model_info in models_info:
         loaded_models.init_model(
@@ -173,10 +189,7 @@ if __name__ == "__main__":
     async def index():
         return FileResponse("./Web/index.html")
 
-    class Text(BaseModel):
-        text: str
-
-    def _voice(
+    async def _voice(
         text: str,
         model_id: int,
         speaker_name: str,
@@ -188,7 +201,10 @@ if __name__ == "__main__":
         language: str,
         auto_translate: bool,
         auto_split: bool,
-    ) -> Response | Dict[str, any]:
+        emotion: Optional[int] = None,
+        reference_audio=None,
+    ) -> Union[Response, Dict[str, any]]:
+        """TTS实现函数"""
         # 检查模型是否存在
         if model_id not in loaded_models.models.keys():
             return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
@@ -207,6 +223,10 @@ if __name__ == "__main__":
             language = loaded_models.models[model_id].language
         if auto_translate:
             text = trans.translate(Sentence=text, to_Language=language.lower())
+        if reference_audio is not None:
+            ref_audio = BytesIO(await reference_audio.read())
+        else:
+            ref_audio = reference_audio
         if not auto_split:
             with torch.no_grad():
                 audio = infer(
@@ -220,7 +240,10 @@ if __name__ == "__main__":
                     hps=loaded_models.models[model_id].hps,
                     net_g=loaded_models.models[model_id].net_g,
                     device=loaded_models.models[model_id].device,
+                    emotion=emotion,
+                    reference_audio=ref_audio,
                 )
+                audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         else:
             texts = cut_sent(text)
             audios = []
@@ -238,22 +261,24 @@ if __name__ == "__main__":
                             hps=loaded_models.models[model_id].hps,
                             net_g=loaded_models.models[model_id].net_g,
                             device=loaded_models.models[model_id].device,
+                            emotion=emotion,
+                            reference_audio=ref_audio,
                         )
                     )
                     audios.append(np.zeros(int(44100 * 0.2)))
                 audio = np.concatenate(audios)
                 audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
-        wavContent = BytesIO()
-        wavfile.write(
-            wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
-        )
-        response = Response(content=wavContent.getvalue(), media_type="audio/wav")
-        return response
+        with BytesIO() as wavContent:
+            wavfile.write(
+                wavContent, loaded_models.models[model_id].hps.data.sampling_rate, audio
+            )
+            response = Response(content=wavContent.getvalue(), media_type="audio/wav")
+            return response
 
     @app.post("/voice")
-    def voice(
+    async def voice(
         request: Request,  # fastapi自动注入
-        text: Text,
+        text: str = Form(...),
         model_id: int = Query(..., description="模型ID"),  # 模型序号
         speaker_name: str = Query(
             None, description="说话人名"
@@ -266,13 +291,14 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
+        emotion: Optional[int] = Query(None, description="emo"),
+        reference_audio: UploadFile = File(None),
     ):
-        """语音接口"""
-        text = text.text
+        """语音接口，若需要上传参考音频请仅使用post请求"""
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )} text={text}"
         )
-        return _voice(
+        return await _voice(
             text=text,
             model_id=model_id,
             speaker_name=speaker_name,
@@ -284,10 +310,12 @@ if __name__ == "__main__":
             language=language,
             auto_translate=auto_translate,
             auto_split=auto_split,
+            emotion=emotion,
+            reference_audio=reference_audio,
         )
 
     @app.get("/voice")
-    def voice(
+    async def voice(
         request: Request,  # fastapi自动注入
         text: str = Query(..., description="输入文字"),
         model_id: int = Query(..., description="模型ID"),  # 模型序号
@@ -302,12 +330,13 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
+        emotion: Optional[int] = Query(None, description="emo"),
     ):
         """语音接口"""
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
-        return _voice(
+        return await _voice(
             text=text,
             model_id=model_id,
             speaker_name=speaker_name,
@@ -319,6 +348,7 @@ if __name__ == "__main__":
             language=language,
             auto_translate=auto_translate,
             auto_split=auto_split,
+            emotion=emotion,
         )
 
     @app.get("/models/info")
@@ -605,7 +635,8 @@ if __name__ == "__main__":
 
     logger.warning("本地服务，请勿将服务端口暴露于外网")
     logger.info(f"api文档地址 http://127.0.0.1:{config.server_config.port}/docs")
-    webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
+    if os.path.isdir(StaticDir):
+        webbrowser.open(f"http://127.0.0.1:{config.server_config.port}")
     uvicorn.run(
         app, port=config.server_config.port, host="0.0.0.0", log_level="warning"
     )

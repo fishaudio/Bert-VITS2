@@ -1,12 +1,14 @@
+import argparse
+from multiprocessing import Pool, cpu_count
+
 import torch
-from multiprocessing import Pool
+import torch.multiprocessing as mp
+from tqdm import tqdm
+
 import commons
 import utils
-from tqdm import tqdm
-from text import check_bert_models, cleaned_text_to_sequence, get_bert
-import argparse
-import torch.multiprocessing as mp
 from config import config
+from text import cleaned_text_to_sequence, get_bert
 
 
 def process_line(line):
@@ -57,7 +59,6 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
-    check_bert_models()
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
     if len(lines) != 0:
-        num_processes = args.num_processes
+        num_processes = min(args.num_processes, cpu_count())
         with Pool(processes=num_processes) as pool:
             for _ in tqdm(pool.imap_unordered(process_line, lines), total=len(lines)):
                 pass

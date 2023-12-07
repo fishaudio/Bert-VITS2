@@ -16,6 +16,24 @@ MATPLOTLIB_FLAG = False
 logger = logging.getLogger(__name__)
 
 
+def download_emo_models(mirror, repo_id, model_name):
+    if mirror == "openi":
+        import openi
+
+        openi.model.download_model(
+            "Stardust_minus/Bert-VITS2",
+            repo_id.split("/")[-1],
+            "./emotional",
+        )
+    else:
+        hf_hub_download(
+            repo_id,
+            "pytorch_model.bin",
+            local_dir=model_name,
+            local_dir_use_symlinks=False,
+        )
+
+
 def download_checkpoint(
     dir_path, repo_config, token=None, regex="G_*.pth", mirror="openi"
 ):
