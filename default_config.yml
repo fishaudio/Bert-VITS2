@@ -77,7 +77,7 @@ emo_cluster:
   save_center: True
   # 训练数据集配置文件路径
   config_path: "config.json"
-  
+
 # train 训练配置
 # 注意， “:” 后需要加空格
 train_ms:

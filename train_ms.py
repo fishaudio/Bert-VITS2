@@ -192,7 +192,7 @@ def run():
         noise_scale_delta=noise_scale_delta,
         **hps.model,
     ).cuda(local_rank)
-    
+
     if getattr(hps.train, "freeze_ZH_bert", False):
         print("Freezing ZH bert encoder !!!")
         for param in net_g.enc_p.bert_proj.parameters():
@@ -230,12 +230,15 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[local_rank],bucket_cap_mb=512)
-    net_d = DDP(net_d, device_ids=[local_rank],bucket_cap_mb=512)
+    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
+    net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
     dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
-            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True,bucket_cap_mb=512
+            net_dur_disc,
+            device_ids=[local_rank],
+            find_unused_parameters=True,
+            bucket_cap_mb=512,
         )
 
     # 下载底模
@@ -501,9 +504,7 @@ def train_and_evaluate(
 
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = (
-                    loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
-                )
+                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
                     loss_gen_all += loss_dur_gen

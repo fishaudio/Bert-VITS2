@@ -110,6 +110,7 @@ class Emo_gen_config:
 
         return cls(**data)
 
+
 class Emo_cluster_config:
     """emo_cluster 配置"""
 

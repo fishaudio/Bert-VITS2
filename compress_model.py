@@ -15,7 +15,7 @@ def copyStateDict(state_dict):
         start_idx = 0
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
-        name = ','.join(k.split('.')[start_idx:])
+        name = ",".join(k.split(".")[start_idx:])
         new_state_dict[name] = v
     return new_state_dict
 
@@ -80,6 +80,7 @@ if __name__ == "__main__":
 
     if output is None:
         import os.path
+
         filename, ext = os.path.splitext(args.input)
         half = "_half" if args.half else ""
         output = filename + "_release" + half + ext
