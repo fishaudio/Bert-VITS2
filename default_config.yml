@@ -125,7 +125,7 @@ webui:
   language_identification_library: "langid"
 
 
-# server api配置
+# server-fastapi配置
 # 注意， “:” 后需要加空格
 # 注意，本配置下的所有配置均为相对于根目录的路径
 server:
@@ -133,58 +133,6 @@ server:
   port: 5000
   # 模型默认使用设备：但是当前并没有实现这个配置。
   device: "cuda"
-  # 需要加载的所有模型的配置
-  # 注意，所有模型都必须正确配置model与config的路径，空路径会导致加载错误。
-  models:
-    - # 模型的路径
-      model: ""
-      # 模型config.json的路径
-      config: ""
-      # 模型使用设备，若填写则会覆盖默认配置
-      device: "cuda"
-      # 模型默认使用的语言
-      language: "ZH"
-      # 模型人物默认参数
-      # 不必填写所有人物，不填的使用默认值
-      # 暂时不用填写，当前尚未实现按人区分配置
-      speakers:
-        - speaker: "科比"
-          sdp_ratio: 0.2
-          noise_scale: 0.6
-          noise_scale_w: 0.8
-          length_scale: 1
-        - speaker: "五条悟"
-          sdp_ratio: 0.3
-          noise_scale: 0.7
-          noise_scale_w: 0.8
-          length_scale: 0.5
-        - speaker: "安倍晋三"
-          sdp_ratio: 0.2
-          noise_scale: 0.6
-          noise_scale_w: 0.8
-          length_scale: 1.2
-    - # 模型的路径
-      model: ""
-      # 模型config.json的路径
-      config: ""
-      # 模型使用设备，若填写则会覆盖默认配置
-      device: "cpu"
-      # 模型默认使用的语言
-      language: "JP"
-      # 模型人物默认参数
-      # 不必填写所有人物，不填的使用默认值
-      speakers: [ ] # 也可以不填
-
-
-# 百度翻译开放平台 api配置
-# api接入文档 https://api.fanyi.baidu.com/doc/21
-# 请不要在github等网站公开分享你的app id 与 key
-translate:
-  # 你的APPID
-  "app_key": ""
-  # 你的密钥
-  "secret_key": ""
-
   # 需要加载的所有模型的配置，可以填多个模型，也可以不填模型，等网页成功后手动加载模型
   # 不加载模型的配置格式：删除默认给的两个模型配置，给models赋值 [ ]，也就是空列表。参考模型2的speakers 即 models: [ ]
   # 注意，所有模型都必须正确配置model与config的路径，空路径会导致加载错误。
@@ -228,7 +176,6 @@ translate:
       # 模型人物默认参数
       # 不必填写所有人物，不填的使用默认值
       speakers: [ ] # 也可以不填
-
 
 # 百度翻译开放平台 api配置
 # api接入文档 https://api.fanyi.baidu.com/doc/21
