@@ -345,16 +345,18 @@ class TextEncoder(nn.Module):
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.emo_proj = nn.Linear(1024, 1024)
-        self.emo_quantizer = [
-            VectorQuantize(
-                dim=1024,
-                codebook_size=10,
-                decay=0.8,
-                commitment_weight=1.0,
-                learnable_codebook=True,
-                ema_update=False,
+        self.emo_quantizer = nn.ModuleList()
+        for i in range(0, n_speakers):
+            self.emo_quantizer.append(
+                    VectorQuantize(
+                    dim=1024,
+                    codebook_size=10,
+                    decay=0.8,
+                    commitment_weight=1.0,
+                    learnable_codebook=True,
+                    ema_update=False,
+                )
             )
-        ] * n_speakers
         self.emo_q_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
