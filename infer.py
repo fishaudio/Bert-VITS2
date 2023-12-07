@@ -67,8 +67,9 @@ def get_emo_(reference_audio, emotion, sid):
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio and emotion == -1
-        else
-        torch.FloatTensor(np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy"))
+        else torch.FloatTensor(
+            np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy")
+        )
     )
     return emo
 
