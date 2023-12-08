@@ -351,6 +351,12 @@ def tts_fn(
     return "Success", (hps.data.sampling_rate, audio_concat)
 
 
+def load_audio(path):
+    audio, sr = librosa.load(path, 44100)
+    audio = librosa.resample(audio, 44100, 48000)
+    return 48000, audio
+
+
 if __name__ == "__main__":
     if config.webui_config.debug:
         logger.info("Enable DEBUG-LEVEL log")
@@ -474,7 +480,7 @@ if __name__ == "__main__":
         )
 
         reference_audio.upload(
-            lambda x: librosa.resample(librosa.load(x, 44100), 44100, 48000),
+            lambda x: load_audio(x),
             inputs=[reference_audio],
             outputs=[reference_audio],
         )
