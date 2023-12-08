@@ -370,6 +370,41 @@ if __name__ == "__main__":
     speaker_ids = hps.data.spk2id
     speakers = list(speaker_ids.keys())
     languages = ["ZH", "JP", "EN", "mix", "auto"]
+    emotion_template = "The speaker is {}."
+    emotion_template = [
+        emotion_template.format(i)
+        for i in [
+            "angry",
+            "calm",
+            "in disgust",
+            "fearful",
+            "happy",
+            "in neutral emotion",
+            "sad",
+            "surprised",
+        ]
+    ]
+    tone_template = "The tone is {}."
+    tone_template = [
+        tone_template.format(i)
+        for i in [
+            "shout",
+            "whisper",
+            "scream",
+            "cry",
+            "sing",
+            "talk",
+            "laugh",
+            "sob",
+            "moan",
+            "yell",
+            "hum",
+            "grunt",
+            "groan",
+            "sigh",
+            "gasp",
+        ]
+    ]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
@@ -390,7 +425,15 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
-                emotion = gr.Textbox(placeholder="用文字描述生成风格。")
+                emotion = gr.Textbox(
+                    label="生成提示词",
+                    placeholder="用文字描述生成风格。",
+                    value="The tone is talk.",
+                )
+                emotion_list = gr.Dropdown(
+                    choices=emotion_template + tone_template,
+                    label="预设提示词",
+                )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
                 )
@@ -483,6 +526,12 @@ if __name__ == "__main__":
             lambda x: load_audio(x),
             inputs=[reference_audio],
             outputs=[reference_audio],
+        )
+
+        emotion_list.change(
+            lambda x: emotion.update(x),
+            inputs=[emotion_list],
+            outputs=[emotion],
         )
     print("推理页面已开启!")
     webbrowser.open(f"http://127.0.0.1:{config.webui_config.port}")
