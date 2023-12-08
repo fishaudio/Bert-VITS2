@@ -10,8 +10,10 @@ from config import config
 from clap_wrapper import get_clap_audio_feature
 import librosa
 import os
-os.environ['OMP_NUM_THREADS'] = 1
-os.environ['MKL_NUM_THREADS'] = 1
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 
 def process_line(line):
     device = config.bert_gen_config.device
