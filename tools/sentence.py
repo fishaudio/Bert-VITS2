@@ -90,6 +90,7 @@ def split_by_language(text: str, target_languages: list = None) -> list:
         end += len(sentence)
         pre_lang = lang
     sentences_list.append((text[start:], pre_lang))
+
     return sentences_list
 
 
