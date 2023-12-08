@@ -162,9 +162,9 @@ def classify_zh_ja(text: str) -> str:
 
 def split_alpha_nonalpha(text, mode=1):
     if mode == 1:
-        pattern = r"(?<=[\u4e00-\u9fff\u3040-\u30FF\d])(?=[\p{Latin}])|(?<=[\p{Latin}])(?=[\u4e00-\u9fff\u3040-\u30FF\d])"
+        pattern = r"(?<=[\u4e00-\u9fff\u3040-\u30FF\d\s])(?=[\p{Latin}])|(?<=[\p{Latin}\s])(?=[\u4e00-\u9fff\u3040-\u30FF\d])"
     elif mode == 2:
-        pattern = r"(?<=[\u4e00-\u9fff\u3040-\u30FF])(?=[\p{Latin}\d])|(?<=[\p{Latin}\d])(?=[\u4e00-\u9fff\u3040-\u30FF])"
+        pattern = r"(?<=[\u4e00-\u9fff\u3040-\u30FF\s])(?=[\p{Latin}\d])|(?<=[\p{Latin}\d\s])(?=[\u4e00-\u9fff\u3040-\u30FF])"
     else:
         raise ValueError("Invalid mode. Supported modes are 1 and 2.")
 
@@ -187,3 +187,11 @@ if __name__ == "__main__":
 
     print(split_alpha_nonalpha(text, mode=2))
     # output: ['vits', '和', 'Bert-VITS2', '是', 'tts', '模型。花费', '3days.花费', '3', '天。Take 3 days']
+
+    text = "vits 和 Bert-VITS2 是 tts 模型。花费3days.花费3天。Take 3 days"
+    print(split_alpha_nonalpha(text, mode=1))
+    # output: ['vits ', '和 ', 'Bert-VITS', '2 ', '是 ', 'tts ', '模型。花费3', 'days.花费3天。Take ', '3 ', 'days']
+
+    text = "vits 和 Bert-VITS2 是 tts 模型。花费3days.花费3天。Take 3 days"
+    print(split_alpha_nonalpha(text, mode=2))
+    # output: ['vits ', '和 ', 'Bert-VITS2 ', '是 ', 'tts ', '模型。花费', '3days.花费', '3', '天。Take ', '3 ', 'days']
