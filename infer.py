@@ -199,19 +199,19 @@ def infer(
     )
     emo = get_emo_(reference_audio, emotion)
     if skip_start:
-        phones = phones[1:]
-        tones = tones[1:]
-        lang_ids = lang_ids[1:]
-        bert = bert[:, 1:]
-        ja_bert = ja_bert[:, 1:]
-        en_bert = en_bert[:, 1:]
+        phones = phones[3:]
+        tones = tones[3:]
+        lang_ids = lang_ids[3:]
+        bert = bert[:, 3:]
+        ja_bert = ja_bert[:, 3:]
+        en_bert = en_bert[:, 3:]
     if skip_end:
-        phones = phones[:-1]
-        tones = tones[:-1]
-        lang_ids = lang_ids[:-1]
-        bert = bert[:, :-1]
-        ja_bert = ja_bert[:, :-1]
-        en_bert = en_bert[:, :-1]
+        phones = phones[:-2]
+        tones = tones[:-2]
+        lang_ids = lang_ids[:-2]
+        bert = bert[:, :-2]
+        ja_bert = ja_bert[:, :-2]
+        en_bert = en_bert[:, :-2]
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -279,19 +279,19 @@ def infer_multilang(
             temp_lang_ids,
         ) = get_text(txt, lang, hps, device)
         if skip_start:
-            temp_bert = temp_bert[:, 1:]
-            temp_ja_bert = temp_ja_bert[:, 1:]
-            temp_en_bert = temp_en_bert[:, 1:]
-            temp_phones = temp_phones[1:]
-            temp_tones = temp_tones[1:]
-            temp_lang_ids = temp_lang_ids[1:]
+            temp_bert = temp_bert[:, 3:]
+            temp_ja_bert = temp_ja_bert[:, 3:]
+            temp_en_bert = temp_en_bert[:, 3:]
+            temp_phones = temp_phones[3:]
+            temp_tones = temp_tones[3:]
+            temp_lang_ids = temp_lang_ids[3:]
         if skip_end:
-            temp_bert = temp_bert[:, :-1]
-            temp_ja_bert = temp_ja_bert[:, :-1]
-            temp_en_bert = temp_en_bert[:, :-1]
-            temp_phones = temp_phones[:-1]
-            temp_tones = temp_tones[:-1]
-            temp_lang_ids = temp_lang_ids[:-1]
+            temp_bert = temp_bert[:, :-2]
+            temp_ja_bert = temp_ja_bert[:, :-2]
+            temp_en_bert = temp_en_bert[:, :-2]
+            temp_phones = temp_phones[:-2]
+            temp_tones = temp_tones[:-2]
+            temp_lang_ids = temp_lang_ids[:-2]
         bert.append(temp_bert)
         ja_bert.append(temp_ja_bert)
         en_bert.append(temp_en_bert)
