@@ -422,6 +422,7 @@ def train_and_evaluate(
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_),
+                g,
             ) = net_g(
                 x,
                 x_lengths,
@@ -470,7 +471,11 @@ def train_and_evaluate(
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
-                    hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach()
+                    hidden_x.detach(),
+                    x_mask.detach(),
+                    logw.detach(),
+                    logw_.detach(),
+                    g.detach(),
                 )
                 with autocast(enabled=False):
                     # TODO: I think need to mean using the mask, but for now, just mean all
@@ -496,7 +501,9 @@ def train_and_evaluate(
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
-                y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw, logw_)
+                y_dur_hat_r, y_dur_hat_g = net_dur_disc(
+                    hidden_x, x_mask, logw, logw_, g
+                )
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel

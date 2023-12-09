@@ -958,6 +958,7 @@ class SynthesizerTrn(nn.Module):
             y_mask,
             (z, z_p, m_p, logs_p, m_q, logs_q),
             (x, logw, logw_),
+            g,
         )
 
     def infer(
