@@ -118,6 +118,7 @@ def generate_audio_multilang(
 def tts_split(
     text: str,
     speaker,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
