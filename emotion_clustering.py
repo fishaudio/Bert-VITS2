@@ -30,6 +30,7 @@ from oldVersion.V101.text import symbols as V101symbols
 
 from oldVersion import V111, V110, V101, V200, V210
 from config import config
+
 # 当前版本信息
 latest_version = "2.2"
 
@@ -70,9 +71,7 @@ def get_emo_(reference_audio, emotion, sid):
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio and emotion == -1
-        else torch.FloatTensor(
-                np.load(filename)
-            )
+        else torch.FloatTensor(np.load(filename))
     )
     return emo
 
