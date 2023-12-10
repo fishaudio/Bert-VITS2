@@ -27,7 +27,7 @@ preprocess_text_config = config.preprocess_text_config
     default=preprocess_text_config.config_path,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--val-per-spk", default=preprocess_text_config.val_per_spk)
+@click.option("--val-per-spk", default=preprocess_text_config.val_per_lang)
 @click.option("--max-val-total", default=preprocess_text_config.max_val_total)
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
@@ -37,7 +37,7 @@ def preprocess(
     train_path: str,
     val_path: str,
     config_path: str,
-    val_per_spk: int,
+    val_per_lang: int,
     max_val_total: int,
     clean: bool,
     yml_config: str,  # 这个不要删
@@ -105,8 +105,8 @@ def preprocess(
 
     for spk, utts in spk_utt_map.items():
         shuffle(utts)
-        val_list += utts[:val_per_spk]
-        train_list += utts[val_per_spk:]
+        val_list += utts[:val_per_lang]
+        train_list += utts[val_per_lang:]
 
     shuffle(val_list)
     if len(val_list) > max_val_total:
