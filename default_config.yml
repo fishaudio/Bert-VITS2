@@ -102,7 +102,7 @@ webui:
   # 推理设备
   device: "cuda"
   # 模型路径
-  model: "genshin/models/G_8000.pth"
+  model: "models/G_8000.pth"
   # 配置文件路径
   config_path: "configs/config.json"
   # 端口号
