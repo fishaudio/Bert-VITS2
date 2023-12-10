@@ -49,7 +49,7 @@ bert_gen:
   # 训练数据集配置文件路径
   config_path: "config.json"
   # 并行数
-  num_processes: 2
+  num_processes: 4
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
   # 该选项同时决定了get_bert_feature的默认设备
   device: "cuda"
@@ -62,21 +62,11 @@ emo_gen:
   # 训练数据集配置文件路径
   config_path: "config.json"
   # 并行数
-  num_processes: 2
+  num_processes: 4
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
   device: "cuda"
-
-emo_cluster:
-  # 聚类方法，可选k,b,s,a
-  method: "k"
-  # 聚类数量
-  n_clusters: 5
-  # 每类的数量
-  n_samples: 10
-  # 是否保存center
-  save_center: True
-  # 训练数据集配置文件路径
-  config_path: "config.json"
+  # 使用多卡推理
+  use_multi_device: false
 
 # train 训练配置
 # 注意， “:” 后需要加空格
