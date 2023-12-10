@@ -44,7 +44,7 @@ def resample(data_dir):
     in_dir = os.path.join(start_path, "raw")
     out_dir = os.path.join(start_path, "wavs")
     subprocess.run(
-        f"CUDA_VISIBLE_DEVICES=0 python resample.py "
+        f"python resample.py "
         f"--sr 44100 "
         f"--in_dir {in_dir} "
         f"--out_dir {out_dir} ",
@@ -63,7 +63,7 @@ def preprocess_text(data_dir):
             path = os.path.join(start_path, "wavs", os.path.basename(path))
             f.writelines(f"{path}|{spk}|{language}|{text}\n")
     subprocess.run(
-        f"CUDA_VISIBLE_DEVICES=0 python preprocess_text.py "
+        f"python preprocess_text.py "
         f"--transcription-path {lbl_path} "
         f"--train-path {train_path} "
         f"--val-path {val_path} "
@@ -77,7 +77,7 @@ def bert_gen(data_dir):
     assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
     subprocess.run(
-        f"CUDA_VISIBLE_DEVICES=0 python bert_gen.py " f"--config {config_path}",
+        f"python bert_gen.py " f"--config {config_path}",
         shell=True,
     )
     return "BERT 特征文件生成完成"
@@ -87,7 +87,7 @@ def clap_gen(data_dir):
     assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
     subprocess.run(
-        f"CUDA_VISIBLE_DEVICES=0 python clap_gen.py " f"--config {config_path}",
+        f"python clap_gen.py " f"--config {config_path}",
         shell=True,
     )
     return "CLAP 特征文件生成完成"
