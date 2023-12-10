@@ -3,7 +3,6 @@ import webbrowser
 import os
 import json
 import subprocess
-import yaml
 import shutil
 
 
@@ -19,7 +18,10 @@ def get_path(data_dir):
 def generate_config(data_dir, batch_size):
     assert data_dir != "", "数据集名称不能为空"
     start_path, _, train_path, val_path, config_path = get_path(data_dir)
-    config = json.load(open(f"configs/config.json"))
+    if os.path.isfile(config_path):
+        config = json.load(open(config_path))
+    else:
+        config = json.load(open("configs/config.json"))
     config["data"]["training_files"] = train_path
     config["data"]["validation_files"] = val_path
     config["train"]["batch_size"] = batch_size
@@ -28,11 +30,13 @@ def generate_config(data_dir, batch_size):
         os.mkdir(out_path)
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4)
-    shutil.copy(src="default_config.yml", dst="config.yml")
+    if not os.path.exists("config.yml"):
+        shutil.copy(src="default_config.yml", dst="config.yml")
     return "配置文件生成完成"
 
 
 def resample(data_dir):
+    assert data_dir != "", "数据集名称不能为空"
     start_path, _, _, _, config_path = get_path(data_dir)
     in_dir = os.path.join(start_path, "raw")
     out_dir = os.path.join(start_path, "wavs")
@@ -47,6 +51,7 @@ def resample(data_dir):
 
 
 def preprocess_text(data_dir):
+    assert data_dir != "", "数据集名称不能为空"
     start_path, lbl_path, train_path, val_path, config_path = get_path(data_dir)
     lines = open(lbl_path, "r", encoding="utf-8").readlines()
     with open(lbl_path, "w", encoding="utf-8") as f:
@@ -66,6 +71,7 @@ def preprocess_text(data_dir):
 
 
 def bert_gen(data_dir):
+    assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
     subprocess.run(
         f"CUDA_VISIBLE_DEVICES=0 python bert_gen.py " f"--config {config_path}",
@@ -75,25 +81,13 @@ def bert_gen(data_dir):
 
 
 def clap_gen(data_dir):
+    assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
     subprocess.run(
         f"CUDA_VISIBLE_DEVICES=0 python clap_gen.py " f"--config {config_path}",
         shell=True,
     )
     return "CLAP 特征文件生成完成"
-
-
-def get_train(data_dir):
-    start_path, _, _, _, config_path = get_path(data_dir)
-    train_command = (
-        f"torchrun --nproc_per_node=1 train_ms.py "
-        f"-c {config_path}"
-        f"-m {start_path}"
-    )
-    deploy_command = (
-        f"torchrun --nproc_per_node=1 deploy.py " f"-c {config_path}" f"-m {start_path}"
-    )
-    return "训练模型及部署所需命令已生成"
 
 
 if __name__ == "__main__":
