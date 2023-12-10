@@ -28,6 +28,9 @@ def generate_config(data_dir, batch_size):
     out_path = os.path.join(start_path, "configs")
     if not os.path.isdir(out_path):
         os.mkdir(out_path)
+    model_path = os.path.join(start_path, "models")
+    if not os.path.isdir(model_path):
+        os.mkdir(model_path)
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4)
     if not os.path.exists("config.yml"):
@@ -97,6 +100,15 @@ if __name__ == "__main__":
                 _ = gr.Markdown(
                     value="# Bert-VITS2 数据预处理\n"
                     "## 预先准备：\n"
+                    "下载 BERT 和 CLAP 模型：\n"
+                    "- [中文 RoBERTa](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large)\n"
+                    "- [日文 DeBERTa](https://huggingface.co/ku-nlp/deberta-v2-large-japanese-char-wwm)\n"
+                    "- [英文 DeBERTa](https://huggingface.co/microsoft/deberta-v3-large)\n"
+                    "- [CLAP](https://huggingface.co/laion/clap-htsat-fused)\n"
+                    "\n"
+                    "将 BERT 模型放置到 `bert` 文件夹下，CLAP 模型放置到 `emotional` 文件夹下，覆盖同名文件夹。\n"
+                    "\n"
+                    "数据准备：\n"
                     "将数据放置在 data 文件夹下，按照如下结构组织：\n"
                     "\n"
                     "```\n"
@@ -149,7 +161,7 @@ if __name__ == "__main__":
                 _ = gr.Markdown(
                     value="## 训练模型及部署：\n"
                     "修改根目录下的 `config.yml` 中 `dataset_path` 一项为 `data/{你的数据集名称}`\n"
-                    "- 训练：执行 `torchrun --nproc_per_node=1 train_ms.py` 命令\n"
+                    "- 训练：将[预训练模型文件](https://openi.pcl.ac.cn/Stardust_minus/Bert-VITS2/modelmanage/show_model)（`D_0.pth`、`DUR_0.pth` 和 `G_0.pth`）放到 `data/{你的数据集名称}/models` 文件夹下，执行 `torchrun --nproc_per_node=1 train_ms.py` 命令\n"
                     "- 部署：修改根目录下的 `config.yml` 中 `webui` 下 `model` 一项为 `models/{权重文件名}.pth` （如 G_10000.pth），然后执行 `python webui.py`"
                 )
 
