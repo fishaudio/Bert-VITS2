@@ -99,10 +99,12 @@ class Emo_gen_config:
         config_path: str,
         num_processes: int = 2,
         device: str = "cuda",
+        use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
         self.device = device
+        self.use_multi_device = use_multi_device
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
