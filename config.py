@@ -38,7 +38,7 @@ class Preprocess_text_config:
         train_path: str,
         val_path: str,
         config_path: str,
-        val_per_spk: int = 5,
+        val_per_lang: int = 5,
         max_val_total: int = 10000,
         clean: bool = True,
     ):
@@ -47,7 +47,7 @@ class Preprocess_text_config:
         self.train_path: str = train_path  # 训练集路径，可以不填。不填则将在原始文本目录生成
         self.val_path: str = val_path  # 验证集路径，可以不填。不填则将在原始文本目录生成
         self.config_path: str = config_path  # 配置文件路径
-        self.val_per_spk: int = val_per_spk  # 每个speaker的验证集条数
+        self.val_per_lang: int = val_per_lang  # 每个speaker的验证集条数
         self.max_val_total: int = max_val_total  # 验证集最大条数，多于的会被截断并放到训练集中
         self.clean: bool = clean  # 是否进行数据清洗
 
