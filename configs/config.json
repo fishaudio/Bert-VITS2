@@ -21,7 +21,7 @@
     "skip_optimizer": true,
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
-    "freeze_EN_bert": false,
+    "freeze_EN_bert": false
   },
   "data": {
     "training_files": "filelists/train.list",
@@ -949,5 +949,5 @@
     "use_spectral_norm": false,
     "gin_channels": 256
   },
-  "version": "2.1"
+  "version": "2.2"
 }
