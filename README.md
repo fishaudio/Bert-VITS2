@@ -7,6 +7,7 @@
 VITS2 Backbone with multilingual bert
 
 For quick guide, please refer to `webui_preprocess.py`.
+
 简易教程请参见 `webui_preprocess.py`。
 
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
