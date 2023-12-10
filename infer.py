@@ -224,7 +224,7 @@ def infer(
             )
     # 在此处实现当前版本的推理
     # emo = get_emo_(reference_audio, emotion, sid)
-    if reference_audio and emotion == -1:
+    if isinstance(reference_audio, np.ndarray):
         emo = get_clap_audio_feature(reference_audio, device)
     else:
         emo = get_clap_text_feature(emotion, device)
@@ -302,7 +302,7 @@ def infer_multilang(
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
     # emo = get_emo_(reference_audio, emotion, sid)
-    if reference_audio and emotion == -1:
+    if isinstance(reference_audio, np.ndarray):
         emo = get_clap_audio_feature(reference_audio, device)
     else:
         emo = get_clap_text_feature(emotion, device)
