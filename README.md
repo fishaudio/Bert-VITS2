@@ -5,6 +5,10 @@
 # Bert-VITS2
 
 VITS2 Backbone with multilingual bert
+
+For quick guide, please refer to `webui_preprocess.py`.
+简易教程请参见 `webui_preprocess.py`。
+
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9)
 
