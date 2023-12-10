@@ -94,7 +94,7 @@ def preprocess(
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
-            spk_utt_map[spk].append(line)
+            spk_utt_map[language].append(line)
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
@@ -108,6 +108,7 @@ def preprocess(
         val_list += utts[:val_per_spk]
         train_list += utts[val_per_spk:]
 
+    shuffle(val_list)
     if len(val_list) > max_val_total:
         train_list += val_list[max_val_total:]
         val_list = val_list[:max_val_total]

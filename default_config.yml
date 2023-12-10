@@ -38,7 +38,7 @@ preprocess_text:
   # 每个speaker的验证集条数
   val_per_spk: 4
   # 验证集最大条数，多于的会被截断并放到训练集中
-  max_val_total: 8
+  max_val_total: 12
   # 是否进行数据清洗
   clean: true
 
@@ -49,7 +49,7 @@ bert_gen:
   # 训练数据集配置文件路径
   config_path: "config.json"
   # 并行数
-  num_processes: 4
+  num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
   # 该选项同时决定了get_bert_feature的默认设备
   device: "cuda"
@@ -62,11 +62,21 @@ emo_gen:
   # 训练数据集配置文件路径
   config_path: "config.json"
   # 并行数
-  num_processes: 4
+  num_processes: 2
   # 使用设备：可选项 "cuda" 显卡推理，"cpu" cpu推理
   device: "cuda"
-  # 使用多卡推理
-  use_multi_device: false
+
+emo_cluster:
+  # 聚类方法，可选k,b,s,a
+  method: "k"
+  # 聚类数量
+  n_clusters: 5
+  # 每类的数量
+  n_samples: 10
+  # 是否保存center
+  save_center: True
+  # 训练数据集配置文件路径
+  config_path: "config.json"
 
 # train 训练配置
 # 注意， “:” 后需要加空格
