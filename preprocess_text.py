@@ -27,7 +27,7 @@ preprocess_text_config = config.preprocess_text_config
     default=preprocess_text_config.config_path,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--val-per-spk", default=preprocess_text_config.val_per_lang)
+@click.option("--val-per-lang", default=preprocess_text_config.val_per_lang)
 @click.option("--max-val-total", default=preprocess_text_config.max_val_total)
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
