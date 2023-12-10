@@ -99,10 +99,12 @@ class Emo_gen_config:
         config_path: str,
         num_processes: int = 2,
         device: str = "cuda",
+        use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
         self.device = device
+        self.use_multi_device = use_multi_device
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
@@ -110,29 +112,6 @@ class Emo_gen_config:
 
         return cls(**data)
 
-
-class Emo_cluster_config:
-    """emo_cluster 配置"""
-
-    def __init__(
-        self,
-        method: str,
-        config_path: str,
-        n_clusters: int = 5,
-        n_samples: int = 10,
-        save_center: bool = True,
-    ):
-        self.method = method
-        self.n_clusters = n_clusters
-        self.n_samples = n_samples
-        self.save_center = save_center
-        self.config_path = config_path
-
-    @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
-        data["config_path"] = os.path.join(dataset_path, data["config_path"])
-
-        return cls(**data)
 
 
 class Train_ms_config:
@@ -248,9 +227,6 @@ class Config:
             )
             self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
                 dataset_path, yaml_config["emo_gen"]
-            )
-            self.emo_cluster_config: Emo_cluster_config = Emo_cluster_config.from_dict(
-                dataset_path, yaml_config["emo_cluster"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
