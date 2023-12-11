@@ -44,6 +44,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         self.min_text_len = getattr(hparams, "min_text_len", 1)
         self.max_text_len = getattr(hparams, "max_text_len", 384)
 
+        self.empty_emo = torch.squeeze(
+            torch.load("empty_emo.npy", map_location="cpu"), dim=1
+        )
+
         random.seed(1234)
         random.shuffle(self.audiopaths_sid_text)
         self._filter()
@@ -93,9 +97,14 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
-        emo = torch.squeeze(
-            torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"), dim=1
-        )
+
+        if np.random.rand() > 0.9:
+            emo = torch.squeeze(
+                torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"),
+                dim=1,
+            )
+        else:
+            emo = self.empty_emo
         return (phones, spec, wav, sid, tone, language, bert, ja_bert, en_bert, emo)
 
     def get_audio(self, filename):
