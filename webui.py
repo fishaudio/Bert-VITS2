@@ -422,7 +422,7 @@ if __name__ == "__main__":
                 text_prompt = gr.Textbox(
                     label="Text prompt",
                     placeholder="用文字描述生成风格。如：Happy",
-                    value="Happy voice.",
+                    value="Happy",
                     visible=True,
                 )
                 audio_prompt = gr.Audio(
