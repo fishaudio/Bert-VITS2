@@ -14,6 +14,8 @@ from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from commons import init_weights, get_padding
 from text import symbols, num_tones, num_languages
 
+from vector_quantize_pytorch import VectorQuantize
+
 
 class DurationDiscriminator(nn.Module):  # vits2
     def __init__(
@@ -310,6 +312,37 @@ class DurationPredictor(nn.Module):
         return x * x_mask
 
 
+class Bottleneck(nn.Sequential):
+    def __init__(self, in_dim, hidden_dim):
+        c_fc1 = nn.Linear(in_dim, hidden_dim, bias=False)
+        c_fc2 = nn.Linear(in_dim, hidden_dim, bias=False)
+        super().__init__(*[c_fc1, c_fc2])
+
+
+class Block(nn.Module):
+    def __init__(self, in_dim, hidden_dim) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(in_dim)
+        self.mlp = MLP(in_dim, hidden_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.mlp(self.norm(x))
+        return x
+
+
+class MLP(nn.Module):
+    def __init__(self, in_dim, hidden_dim):
+        super().__init__()
+        self.c_fc1 = nn.Linear(in_dim, hidden_dim, bias=False)
+        self.c_fc2 = nn.Linear(in_dim, hidden_dim, bias=False)
+        self.c_proj = nn.Linear(hidden_dim, in_dim, bias=False)
+
+    def forward(self, x: torch.Tensor):
+        x = F.silu(self.c_fc1(x)) * self.c_fc2(x)
+        x = self.c_proj(x)
+        return x
+
+
 class TextEncoder(nn.Module):
     def __init__(
         self,
@@ -343,7 +376,31 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.emo_proj = nn.Linear(512, hidden_channels)
+        # self.emo_proj = nn.Linear(512, hidden_channels)
+        self.in_feature_net = nn.Sequential(
+            # input is assumed to an already normalized embedding
+            nn.Linear(512, 1028, bias=False),
+            nn.GELU(),
+            nn.LayerNorm(1028),
+            *[Block(1028, 512) for _ in range(1)],
+            nn.Linear(1028, 512, bias=False),
+            # normalize before passing to VQ?
+            # nn.GELU(),
+            # nn.LayerNorm(512),
+        )
+        self.emo_vq = VectorQuantize(
+            dim=512,
+            codebook_size=64,
+            codebook_dim=32,
+            commitment_weight=0.1,
+            decay=0.85,
+            heads=32,
+            kmeans_iters=20,
+            separate_codebook_per_head=True,
+            stochastic_sample_codes=True,
+            threshold_ema_dead_code=2,
+        )
+        self.out_feature_net = nn.Linear(512, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -363,7 +420,11 @@ class TextEncoder(nn.Module):
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
-        emo_emb = self.emo_proj(emo.unsqueeze(1))
+        emo_emb = self.in_feature_net(emo)
+        emo_emb, _, loss_commit = self.emo_vq(emo_emb.unsqueeze(1))
+        loss_commit = loss_commit.mean()
+        emo_emb = self.out_feature_net(emo_emb)
+        # emo_emb = self.emo_proj(emo.unsqueeze(1))
         x = (
             self.emb(x)
             + self.tone_emb(tone)
@@ -384,7 +445,7 @@ class TextEncoder(nn.Module):
         stats = self.proj(x) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x, m, logs, x_mask
+        return x, m, logs, x_mask, loss_commit
 
 
 class ResidualCouplingBlock(nn.Module):
@@ -891,7 +952,7 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
+        x, m_p, logs_p, x_mask, loss_commit = self.enc_p(
             x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
@@ -959,6 +1020,7 @@ class SynthesizerTrn(nn.Module):
             (z, z_p, m_p, logs_p, m_q, logs_q),
             (x, logw, logw_),
             g,
+            loss_commit,
         )
 
     def infer(
@@ -985,7 +1047,7 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
+        x, m_p, logs_p, x_mask, _ = self.enc_p(
             x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (

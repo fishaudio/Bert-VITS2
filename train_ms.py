@@ -13,6 +13,7 @@ import logging
 from config import config
 import argparse
 import datetime
+import gc
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
@@ -423,6 +424,7 @@ def train_and_evaluate(
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_),
                 g,
+                loss_commit,
             ) = net_g(
                 x,
                 x_lengths,
@@ -511,7 +513,9 @@ def train_and_evaluate(
 
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
+                loss_gen_all = (
+                    loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_commit
+                )
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
                     loss_gen_all += loss_dur_gen
@@ -613,6 +617,8 @@ def train_and_evaluate(
 
         global_step += 1
 
+    gc.collect()
+    torch.cuda.empty_cache()
     if rank == 0:
         logger.info("====> Epoch: {}".format(epoch))
 
