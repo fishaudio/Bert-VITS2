@@ -116,15 +116,15 @@ def get_text(text, language_str, hps, device):
 
     if language_str == "ZH":
         bert = bert_ori
-        ja_bert = torch.zeros(1024, len(phone))
-        en_bert = torch.zeros(1024, len(phone))
+        ja_bert = torch.rand(1024, len(phone))
+        en_bert = torch.rand(1024, len(phone))
     elif language_str == "JP":
-        bert = torch.zeros(1024, len(phone))
+        bert = torch.rand(1024, len(phone))
         ja_bert = bert_ori
-        en_bert = torch.zeros(1024, len(phone))
+        en_bert = torch.rand(1024, len(phone))
     elif language_str == "EN":
-        bert = torch.zeros(1024, len(phone))
-        ja_bert = torch.zeros(1024, len(phone))
+        bert = torch.rand(1024, len(phone))
+        ja_bert = torch.rand(1024, len(phone))
         en_bert = bert_ori
     else:
         raise ValueError("language_str should be ZH, JP or EN")
