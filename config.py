@@ -113,7 +113,6 @@ class Emo_gen_config:
         return cls(**data)
 
 
-
 class Train_ms_config:
     """训练配置"""
 
