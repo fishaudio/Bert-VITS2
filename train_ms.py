@@ -173,6 +173,8 @@ def run():
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
         ).cuda(local_rank)
+    else:
+        net_dur_disc = None
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
         and hps.model.use_spk_conditioned_encoder is True
@@ -251,8 +253,8 @@ def run():
             mirror=config.mirror,
         )
 
-    try:
-        if net_dur_disc is not None:
+    if net_dur_disc is not None:
+        try:
             _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(
                 utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
                 net_dur_disc,
@@ -261,28 +263,32 @@ def run():
                 if "skip_optimizer" in hps.train
                 else True,
             )
-            _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
-                net_g,
-                optim_g,
-                skip_optimizer=hps.train.skip_optimizer
-                if "skip_optimizer" in hps.train
-                else True,
-            )
-            _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
-                net_d,
-                optim_d,
-                skip_optimizer=hps.train.skip_optimizer
-                if "skip_optimizer" in hps.train
-                else True,
-            )
-            if not optim_g.param_groups[0].get("initial_lr"):
-                optim_g.param_groups[0]["initial_lr"] = g_resume_lr
-            if not optim_d.param_groups[0].get("initial_lr"):
-                optim_d.param_groups[0]["initial_lr"] = d_resume_lr
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
+        except:
+            print("Initialize dur_disc")
+
+    try:
+        _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
+            utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
+            net_g,
+            optim_g,
+            skip_optimizer=hps.train.skip_optimizer
+            if "skip_optimizer" in hps.train
+            else True,
+        )
+        _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
+            utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
+            net_d,
+            optim_d,
+            skip_optimizer=hps.train.skip_optimizer
+            if "skip_optimizer" in hps.train
+            else True,
+        )
+        if not optim_g.param_groups[0].get("initial_lr"):
+            optim_g.param_groups[0]["initial_lr"] = g_resume_lr
+        if not optim_d.param_groups[0].get("initial_lr"):
+            optim_d.param_groups[0]["initial_lr"] = d_resume_lr
 
         epoch_str = max(epoch_str, 1)
         # global_step = (epoch_str - 1) * len(train_loader)
@@ -304,8 +310,6 @@ def run():
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     if net_dur_disc is not None:
-        if not optim_dur_disc.param_groups[0].get("initial_lr"):
-            optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
         scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
             optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
         )
@@ -475,8 +479,8 @@ def train_and_evaluate(
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
                     hidden_x.detach(),
                     x_mask.detach(),
-                    logw.detach(),
                     logw_.detach(),
+                    logw.detach(),
                     g.detach(),
                 )
                 with autocast(enabled=False):
@@ -504,7 +508,7 @@ def train_and_evaluate(
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
-                    hidden_x, x_mask, logw, logw_, g
+                    hidden_x, x_mask, logw_, logw, g
                 )
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())
