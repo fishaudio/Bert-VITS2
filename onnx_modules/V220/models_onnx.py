@@ -265,6 +265,37 @@ class DurationPredictor(nn.Module):
         return x * x_mask
 
 
+class Bottleneck(nn.Sequential):
+    def __init__(self, in_dim, hidden_dim):
+        c_fc1 = nn.Linear(in_dim, hidden_dim, bias=False)
+        c_fc2 = nn.Linear(in_dim, hidden_dim, bias=False)
+        super().__init__(*[c_fc1, c_fc2])
+
+
+class Block(nn.Module):
+    def __init__(self, in_dim, hidden_dim) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(in_dim)
+        self.mlp = MLP(in_dim, hidden_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.mlp(self.norm(x))
+        return x
+
+
+class MLP(nn.Module):
+    def __init__(self, in_dim, hidden_dim):
+        super().__init__()
+        self.c_fc1 = nn.Linear(in_dim, hidden_dim, bias=False)
+        self.c_fc2 = nn.Linear(in_dim, hidden_dim, bias=False)
+        self.c_proj = nn.Linear(hidden_dim, in_dim, bias=False)
+
+    def forward(self, x: torch.Tensor):
+        x = F.silu(self.c_fc1(x)) * self.c_fc2(x)
+        x = self.c_proj(x)
+        return x
+
+
 class TextEncoder(nn.Module):
     def __init__(
         self,
@@ -298,21 +329,45 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.emo_proj = nn.Linear(1024, 1024)
-        self.emo_quantizer = nn.ModuleList()
-        for i in range(0, n_speakers):
-            self.emo_quantizer.append(
-                VectorQuantize(
-                    dim=1024,
-                    codebook_size=10,
-                    decay=0.8,
-                    commitment_weight=1.0,
-                    learnable_codebook=True,
-                    ema_update=False,
-                )
-            )
-        self.emo_q_proj = nn.Linear(1024, hidden_channels)
+        #self.emo_proj = nn.Linear(1024, 1024)
+        #self.emo_quantizer = nn.ModuleList()
+        #for i in range(0, n_speakers):
+        #    self.emo_quantizer.append(
+        #        VectorQuantize(
+        #            dim=1024,
+        #            codebook_size=10,
+        #            decay=0.8,
+        #            commitment_weight=1.0,
+        #            learnable_codebook=True,
+        #            ema_update=False,
+        #        )
+        #    )
+        #self.emo_q_proj = nn.Linear(1024, hidden_channels)
         self.n_speakers = n_speakers
+        self.in_feature_net = nn.Sequential(
+            # input is assumed to an already normalized embedding
+            nn.Linear(512, 1028, bias=False),
+            nn.GELU(),
+            nn.LayerNorm(1028),
+            *[Block(1028, 512) for _ in range(1)],
+            nn.Linear(1028, 512, bias=False),
+            # normalize before passing to VQ?
+            # nn.GELU(),
+            # nn.LayerNorm(512),
+        )
+        self.emo_vq = VectorQuantize(
+            dim=512,
+            codebook_size=64,
+            codebook_dim=32,
+            commitment_weight=0.1,
+            decay=0.85,
+            heads=32,
+            kmeans_iters=20,
+            separate_codebook_per_head=True,
+            stochastic_sample_codes=True,
+            threshold_ema_dead_code=2,
+        )
+        self.out_feature_net = nn.Linear(512, hidden_channels)
 
         self.encoder = attentions_onnx.Encoder(
             hidden_channels,
@@ -325,43 +380,17 @@ class TextEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def init_vq(self):
-        self.emb_vq = nn.Embedding(10 * self.n_speakers, 1024)
-        self.emb_vq_weight = torch.zeros(10 * self.n_speakers, 1024).float()
-        for i in range(self.n_speakers):
-            for j in range(10):
-                self.emb_vq_weight[i * 10 + j] = self.emo_quantizer[
-                    i
-                ].get_output_from_indices(torch.LongTensor([j]))
-        self.emb_vq.weight = nn.Parameter(self.emb_vq_weight.clone())
-
     def forward(
-        self,
-        x,
-        x_lengths,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
-        g=None,
-        vqidx=None,
-        sid=None,
+        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g=None
     ):
         x_mask = torch.ones_like(x).unsqueeze(0)
         bert_emb = self.bert_proj(bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
-        ja_bert_emb = self.ja_bert_proj(ja_bert.transpose(0, 1).unsqueeze(0)).transpose(
-            1, 2
-        )
-        en_bert_emb = self.en_bert_proj(en_bert.transpose(0, 1).unsqueeze(0)).transpose(
-            1, 2
-        )
+        ja_bert_emb = self.ja_bert_proj(ja_bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
+        en_bert_emb = self.en_bert_proj(en_bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
+        emo_emb = self.in_feature_net(emo.transpose(0, 1))
+        emo_emb, _, _ = self.emo_vq(emo_emb.unsqueeze(1))
 
-        emb_vq_idx = torch.clamp(
-            (sid * 10) + vqidx, min=0, max=(self.n_speakers * 10) - 1
-        )
-
-        vqval = self.emb_vq(emb_vq_idx)
+        emo_emb = self.out_feature_net(emo_emb)
 
         x = (
             self.emb(x)
@@ -370,12 +399,14 @@ class TextEncoder(nn.Module):
             + bert_emb
             + ja_bert_emb
             + en_bert_emb
-            + self.emo_q_proj(vqval)
+            + emo_emb
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
-        x_mask = x_mask.to(x.dtype)
+        x_mask = x_mask.to(
+            x.dtype
+        )
 
         x = self.encoder(x * x_mask, x_mask, g=g)
         stats = self.proj(x) * x_mask
@@ -773,7 +804,7 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=4,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        **kwargs,
+        **kwargs
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -814,7 +845,7 @@ class SynthesizerTrn(nn.Module):
             n_layers,
             kernel_size,
             p_dropout,
-            n_speakers,
+            self.n_speakers,
             gin_channels=self.enc_gin_channels,
         )
         self.dec = Generator(
@@ -938,11 +969,11 @@ class SynthesizerTrn(nn.Module):
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
 
-        self.enc_p.init_vq()
+        emo = torch.randn(512,1)
 
         torch.onnx.export(
             self.enc_p,
-            (x, x_lengths, tone, language, bert, ja_bert, en_bert, g, sid, sid),
+            (x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g),
             f"onnx/{path}/{path}_enc_p.onnx",
             input_names=[
                 "x",
@@ -952,9 +983,8 @@ class SynthesizerTrn(nn.Module):
                 "bert_0",
                 "bert_1",
                 "bert_2",
-                "g",
-                "vqidx",
-                "sid",
+                "emo",
+                "g"
             ],
             output_names=["xout", "m_p", "logs_p", "x_mask"],
             dynamic_axes={
@@ -974,7 +1004,7 @@ class SynthesizerTrn(nn.Module):
         )
 
         x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, g, sid, sid
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, g
         )
 
         zinput = (
