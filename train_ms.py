@@ -616,7 +616,7 @@ def train_and_evaluate(
                     )
 
         global_step += 1
-
+        
     gc.collect()
     torch.cuda.empty_cache()
     if rank == 0:
