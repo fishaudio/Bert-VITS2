@@ -48,11 +48,16 @@ class DurationDiscriminator(nn.Module):  # vits2
             filter_channels, filter_channels, kernel_size, padding=kernel_size // 2
         )
         self.pre_out_norm_2 = modules.LayerNorm(filter_channels)
+        self.LSTM = nn.LSTM(
+            filter_channels, filter_channels, batch_first=True, bidirectional=True
+        )
 
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, in_channels, 1)
 
-        self.output_layer = nn.Sequential(nn.Linear(filter_channels, 1), nn.Sigmoid())
+        self.output_layer = nn.Sequential(
+            nn.Linear(2 * filter_channels, 1), nn.Sigmoid()
+        )
 
     def forward_probability(self, x, x_mask, dur, g=None):
         dur = self.dur_proj(dur)
@@ -67,6 +72,7 @@ class DurationDiscriminator(nn.Module):  # vits2
         x = self.drop(x)
         x = x * x_mask
         x = x.transpose(1, 2)
+        x, _ = self.LSTM(x)
         output_prob = self.output_layer(x)
         return output_prob
 
