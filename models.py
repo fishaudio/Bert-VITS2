@@ -996,6 +996,9 @@ class SynthesizerTrn(nn.Module):
         logw_sdp = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=1.0)
         logw_mas = torch.log(w + 1e-6) * x_mask
         logw_dp = self.dp(x, x_mask, g=g)
+        l_length_sdp += torch.sum((logw_sdp - logw_mas) ** 2, [1, 2]) / torch.sum(
+            x_mask
+        )  # for averaging
         l_length_dp = torch.sum((logw_dp - logw_mas) ** 2, [1, 2]) / torch.sum(
             x_mask
         )  # for averaging
