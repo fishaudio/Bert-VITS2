@@ -18,8 +18,8 @@ import numpy as np
 from models import SynthesizerTrn
 from text.symbols import symbols
 
-# from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
-# from oldVersion.V210.text import symbols as V210symbols
+from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
+from oldVersion.V210.text import symbols as V210symbols
 from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
 from oldVersion.V200.text import symbols as V200symbols
 from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
@@ -29,14 +29,14 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200  # , V210
+from oldVersion import V111, V110, V101, V200, V210
 
 # 当前版本信息
 latest_version = "2.2"
 
 # 版本兼容
 SynthesizerTrnMap = {
-    # "2.1": V210SynthesizerTrn,
+    "2.1": V210SynthesizerTrn,
     "2.0.2-fix": V200SynthesizerTrn,
     "2.0.1": V200SynthesizerTrn,
     "2.0": V200SynthesizerTrn,
@@ -50,7 +50,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
-    # "2.1": V210symbols,
+    "2.1": V210symbols,
     "2.0.2-fix": V200symbols,
     "2.0.1": V200symbols,
     "2.0": V200symbols,
