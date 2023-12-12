@@ -18,7 +18,7 @@ Model card for CLAP: Contrastive Language-Audio Pretraining
 
 # TL;DR
 
-The abstract of the paper states that: 
+The abstract of the paper states that:
 
 > Contrastive learning has shown remarkable success in the field of multimodal representation learning. In this paper, we propose a pipeline of contrastive language-audio pretraining to develop an audio representation by combining audio data with natural language descriptions. To accomplish this target, we first release LAION-Audio-630K, a large collection of 633,526 audio-text pairs from different data sources. Second, we construct a contrastive language-audio pretraining model by considering different audio encoders and text encoders. We incorporate the feature fusion mechanism and keyword-to-caption augmentation into the model design to further enable the model to process audio inputs of variable lengths and enhance the performance. Third, we perform comprehensive experiments to evaluate our model across three tasks: text-to-audio retrieval, zero-shot audio classification, and supervised audio classification. The results demonstrate that our model achieves superior performance in text-to-audio retrieval task. In audio classification tasks, the model achieves state-of-the-art performance in the zero-shot setting and is able to obtain performance comparable to models' results in the non-zero-shot setting. LAION-Audio-630K and the proposed model are both available to the public.
 
@@ -89,19 +89,19 @@ If you are using this model for your work, please consider citing the original p
 ```
 @misc{https://doi.org/10.48550/arxiv.2211.06687,
   doi = {10.48550/ARXIV.2211.06687},
-  
+
   url = {https://arxiv.org/abs/2211.06687},
-  
+
   author = {Wu, Yusong and Chen, Ke and Zhang, Tianyu and Hui, Yuchen and Berg-Kirkpatrick, Taylor and Dubnov, Shlomo},
-  
+
   keywords = {Sound (cs.SD), Audio and Speech Processing (eess.AS), FOS: Computer and information sciences, FOS: Computer and information sciences, FOS: Electrical engineering, electronic engineering, information engineering, FOS: Electrical engineering, electronic engineering, information engineering},
-  
+
   title = {Large-scale Contrastive Language-Audio Pretraining with Feature Fusion and Keyword-to-Caption Augmentation},
-  
+
   publisher = {arXiv},
-  
+
   year = {2022},
-  
+
   copyright = {Creative Commons Attribution 4.0 International}
 }
 ```

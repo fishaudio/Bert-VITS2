@@ -29,7 +29,7 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200, V210
+from oldVersion import V111, V110, V101, V200
 
 # 当前版本信息
 latest_version = "2.2"
