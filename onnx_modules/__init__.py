@@ -43,7 +43,7 @@ def export_onnx(export_path, model_path, config_path):
             "deberta-v2-large-japanese",
             "bert-base-japanese-v3",
         ],
-        "Clap": "clap-htsat-fused"
+        "Clap": "clap-htsat-fused",
     }
 
     with open(f"onnx/{export_path}.json", "w") as MoeVsConfFile:
