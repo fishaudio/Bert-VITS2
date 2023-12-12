@@ -7,7 +7,8 @@ from multiprocessing import Pool
 from tqdm import tqdm
 
 
-def process_speaker(speaker):
+def process_speaker(item):
+    filelist_dict,speaker=item
     embs = []
     wavnames = []
     print("\nspeaker: " + speaker)
@@ -81,10 +82,15 @@ if __name__ == "__main__":
                 filelist_dict[speaker] = []
             filelist_dict[speaker].append(line.split("|")[0])
 
+    dicts=[]
+    for key in filelist_dict:
+        single_dict = {key: filelist_dict[key]}
+        dicts.append((single_dict,key))
+
     with Pool() as p:
         results = list(
             tqdm(
-                p.imap(process_speaker, list(filelist_dict.keys())),
+                p.imap(process_speaker, dicts),
                 total=len(filelist_dict),
             )
         )
