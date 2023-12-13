@@ -5,7 +5,6 @@ import torch
 import commons
 from .text import cleaned_text_to_sequence, get_bert
 from .text.cleaner import clean_text
-from .emo_gen import get_emo
 
 
 def get_text(text, language_str, hps, device):
@@ -50,6 +49,7 @@ def get_text(text, language_str, hps, device):
 
 
 def get_emo_(reference_audio, emotion):
+    from .emo_gen import get_emo
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio
