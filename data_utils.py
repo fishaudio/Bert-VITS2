@@ -44,9 +44,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         self.min_text_len = getattr(hparams, "min_text_len", 1)
         self.max_text_len = getattr(hparams, "max_text_len", 384)
 
-        self.empty_emo = torch.squeeze(
-            torch.load("empty_emo.npy", map_location="cpu"), dim=1
-        )
+        self.variance = 0.015
 
         random.seed(1234)
         random.shuffle(self.audiopaths_sid_text)
@@ -98,13 +96,12 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
 
-        if np.random.rand() > 0.1:
-            emo = torch.squeeze(
-                torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"),
-                dim=1,
-            )
-        else:
-            emo = self.empty_emo
+        emo = torch.squeeze(
+            torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"),
+            dim=1,
+        )
+
+        emo += torch.randn_like(emo) * self.variance
         return (phones, spec, wav, sid, tone, language, bert, ja_bert, en_bert, emo)
 
     def get_audio(self, filename):
@@ -168,15 +165,15 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         if language_str == "ZH":
             bert = bert_ori
-            ja_bert = torch.rand(1024, len(phone))
-            en_bert = torch.rand(1024, len(phone))
+            ja_bert = torch.randn(1024, len(phone))
+            en_bert = torch.randn(1024, len(phone))
         elif language_str == "JP":
-            bert = torch.rand(1024, len(phone))
+            bert = torch.randn(1024, len(phone))
             ja_bert = bert_ori
-            en_bert = torch.rand(1024, len(phone))
+            en_bert = torch.randn(1024, len(phone))
         elif language_str == "EN":
-            bert = torch.rand(1024, len(phone))
-            ja_bert = torch.rand(1024, len(phone))
+            bert = torch.randn(1024, len(phone))
+            ja_bert = torch.randn(1024, len(phone))
             en_bert = bert_ori
         phone = torch.LongTensor(phone)
         tone = torch.LongTensor(tone)
