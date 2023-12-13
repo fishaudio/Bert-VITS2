@@ -235,7 +235,6 @@ def run():
         optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
-    dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
@@ -565,6 +564,30 @@ def train_and_evaluate(
                 scalar_dict.update(
                     {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
                 )
+
+                if net_dur_disc is not None:
+                    scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all})
+
+                    scalar_dict.update(
+                        {
+                            "loss/dur_disc_g/{}".format(i): v
+                            for i, v in enumerate(losses_dur_disc_g)
+                        }
+                    )
+                    scalar_dict.update(
+                        {
+                            "loss/dur_disc_r/{}".format(i): v
+                            for i, v in enumerate(losses_dur_disc_r)
+                        }
+                    )
+
+                    scalar_dict.update({"loss/g/dur_gen": loss_dur_gen})
+                    scalar_dict.update(
+                        {
+                            "loss/g/dur_gen_{}".format(i): v
+                            for i, v in enumerate(losses_dur_gen)
+                        }
+                    )
 
                 image_dict = {
                     "slice/mel_org": utils.plot_spectrogram_to_numpy(
