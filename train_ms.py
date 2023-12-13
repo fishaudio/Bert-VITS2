@@ -239,7 +239,6 @@ def run():
         net_dur_disc = DDP(
             net_dur_disc,
             device_ids=[local_rank],
-            find_unused_parameters=True,
             bucket_cap_mb=512,
         )
 
