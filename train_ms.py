@@ -344,6 +344,9 @@ def run():
                 None,
                 None,
             )
+        torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
+        torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
+        torch.nn.utils.clip_grad_norm_(parameters=net_dur_disc.parameters(), max_norm=100)
         scheduler_g.step()
         scheduler_d.step()
         if net_dur_disc is not None:
