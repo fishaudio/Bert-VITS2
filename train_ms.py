@@ -343,10 +343,7 @@ def run():
                 [train_loader, None],
                 None,
                 None,
-            )
-        torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
-        torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
-        torch.nn.utils.clip_grad_norm_(parameters=net_dur_disc.parameters(), max_norm=100)
+            ) 
         scheduler_g.step()
         scheduler_d.step()
         if net_dur_disc is not None:
@@ -495,12 +492,14 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                commons.clip_grad_value_(net_dur_disc.parameters(), None)
+                torch.nn.utils.clip_grad_norm_(parameters=net_dur_disc.parameters(), max_norm=100)
+                grad_norm_dur = commons.clip_grad_value_(net_dur_disc.parameters(), None)
                 scaler.step(optim_dur_disc)
 
         optim_d.zero_grad()
         scaler.scale(loss_disc_all).backward()
         scaler.unscale_(optim_d)
+        torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
@@ -527,6 +526,7 @@ def train_and_evaluate(
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
+        torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
         scaler.update()
@@ -548,6 +548,7 @@ def train_and_evaluate(
                     "learning_rate": lr,
                     "grad_norm_d": grad_norm_d,
                     "grad_norm_g": grad_norm_g,
+                    "grad_norm_dur": grad_norm_dur,
                 }
                 scalar_dict.update(
                     {
