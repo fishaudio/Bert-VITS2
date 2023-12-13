@@ -60,7 +60,9 @@ def preprocess_text(data_dir):
     with open(lbl_path, "w", encoding="utf-8") as f:
         for line in lines:
             path, spk, language, text = line.strip().split("|")
-            path = os.path.join(start_path, "wavs", os.path.basename(path))
+            path = os.path.join(start_path, "wavs", os.path.basename(path)).replace(
+                "\\", "/"
+            )
             f.writelines(f"{path}|{spk}|{language}|{text}\n")
     subprocess.run(
         f"python preprocess_text.py "
@@ -173,5 +175,5 @@ if __name__ == "__main__":
         bert_gen_btn.click(bert_gen, inputs=[data_dir], outputs=[info])
         clap_gen_btn.click(clap_gen, inputs=[data_dir], outputs=[info])
 
-    webbrowser.open("http://127.0.0.1:7860")
+    webbrowser.open(f"http://127.0.0.1:7860")
     app.launch(share=False, server_port=7860)
