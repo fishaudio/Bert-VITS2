@@ -201,7 +201,7 @@ if __name__ == "__main__":
         language: str,
         auto_translate: bool,
         auto_split: bool,
-        emotion: Optional[int] = None,
+        emotion: Optional[Union[int, str]] = None,
         reference_audio=None,
     ) -> Union[Response, Dict[str, any]]:
         """TTS实现函数"""
@@ -291,7 +291,7 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
-        emotion: Optional[int] = Query(None, description="emo"),
+        emotion: Optional[Union[int, str]] = Query(None, description="emo"),
         reference_audio: UploadFile = File(None),
     ):
         """语音接口，若需要上传参考音频请仅使用post请求"""
@@ -330,7 +330,7 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
-        emotion: Optional[int] = Query(None, description="emo"),
+        emotion: Optional[Union[int, str]] = Query(None, description="emo"),
     ):
         """语音接口"""
         logger.info(
