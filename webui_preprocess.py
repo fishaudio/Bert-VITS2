@@ -44,7 +44,7 @@ def resample(data_dir):
     in_dir = os.path.join(start_path, "raw")
     out_dir = os.path.join(start_path, "wavs")
     subprocess.run(
-        f"python resample.py "
+        f"python resample_legacy.py "
         f"--sr 44100 "
         f"--in_dir {in_dir} "
         f"--out_dir {out_dir} ",
@@ -175,5 +175,5 @@ if __name__ == "__main__":
         bert_gen_btn.click(bert_gen, inputs=[data_dir], outputs=[info])
         clap_gen_btn.click(clap_gen, inputs=[data_dir], outputs=[info])
 
-    webbrowser.open(f"http://127.0.0.1:7860")
+    webbrowser.open("http://127.0.0.1:7860")
     app.launch(share=False, server_port=7860)
