@@ -21,8 +21,7 @@ fugashi
 num2words
 PyYAML
 requests
-pyopenjtalk; sys_platform == 'linux'
-openjtalk; sys_platform != 'linux'
+pyopenjtalk-prebuilt
 jaconv
 psutil
 GPUtil
