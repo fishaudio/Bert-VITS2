@@ -207,17 +207,21 @@ if __name__ == "__main__":
         """TTS实现函数"""
         # 检查模型是否存在
         if model_id not in loaded_models.models.keys():
+            logger.error(f"/voice 请求错误：模型model_id={model_id}未加载")
             return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
         # 检查是否提供speaker
         if speaker_name is None and speaker_id is None:
+            logger.error(f"/voice 请求错误：推理请求未提供speaker_name或speaker_id")
             return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
         elif speaker_name is None:
             # 检查speaker_id是否存在
             if speaker_id not in loaded_models.models[model_id].id2spk.keys():
+                logger.error(f"/voice 请求错误：角色speaker_id={speaker_id}不存在")
                 return {"status": 12, "detail": f"角色speaker_id={speaker_id}不存在"}
             speaker_name = loaded_models.models[model_id].id2spk[speaker_id]
         # 检查speaker_name是否存在
         if speaker_name not in loaded_models.models[model_id].spk2id.keys():
+            logger.error(f"/voice 请求错误：角色speaker_name={speaker_name}不存在")
             return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
         if language is None:
             language = loaded_models.models[model_id].language
@@ -370,7 +374,9 @@ if __name__ == "__main__":
         )
         result = loaded_models.del_model(model_id)
         if result is None:
+            logger.error(f"/models/delete 模型删除错误：模型{model_id}不存在，删除失败")
             return {"status": 14, "detail": f"模型{model_id}不存在，删除失败"}
+
         return {"status": 0, "detail": "删除成功"}
 
     @app.get("/models/add")
@@ -394,6 +400,7 @@ if __name__ == "__main__":
             elif os.path.isfile(os.path.join(model_dir, "../config.json")):
                 config_path = os.path.join(model_dir, "../config.json")
             else:
+                logger.error(f"/models/add 模型添加失败：未在模型所在目录以及上级目录找到config.json文件")
                 return {
                     "status": 15,
                     "detail": "查询未传入配置文件路径，同时默认路径./与../中不存在配置文件config.json。",
@@ -628,8 +635,10 @@ if __name__ == "__main__":
             f"{request.client.host}:{request.client.port}/tools/get_audio  { unquote(str(request.query_params) )}"
         )
         if not os.path.isfile(path):
+            logger.error(f"/tools/get_audio 获取音频错误：指定音频{path}不存在")
             return {"status": 18, "detail": "指定音频不存在"}
-        if not path.endswith(".wav"):
+        if not path.lower().endswith(".wav"):
+            logger.error(f"/tools/get_audio 获取音频错误：音频{path}非wav文件")
             return {"status": 19, "detail": "非wav格式文件"}
         return FileResponse(path=path)
 
