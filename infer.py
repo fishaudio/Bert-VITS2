@@ -29,7 +29,7 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200
+from oldVersion import V111, V110, V101, V200, V210
 
 # 当前版本信息
 latest_version = "2.2"
@@ -157,9 +157,9 @@ def infer(
 ):
     # 2.2版本参数位置变了
     # 2.1 参数新增 emotion reference_audio skip_start skip_end
-    # inferMap_V3 = {
-    #     "2.1": V210.infer,
-    # }
+    inferMap_V3 = {
+        "2.1": V210.infer,
+    }
     # 支持中日英三语版本
     inferMap_V2 = {
         "2.0.2-fix": V200.infer,
@@ -180,23 +180,23 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
-        # if version in inferMap_V3.keys():
-        #     return inferMap_V3[version](
-        #         text,
-        #         sdp_ratio,
-        #         noise_scale,
-        #         noise_scale_w,
-        #         length_scale,
-        #         sid,
-        #         language,
-        #         hps,
-        #         net_g,
-        #         device,
-        #         reference_audio,
-        #         emotion,
-        #         skip_start,
-        #         skip_end,
-        #     )
+        if version in inferMap_V3.keys():
+            return inferMap_V3[version](
+                text,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
+                language,
+                hps,
+                net_g,
+                device,
+                reference_audio,
+                emotion,
+                skip_start,
+                skip_end,
+            )
         if version in inferMap_V2.keys():
             return inferMap_V2[version](
                 text,
