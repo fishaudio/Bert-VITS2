@@ -10,11 +10,11 @@ from config import config
 
 
 def process(item):
-    wav_name, args = item
-    wav_path = os.path.join(args.in_dir, wav_name)
+    spkdir, wav_name, args = item
+    wav_path = os.path.join(args.in_dir, spkdir, wav_name)
     if os.path.exists(wav_path) and wav_path.lower().endswith(".wav"):
         wav, sr = librosa.load(wav_path, sr=args.sr)
-        soundfile.write(os.path.join(args.out_dir, wav_name), wav, sr)
+        soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
 
 if __name__ == "__main__":
@@ -54,11 +54,15 @@ if __name__ == "__main__":
     tasks = []
 
     for dirpath, _, filenames in os.walk(args.in_dir):
-        if not os.path.isdir(args.out_dir):
-            os.makedirs(args.out_dir, exist_ok=True)
+        # 子级目录
+        spk_dir = os.path.relpath(dirpath, args.in_dir)
+        spk_dir_out = os.path.join(args.out_dir, spk_dir)
+        if not os.path.isdir(spk_dir_out):
+            os.makedirs(spk_dir_out, exist_ok=True)
         for filename in filenames:
             if filename.lower().endswith(".wav"):
-                tasks.append((filename, args))
+                twople = (spk_dir, filename, args)
+                tasks.append(twople)
 
     for _ in tqdm(
         pool.imap_unordered(process, tasks),
