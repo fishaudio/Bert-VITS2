@@ -5,6 +5,7 @@ import logging
 import gc
 import random
 
+import librosa
 import gradio
 import numpy as np
 import utils
@@ -223,12 +224,26 @@ if __name__ == "__main__":
         if speaker_name not in loaded_models.models[model_id].spk2id.keys():
             logger.error(f"/voice 请求错误：角色speaker_name={speaker_name}不存在")
             return {"status": 13, "detail": f"角色speaker_name={speaker_name}不存在"}
+        # 未传入则使用默认语言
         if language is None:
             language = loaded_models.models[model_id].language
+        # 翻译会破坏mix结构，auto也会变得无意义。不要在这两个模式下使用
         if auto_translate:
+            if language == "auto" or language == "mix":
+                logger.error(
+                    f"/voice 请求错误：请勿同时使用language = {language}与auto_translate模式"
+                )
+                return {
+                    "status": 20,
+                    "detail": f"请勿同时使用language = {language}与auto_translate模式",
+                }
             text = trans.translate(Sentence=text, to_Language=language.lower())
         if reference_audio is not None:
             ref_audio = BytesIO(await reference_audio.read())
+            # 2.2 适配
+            if loaded_models.models[model_id].version == "2.2":
+                ref_audio, _ = librosa.load(ref_audio, 48000)
+
         else:
             ref_audio = reference_audio
         if not auto_split:
