@@ -50,6 +50,7 @@ def get_text(text, language_str, hps, device):
 
 def get_emo_(reference_audio, emotion):
     from .emo_gen import get_emo
+
     emo = (
         torch.from_numpy(get_emo(reference_audio))
         if reference_audio

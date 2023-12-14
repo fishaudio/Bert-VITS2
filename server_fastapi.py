@@ -212,7 +212,7 @@ if __name__ == "__main__":
             return {"status": 10, "detail": f"模型model_id={model_id}未加载"}
         # 检查是否提供speaker
         if speaker_name is None and speaker_id is None:
-            logger.error(f"/voice 请求错误：推理请求未提供speaker_name或speaker_id")
+            logger.error("/voice 请求错误：推理请求未提供speaker_name或speaker_id")
             return {"status": 11, "detail": "请提供speaker_name或speaker_id"}
         elif speaker_name is None:
             # 检查speaker_id是否存在
@@ -415,7 +415,7 @@ if __name__ == "__main__":
             elif os.path.isfile(os.path.join(model_dir, "../config.json")):
                 config_path = os.path.join(model_dir, "../config.json")
             else:
-                logger.error(f"/models/add 模型添加失败：未在模型所在目录以及上级目录找到config.json文件")
+                logger.error("/models/add 模型添加失败：未在模型所在目录以及上级目录找到config.json文件")
                 return {
                     "status": 15,
                     "detail": "查询未传入配置文件路径，同时默认路径./与../中不存在配置文件config.json。",
