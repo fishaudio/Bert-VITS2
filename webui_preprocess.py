@@ -19,9 +19,9 @@ def generate_config(data_dir, batch_size):
     assert data_dir != "", "数据集名称不能为空"
     start_path, _, train_path, val_path, config_path = get_path(data_dir)
     if os.path.isfile(config_path):
-        config = json.load(open(config_path))
+        config = json.load(open(config_path, "r", encoding="utf-8"))
     else:
-        config = json.load(open("configs/config.json"))
+        config = json.load(open("configs/config.json", "r", encoding="utf-8"))
     config["data"]["training_files"] = train_path
     config["data"]["validation_files"] = val_path
     config["train"]["batch_size"] = batch_size
