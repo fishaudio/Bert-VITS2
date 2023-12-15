@@ -493,8 +493,8 @@ def train_and_evaluate(
                     logw_sdp.detach(),
                     g.detach(),
                 )
-                y_dur_hat_r += y_dur_hat_r_sdp
-                y_dur_hat_g += y_dur_hat_g_sdp
+                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
+                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
                     (
@@ -531,8 +531,8 @@ def train_and_evaluate(
                 y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
                     hidden_x, x_mask, logw_, logw_sdp, g
                 )
-                y_dur_hat_r += y_dur_hat_r_sdp
-                y_dur_hat_g += y_dur_hat_g_sdp
+                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
+                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
