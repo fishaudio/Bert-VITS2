@@ -98,7 +98,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device):
+def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -110,7 +110,9 @@ def get_text(text, language_str, hps, device):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert_ori = get_bert(norm_text, word2ph, language_str, device)
+    bert_ori = get_bert(
+        norm_text, word2ph, language_str, device, style_text, style_weight
+    )
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
 
@@ -154,6 +156,8 @@ def infer(
     reference_audio=None,
     skip_start=False,
     skip_end=False,
+    style_text=None,
+    style_weight=0.7,
 ):
     # 2.2版本参数位置变了
     # 2.1 参数新增 emotion reference_audio skip_start skip_end
@@ -181,6 +185,7 @@ def infer(
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
         if version in inferMap_V3.keys():
+            emotion = 0
             return inferMap_V3[version](
                 text,
                 sdp_ratio,
@@ -196,6 +201,8 @@ def infer(
                 emotion,
                 skip_start,
                 skip_end,
+                style_text,
+                style_weight,
             )
         if version in inferMap_V2.keys():
             return inferMap_V2[version](
@@ -231,7 +238,12 @@ def infer(
     emo = torch.squeeze(emo, dim=1)
 
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
-        text, language, hps, device
+        text,
+        language,
+        hps,
+        device,
+        style_text=style_text,
+        style_weight=style_weight,
     )
     if skip_start:
         phones = phones[3:]

@@ -42,6 +42,8 @@ def generate_audio(
     language,
     reference_audio,
     emotion,
+    style_text,
+    style_weight,
     skip_start=False,
     skip_end=False,
 ):
@@ -66,6 +68,8 @@ def generate_audio(
                 device=device,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                style_text=style_text,
+                style_weight=style_weight,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -127,7 +131,11 @@ def tts_split(
     interval_between_sent,
     reference_audio,
     emotion,
+    style_text,
+    style_weight,
 ):
+    if style_text == "":
+        style_text = None
     if language == "mix":
         return ("invalid", None)
     while text.find("\n\n") != -1:
@@ -153,6 +161,8 @@ def tts_split(
                 device=device,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                style_text=style_text,
+                style_weight=style_weight,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -182,6 +192,8 @@ def tts_split(
                     device=device,
                     skip_start=skip_start,
                     skip_end=skip_end,
+                    style_text=style_text,
+                    style_weight=style_weight,
                 )
                 audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
@@ -210,7 +222,11 @@ def tts_fn(
     reference_audio,
     emotion,
     prompt_mode,
+    style_text,
+    style_weight,
 ):
+    if style_text == "":
+        style_text = None
     if prompt_mode == "Audio prompt":
         if reference_audio == None:
             return ("Invalid audio prompt", None)
@@ -352,6 +368,8 @@ def tts_fn(
                 language,
                 reference_audio,
                 emotion,
+                style_text,
+                style_weight,
             )
         )
 
@@ -411,6 +429,17 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
+                style_text = gr.Textbox(
+                    "私はとっても悲しいな……", label="Style text", info="このテキストの読み上げと同じ感情・声音で生成"
+                )
+                style_weight = gr.Slider(
+                    minimum=-1,
+                    maximum=2,
+                    value=0.7,
+                    step=0.05,
+                    label="Style weight",
+                    info="元テキストとスタイルテキストのbert混合比率、0で元テキストのみ、1でスタイルテキストのみ",
+                )
                 _ = gr.Markdown(
                     value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
                 )
@@ -440,9 +469,7 @@ if __name__ == "__main__":
                 length_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
                 )
-                language = gr.Dropdown(
-                    choices=languages, value=languages[0], label="Language"
-                )
+                language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
                 with gr.Row():
@@ -487,6 +514,8 @@ if __name__ == "__main__":
                 audio_prompt,
                 text_prompt,
                 prompt_mode,
+                style_text,
+                style_weight,
             ],
             outputs=[text_output, audio_output],
         )
@@ -511,6 +540,8 @@ if __name__ == "__main__":
                 interval_between_sent,
                 audio_prompt,
                 text_prompt,
+                style_text,
+                style_weight,
             ],
             outputs=[text_output, audio_output],
         )
