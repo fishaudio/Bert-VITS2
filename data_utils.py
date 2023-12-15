@@ -97,7 +97,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         sid = torch.LongTensor([int(self.spk_map[sid])])
 
         emo = torch.squeeze(
-            torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"),
+            torch.load(audiopath.replace(".wav", ".emo.pt"), map_location="cpu"),
             dim=1,
         )
 
