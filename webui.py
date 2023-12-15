@@ -436,7 +436,7 @@ if __name__ == "__main__":
                     minimum=-1,
                     maximum=2,
                     value=0.7,
-                    step=0.05,
+                    step=0.1,
                     label="Style weight",
                     info="元テキストとスタイルテキストのbert混合比率、0で元テキストのみ、1でスタイルテキストのみ",
                 )

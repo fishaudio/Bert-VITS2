@@ -54,7 +54,7 @@ def get_bert_feature(
         if style_text:
             repeat_feature = (
                 res[i].repeat(word2phone[i], 1) * (1 - style_weight)
-                + style_res_mean * style_weight
+                + style_res_mean.repeat(word2phone[i], 1) * style_weight
             )
         else:
             repeat_feature = res[i].repeat(word2phone[i], 1)
