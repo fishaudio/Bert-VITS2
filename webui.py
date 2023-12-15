@@ -430,7 +430,9 @@ if __name__ == "__main__":
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
                 style_text = gr.Textbox(
-                    "私はとっても悲しいな……", label="Style text", info="このテキストの読み上げと同じ感情・声音で生成"
+                    placeholder="私はとっても悲しいな……",
+                    label="Style text",
+                    info="このテキストの読み上げと同じ感情・声音で生成",
                 )
                 style_weight = gr.Slider(
                     minimum=-1,
