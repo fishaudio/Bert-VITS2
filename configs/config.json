@@ -21,7 +21,8 @@
     "skip_optimizer": true,
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
-    "freeze_EN_bert": false
+    "freeze_EN_bert": false,
+    "freeze_emo": false
   },
   "data": {
     "training_files": "filelists/train.list",
