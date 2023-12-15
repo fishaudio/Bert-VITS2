@@ -429,13 +429,13 @@ if __name__ == "__main__":
                     label="Audio prompt", type="filepath", visible=False
                 )
                 sdp_ratio = gr.Slider(
-                    minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
+                    minimum=0, maximum=1, value=0.5, step=0.1, label="SDP Ratio"
                 )
                 noise_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise"
                 )
                 noise_scale_w = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise_W"
+                    minimum=0.1, maximum=2, value=0.9, step=0.1, label="Noise_W"
                 )
                 length_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
