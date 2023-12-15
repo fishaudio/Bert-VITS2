@@ -27,7 +27,7 @@ def process_line(line):
             device = torch.device("cpu")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
 
-    clap_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".emo.npy")
+    clap_path = wav_path.replace(".WAV", ".wav").replace(".wav", ".emo.pt")
     if os.path.isfile(clap_path):
         return
 
