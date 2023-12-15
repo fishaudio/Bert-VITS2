@@ -634,9 +634,11 @@ class ToneSandhi:
     # input seg: [('听', 'v'), ('一', 'm'), ('听', 'v')]
     # output seg: [['听一听', 'v']]
     def _merge_yi(self, seg: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
-        new_seg = []
+        new_seg = [] * len(seg)
         # function 1
-        for i, (word, pos) in enumerate(seg):
+        i = 0
+        while i < len(seg):
+            word, pos = seg[i]
             if (
                 i - 1 >= 0
                 and word == "一"
@@ -645,6 +647,7 @@ class ToneSandhi:
                 and seg[i - 1][1] == "v"
             ):
                 new_seg[i - 1][0] = new_seg[i - 1][0] + "一" + new_seg[i - 1][0]
+                i += 2
             else:
                 if (
                     i - 2 >= 0
@@ -655,7 +658,8 @@ class ToneSandhi:
                     continue
                 else:
                     new_seg.append([word, pos])
-        seg = new_seg
+                i += 1
+        seg = [i for i in new_seg if len(i) > 0]
         new_seg = []
         # function 2
         for i, (word, pos) in enumerate(seg):
