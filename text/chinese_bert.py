@@ -13,6 +13,7 @@ models = dict()
 
 
 def get_bert_feature(text, word2ph, device=config.bert_gen_config.device):
+    global models
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()
