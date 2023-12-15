@@ -33,6 +33,9 @@ device = config.webui_config.device
 if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 bert_feature_map = {
     "ZH": BertFeature(
         "./bert/chinese-roberta-wwm-ext-large",
