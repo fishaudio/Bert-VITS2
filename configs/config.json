@@ -18,6 +18,7 @@
     "warmup_epochs": 0,
     "c_mel": 45,
     "c_kl": 1.0,
+    "c_commit": 100,
     "skip_optimizer": true,
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
@@ -943,7 +944,14 @@
     ],
     "n_layers_q": 3,
     "use_spectral_norm": false,
-    "gin_channels": 256
+    "gin_channels": 256,
+    "slm": {
+        "model": "./slm/wavlm-base-plus",
+        "sr": 16000,
+        "hidden": 768,
+        "nlayers": 13,
+        "initial_channel": 64
+    }
   },
   "version": "2.2"
 }
