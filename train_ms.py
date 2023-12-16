@@ -226,7 +226,7 @@ def run():
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     net_wd = WavLMDiscriminator(
         hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
-    )
+    ).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -256,6 +256,7 @@ def run():
         optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
+    net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
