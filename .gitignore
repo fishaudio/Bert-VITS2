@@ -183,3 +183,5 @@ Model
 raw/
 logs/
 Data/*
+/onnx
+/.vs

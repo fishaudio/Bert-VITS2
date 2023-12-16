@@ -2,15 +2,18 @@ from utils import get_hparams_from_file, load_checkpoint
 import json
 
 
-def export_onnx(export_path, model_path, config_path):
+def export_onnx(export_path, model_path, config_path, novq, dev):
     hps = get_hparams_from_file(config_path)
     version = hps.version[0:3]
-    if version == "2.0":
+    if version == "2.0" or (version == "2.1" and novq):
         from .V200 import SynthesizerTrn, symbols
-    elif version == "2.1":
+    elif version == "2.1" and (not novq):
         from .V210 import SynthesizerTrn, symbols
     elif version == "2.2":
-        from .V220 import SynthesizerTrn, symbols
+        if novq and dev:
+            from .V220_novq_dev import SynthesizerTrn, symbols
+        else:
+            from .V220 import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
