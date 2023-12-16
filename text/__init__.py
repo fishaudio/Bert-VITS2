@@ -18,13 +18,15 @@ def cleaned_text_to_sequence(cleaned_text, tones, language):
     return phones, tones, lang_ids
 
 
-def get_bert(norm_text, word2ph, language, device):
+def get_bert(norm_text, word2ph, language, device, style_text=None, style_weight=0.7):
     from .chinese_bert import get_bert_feature as zh_bert
     from .english_bert_mock import get_bert_feature as en_bert
     from .japanese_bert import get_bert_feature as jp_bert
 
     lang_bert_func_map = {"ZH": zh_bert, "EN": en_bert, "JP": jp_bert}
-    bert = lang_bert_func_map[language](norm_text, word2ph, device)
+    bert = lang_bert_func_map[language](
+        norm_text, word2ph, device, style_text, style_weight
+    )
     return bert
 
 
