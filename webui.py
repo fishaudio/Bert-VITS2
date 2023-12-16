@@ -40,8 +40,6 @@ def generate_audio(
     length_scale,
     speaker,
     language,
-    reference_audio,
-    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -53,8 +51,6 @@ def generate_audio(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer(
                 piece,
-                reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -81,8 +77,6 @@ def generate_audio_multilang(
     length_scale,
     speaker,
     language,
-    reference_audio,
-    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -94,8 +88,6 @@ def generate_audio_multilang(
             skip_end = (idx != len(slices) - 1) and skip_end
             audio = infer_multilang(
                 piece,
-                reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -125,8 +117,6 @@ def tts_split(
     cut_by_sent,
     interval_between_para,
     interval_between_sent,
-    reference_audio,
-    emotion,
 ):
     if language == "mix":
         return ("invalid", None)
@@ -140,8 +130,6 @@ def tts_split(
             skip_end = idx != len(para_list) - 1
             audio = infer(
                 p,
-                reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -169,8 +157,6 @@ def tts_split(
                 skip_end = (idx != len(sent_list) - 1) and skip_end
                 audio = infer(
                     s,
-                    reference_audio=reference_audio,
-                    emotion=emotion,
                     sdp_ratio=sdp_ratio,
                     noise_scale=noise_scale,
                     noise_scale_w=noise_scale_w,
@@ -207,17 +193,7 @@ def tts_fn(
     noise_scale_w,
     length_scale,
     language,
-    reference_audio,
-    emotion,
-    prompt_mode,
 ):
-    if prompt_mode == "Audio prompt":
-        if reference_audio == None:
-            return ("Invalid audio prompt", None)
-        else:
-            reference_audio = load_audio(reference_audio)[1]
-    else:
-        reference_audio = None
     audio_list = []
     if language == "mix":
         bool_valid, str_valid = re_matching.validate_text(text)
@@ -285,8 +261,6 @@ def tts_fn(
                         length_scale,
                         _speaker,
                         lang_to_generate,
-                        reference_audio,
-                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -333,8 +307,6 @@ def tts_fn(
                         length_scale,
                         speaker,
                         lang_to_generate,
-                        reference_audio,
-                        emotion,
                         skip_start,
                         skip_end,
                     )
@@ -350,32 +322,11 @@ def tts_fn(
                 length_scale,
                 speaker,
                 language,
-                reference_audio,
-                emotion,
             )
         )
 
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
-
-
-def load_audio(path):
-    audio, sr = librosa.load(path, 48000)
-    # audio = librosa.resample(audio, 44100, 48000)
-    return sr, audio
-
-
-def gr_util(item):
-    if item == "Text prompt":
-        return {"visible": True, "__type__": "update"}, {
-            "visible": False,
-            "__type__": "update",
-        }
-    else:
-        return {"visible": False, "__type__": "update"}, {
-            "visible": True,
-            "__type__": "update",
-        }
 
 
 if __name__ == "__main__":
@@ -410,23 +361,6 @@ if __name__ == "__main__":
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
-                )
-                _ = gr.Markdown(
-                    value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
-                )
-                prompt_mode = gr.Radio(
-                    ["Text prompt", "Audio prompt"],
-                    label="Prompt Mode",
-                    value="Text prompt",
-                )
-                text_prompt = gr.Textbox(
-                    label="Text prompt",
-                    placeholder="用文字描述生成风格。如：Happy",
-                    value="Happy",
-                    visible=True,
-                )
-                audio_prompt = gr.Audio(
-                    label="Audio prompt", type="filepath", visible=False
                 )
                 sdp_ratio = gr.Slider(
                     minimum=0, maximum=1, value=0.5, step=0.1, label="SDP Ratio"
@@ -484,9 +418,6 @@ if __name__ == "__main__":
                 noise_scale_w,
                 length_scale,
                 language,
-                audio_prompt,
-                text_prompt,
-                prompt_mode,
             ],
             outputs=[text_output, audio_output],
         )
@@ -509,22 +440,8 @@ if __name__ == "__main__":
                 opt_cut_by_sent,
                 interval_between_para,
                 interval_between_sent,
-                audio_prompt,
-                text_prompt,
             ],
             outputs=[text_output, audio_output],
-        )
-
-        prompt_mode.change(
-            lambda x: gr_util(x),
-            inputs=[prompt_mode],
-            outputs=[text_prompt, audio_prompt],
-        )
-
-        audio_prompt.upload(
-            lambda x: load_audio(x),
-            inputs=[audio_prompt],
-            outputs=[audio_prompt],
         )
 
     print("推理页面已开启!")
