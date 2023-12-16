@@ -949,5 +949,5 @@
     "use_spectral_norm": false,
     "gin_channels": 256
   },
-  "version": "2.3"
+  "version": "2.2"
 }
