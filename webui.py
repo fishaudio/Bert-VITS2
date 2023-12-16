@@ -42,6 +42,8 @@ def generate_audio(
     language,
     reference_audio,
     emotion,
+    style_text,
+    style_weight,
     skip_start=False,
     skip_end=False,
 ):
@@ -66,6 +68,8 @@ def generate_audio(
                 device=device,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                style_text=style_text,
+                style_weight=style_weight,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -127,7 +131,11 @@ def tts_split(
     interval_between_sent,
     reference_audio,
     emotion,
+    style_text,
+    style_weight,
 ):
+    if style_text == "":
+        style_text = None
     if language == "mix":
         return ("invalid", None)
     while text.find("\n\n") != -1:
@@ -153,6 +161,8 @@ def tts_split(
                 device=device,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                style_text=style_text,
+                style_weight=style_weight,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -182,6 +192,8 @@ def tts_split(
                     device=device,
                     skip_start=skip_start,
                     skip_end=skip_end,
+                    style_text=style_text,
+                    style_weight=style_weight,
                 )
                 audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
@@ -210,7 +222,11 @@ def tts_fn(
     reference_audio,
     emotion,
     prompt_mode,
+    style_text,
+    style_weight,
 ):
+    if style_text == "":
+        style_text = None
     if prompt_mode == "Audio prompt":
         if reference_audio == None:
             return ("Invalid audio prompt", None)
@@ -352,6 +368,8 @@ def tts_fn(
                 language,
                 reference_audio,
                 emotion,
+                style_text,
+                style_weight,
             )
         )
 
@@ -411,19 +429,36 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
+                with gr.Accordion("融合文本语义", open=False):
+                    gr.Markdown(
+                        value="使用辅助文本的语意来辅助生成对话（语言保持与主文本相同）\n\n"
+                        "**注意**：不要使用**指令式文本**（如：开心），要使用**带有强烈情感的文本**（如：我好快乐！！！）\n\n"
+                        "效果较不明确，留空即为不使用该功能"
+                    )
+                    style_text = gr.Textbox(label="辅助文本")
+                    style_weight = gr.Slider(
+                        minimum=0,
+                        maximum=1,
+                        value=0.7,
+                        step=0.1,
+                        label="Weight",
+                        info="主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本",
+                    )
                 _ = gr.Markdown(
-                    value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
+                    value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n",
+                    visible=False,
                 )
                 prompt_mode = gr.Radio(
                     ["Text prompt", "Audio prompt"],
                     label="Prompt Mode",
                     value="Text prompt",
+                    visible=False,
                 )
                 text_prompt = gr.Textbox(
                     label="Text prompt",
                     placeholder="用文字描述生成风格。如：Happy",
                     value="Happy",
-                    visible=True,
+                    visible=False,
                 )
                 audio_prompt = gr.Audio(
                     label="Audio prompt", type="filepath", visible=False
@@ -487,6 +522,8 @@ if __name__ == "__main__":
                 audio_prompt,
                 text_prompt,
                 prompt_mode,
+                style_text,
+                style_weight,
             ],
             outputs=[text_output, audio_output],
         )
@@ -511,6 +548,8 @@ if __name__ == "__main__":
                 interval_between_sent,
                 audio_prompt,
                 text_prompt,
+                style_text,
+                style_weight,
             ],
             outputs=[text_output, audio_output],
         )

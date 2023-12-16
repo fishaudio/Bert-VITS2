@@ -343,7 +343,6 @@ class TextEncoder(nn.Module):
         n_layers,
         kernel_size,
         p_dropout,
-        n_speakers,
         gin_channels=0,
     ):
         super().__init__()
@@ -365,31 +364,6 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        # self.emo_proj = nn.Linear(512, hidden_channels)
-        self.in_feature_net = nn.Sequential(
-            # input is assumed to an already normalized embedding
-            nn.Linear(512, 1028, bias=False),
-            nn.GELU(),
-            nn.LayerNorm(1028),
-            *[Block(1028, 512) for _ in range(1)],
-            nn.Linear(1028, 512, bias=False),
-            # normalize before passing to VQ?
-            # nn.GELU(),
-            # nn.LayerNorm(512),
-        )
-        self.emo_vq = VectorQuantize(
-            dim=512,
-            codebook_size=64,
-            codebook_dim=32,
-            commitment_weight=0.1,
-            decay=0.85,
-            heads=32,
-            kmeans_iters=20,
-            separate_codebook_per_head=True,
-            stochastic_sample_codes=True,
-            threshold_ema_dead_code=2,
-        )
-        self.out_feature_net = nn.Linear(512, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -402,18 +376,10 @@ class TextEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(
-        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=None
-    ):
-        sid = sid.cpu()
+    def forward(self, x, x_lengths, tone, language, bert, ja_bert, en_bert, g=None):
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
-        emo_emb = self.in_feature_net(emo)
-        emo_emb, _, loss_commit = self.emo_vq(emo_emb.unsqueeze(1))
-        loss_commit = loss_commit.mean()
-        emo_emb = self.out_feature_net(emo_emb)
-        # emo_emb = self.emo_proj(emo.unsqueeze(1))
         x = (
             self.emb(x)
             + self.tone_emb(tone)
@@ -421,7 +387,6 @@ class TextEncoder(nn.Module):
             + bert_emb
             + ja_bert_emb
             + en_bert_emb
-            + emo_emb
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
@@ -434,7 +399,7 @@ class TextEncoder(nn.Module):
         stats = self.proj(x) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x, m, logs, x_mask, loss_commit
+        return x, m, logs, x_mask
 
 
 class ResidualCouplingBlock(nn.Module):
@@ -916,7 +881,6 @@ class SynthesizerTrn(nn.Module):
             n_layers,
             kernel_size,
             p_dropout,
-            self.n_speakers,
             gin_channels=self.enc_gin_channels,
         )
         self.dec = Generator(
@@ -984,14 +948,13 @@ class SynthesizerTrn(nn.Module):
         bert,
         ja_bert,
         en_bert,
-        emo=None,
     ):
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask, loss_commit = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
+        x, m_p, logs_p, x_mask = self.enc_p(
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, g=g
         )
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
@@ -1060,7 +1023,6 @@ class SynthesizerTrn(nn.Module):
             (z, z_p, m_p, logs_p, m_q, logs_q),
             (x, logw, logw_, logw_sdp),
             g,
-            loss_commit,
         )
 
     def infer(
@@ -1073,7 +1035,6 @@ class SynthesizerTrn(nn.Module):
         bert,
         ja_bert,
         en_bert,
-        emo=None,
         noise_scale=0.667,
         length_scale=1,
         noise_scale_w=0.8,
@@ -1087,8 +1048,8 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask, _ = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
+        x, m_p, logs_p, x_mask = self.enc_p(
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, g=g
         )
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
             sdp_ratio
