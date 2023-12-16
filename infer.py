@@ -64,6 +64,17 @@ symbolsMap = {
 }
 
 
+# def get_emo_(reference_audio, emotion, sid):
+#     emo = (
+#         torch.from_numpy(get_emo(reference_audio))
+#         if reference_audio and emotion == -1
+#         else torch.FloatTensor(
+#             np.load(f"emo_clustering/{sid}/cluster_center_{emotion}.npy")
+#         )
+#     )
+#     return emo
+
+
 def get_net_g(model_path: str, version: str, device: str, hps):
     if version != latest_version:
         net_g = SynthesizerTrnMap[version](
@@ -130,6 +141,7 @@ def get_text(text, language_str, hps, device):
 
 def infer(
     text,
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -139,6 +151,7 @@ def infer(
     hps,
     net_g,
     device,
+    reference_audio=None,
     skip_start=False,
     skip_end=False,
 ):
@@ -167,23 +180,23 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
-        # if version in inferMap_V3.keys():
-        # return inferMap_V3[version](
-        #     text,
-        #     sdp_ratio,
-        #     noise_scale,
-        #     noise_scale_w,
-        #     length_scale,
-        #     sid,
-        #     language,
-        #     hps,
-        #     net_g,
-        #     device,
-        #     reference_audio,
-        #     emotion,
-        #     skip_start,
-        #     skip_end,
-        # )
+        if version in inferMap_V3.keys():
+            return inferMap_V3[version](
+                text,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
+                language,
+                hps,
+                net_g,
+                device,
+                reference_audio,
+                emotion,
+                skip_start,
+                skip_end,
+            )
         if version in inferMap_V2.keys():
             return inferMap_V2[version](
                 text,
@@ -209,6 +222,14 @@ def infer(
                 net_g,
                 device,
             )
+    # 在此处实现当前版本的推理
+    # emo = get_emo_(reference_audio, emotion, sid)
+    if isinstance(reference_audio, np.ndarray):
+        emo = get_clap_audio_feature(reference_audio, device)
+    else:
+        emo = get_clap_text_feature(emotion, device)
+    emo = torch.squeeze(emo, dim=1)
+
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text, language, hps, device
     )
@@ -234,6 +255,7 @@ def infer(
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
+        emo = emo.to(device).unsqueeze(0)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
@@ -246,6 +268,7 @@ def infer(
                 bert,
                 ja_bert,
                 en_bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -255,7 +278,7 @@ def infer(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert, emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio
@@ -272,10 +295,18 @@ def infer_multilang(
     hps,
     net_g,
     device,
+    reference_audio=None,
+    emotion=None,
     skip_start=False,
     skip_end=False,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
+    # emo = get_emo_(reference_audio, emotion, sid)
+    if isinstance(reference_audio, np.ndarray):
+        emo = get_clap_audio_feature(reference_audio, device)
+    else:
+        emo = get_clap_text_feature(emotion, device)
+    emo = torch.squeeze(emo, dim=1)
     for idx, (txt, lang) in enumerate(zip(text, language)):
         skip_start = (idx != 0) or (skip_start and idx == 0)
         skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
@@ -320,6 +351,7 @@ def infer_multilang(
         bert = bert.to(device).unsqueeze(0)
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
@@ -333,6 +365,7 @@ def infer_multilang(
                 bert,
                 ja_bert,
                 en_bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -342,7 +375,7 @@ def infer_multilang(
             .float()
             .numpy()
         )
-        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert
+        del x_tst, tones, lang_ids, bert, x_tst_lengths, speakers, ja_bert, en_bert, emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio

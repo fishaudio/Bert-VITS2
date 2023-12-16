@@ -218,6 +218,11 @@ def run():
         for param in net_g.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
 
+    if getattr(hps.train, "freeze_emo", False):
+        print("Freezing Emo vq !!!")
+        for param in net_g.enc_p.emo_vq.parameters():
+            param.requires_grad = False
+
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     net_wd = WavLMDiscriminator(
         hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
@@ -405,10 +410,7 @@ def train_and_evaluate(
     if writers is not None:
         writer, writer_eval = writers
     wl = WavLMLoss(
-        hps.model.slm.model,
-        net_wd,
-        hps.data.sampling_rate,
-        hps.model.slm.sr,
+        hps.model.slm.model, net_wd, hps.data.sampling_rate, hps.model.slm.sr
     ).to(local_rank)
 
     train_loader.batch_sampler.set_epoch(epoch)
@@ -432,6 +434,7 @@ def train_and_evaluate(
         bert,
         ja_bert,
         en_bert,
+        emo,
     ) in enumerate(tqdm(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -454,6 +457,7 @@ def train_and_evaluate(
         bert = bert.cuda(local_rank, non_blocking=True)
         ja_bert = ja_bert.cuda(local_rank, non_blocking=True)
         en_bert = en_bert.cuda(local_rank, non_blocking=True)
+        emo = emo.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
@@ -466,6 +470,7 @@ def train_and_evaluate(
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_, logw_sdp),
                 g,
+                loss_commit,
             ) = net_g(
                 x,
                 x_lengths,
@@ -477,6 +482,7 @@ def train_and_evaluate(
                 bert,
                 ja_bert,
                 en_bert,
+                emo,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -570,8 +576,13 @@ def train_and_evaluate(
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
-                _, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw_, logw, g)
-                _, y_dur_hat_g_sdp = net_dur_disc(hidden_x, x_mask, logw_, logw_sdp, g)
+                y_dur_hat_r, y_dur_hat_g = net_dur_disc(
+                    hidden_x, x_mask, logw_, logw, g
+                )
+                y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
+                    hidden_x, x_mask, logw_, logw_sdp, g
+                )
+                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
                 y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
@@ -584,14 +595,17 @@ def train_and_evaluate(
                 loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
                 loss_lm_gen = wl.generator(y_hat.squeeze())
 
+                loss_commit = loss_commit * hps.train.c_commit
+
                 loss_gen_all = (
                     loss_gen
                     + loss_fm
                     + loss_mel
                     + loss_dur
                     + loss_kl
-                    + loss_lm
                     + loss_lm_gen
+                    + loss_lm
+                    + loss_commit
                 )
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
@@ -633,6 +647,7 @@ def train_and_evaluate(
                         "loss/g/kl": loss_kl,
                         "loss/g/lm": loss_lm,
                         "loss/g/lm_gen": loss_lm_gen,
+                        "loss/g/commit": loss_commit,
                     }
                 )
                 scalar_dict.update(
@@ -756,6 +771,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert,
             ja_bert,
             en_bert,
+            emo,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -766,6 +782,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            emo = emo.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
@@ -776,6 +793,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     bert,
                     ja_bert,
                     en_bert,
+                    emo,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
