@@ -173,6 +173,8 @@ def run():
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
         ).cuda(local_rank)
+    else:
+        net_dur_disc = None
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
         and hps.model.use_spk_conditioned_encoder is True
@@ -209,6 +211,11 @@ def run():
         for param in net_g.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
 
+    if getattr(hps.train, "freeze_emo", False):
+        print("Freezing Emo vq !!!")
+        for param in net_g.enc_p.emo_vq.parameters():
+            param.requires_grad = False
+
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
@@ -233,12 +240,10 @@ def run():
         optim_dur_disc = None
     net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
-    dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
             device_ids=[local_rank],
-            find_unused_parameters=True,
             bucket_cap_mb=512,
         )
 
@@ -251,8 +256,8 @@ def run():
             mirror=config.mirror,
         )
 
-    try:
-        if net_dur_disc is not None:
+    if net_dur_disc is not None:
+        try:
             _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(
                 utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
                 net_dur_disc,
@@ -261,28 +266,32 @@ def run():
                 if "skip_optimizer" in hps.train
                 else True,
             )
-            _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
-                net_g,
-                optim_g,
-                skip_optimizer=hps.train.skip_optimizer
-                if "skip_optimizer" in hps.train
-                else True,
-            )
-            _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
-                net_d,
-                optim_d,
-                skip_optimizer=hps.train.skip_optimizer
-                if "skip_optimizer" in hps.train
-                else True,
-            )
-            if not optim_g.param_groups[0].get("initial_lr"):
-                optim_g.param_groups[0]["initial_lr"] = g_resume_lr
-            if not optim_d.param_groups[0].get("initial_lr"):
-                optim_d.param_groups[0]["initial_lr"] = d_resume_lr
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
+        except:
+            print("Initialize dur_disc")
+
+    try:
+        _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
+            utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
+            net_g,
+            optim_g,
+            skip_optimizer=hps.train.skip_optimizer
+            if "skip_optimizer" in hps.train
+            else True,
+        )
+        _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
+            utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
+            net_d,
+            optim_d,
+            skip_optimizer=hps.train.skip_optimizer
+            if "skip_optimizer" in hps.train
+            else True,
+        )
+        if not optim_g.param_groups[0].get("initial_lr"):
+            optim_g.param_groups[0]["initial_lr"] = g_resume_lr
+        if not optim_d.param_groups[0].get("initial_lr"):
+            optim_d.param_groups[0]["initial_lr"] = d_resume_lr
 
         epoch_str = max(epoch_str, 1)
         # global_step = (epoch_str - 1) * len(train_loader)
@@ -304,14 +313,12 @@ def run():
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     if net_dur_disc is not None:
-        if not optim_dur_disc.param_groups[0].get("initial_lr"):
-            optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
         scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
             optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
         )
     else:
         scheduler_dur_disc = None
-    scaler = GradScaler(enabled=hps.train.fp16_run)
+    scaler = GradScaler(enabled=hps.train.bf16_run)
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
         if rank == 0:
@@ -413,7 +420,7 @@ def train_and_evaluate(
         en_bert = en_bert.cuda(local_rank, non_blocking=True)
         emo = emo.cuda(local_rank, non_blocking=True)
 
-        with autocast(enabled=hps.train.fp16_run):
+        with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
                 y_hat,
                 l_length,
@@ -422,7 +429,7 @@ def train_and_evaluate(
                 x_mask,
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
-                (hidden_x, logw, logw_),
+                (hidden_x, logw, logw_, logw_sdp),
                 g,
                 loss_commit,
             ) = net_g(
@@ -450,7 +457,7 @@ def train_and_evaluate(
                 mel, ids_slice, hps.train.segment_size // hps.data.hop_length
             )
             y_hat_mel = mel_spectrogram_torch(
-                y_hat.squeeze(1),
+                y_hat.squeeze(1).float(),
                 hps.data.filter_length,
                 hps.data.n_mel_channels,
                 hps.data.sampling_rate,
@@ -466,7 +473,7 @@ def train_and_evaluate(
 
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
-            with autocast(enabled=False):
+            with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
                     y_d_hat_r, y_d_hat_g
                 )
@@ -475,11 +482,20 @@ def train_and_evaluate(
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
                     hidden_x.detach(),
                     x_mask.detach(),
-                    logw.detach(),
                     logw_.detach(),
+                    logw.detach(),
                     g.detach(),
                 )
-                with autocast(enabled=False):
+                y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
+                    hidden_x.detach(),
+                    x_mask.detach(),
+                    logw_.detach(),
+                    logw_sdp.detach(),
+                    g.detach(),
+                )
+                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
+                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+                with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
                     (
                         loss_dur_disc,
@@ -490,23 +506,34 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                commons.clip_grad_value_(net_dur_disc.parameters(), None)
+                # torch.nn.utils.clip_grad_norm_(
+                #     parameters=net_dur_disc.parameters(), max_norm=100
+                # )
+                grad_norm_dur = commons.clip_grad_value_(
+                    net_dur_disc.parameters(), None
+                )
                 scaler.step(optim_dur_disc)
 
         optim_d.zero_grad()
         scaler.scale(loss_disc_all).backward()
         scaler.unscale_(optim_d)
+        # torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        with autocast(enabled=hps.train.fp16_run):
+        with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
-                    hidden_x, x_mask, logw, logw_, g
+                    hidden_x, x_mask, logw_, logw, g
                 )
-            with autocast(enabled=False):
+                y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
+                    hidden_x, x_mask, logw_, logw_sdp, g
+                )
+                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
+                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+            with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
                 loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
@@ -522,6 +549,7 @@ def train_and_evaluate(
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
+        # torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
         scaler.update()
@@ -543,6 +571,7 @@ def train_and_evaluate(
                     "learning_rate": lr,
                     "grad_norm_d": grad_norm_d,
                     "grad_norm_g": grad_norm_g,
+                    "grad_norm_dur": grad_norm_dur,
                 }
                 scalar_dict.update(
                     {
@@ -561,6 +590,30 @@ def train_and_evaluate(
                 scalar_dict.update(
                     {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
                 )
+
+                if net_dur_disc is not None:
+                    scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all})
+
+                    scalar_dict.update(
+                        {
+                            "loss/dur_disc_g/{}".format(i): v
+                            for i, v in enumerate(losses_dur_disc_g)
+                        }
+                    )
+                    scalar_dict.update(
+                        {
+                            "loss/dur_disc_r/{}".format(i): v
+                            for i, v in enumerate(losses_dur_disc_r)
+                        }
+                    )
+
+                    scalar_dict.update({"loss/g/dur_gen": loss_dur_gen})
+                    scalar_dict.update(
+                        {
+                            "loss/g/dur_gen_{}".format(i): v
+                            for i, v in enumerate(losses_dur_gen)
+                        }
+                    )
 
                 image_dict = {
                     "slice/mel_org": utils.plot_spectrogram_to_numpy(

@@ -5,6 +5,7 @@ from g2p_en import G2p
 from transformers import DebertaV2Tokenizer
 
 from text import symbols
+from text.symbols import punctuation
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
@@ -217,6 +218,8 @@ def refine_ph(phn):
     if re.search(r"\d$", phn):
         tone = int(phn[-1]) + 1
         phn = phn[:-1]
+    else:
+        tone = 3
     return phn.lower(), tone
 
 
@@ -389,45 +392,84 @@ def sep_text(text):
     return words
 
 
+def text_to_words(text):
+    tokens = tokenizer.tokenize(text)
+    words = []
+    for idx, t in enumerate(tokens):
+        if t.startswith("▁"):
+            words.append([t[1:]])
+        else:
+            if t in punctuation:
+                if idx == len(tokens) - 1:
+                    words.append([f"{t}"])
+                else:
+                    if (
+                        not tokens[idx + 1].startswith("▁")
+                        and tokens[idx + 1] not in punctuation
+                    ):
+                        if idx == 0:
+                            words.append([])
+                        words[-1].append(f"{t}")
+                    else:
+                        words.append([f"{t}"])
+            else:
+                if idx == 0:
+                    words.append([])
+                words[-1].append(f"{t}")
+    return words
+
+
 def g2p(text):
     phones = []
     tones = []
-    # word2ph = []
-    words = sep_text(text)
-    tokens = [tokenizer.tokenize(i) for i in words]
+    phone_len = []
+    # words = sep_text(text)
+    # tokens = [tokenizer.tokenize(i) for i in words]
+    words = text_to_words(text)
+
     for word in words:
-        if word.upper() in eng_dict:
-            phns, tns = refine_syllables(eng_dict[word.upper()])
-            phones.append([post_replace_ph(i) for i in phns])
-            tones.append(tns)
-            # word2ph.append(len(phns))
-        else:
-            phone_list = list(filter(lambda p: p != " ", _g2p(word)))
-            phns = []
-            tns = []
-            for ph in phone_list:
-                if ph in arpa:
-                    ph, tn = refine_ph(ph)
-                    phns.append(ph)
-                    tns.append(tn)
-                else:
-                    phns.append(ph)
-                    tns.append(0)
-            phones.append([post_replace_ph(i) for i in phns])
-            tones.append(tns)
-            # word2ph.append(len(phns))
-    # phones = [post_replace_ph(i) for i in phones]
+        temp_phones, temp_tones = [], []
+        if len(word) > 1:
+            if "'" in word:
+                word = ["".join(word)]
+        for w in word:
+            if w in punctuation:
+                temp_phones.append(w)
+                temp_tones.append(0)
+                continue
+            if w.upper() in eng_dict:
+                phns, tns = refine_syllables(eng_dict[w.upper()])
+                temp_phones += [post_replace_ph(i) for i in phns]
+                temp_tones += tns
+                # w2ph.append(len(phns))
+            else:
+                phone_list = list(filter(lambda p: p != " ", _g2p(w)))
+                phns = []
+                tns = []
+                for ph in phone_list:
+                    if ph in arpa:
+                        ph, tn = refine_ph(ph)
+                        phns.append(ph)
+                        tns.append(tn)
+                    else:
+                        phns.append(ph)
+                        tns.append(0)
+                temp_phones += [post_replace_ph(i) for i in phns]
+                temp_tones += tns
+        phones += temp_phones
+        tones += temp_tones
+        phone_len.append(len(temp_phones))
+        # phones = [post_replace_ph(i) for i in phones]
 
     word2ph = []
-    for token, phoneme in zip(tokens, phones):
-        phone_len = len(phoneme)
+    for token, pl in zip(words, phone_len):
         word_len = len(token)
 
-        aaa = distribute_phone(phone_len, word_len)
+        aaa = distribute_phone(pl, word_len)
         word2ph += aaa
 
-    phones = ["_"] + [j for i in phones for j in i] + ["_"]
-    tones = [0] + [j for i in tones for j in i] + [0]
+    phones = ["_"] + phones + ["_"]
+    tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
     assert len(phones) == len(tones), text
     assert len(phones) == sum(word2ph), text
