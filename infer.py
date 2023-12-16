@@ -32,7 +32,7 @@ from oldVersion.V101.text import symbols as V101symbols
 from oldVersion import V111, V110, V101, V200, V210
 
 # 当前版本信息
-latest_version = "2.3"
+latest_version = "2.2"
 
 # 版本兼容
 SynthesizerTrnMap = {
