@@ -429,18 +429,18 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
+                gr.Markdown(value="声音风格模仿：生成与此文本朗读相同的情感和声音。")
                 style_text = gr.Textbox(
-                    placeholder="私はとっても悲しいな……",
-                    label="Style text",
-                    info="このテキストの読み上げと同じ感情・声音で生成",
+                    placeholder="如：太糟糕了，我真的很伤心......",
+                    label="风格文本",
                 )
                 style_weight = gr.Slider(
-                    minimum=-1,
-                    maximum=2,
+                    minimum=0,
+                    maximum=1,
                     value=0.7,
                     step=0.1,
-                    label="Style weight",
-                    info="元テキストとスタイルテキストのbert混合比率、0で元テキストのみ、1でスタイルテキストのみ",
+                    label="风格权重",
+                    info="原始文本和风格文本的bert混合比率，0表示仅原始文本，1表示仅风格文本",
                 )
                 _ = gr.Markdown(
                     value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
@@ -471,7 +471,9 @@ if __name__ == "__main__":
                 length_scale = gr.Slider(
                     minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
                 )
-                language = gr.Dropdown(choices=languages, value="JP", label="Language")
+                language = gr.Dropdown(
+                    choices=languages, value=languages[0], label="Language"
+                )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
                 with gr.Row():
