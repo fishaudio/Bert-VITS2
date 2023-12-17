@@ -96,7 +96,6 @@ def generate_audio_multilang(
         for idx, piece in enumerate(slices):
             skip_start = idx != 0
             skip_end = idx != len(slices) - 1
-            print(piece, skip_start, skip_end)
             audio = infer_multilang(
                 piece,
                 reference_audio=reference_audio,
@@ -260,7 +259,7 @@ def tts_fn(
                     if len(content) > 1:
                         _text += [[part] for part in content[1:]]
                         _lang += [[lang] for part in content[1:]]
-            print(_text, _lang)
+            print(f"Text: {_text}\nLang: {_lang}")
             audio_list.extend(
                 generate_audio_multilang(
                     _text,
@@ -277,16 +276,20 @@ def tts_fn(
     elif language.lower() == "auto":
         _text, _lang = [], []
         for idx, slice in enumerate(text.split("|")):
+            if slice == "":
+                continue
             temp_text, temp_lang = [], []
             sentences_list = split_by_language(
                 slice, target_languages=["zh", "ja", "en"]
             )
             for sentence, lang in sentences_list:
+                if sentence == "":
+                    continue
                 temp_text.append(sentence)
                 temp_lang.append(lang.upper())
             _text.append(temp_text)
             _lang.append(temp_lang)
-        print(_text, _lang)
+        print(f"Text: {_text}\nLang: {_lang}")
         audio_list.extend(
             generate_audio_multilang(
                 _text,
