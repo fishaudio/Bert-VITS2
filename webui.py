@@ -51,8 +51,8 @@ def generate_audio(
     # silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
     with torch.no_grad():
         for idx, piece in enumerate(slices):
-            skip_start = (idx != 0) and skip_start
-            skip_end = (idx != len(slices) - 1) and skip_end
+            skip_start = idx != 0
+            skip_end = idx != len(slices) - 1
             audio = infer(
                 piece,
                 reference_audio=reference_audio,
@@ -94,8 +94,9 @@ def generate_audio_multilang(
     # silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
     with torch.no_grad():
         for idx, piece in enumerate(slices):
-            skip_start = (idx != 0) and skip_start
-            skip_end = (idx != len(slices) - 1) and skip_end
+            skip_start = idx != 0
+            skip_end = idx != len(slices) - 1
+            print(piece, skip_start, skip_end)
             audio = infer_multilang(
                 piece,
                 reference_audio=reference_audio,
@@ -170,13 +171,13 @@ def tts_split(
             audio_list.append(silence)
     else:
         for idx, p in enumerate(para_list):
-            skip_start = idx != 0
-            skip_end = idx != len(para_list) - 1
+            skip_start_ = idx != 0
+            skip_end_ = idx != len(para_list) - 1
             audio_list_sent = []
             sent_list = re_matching.cut_sent(p)
             for idx, s in enumerate(sent_list):
-                skip_start = (idx != 0) and skip_start
-                skip_end = (idx != len(sent_list) - 1) and skip_end
+                skip_start = (idx != 0) and skip_start_
+                skip_end = (idx != len(sent_list) - 1) and skip_end_
                 audio = infer(
                     s,
                     reference_audio=reference_audio,
@@ -242,120 +243,63 @@ def tts_fn(
                 hps.data.sampling_rate,
                 np.concatenate([np.zeros(hps.data.sampling_rate // 2)]),
             )
-        result = []
         for slice in re_matching.text_matching(text):
             _speaker = slice.pop()
-            temp_contant = []
-            temp_lang = []
+            _text, _lang = [], []
             for lang, content in slice:
-                if "|" in content:
-                    temp = []
-                    temp_ = []
-                    for i in content.split("|"):
-                        if i != "":
-                            temp.append([i])
-                            temp_.append([lang])
-                        else:
-                            temp.append([])
-                            temp_.append([])
-                    temp_contant += temp
-                    temp_lang += temp_
+                content = content.split("|")
+                content = [part for part in content if part != ""]
+                if len(content) == 0:
+                    continue
+                if len(_text) == 0:
+                    _text = [[part] for part in content]
+                    _lang = [[lang] for part in content]
                 else:
-                    if len(temp_contant) == 0:
-                        temp_contant.append([])
-                        temp_lang.append([])
-                    temp_contant[-1].append(content)
-                    temp_lang[-1].append(lang)
-            for i, j in zip(temp_lang, temp_contant):
-                result.append([*zip(i, j), _speaker])
-        for i, one in enumerate(result):
-            skip_start = i != 0
-            skip_end = i != len(result) - 1
-            _speaker = one.pop()
-            idx = 0
-            while idx < len(one):
-                text_to_generate = []
-                lang_to_generate = []
-                while True:
-                    lang, content = one[idx]
-                    temp_text = [content]
-                    if len(text_to_generate) > 0:
-                        text_to_generate[-1] += [temp_text.pop(0)]
-                        lang_to_generate[-1] += [lang]
-                    if len(temp_text) > 0:
-                        text_to_generate += [[i] for i in temp_text]
-                        lang_to_generate += [[lang]] * len(temp_text)
-                    if idx + 1 < len(one):
-                        idx += 1
-                    else:
-                        break
-                skip_start = (idx != 0) and skip_start
-                skip_end = (idx != len(one) - 1) and skip_end
-                print(text_to_generate, lang_to_generate)
-                audio_list.extend(
-                    generate_audio_multilang(
-                        text_to_generate,
-                        sdp_ratio,
-                        noise_scale,
-                        noise_scale_w,
-                        length_scale,
-                        _speaker,
-                        lang_to_generate,
-                        reference_audio,
-                        emotion,
-                        skip_start,
-                        skip_end,
-                    )
+                    _text[-1].append(content[0])
+                    _lang[-1].append(lang)
+                    if len(content) > 1:
+                        _text += [[part] for part in content[1:]]
+                        _lang += [[lang] for part in content[1:]]
+            print(_text, _lang)
+            audio_list.extend(
+                generate_audio_multilang(
+                    _text,
+                    sdp_ratio,
+                    noise_scale,
+                    noise_scale_w,
+                    length_scale,
+                    _speaker,
+                    _lang,
+                    reference_audio,
+                    emotion,
                 )
-                idx += 1
+            )
     elif language.lower() == "auto":
+        _text, _lang = [], []
         for idx, slice in enumerate(text.split("|")):
-            if slice == "":
-                continue
-            skip_start = idx != 0
-            skip_end = idx != len(text.split("|")) - 1
+            temp_text, temp_lang = [], []
             sentences_list = split_by_language(
                 slice, target_languages=["zh", "ja", "en"]
             )
-            idx = 0
-            while idx < len(sentences_list):
-                text_to_generate = []
-                lang_to_generate = []
-                while True:
-                    content, lang = sentences_list[idx]
-                    temp_text = [content]
-                    lang = lang.upper()
-                    if lang == "JA":
-                        lang = "JP"
-                    if len(text_to_generate) > 0:
-                        text_to_generate[-1] += [temp_text.pop(0)]
-                        lang_to_generate[-1] += [lang]
-                    if len(temp_text) > 0:
-                        text_to_generate += [[i] for i in temp_text]
-                        lang_to_generate += [[lang]] * len(temp_text)
-                    if idx + 1 < len(sentences_list):
-                        idx += 1
-                    else:
-                        break
-                skip_start = (idx != 0) and skip_start
-                skip_end = (idx != len(sentences_list) - 1) and skip_end
-                print(text_to_generate, lang_to_generate)
-                audio_list.extend(
-                    generate_audio_multilang(
-                        text_to_generate,
-                        sdp_ratio,
-                        noise_scale,
-                        noise_scale_w,
-                        length_scale,
-                        speaker,
-                        lang_to_generate,
-                        reference_audio,
-                        emotion,
-                        skip_start,
-                        skip_end,
-                    )
-                )
-                idx += 1
+            for sentence, lang in sentences_list:
+                temp_text.append(sentence)
+                temp_lang.append(lang.upper())
+            _text.append(temp_text)
+            _lang.append(temp_lang)
+        print(_text, _lang)
+        audio_list.extend(
+            generate_audio_multilang(
+                _text,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                speaker,
+                _lang,
+                reference_audio,
+                emotion,
+            )
+        )
     else:
         audio_list.extend(
             generate_audio(
@@ -429,21 +373,6 @@ if __name__ == "__main__":
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
-                with gr.Accordion("融合文本语义", open=False):
-                    gr.Markdown(
-                        value="使用辅助文本的语意来辅助生成对话（语言保持与主文本相同）\n\n"
-                        "**注意**：不要使用**指令式文本**（如：开心），要使用**带有强烈情感的文本**（如：我好快乐！！！）\n\n"
-                        "效果较不明确，留空即为不使用该功能"
-                    )
-                    style_text = gr.Textbox(label="辅助文本")
-                    style_weight = gr.Slider(
-                        minimum=0,
-                        maximum=1,
-                        value=0.7,
-                        step=0.1,
-                        label="Weight",
-                        info="主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本",
-                    )
                 _ = gr.Markdown(
                     value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n",
                     visible=False,
@@ -480,7 +409,22 @@ if __name__ == "__main__":
                 )
                 btn = gr.Button("生成音频！", variant="primary")
             with gr.Column():
-                with gr.Row():
+                with gr.Accordion("融合文本语义", open=False):
+                    gr.Markdown(
+                        value="使用辅助文本的语意来辅助生成对话（语言保持与主文本相同）\n\n"
+                        "**注意**：不要使用**指令式文本**（如：开心），要使用**带有强烈情感的文本**（如：我好快乐！！！）\n\n"
+                        "效果较不明确，留空即为不使用该功能"
+                    )
+                    style_text = gr.Textbox(label="辅助文本")
+                    style_weight = gr.Slider(
+                        minimum=0,
+                        maximum=1,
+                        value=0.7,
+                        step=0.1,
+                        label="Weight",
+                        info="主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本",
+                    )
+                with gr.Row(visible=False):
                     with gr.Column():
                         interval_between_sent = gr.Slider(
                             minimum=0,

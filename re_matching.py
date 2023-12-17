@@ -44,7 +44,6 @@ def text_matching(text: str) -> list:
     result = []
     for speaker, dialogue in matches:
         result.append(extract_language_and_text_updated(speaker, dialogue))
-    print(result)
     return result
 
 

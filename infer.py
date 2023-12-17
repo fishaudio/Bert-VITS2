@@ -10,7 +10,8 @@
 import torch
 import commons
 from text import cleaned_text_to_sequence, get_bert
-from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
+
+# from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
 from text.cleaner import clean_text
 import utils
 import numpy as np
@@ -99,6 +100,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
 
 
 def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
+    style_text = None if style_text == "" else style_text
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -328,8 +330,8 @@ def infer_multilang(
     #     emo = get_clap_text_feature(emotion, device)
     # emo = torch.squeeze(emo, dim=1)
     for idx, (txt, lang) in enumerate(zip(text, language)):
-        skip_start = (idx != 0) or (skip_start and idx == 0)
-        skip_end = (idx != len(text) - 1) or (skip_end and idx == len(text) - 1)
+        _skip_start = (idx != 0) or (skip_start and idx == 0)
+        _skip_end = (idx != len(language) - 1) or skip_end
         (
             temp_bert,
             temp_ja_bert,
@@ -338,14 +340,14 @@ def infer_multilang(
             temp_tones,
             temp_lang_ids,
         ) = get_text(txt, lang, hps, device)
-        if skip_start:
+        if _skip_start:
             temp_bert = temp_bert[:, 3:]
             temp_ja_bert = temp_ja_bert[:, 3:]
             temp_en_bert = temp_en_bert[:, 3:]
             temp_phones = temp_phones[3:]
             temp_tones = temp_tones[3:]
             temp_lang_ids = temp_lang_ids[3:]
-        if skip_end:
+        if _skip_end:
             temp_bert = temp_bert[:, :-2]
             temp_ja_bert = temp_ja_bert[:, :-2]
             temp_en_bert = temp_en_bert[:, :-2]
