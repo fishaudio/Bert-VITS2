@@ -49,7 +49,6 @@ torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
-torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
 
@@ -550,7 +549,8 @@ def train_and_evaluate(
         optim_d.zero_grad()
         scaler.scale(loss_disc_all).backward()
         scaler.unscale_(optim_d)
-        # torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
+        if getattr(hps.train, "bf16_run", False):
+            torch.nn.utils.clip_grad_norm_(parameters=net_d.parameters(), max_norm=200)
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
@@ -599,7 +599,8 @@ def train_and_evaluate(
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
-        # torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
+        if getattr(hps.train, "bf16_run", False):
+            torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
         scaler.update()
