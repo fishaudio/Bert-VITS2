@@ -32,7 +32,7 @@ For quick guide, please refer to `webui_preprocess.py`.
 + [svc-develop-team/so-vits-svc](https://github.com/svc-develop-team/so-vits-svc)
 + [PaddlePaddle/PaddleSpeech](https://github.com/PaddlePaddle/PaddleSpeech)
 + [emotional-vits](https://github.com/innnky/emotional-vits)
-+ [Bert-VITS2-en](https://github.com/xwan07017/Bert-VITS2-en)
++ [fish-speech](https://github.com/fishaudio/fish-speech)
 + [Bert-VITS2-UI](https://github.com/jiangyuxiaoxiao/Bert-VITS2-UI)
 ## 感谢所有贡献者作出的努力
 <a href="https://github.com/fishaudio/Bert-VITS2/graphs/contributors" target="_blank">
