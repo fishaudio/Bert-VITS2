@@ -73,7 +73,6 @@ def generate_audio(
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
-            # audio_list.append(silence)  # 将静音添加到列表中
     return audio_list
 
 
@@ -114,7 +113,6 @@ def generate_audio_multilang(
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
-            # audio_list.append(silence)  # 将静音添加到列表中
     return audio_list
 
 
@@ -134,68 +132,47 @@ def tts_split(
     style_text,
     style_weight,
 ):
-    if style_text == "":
-        style_text = None
-    if language == "mix":
-        return ("invalid", None)
     while text.find("\n\n") != -1:
         text = text.replace("\n\n", "\n")
+    text = text.replace("|", "")
     para_list = re_matching.cut_para(text)
+    para_list = [p for p in para_list if p != ""]
     audio_list = []
-    if not cut_by_sent:
-        for idx, p in enumerate(para_list):
-            skip_start = idx != 0
-            skip_end = idx != len(para_list) - 1
-            audio = infer(
+    for p in para_list:
+        if not cut_by_sent:
+            audio_list += process_text(
                 p,
-                reference_audio=reference_audio,
-                emotion=emotion,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise_scale,
-                noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
-                sid=speaker,
-                language=language,
-                hps=hps,
-                net_g=net_g,
-                device=device,
-                skip_start=skip_start,
-                skip_end=skip_end,
-                style_text=style_text,
-                style_weight=style_weight,
+                speaker,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                language,
+                reference_audio,
+                emotion,
+                style_text,
+                style_weight,
             )
-            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
-            audio_list.append(audio16bit)
             silence = np.zeros((int)(44100 * interval_between_para), dtype=np.int16)
             audio_list.append(silence)
-    else:
-        for idx, p in enumerate(para_list):
-            skip_start_ = idx != 0
-            skip_end_ = idx != len(para_list) - 1
+        else:
             audio_list_sent = []
             sent_list = re_matching.cut_sent(p)
-            for idx, s in enumerate(sent_list):
-                skip_start = (idx != 0) and skip_start_
-                skip_end = (idx != len(sent_list) - 1) and skip_end_
-                audio = infer(
+            sent_list = [s for s in sent_list if s != ""]
+            for s in sent_list:
+                audio_list_sent += process_text(
                     s,
-                    reference_audio=reference_audio,
-                    emotion=emotion,
-                    sdp_ratio=sdp_ratio,
-                    noise_scale=noise_scale,
-                    noise_scale_w=noise_scale_w,
-                    length_scale=length_scale,
-                    sid=speaker,
-                    language=language,
-                    hps=hps,
-                    net_g=net_g,
-                    device=device,
-                    skip_start=skip_start,
-                    skip_end=skip_end,
-                    style_text=style_text,
-                    style_weight=style_weight,
+                    speaker,
+                    sdp_ratio,
+                    noise_scale,
+                    noise_scale_w,
+                    length_scale,
+                    language,
+                    reference_audio,
+                    emotion,
+                    style_text,
+                    style_weight,
                 )
-                audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
                 audio_list_sent.append(silence)
             if (interval_between_para - interval_between_sent) > 0:
@@ -208,10 +185,47 @@ def tts_split(
             )  # 对完整句子做音量归一
             audio_list.append(audio16bit)
     audio_concat = np.concatenate(audio_list)
-    return ("Success", (44100, audio_concat))
+    return ("Success", (hps.data.sampling_rate, audio_concat))
 
 
-def tts_fn(
+def process_mix(slice):
+    _speaker = slice.pop()
+    _text, _lang = [], []
+    for lang, content in slice:
+        content = content.split("|")
+        content = [part for part in content if part != ""]
+        if len(content) == 0:
+            continue
+        if len(_text) == 0:
+            _text = [[part] for part in content]
+            _lang = [[lang] for part in content]
+        else:
+            _text[-1].append(content[0])
+            _lang[-1].append(lang)
+            if len(content) > 1:
+                _text += [[part] for part in content[1:]]
+                _lang += [[lang] for part in content[1:]]
+    return _text, _lang, _speaker
+
+
+def process_auto(text):
+    _text, _lang = [], []
+    for slice in text.split("|"):
+        if slice == "":
+            continue
+        temp_text, temp_lang = [], []
+        sentences_list = split_by_language(slice, target_languages=["zh", "ja", "en"])
+        for sentence, lang in sentences_list:
+            if sentence == "":
+                continue
+            temp_text.append(sentence)
+            temp_lang.append(lang.upper())
+        _text.append(temp_text)
+        _lang.append(temp_lang)
+    return _text, _lang
+
+
+def process_text(
     text: str,
     speaker,
     sdp_ratio,
@@ -221,19 +235,9 @@ def tts_fn(
     language,
     reference_audio,
     emotion,
-    prompt_mode,
-    style_text,
-    style_weight,
+    style_text=None,
+    style_weight=0,
 ):
-    if style_text == "":
-        style_text = None
-    if prompt_mode == "Audio prompt":
-        if reference_audio == None:
-            return ("Invalid audio prompt", None)
-        else:
-            reference_audio = load_audio(reference_audio)[1]
-    else:
-        reference_audio = None
     audio_list = []
     if language == "mix":
         bool_valid, str_valid = re_matching.validate_text(text)
@@ -243,22 +247,9 @@ def tts_fn(
                 np.concatenate([np.zeros(hps.data.sampling_rate // 2)]),
             )
         for slice in re_matching.text_matching(text):
-            _speaker = slice.pop()
-            _text, _lang = [], []
-            for lang, content in slice:
-                content = content.split("|")
-                content = [part for part in content if part != ""]
-                if len(content) == 0:
-                    continue
-                if len(_text) == 0:
-                    _text = [[part] for part in content]
-                    _lang = [[lang] for part in content]
-                else:
-                    _text[-1].append(content[0])
-                    _lang[-1].append(lang)
-                    if len(content) > 1:
-                        _text += [[part] for part in content[1:]]
-                        _lang += [[lang] for part in content[1:]]
+            _text, _lang, _speaker = process_mix(slice)
+            if _speaker is None:
+                continue
             print(f"Text: {_text}\nLang: {_lang}")
             audio_list.extend(
                 generate_audio_multilang(
@@ -274,21 +265,7 @@ def tts_fn(
                 )
             )
     elif language.lower() == "auto":
-        _text, _lang = [], []
-        for idx, slice in enumerate(text.split("|")):
-            if slice == "":
-                continue
-            temp_text, temp_lang = [], []
-            sentences_list = split_by_language(
-                slice, target_languages=["zh", "ja", "en"]
-            )
-            for sentence, lang in sentences_list:
-                if sentence == "":
-                    continue
-                temp_text.append(sentence)
-                temp_lang.append(lang.upper())
-            _text.append(temp_text)
-            _lang.append(temp_lang)
+        _text, _lang = process_auto(text)
         print(f"Text: {_text}\nLang: {_lang}")
         audio_list.extend(
             generate_audio_multilang(
@@ -319,9 +296,59 @@ def tts_fn(
                 style_weight,
             )
         )
+    return audio_list
+
+
+def tts_fn(
+    text: str,
+    speaker,
+    sdp_ratio,
+    noise_scale,
+    noise_scale_w,
+    length_scale,
+    language,
+    reference_audio,
+    emotion,
+    prompt_mode,
+    style_text=None,
+    style_weight=0,
+):
+    if style_text == "":
+        style_text = None
+    if prompt_mode == "Audio prompt":
+        if reference_audio == None:
+            return ("Invalid audio prompt", None)
+        else:
+            reference_audio = load_audio(reference_audio)[1]
+    else:
+        reference_audio = None
+
+    audio_list = process_text(
+        text,
+        speaker,
+        sdp_ratio,
+        noise_scale,
+        noise_scale_w,
+        length_scale,
+        language,
+        reference_audio,
+        emotion,
+        style_text,
+        style_weight,
+    )
 
     audio_concat = np.concatenate(audio_list)
     return "Success", (hps.data.sampling_rate, audio_concat)
+
+
+def format_utils(text, speaker):
+    _text, _lang = process_auto(text)
+    res = f"[{speaker}]"
+    for lang_s, content_s in zip(_lang, _text):
+        for lang, content in zip(lang_s, content_s):
+            res += f"<{lang.lower()}>{content}"
+        res += "|"
+    return "mix", res[:-1]
 
 
 def load_audio(path):
@@ -373,6 +400,7 @@ if __name__ == "__main__":
                 )
                 trans = gr.Button("中翻日", variant="primary")
                 slicer = gr.Button("快速切分", variant="primary")
+                formatter = gr.Button("检测语言，并整理为 MIX 格式", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
                 )
@@ -427,7 +455,7 @@ if __name__ == "__main__":
                         label="Weight",
                         info="主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本",
                     )
-                with gr.Row(visible=False):
+                with gr.Row():
                     with gr.Column():
                         interval_between_sent = gr.Slider(
                             minimum=0,
@@ -511,6 +539,12 @@ if __name__ == "__main__":
             lambda x: load_audio(x),
             inputs=[audio_prompt],
             outputs=[audio_prompt],
+        )
+
+        formatter.click(
+            format_utils,
+            inputs=[text, speaker],
+            outputs=[language, text],
         )
 
     print("推理页面已开启!")
