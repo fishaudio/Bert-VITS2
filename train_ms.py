@@ -387,6 +387,7 @@ def run():
             )
         scheduler_g.step()
         scheduler_d.step()
+        scheduler_wd.step()
         if net_dur_disc is not None:
             scheduler_dur_disc.step()
 
