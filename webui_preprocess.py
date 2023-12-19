@@ -92,7 +92,7 @@ if __name__ == "__main__":
                 _ = gr.Markdown(
                     value="# Bert-VITS2 数据预处理\n"
                     "## 预先准备：\n"
-                    "下载 BERT 和 CLAP 模型：\n"
+                    "下载 BERT 和 WavLM 模型：\n"
                     "- [中文 RoBERTa](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large)\n"
                     "- [日文 DeBERTa](https://huggingface.co/ku-nlp/deberta-v2-large-japanese-char-wwm)\n"
                     "- [英文 DeBERTa](https://huggingface.co/microsoft/deberta-v3-large)\n"
