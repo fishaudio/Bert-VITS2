@@ -151,7 +151,7 @@ if __name__ == "__main__":
                 _ = gr.Markdown(
                     value="## 训练模型及部署：\n"
                     "修改根目录下的 `config.yml` 中 `dataset_path` 一项为 `data/{你的数据集名称}`\n"
-                    "- 训练：将[预训练模型文件](https://openi.pcl.ac.cn/Stardust_minus/Bert-VITS2/modelmanage/show_model)（`D_0.pth`、`DUR_0.pth` 和 `G_0.pth`）放到 `data/{你的数据集名称}/models` 文件夹下，执行 `torchrun --nproc_per_node=1 train_ms.py` 命令（多卡运行可参考 `run_MnodesAndMgpus.sh` 中的命令。\n"
+                    "- 训练：将[预训练模型文件](https://openi.pcl.ac.cn/Stardust_minus/Bert-VITS2/modelmanage/show_model)（`D_0.pth`、`DUR_0.pth`、`WD_0.pth` 和 `G_0.pth`）放到 `data/{你的数据集名称}/models` 文件夹下，执行 `torchrun --nproc_per_node=1 train_ms.py` 命令（多卡运行可参考 `run_MnodesAndMgpus.sh` 中的命令。\n"
                     "- 部署：修改根目录下的 `config.yml` 中 `webui` 下 `model` 一项为 `models/{权重文件名}.pth` （如 G_10000.pth），然后执行 `python webui.py`"
                 )
 
