@@ -944,7 +944,7 @@
     ],
     "n_layers_q": 3,
     "use_spectral_norm": false,
-    "gin_channels": 256,
+    "gin_channels": 512,
     "slm": {
         "model": "./slm/wavlm-base-plus",
         "sr": 16000,
