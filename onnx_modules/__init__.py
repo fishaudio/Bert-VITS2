@@ -1,4 +1,4 @@
-from utils import get_hparams_from_file, load_checkpoint
+﻿from utils import get_hparams_from_file, load_checkpoint
 import json
 
 
@@ -14,6 +14,8 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
             from .V220_novq_dev import SynthesizerTrn, symbols
         else:
             from .V220 import SynthesizerTrn, symbols
+    elif version == "2.3":
+        from .V230 import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,

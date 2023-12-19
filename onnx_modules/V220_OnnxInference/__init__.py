@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import onnxruntime as ort
 
 
@@ -57,6 +57,13 @@ class OnnxInferenceSession:
         length_scale=1.0,
         sdp_ratio=0.0,
     ):
+        if seq.ndim == 1:
+            seq = np.expand_dims(seq, 0)
+        if tone.ndim == 1:
+            tone = np.expand_dims(tone, 0)
+        if language.ndim == 1:
+            language = np.expand_dims(language, 0)
+        assert(seq.ndim == 2,tone.ndim == 2,language.ndim == 2)
         g = self.emb_g.run(
             None,
             {

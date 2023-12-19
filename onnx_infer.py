@@ -13,8 +13,7 @@ Session = OnnxInferenceSession(
     )
 
 #这里的输入和原版是一样的，只需要在原版预处理结果出来之后加上.numpy()即可
-x = np.expand_dims(
-    np.array(
+x = np.array(
         [
             0,
             97,
@@ -46,15 +45,13 @@ x = np.expand_dims(
             104,
             0,
         ]
-    ),
-    0
-)
+    )
 tone = np.zeros_like(x)
 language = np.zeros_like(x)
 sid = np.array([0])
-bert = np.random.randn(x.shape[1], 1024)
-ja_bert = np.random.randn(x.shape[1], 1024)
-en_bert = np.random.randn(x.shape[1], 1024)
+bert = np.random.randn(x.shape[0], 1024)
+ja_bert = np.random.randn(x.shape[0], 1024)
+en_bert = np.random.randn(x.shape[0], 1024)
 emo = np.random.randn(512, 1)
 
 audio = Session(
