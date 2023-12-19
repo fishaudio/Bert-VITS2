@@ -85,16 +85,6 @@ def bert_gen(data_dir):
     return "BERT 特征文件生成完成"
 
 
-def clap_gen(data_dir):
-    assert data_dir != "", "数据集名称不能为空"
-    _, _, _, _, config_path = get_path(data_dir)
-    subprocess.run(
-        f"python clap_gen.py " f"--config {config_path}",
-        shell=True,
-    )
-    return "CLAP 特征文件生成完成"
-
-
 if __name__ == "__main__":
     with gr.Blocks() as app:
         with gr.Row():
@@ -106,9 +96,9 @@ if __name__ == "__main__":
                     "- [中文 RoBERTa](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large)\n"
                     "- [日文 DeBERTa](https://huggingface.co/ku-nlp/deberta-v2-large-japanese-char-wwm)\n"
                     "- [英文 DeBERTa](https://huggingface.co/microsoft/deberta-v3-large)\n"
-                    "- [CLAP](https://huggingface.co/laion/clap-htsat-fused)\n"
+                    "- [WavLM](https://huggingface.co/microsoft/wavlm-base-plus)\n"
                     "\n"
-                    "将 BERT 模型放置到 `bert` 文件夹下，CLAP 模型放置到 `emotional` 文件夹下，覆盖同名文件夹。\n"
+                    "将 BERT 模型放置到 `bert` 文件夹下，WavLM 模型放置到 `slm` 文件夹下，覆盖同名文件夹。\n"
                     "\n"
                     "数据准备：\n"
                     "将数据放置在 data 文件夹下，按照如下结构组织：\n"
@@ -158,8 +148,6 @@ if __name__ == "__main__":
                 preprocess_text_btn = gr.Button(value="执行", variant="primary")
                 _ = gr.Markdown(value="## 第四步：生成 BERT 特征文件")
                 bert_gen_btn = gr.Button(value="执行", variant="primary")
-                _ = gr.Markdown(value="## 第五步：生成 CLAP 特征文件")
-                clap_gen_btn = gr.Button(value="执行", variant="primary")
                 _ = gr.Markdown(
                     value="## 训练模型及部署：\n"
                     "修改根目录下的 `config.yml` 中 `dataset_path` 一项为 `data/{你的数据集名称}`\n"
@@ -173,7 +161,6 @@ if __name__ == "__main__":
         resample_btn.click(resample, inputs=[data_dir], outputs=[info])
         preprocess_text_btn.click(preprocess_text, inputs=[data_dir], outputs=[info])
         bert_gen_btn.click(bert_gen, inputs=[data_dir], outputs=[info])
-        clap_gen_btn.click(clap_gen, inputs=[data_dir], outputs=[info])
 
     webbrowser.open("http://127.0.0.1:7860")
     app.launch(share=False, server_port=7860)
