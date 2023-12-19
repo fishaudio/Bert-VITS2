@@ -2,7 +2,7 @@ from onnx_modules.V220_OnnxInference import OnnxInferenceSession
 import numpy as np
 Session = OnnxInferenceSession(
         {
-        "enc" : "onnx/BertVits2.2PT/BertVits2.2PT_enc_p.onnx",   
+        "enc" : "onnx/BertVits2.2PT/BertVits2.2PT_enc_p.onnx",
         "emb_g" : "onnx/BertVits2.2PT/BertVits2.2PT_emb.onnx",
         "dp" : "onnx/BertVits2.2PT/BertVits2.2PT_dp.onnx",
         "sdp" : "onnx/BertVits2.2PT/BertVits2.2PT_sdp.onnx",
