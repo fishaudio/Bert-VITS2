@@ -67,6 +67,8 @@ class WavLMLoss(torch.nn.Module):
         self.wd = wd
         self.resample = torchaudio.transforms.Resample(model_sr, slm_sr)
         self.wavlm.eval()
+        for param in self.wavlm.parameters():
+            param.requires_grad = False
 
     def forward(self, wav, y_rec):
         with torch.no_grad():
