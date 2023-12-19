@@ -7,7 +7,7 @@ from .text import cleaned_text_to_sequence, get_bert
 from .text.cleaner import clean_text
 
 
-def get_text(text, language_str, hps, device):
+def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -19,7 +19,9 @@ def get_text(text, language_str, hps, device):
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert_ori = get_bert(norm_text, word2ph, language_str, device)
+    bert_ori = get_bert(
+        norm_text, word2ph, language_str, device, style_text, style_weight
+    )
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
 
@@ -74,9 +76,11 @@ def infer(
     emotion=None,
     skip_start=False,
     skip_end=False,
+    style_text=None,
+    style_weight=0.7,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
-        text, language, hps, device
+        text, language, hps, device, style_text, style_weight
     )
     emo = get_emo_(reference_audio, emotion)
     if skip_start:
