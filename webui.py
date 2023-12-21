@@ -219,6 +219,8 @@ def process_auto(text):
             if sentence == "":
                 continue
             temp_text.append(sentence)
+            if lang == "ja":
+                lang = "jp"
             temp_lang.append(lang.upper())
         _text.append(temp_text)
         _lang.append(temp_lang)
