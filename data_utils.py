@@ -3,7 +3,6 @@ import random
 import torch
 import torch.utils.data
 from tqdm import tqdm
-import numpy as np
 from tools.log import logger
 import commons
 from mel_processing import spectrogram_torch, mel_spectrogram_torch

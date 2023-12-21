@@ -63,7 +63,7 @@ class OnnxInferenceSession:
             tone = np.expand_dims(tone, 0)
         if language.ndim == 1:
             language = np.expand_dims(language, 0)
-        assert(seq.ndim == 2,tone.ndim == 2,language.ndim == 2)
+        assert (seq.ndim == 2, tone.ndim == 2, language.ndim == 2)
         g = self.emb_g.run(
             None,
             {
@@ -82,7 +82,7 @@ class OnnxInferenceSession:
                 "bert_2": bert_en.astype(np.float32),
                 "g": g.astype(np.float32),
                 "vqidx": vqidx.astype(np.int64),
-                "sid": sid.astype(np.int64)
+                "sid": sid.astype(np.int64),
             },
         )
         x, m_p, logs_p, x_mask = enc_rtn[0], enc_rtn[1], enc_rtn[2], enc_rtn[3]
