@@ -5,7 +5,7 @@
     2. 请在模型的config.json中显示声明版本号，添加一个字段"version" : "你的版本号"
 特殊版本说明：
     1.1.1-fix： 1.1.1版本训练的模型，但是在推理时使用dev的日语修复
-    2.2：当前版本
+    2.3：当前版本
 """
 import torch
 import commons
@@ -19,6 +19,8 @@ import numpy as np
 from models import SynthesizerTrn
 from text.symbols import symbols
 
+from oldVersion.V220.models import SynthesizerTrn as V220SynthesizerTrn
+from oldVersion.V220.text import symbols as V220symbols
 from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
 from oldVersion.V210.text import symbols as V210symbols
 from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
@@ -30,13 +32,14 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200, V210
+from oldVersion import V111, V110, V101, V200, V210, V220
 
 # 当前版本信息
 latest_version = "2.3"
 
 # 版本兼容
 SynthesizerTrnMap = {
+    "2.2": V220SynthesizerTrn,
     "2.1": V210SynthesizerTrn,
     "2.0.2-fix": V200SynthesizerTrn,
     "2.0.1": V200SynthesizerTrn,
@@ -51,6 +54,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
+    "2.2": V220symbols,
     "2.1": V210symbols,
     "2.0.2-fix": V200symbols,
     "2.0.1": V200symbols,
@@ -162,6 +166,9 @@ def infer(
     style_weight=0.7,
 ):
     # 2.2版本参数位置变了
+    inferMap_V4 = {
+        "2.2": V220.infer,
+    }
     # 2.1 参数新增 emotion reference_audio skip_start skip_end
     inferMap_V3 = {
         "2.1": V210.infer,
@@ -186,6 +193,26 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
+        if version in inferMap_V4.keys():
+            emotion = ""  # Use empty emotion prompt
+            return inferMap_V4[version](
+                text,
+                emotion,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
+                language,
+                hps,
+                net_g,
+                device,
+                reference_audio,
+                skip_start,
+                skip_end,
+                style_text,
+                style_weight,
+            )
         if version in inferMap_V3.keys():
             emotion = 0
             return inferMap_V3[version](
