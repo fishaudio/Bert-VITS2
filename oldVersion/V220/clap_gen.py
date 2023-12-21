@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import utils
 from config import config
-from clap_wrapper import get_clap_audio_feature
+from .clap_wrapper import get_clap_audio_feature
 import librosa
 import os
 
