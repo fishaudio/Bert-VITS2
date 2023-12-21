@@ -11,7 +11,7 @@ inference: false
 
 [Microsoft's WavLM](https://github.com/microsoft/unilm/tree/master/wavlm)
 
-The base model pretrained on 16kHz sampled speech audio. When using the model, make sure that your speech input is also sampled at 16kHz. 
+The base model pretrained on 16kHz sampled speech audio. When using the model, make sure that your speech input is also sampled at 16kHz.
 
 **Note**: This model does not have a tokenizer as it was pretrained on audio alone. In order to use this model **speech recognition**, a tokenizer should be created and the model should be fine-tuned on labeled text data. Check out [this blog](https://huggingface.co/blog/fine-tune-wav2vec2-english) for more in-detail explanation of how to fine-tune the model.
 
@@ -32,10 +32,10 @@ The original model can be found under https://github.com/microsoft/unilm/tree/ma
 
 # Usage
 
-This is an English pre-trained speech model that has to be fine-tuned on a downstream task like speech recognition or audio classification before it can be 
+This is an English pre-trained speech model that has to be fine-tuned on a downstream task like speech recognition or audio classification before it can be
 used in inference. The model was pre-trained in English and should therefore perform well only in English. The model has been shown to work well on the [SUPERB benchmark](https://superbbenchmark.org/).
 
-**Note**: The model was pre-trained on phonemes rather than characters. This means that one should make sure that the input text is converted to a sequence 
+**Note**: The model was pre-trained on phonemes rather than characters. This means that one should make sure that the input text is converted to a sequence
 of phonemes before fine-tuning.
 
 ## Speech Recognition

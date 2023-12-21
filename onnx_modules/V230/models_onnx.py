@@ -15,8 +15,6 @@ from commons import init_weights, get_padding
 from .text import symbols, num_tones, num_languages
 
 
-
-
 class DurationDiscriminator(nn.Module):  # vits2
     def __init__(
         self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0
@@ -335,8 +333,12 @@ class TextEncoder(nn.Module):
     def forward(self, x, x_lengths, tone, language, bert, ja_bert, en_bert, g=None):
         x_mask = torch.ones_like(x).unsqueeze(0)
         bert_emb = self.bert_proj(bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
-        ja_bert_emb = self.ja_bert_proj(ja_bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
-        en_bert_emb = self.en_bert_proj(en_bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
+        ja_bert_emb = self.ja_bert_proj(ja_bert.transpose(0, 1).unsqueeze(0)).transpose(
+            1, 2
+        )
+        en_bert_emb = self.en_bert_proj(en_bert.transpose(0, 1).unsqueeze(0)).transpose(
+            1, 2
+        )
         x = (
             self.emb(x)
             + self.tone_emb(tone)
@@ -795,7 +797,7 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=4,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.n_vocab = n_vocab
