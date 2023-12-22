@@ -179,8 +179,12 @@ def run():
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
         ).cuda(local_rank)
+        net_wd = WavLMDiscriminator(
+            hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
+        ).cuda(local_rank)
     else:
         net_dur_disc = None
+        net_wd = None
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
         and hps.model.use_spk_conditioned_encoder is True
@@ -208,9 +212,6 @@ def run():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
-    net_wd = WavLMDiscriminator(
-        hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
-    ).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -223,12 +224,6 @@ def run():
         betas=hps.train.betas,
         eps=hps.train.eps,
     )
-    optim_wd = torch.optim.AdamW(
-        net_wd.parameters(),
-        hps.train.learning_rate,
-        betas=hps.train.betas,
-        eps=hps.train.eps,
-    )
     if net_dur_disc is not None:
         optim_dur_disc = torch.optim.AdamW(
             net_dur_disc.parameters(),
@@ -236,17 +231,24 @@ def run():
             betas=hps.train.betas,
             eps=hps.train.eps,
         )
+        optim_wd = torch.optim.AdamW(
+            net_wd.parameters(),
+            hps.train.learning_rate,
+            betas=hps.train.betas,
+            eps=hps.train.eps,
+        )
     else:
         optim_dur_disc = None
+        optim_wd = None
     net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
-    net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
             device_ids=[local_rank],
             bucket_cap_mb=512,
         )
+        net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
 
     # 下载底模
     if config.train_ms_config.base["use_base_model"]:
@@ -268,8 +270,18 @@ def run():
                 if "skip_optimizer" in hps.train
                 else True,
             )
+            _, optim_wd, wd_resume_lr, epoch_str = utils.load_checkpoint(
+                utils.latest_checkpoint_path(hps.model_dir, "WD_*.pth"),
+                net_wd,
+                optim_wd,
+                skip_optimizer=hps.train.skip_optimizer
+                if "skip_optimizer" in hps.train
+                else True,
+            )
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
+            if not optim_wd.param_groups[0].get("initial_lr"):
+                optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
         except:
             print("Initialize dur_disc")
 
@@ -308,43 +320,31 @@ def run():
         epoch_str = 1
         global_step = 0
 
-    try:
-        _, optim_wd, wd_resume_lr, epoch_str = utils.load_checkpoint(
-            utils.latest_checkpoint_path(hps.model_dir, "WD_*.pth"),
-            net_wd,
-            optim_wd,
-            skip_optimizer=hps.train.skip_optimizer
-            if "skip_optimizer" in hps.train
-            else True,
-        )
-        if not optim_wd.param_groups[0].get("initial_lr"):
-            optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
-    except Exception as e:
-        print(e)
-
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
-    scheduler_wd = torch.optim.lr_scheduler.ExponentialLR(
-        optim_wd, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
-    )
     if net_dur_disc is not None:
         scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
             optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
         )
+        scheduler_wd = torch.optim.lr_scheduler.ExponentialLR(
+            optim_wd, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
+        )
+        wl = WavLMLoss(
+            hps.model.slm.model,
+            net_wd,
+            hps.data.sampling_rate,
+            hps.model.slm.sr,
+        ).to(local_rank)
     else:
         scheduler_dur_disc = None
+        scheduler_wd = None
+        wl = None
     scaler = GradScaler(enabled=hps.train.bf16_run)
 
-    wl = WavLMLoss(
-        hps.model.slm.model,
-        net_wd,
-        hps.data.sampling_rate,
-        hps.model.slm.sr,
-    ).to(local_rank)
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
         if rank == 0:
@@ -407,9 +407,9 @@ def train_and_evaluate(
 
     net_g.train()
     net_d.train()
-    net_wd.train()
     if net_dur_disc is not None:
         net_dur_disc.train()
+        net_wd.train()
     for batch_idx, (
         x,
         x_lengths,
@@ -531,6 +531,18 @@ def train_and_evaluate(
                     net_dur_disc.parameters(), None
                 )
                 scaler.step(optim_dur_disc)
+                
+                with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
+                    loss_slm = wl.discriminator(
+                        y.detach().squeeze(), y_hat.detach().squeeze()
+                    ).mean()
+
+                optim_wd.zero_grad()
+                scaler.scale(loss_slm).backward()
+                scaler.unscale_(optim_wd)
+                # torch.nn.utils.clip_grad_norm_(parameters=net_wd.parameters(), max_norm=200)
+                grad_norm_wd = commons.clip_grad_value_(net_wd.parameters(), None)
+                scaler.step(optim_wd)
 
         optim_d.zero_grad()
         scaler.scale(loss_disc_all).backward()
@@ -541,24 +553,14 @@ def train_and_evaluate(
         scaler.step(optim_d)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            loss_slm = wl.discriminator(
-                y.detach().squeeze(), y_hat.detach().squeeze()
-            ).mean()
-
-        optim_wd.zero_grad()
-        scaler.scale(loss_slm).backward()
-        scaler.unscale_(optim_wd)
-        # torch.nn.utils.clip_grad_norm_(parameters=net_wd.parameters(), max_norm=200)
-        grad_norm_wd = commons.clip_grad_value_(net_wd.parameters(), None)
-        scaler.step(optim_wd)
-
-        with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
                 _, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw_, logw, g)
                 _, y_dur_hat_g_sdp = net_dur_disc(hidden_x, x_mask, logw_, logw_sdp, g)
                 y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+                loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
+                loss_lm_gen = wl.generator(y_hat.squeeze())
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
@@ -567,21 +569,16 @@ def train_and_evaluate(
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
 
-                loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
-                loss_lm_gen = wl.generator(y_hat.squeeze())
-
                 loss_gen_all = (
                     loss_gen
                     + loss_fm
                     + loss_mel
                     + loss_dur
                     + loss_kl
-                    + loss_lm
-                    + loss_lm_gen
                 )
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
-                    loss_gen_all += loss_dur_gen
+                    loss_gen_all += loss_dur_gen + loss_lm + loss_lm_gen
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
@@ -605,12 +602,9 @@ def train_and_evaluate(
                 scalar_dict = {
                     "loss/g/total": loss_gen_all,
                     "loss/d/total": loss_disc_all,
-                    "loss/wd/total": loss_slm,
                     "learning_rate": lr,
                     "grad_norm_d": grad_norm_d,
                     "grad_norm_g": grad_norm_g,
-                    "grad_norm_dur": grad_norm_dur,
-                    "grad_norm_wd": grad_norm_wd,
                 }
                 scalar_dict.update(
                     {
@@ -618,8 +612,6 @@ def train_and_evaluate(
                         "loss/g/mel": loss_mel,
                         "loss/g/dur": loss_dur,
                         "loss/g/kl": loss_kl,
-                        "loss/g/lm": loss_lm,
-                        "loss/g/lm_gen": loss_lm_gen,
                     }
                 )
                 scalar_dict.update(
@@ -633,7 +625,13 @@ def train_and_evaluate(
                 )
 
                 if net_dur_disc is not None:
-                    scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all})
+                    scalar_dict.update({
+                        "loss/dur_disc/total": loss_dur_disc_all,
+                        "loss/wd/total": loss_slm,
+                        "grad_norm_dur": grad_norm_dur,
+                        "grad_norm_wd": grad_norm_wd,
+                        "loss/g/lm": loss_lm,
+                        "loss/g/lm_gen": loss_lm_gen,})
 
                     scalar_dict.update(
                         {
@@ -693,13 +691,6 @@ def train_and_evaluate(
                     epoch,
                     os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
                 )
-                utils.save_checkpoint(
-                    net_wd,
-                    optim_wd,
-                    hps.train.learning_rate,
-                    epoch,
-                    os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
-                )
                 if net_dur_disc is not None:
                     utils.save_checkpoint(
                         net_dur_disc,
@@ -707,6 +698,13 @@ def train_and_evaluate(
                         hps.train.learning_rate,
                         epoch,
                         os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
+                    )
+                    utils.save_checkpoint(
+                        net_wd,
+                        optim_wd,
+                        hps.train.learning_rate,
+                        epoch,
+                        os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
                     )
                 keep_ckpts = config.train_ms_config.keep_ckpts
                 if keep_ckpts > 0:
