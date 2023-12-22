@@ -207,16 +207,6 @@ def run():
         for param in net_g.enc_p.bert_proj.parameters():
             param.requires_grad = False
 
-    if getattr(hps.train, "freeze_EN_bert", False):
-        print("Freezing EN bert encoder !!!")
-        for param in net_g.enc_p.en_bert_proj.parameters():
-            param.requires_grad = False
-
-    if getattr(hps.train, "freeze_JP_bert", False):
-        print("Freezing JP bert encoder !!!")
-        for param in net_g.enc_p.ja_bert_proj.parameters():
-            param.requires_grad = False
-
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     net_wd = WavLMDiscriminator(
         hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
@@ -431,8 +421,6 @@ def train_and_evaluate(
         tone,
         language,
         bert,
-        ja_bert,
-        en_bert,
     ) in enumerate(tqdm(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -453,8 +441,6 @@ def train_and_evaluate(
         tone = tone.cuda(local_rank, non_blocking=True)
         language = language.cuda(local_rank, non_blocking=True)
         bert = bert.cuda(local_rank, non_blocking=True)
-        ja_bert = ja_bert.cuda(local_rank, non_blocking=True)
-        en_bert = en_bert.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
@@ -476,8 +462,6 @@ def train_and_evaluate(
                 tone,
                 language,
                 bert,
-                ja_bert,
-                en_bert,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -757,16 +741,12 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             tone,
             language,
             bert,
-            ja_bert,
-            en_bert,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             y, y_lengths = y.cuda(), y_lengths.cuda()
             speakers = speakers.cuda()
-            bert = bert.cuda()
-            ja_bert = ja_bert.cuda()
-            en_bert = en_bert.cuda()
+            bert = bert.cuda()cuda()
             tone = tone.cuda()
             language = language.cuda()
             for use_sdp in [True, False]:
@@ -777,8 +757,6 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     tone,
                     language,
                     bert,
-                    ja_bert,
-                    en_bert,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
