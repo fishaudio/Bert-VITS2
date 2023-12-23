@@ -1,14 +1,17 @@
-# 変更点
+# Bert-VITS2-litaginフォーク
+
+## 変更点
 - `keep_ckpts`のバグを修正
 - 圧縮モデルを保存する設定を追加: `config.json`の`save_compressed_models`を`true`にすると、modelの保存時に圧縮モデルも保存される（これと`keep_ckpts`を`1`とかにしとけばかなり容量の節約に）
 - Ver 2.1での学習をサポート（`train_ms_V210.py`）
 
-# TODO
+## TODO
 - [ ] Ver 2.2での学習をサポート
 - [ ] Ver 2.1, 2.2での学習でのbf16対応
 - [ ] 推論のWebUIでのバージョンに応じた感情指定のサポート
 - [ ] より良い推論WebUI？
 - [ ] 学習のWebUI?
+
 
 以下本家のREADME.md
 
