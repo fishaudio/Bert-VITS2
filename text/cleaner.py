@@ -1,21 +1,18 @@
-from text import chinese, japanese, english, cleaned_text_to_sequence
+from text import chinese, cleaned_text_to_sequence
 
 
-language_module_map = {"ZH": chinese, "JP": japanese, "EN": english}
 
 
 def clean_text(text, language):
-    language_module = language_module_map[language]
-    norm_text = language_module.text_normalize(text)
-    phones, tones, word2ph = language_module.g2p(norm_text)
+    norm_text = chinese.text_normalize(text)
+    phones, tones, word2ph = chinese.g2p(norm_text)
     return norm_text, phones, tones, word2ph
 
 
 def clean_text_bert(text, language):
-    language_module = language_module_map[language]
-    norm_text = language_module.text_normalize(text)
-    phones, tones, word2ph = language_module.g2p(norm_text)
-    bert = language_module.get_bert_feature(norm_text, word2ph)
+    norm_text = chinese.text_normalize(text)
+    phones, tones, word2ph = chinese.g2p(norm_text)
+    bert = chinese.get_bert_feature(norm_text, word2ph)
     return phones, tones, bert
 
 
