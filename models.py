@@ -830,8 +830,8 @@ class SynthesizerTrn(nn.Module):
         n_speakers=256,
         gin_channels=256,
         use_sdp=True,
-        n_flow_layer=4,
-        n_layers_trans_flow=4,
+        n_flow_layer=8,
+        n_layers_trans_flow=8,
         flow_share_parameter=False,
         use_transformer_flow=True,
         **kwargs
@@ -989,11 +989,11 @@ class SynthesizerTrn(nn.Module):
 
         logw_ = torch.log(w + 1e-6) * x_mask
         logw = self.dp(x, x_mask, g=g)
-        logw_sdp = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=1.0)
+        # logw_sdp = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=1.0)
         l_length_dp = torch.sum((logw - logw_) ** 2, [1, 2]) / torch.sum(
             x_mask
         )  # for averaging
-        l_length_sdp += torch.sum((logw_sdp - logw_) ** 2, [1, 2]) / torch.sum(x_mask)
+        # l_length_sdp += torch.sum((logw_sdp - logw_) ** 2, [1, 2]) / torch.sum(x_mask)
 
         l_length = l_length_dp + l_length_sdp
 
@@ -1013,7 +1013,7 @@ class SynthesizerTrn(nn.Module):
             x_mask,
             y_mask,
             (z, z_p, m_p, logs_p, m_q, logs_q),
-            (x, logw, logw_, logw_sdp),
+            (x, logw, logw_),
             g,
         )
 
