@@ -24,6 +24,7 @@ import numpy as np
 from config import config
 from tools.translate import translate
 import librosa
+import re
 
 net_g = None
 
@@ -31,6 +32,15 @@ device = config.webui_config.device
 if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
+
+def contains_any_alphabet(input_string):
+	pattern = re.compile('[a-zA-Z]')
+	return bool(pattern.search(input_string))
+
+
+def contains_any_chinese(input_string):
+	pattern = re.compile('[\u4e00-\u9fa5]')
+	return bool(pattern.search(input_string))
 
 def generate_audio(
     slices,
