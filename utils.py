@@ -10,6 +10,7 @@ from huggingface_hub import hf_hub_download
 from scipy.io.wavfile import read
 import torch
 import re
+from collections import OrderedDict
 
 MATPLOTLIB_FLAG = False
 
@@ -136,6 +137,35 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
             "iteration": iteration,
             "optimizer": optimizer.state_dict(),
             "learning_rate": learning_rate,
+        },
+        checkpoint_path,
+    )
+
+
+def save_compressed_models_checkpoint(model, iteration, checkpoint_path, ishalf=False):
+    logger.info(
+        f"Saving compressed model at iteration {iteration} to {checkpoint_path}"
+    )
+    if hasattr(model, "module"):
+        state_dict = model.module.state_dict()
+    else:
+        state_dict = model.state_dict()
+    keys = []
+    for k in state_dict:
+        if "enc_q" in k:
+            continue  # noqa: E701
+        keys.append(k)
+
+    new_dict_g = (
+        {k: state_dict[k].half() for k in keys}
+        if ishalf
+        else {k: state_dict[k] for k in keys}
+    )
+    torch.save(
+        {
+            "model": new_dict_g,
+            "iteration": iteration,
+            "learning_rate": 0,
         },
         checkpoint_path,
     )
@@ -302,9 +332,10 @@ def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_tim
     to_del = [
         os.path.join(path_to_models, fn)
         for fn in (
-            x_sorted("G")[:-n_ckpts_to_keep]
-            + x_sorted("D")[:-n_ckpts_to_keep]
-            + x_sorted("WD")[:-n_ckpts_to_keep]
+            x_sorted("G_")[:-n_ckpts_to_keep]
+            + x_sorted("D_")[:-n_ckpts_to_keep]
+            + x_sorted("WD_")[:-n_ckpts_to_keep]
+            + x_sorted("DUR_")[:-n_ckpts_to_keep]
         )
     ]
 

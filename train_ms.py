@@ -390,6 +390,15 @@ def run():
         scheduler_wd.step()
         if net_dur_disc is not None:
             scheduler_dur_disc.step()
+        if epoch == hps.train.epochs:
+            utils.save_compressed_models_checkpoint(
+                net_g,
+                epoch,
+                os.path.join(
+                    hps.model_dir,
+                    f"release_{global_step}.pth",
+                ),
+            )
 
 
 def train_and_evaluate(
@@ -730,6 +739,16 @@ def train_and_evaluate(
                         path_to_models=hps.model_dir,
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
+                    )
+                save_compressed_models = hps.train.save_compressed_models
+                if save_compressed_models:
+                    utils.save_compressed_models_checkpoint(
+                        net_g,
+                        epoch,
+                        os.path.join(
+                            hps.model_dir,
+                            f"release_{global_step}.pth",
+                        ),
                     )
 
         global_step += 1
