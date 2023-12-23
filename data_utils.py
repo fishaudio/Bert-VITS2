@@ -68,7 +68,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 phones = phones.split(" ")
                 tone = [int(i) for i in tone.split(" ")]
                 word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append(
+                audiopaths_sid_text_new.append( 
                     [audiopath, spk, language, text, phones, tone, word2ph]
                 )
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
@@ -199,7 +199,7 @@ class TextAudioSpeakerCollate:
         text_padded = torch.LongTensor(len(batch), max_text_len)
         tone_padded = torch.LongTensor(len(batch), max_text_len)
         language_padded = torch.LongTensor(len(batch), max_text_len)
-        bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
+        bert_padded = torch.FloatTensor(len(batch), 2560, max_text_len)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
         wav_padded = torch.FloatTensor(len(batch), 1, max_wav_len)
