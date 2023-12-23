@@ -744,7 +744,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
             y, y_lengths = y.cuda(), y_lengths.cuda()
             speakers = speakers.cuda()
-            bert = bert.cuda()cuda()
+            bert = bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
             for use_sdp in [True, False]:
