@@ -740,8 +740,10 @@ def train_and_evaluate(
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
                     )
-                save_compressed_models = hps.train.save_compressed_models
-                if save_compressed_models:
+                if (
+                    "save_compressed_models" in hps.train.keys()
+                    and hps.train.save_compressed_models is True
+                ):
                     utils.save_compressed_models_checkpoint(
                         net_g,
                         epoch,

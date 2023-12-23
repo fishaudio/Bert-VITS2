@@ -18,19 +18,19 @@ import gc
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
 import utils
-from oldVersion.V210.data_utils import (
+from oldVersion.V220.data_utils import (
     TextAudioSpeakerLoader,
     TextAudioSpeakerCollate,
     DistributedBucketSampler,
 )
-from oldVersion.V210.models import (
+from oldVersion.V220.models import (
     SynthesizerTrn,
     MultiPeriodDiscriminator,
     DurationDiscriminator,
 )
 from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from oldVersion.V210.text.symbols import symbols
+from oldVersion.V220.text.symbols import symbols
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -194,6 +194,21 @@ def run():
         **hps.model,
     ).cuda(local_rank)
 
+    if getattr(hps.train, "freeze_ZH_bert", False):
+        print("Freezing ZH bert encoder !!!")
+        for param in net_g.enc_p.bert_proj.parameters():
+            param.requires_grad = False
+
+    if getattr(hps.train, "freeze_EN_bert", False):
+        print("Freezing EN bert encoder !!!")
+        for param in net_g.enc_p.en_bert_proj.parameters():
+            param.requires_grad = False
+
+    if getattr(hps.train, "freeze_JP_bert", False):
+        print("Freezing JP bert encoder !!!")
+        for param in net_g.enc_p.ja_bert_proj.parameters():
+            param.requires_grad = False
+
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
@@ -216,12 +231,15 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[local_rank])
-    net_d = DDP(net_d, device_ids=[local_rank])
+    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
+    net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
     dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
-            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
+            net_dur_disc,
+            device_ids=[local_rank],
+            find_unused_parameters=True,
+            bucket_cap_mb=512,
         )
 
     # 下载底模
@@ -328,7 +346,6 @@ def run():
         scheduler_d.step()
         if net_dur_disc is not None:
             scheduler_dur_disc.step()
-
         if epoch == hps.train.epochs:
             utils.save_compressed_models_checkpoint(
                 net_g,
@@ -415,6 +432,7 @@ def train_and_evaluate(
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_),
+                g,
                 loss_commit,
             ) = net_g(
                 x,
@@ -464,7 +482,11 @@ def train_and_evaluate(
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
-                    hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach()
+                    hidden_x.detach(),
+                    x_mask.detach(),
+                    logw.detach(),
+                    logw_.detach(),
+                    g.detach(),
                 )
                 with autocast(enabled=False):
                     # TODO: I think need to mean using the mask, but for now, just mean all
@@ -490,7 +512,9 @@ def train_and_evaluate(
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
-                y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw, logw_)
+                y_dur_hat_r, y_dur_hat_g = net_dur_disc(
+                    hidden_x, x_mask, logw, logw_, g
+                )
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
@@ -599,10 +623,8 @@ def train_and_evaluate(
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
                     )
-                if (
-                    "save_compressed_models" in hps.train.keys()
-                    and hps.train.save_compressed_models is True
-                ):
+                save_compressed_models = hps.train.save_compressed_models
+                if save_compressed_models:
                     utils.save_compressed_models_checkpoint(
                         net_g,
                         epoch,
@@ -613,6 +635,7 @@ def train_and_evaluate(
                     )
 
         global_step += 1
+
     gc.collect()
     torch.cuda.empty_cache()
     if rank == 0:
