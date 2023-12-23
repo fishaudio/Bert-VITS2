@@ -30,24 +30,6 @@ def get_bert(norm_text, word2ph, language, device, style_text=None, style_weight
     return bert
 
 
-def check_bert_models():
-    import json
-    from pathlib import Path
-
-    from config import config
-    from .bert_utils import _check_bert
-
-    if config.mirror.lower() == "openi":
-        import openi
-
-        kwargs = {"token": config.openi_token} if config.openi_token else {}
-        openi.login(**kwargs)
-
-    with open("./bert/bert_models.json", "r") as fp:
-        models = json.load(fp)
-        for k, v in models.items():
-            local_path = Path("./bert").joinpath(k)
-            _check_bert(v["repo_id"], v["files"], local_path)
 
 
 def init_openjtalk():
@@ -60,4 +42,3 @@ def init_openjtalk():
 
 
 init_openjtalk()
-check_bert_models()
