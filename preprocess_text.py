@@ -125,7 +125,7 @@ def preprocess(
     json_config["data"]["spk2id"] = spk_id_map
     json_config["data"]["n_speakers"] = len(spk_id_map)
     # 新增写入：写入训练版本、数据集路径
-    json_config["version"] = latest_version
+    # json_config["version"] = latest_version
     json_config["data"]["training_files"] = os.path.normpath(train_path).replace(
         "\\", "/"
     )
