@@ -53,26 +53,41 @@ def generate_audio(
         for idx, piece in enumerate(slices):
             skip_start = idx != 0
             skip_end = idx != len(slices) - 1
-            audio = infer(
-                piece,
-                reference_audio=reference_audio,
-                emotion=emotion,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise_scale,
-                noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
-                sid=speaker,
-                language=language,
-                hps=hps,
-                net_g=net_g,
-                device=device,
-                skip_start=skip_start,
-                skip_end=skip_end,
-                style_text=style_text,
-                style_weight=style_weight,
-            )
-            audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
-            audio_list.append(audio16bit)
+            
+            # Simple support for Chinese and English mixed mode
+            lan = language
+
+            reg_result = re.compile(
+                '([\u4e00-\u9fa5\s,.;!?:\'\"，。；！？：‘’“”]+|[a-zA-Z\s,.;!?:\'\"，。；！？：‘’“”]+|[^\u4e00-\u9fa5a-zA-Z]+)')
+
+            result = reg_result.findall(piece)
+
+            for split_text in result:
+                if contains_any_alphabet(split_text):
+                    lan = 'EN'
+                elif contains_any_chinese(split_text):
+                    lan = 'ZH'
+                    
+                audio = infer(
+                    split_text,
+                    reference_audio=reference_audio,
+                    emotion=emotion,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise_scale,
+                    noise_scale_w=noise_scale_w,
+                    length_scale=length_scale,
+                    sid=speaker,
+                    language=language,
+                    hps=hps,
+                    net_g=net_g,
+                    device=device,
+                    skip_start=skip_start,
+                    skip_end=skip_end,
+                    style_text=style_text,
+                    style_weight=style_weight,
+                )
+                audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
+                audio_list.append(audio16bit)
     return audio_list
 
 
