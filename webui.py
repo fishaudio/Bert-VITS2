@@ -32,16 +32,14 @@ device = config.webui_config.device
 if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-
 def contains_any_alphabet(input_string):
-    pattern = re.compile("[a-zA-Z]")
-    return bool(pattern.search(input_string))
+	pattern = re.compile('[a-zA-Z]')
+	return bool(pattern.search(input_string))
 
 
 def contains_any_chinese(input_string):
-    pattern = re.compile("[\u4e00-\u9fa5]")
-    return bool(pattern.search(input_string))
-
+	pattern = re.compile('[\u4e00-\u9fa5]')
+	return bool(pattern.search(input_string))
 
 def generate_audio(
     slices,
@@ -69,16 +67,15 @@ def generate_audio(
             lan = language
 
             reg_result = re.compile(
-                "([\u4e00-\u9fa5\s,.;!?:'\"，。；！？：‘’“”]+|[a-zA-Z\s,.;!?:'\"，。；！？：‘’“”]+|[^\u4e00-\u9fa5a-zA-Z]+)"
-            )
+                '([\u4e00-\u9fa5\s,.;!?:\'\"，。；！？：‘’“”]+|[a-zA-Z\s,.;!?:\'\"，。；！？：‘’“”]+|[^\u4e00-\u9fa5a-zA-Z]+)')
 
             result = reg_result.findall(piece)
 
             for split_text in result:
                 if contains_any_alphabet(split_text):
-                    lan = "EN"
+                    lan = 'EN'
                 elif contains_any_chinese(split_text):
-                    lan = "ZH"
+                    lan = 'ZH'
 
                 audio = infer(
                     split_text,
@@ -89,7 +86,7 @@ def generate_audio(
                     noise_scale_w=noise_scale_w,
                     length_scale=length_scale,
                     sid=speaker,
-                    language=language,
+                    language=lan,
                     hps=hps,
                     net_g=net_g,
                     device=device,
@@ -100,6 +97,7 @@ def generate_audio(
                 )
                 audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
                 audio_list.append(audio16bit)
+
     return audio_list
 
 
