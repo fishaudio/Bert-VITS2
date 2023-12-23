@@ -451,7 +451,7 @@ def train_and_evaluate(
                 x_mask,
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
-                (hidden_x, logw, logw_, logw_sdp),
+                (hidden_x, logw, logw_,
                 g,
             ) = net_g(
                 x,
@@ -504,15 +504,15 @@ def train_and_evaluate(
                     logw.detach(),
                     g.detach(),
                 )
-                y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
-                    hidden_x.detach(),
-                    x_mask.detach(),
-                    logw_.detach(),
-                    logw_sdp.detach(),
-                    g.detach(),
-                )
-                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
-                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+               # y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
+                   # hidden_x.detach(),
+                   # x_mask.detach(),
+                   # logw_.detach(),
+                   # logw_sdp.detach(),
+                   # g.detach(),
+                # )
+                # y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
+                # y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
                     (
@@ -557,8 +557,8 @@ def train_and_evaluate(
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
                 _, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw_, logw, g)
-                _, y_dur_hat_g_sdp = net_dur_disc(hidden_x, x_mask, logw_, logw_sdp, g)
-                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+                # _, y_dur_hat_g_sdp = net_dur_disc(hidden_x, x_mask, logw_, logw_sdp, g)
+                # y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
                 loss_lm_gen = wl.generator(y_hat.squeeze())
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
