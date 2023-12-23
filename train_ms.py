@@ -451,7 +451,7 @@ def train_and_evaluate(
                 x_mask,
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
-                (hidden_x, logw, logw_,
+                (hidden_x, logw, logw_,)
                 g,
             ) = net_g(
                 x,
