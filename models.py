@@ -361,7 +361,8 @@ class TextEncoder(nn.Module):
         nn.init.normal_(self.tone_emb.weight, 0.0, hidden_channels**-0.5)
         self.language_emb = nn.Embedding(num_languages, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
-        self.bert_proj = nn.Conv1d(2560, hidden_channels, 1)
+        self.bert_proj = nn.Conv1d(2560, 1024, 1)
+        self.bert_pre_proj = nn.Conv1d(1024, hidden_channels, 1)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -375,7 +376,7 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, tone, language, bert, g=None):
-        bert_emb = self.bert_proj(bert).transpose(1, 2)
+        bert_emb = self.bert_proj(self.bert_pre_proj(bert)).transpose(1, 2)
         x = (
             self.emb(x)
             + self.tone_emb(tone)
