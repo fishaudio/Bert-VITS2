@@ -1,0 +1,15 @@
+{
+    "do_lower_case": true,
+    "do_basic_tokenize": true,
+    "never_split": null,
+    "unk_token": "[UNK]",
+    "sep_token": "[SEP]",
+    "pad_token": "[PAD]",
+    "cls_token": "[CLS]",
+    "mask_token": "[MASK]",
+    "tokenize_chinese_chars": true,
+    "strip_accents": null,
+    "special_tokens_map_file": null,
+    "name_or_path": "/cognitive_comp/gaoxinyu/pretrained_model/bert-1.3B",
+    "tokenizer_class": "BertTokenizer"
+}
