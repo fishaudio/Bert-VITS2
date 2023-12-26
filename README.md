@@ -6,7 +6,7 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 ## これは何？
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
-- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)のように、GitやPythonがない人でも簡単にインストールできるやつもあります。
+- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)のように、GitやPythonがない人でも簡単にインストールできるやつもあります（まだ少し未検証）。
 
 ## 使い方
 
@@ -18,7 +18,7 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 #### GitやPythonに馴染みが無い方
 
-[これ]をダウンロードして、スペースを含まない英数字のみのパスで実行してください（まだ動作未確認なので後でちゃんとチェックします）。
+[これ](https://github.com/litagin02/Style-Bert-VITS2/raw/master/scripts/Install-Style-Bert-VITS2.bat)をダウンロードして、スペースを含まない英数字のみのパスで実行してください（まだ動作未確認なので後でちゃんとチェックします）。
 
 #### GitやPython使える人
 

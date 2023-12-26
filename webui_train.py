@@ -206,7 +206,7 @@ if __name__ == "__main__":
                 gr.Markdown(value="### Step 2: 音声ファイルの前処理")
                 resample_btn = gr.Button(value="実行", variant="primary")
             with gr.Column():
-                gr.Markdown(value="### Step 3: ラベルファイルの前処理")
+                gr.Markdown(value="### Step 3: 書き起こしファイルの前処理")
                 preprocess_text_btn = gr.Button(value="実行", variant="primary")
             with gr.Column():
                 gr.Markdown(value="### Step 4: BERT特徴ファイルの生成")
