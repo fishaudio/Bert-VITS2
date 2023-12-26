@@ -19,6 +19,7 @@ pyopenjtalk-prebuilt
 pypinyin
 PyYAML
 requests
+safetensors
 scipy
 tensorboard
 transformers
