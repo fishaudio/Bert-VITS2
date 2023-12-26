@@ -1,12 +1,9 @@
 import sys
-
 import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
-
 from config import config
 
-LOCAL_PATH = "./bert/chinese-roberta-wwm-ext-large"
-
+LOCAL_PATH = "./bert/Erlangshen-MegatronBert-3.9B-Chinese"
 tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
