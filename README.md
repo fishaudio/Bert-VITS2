@@ -1,17 +1,86 @@
-# Bert-VITS2-litaginフォーク
+# Style-Bert-VITS2
 
-## 変更点
-- `keep_ckpts`のバグを修正
-- 圧縮モデルを保存する設定を追加: `config.json`の`save_compressed_models`を`true`にすると、modelの保存時に圧縮モデルも保存される（これと`keep_ckpts`を`1`とかにしとけばかなり容量の節約に）
-- Ver 2.1での学習をサポート（`train_ms_V210.py`）
+Bert-VITS2 with more controllable voice styles.
 
-## TODO
-- [x] Ver 2.2での学習をサポート←たぶんやった、まだ確認してない
-- [ ] Ver 2.1での感情のクラス数を10から少なくして実験
-- [ ] Ver 2.1, 2.2での学習でのbf16対応
-- [ ] 推論のWebUIでのバージョンに応じた感情指定のサポート
-- [ ] より良い推論WebUI？
-- [ ] 学習のWebUI?
+This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
+
+## これは何？
+- [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
+- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)のように、GitやPythonがない人でも簡単にインストールできるやつもあります。
+
+## 使い方
+
+詳しくは[こちら](docs/tutorial.md)を参照してください。
+
+### インストール
+
+Windows環境で最近のNVIDIA製グラボがあることを前提にしています。
+
+#### GitやPythonに馴染みが無い方
+
+[これ]をダウンロードして、スペースを含まない英数字のみのパスで実行してください（まだ動作未確認なので後でちゃんとチェックします）。
+
+#### GitやPython使える人
+
+Python 3.10で動作確認しています。
+
+```bash
+git clone https://github.com/litagin02/Style-Bert-VITS2.git
+cd Style-Bert-VITS2
+python -m venv venv
+venv\Scripts\activate
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
+python initialize.py
+```
+最後を忘れずに。
+
+### 音声合成
+
+`App.bat`をダブルクリックするとWebUIが起動します。
+TODO: デフォルトモデルをいくつかダウンロードするようにする
+
+ディレクトリ構造:
+```
+model_assets
+├── your_model
+│   ├── config.json
+│   ├── your_model_file1.safetensors
+│   ├── your_model_file2.safetensors
+│   ├── ...
+│   └── style_vectors.npy
+└── another_model
+    ├── ...
+```
+このように、推論には`config.json`と`*.safetensors`と`style_vectors.npy`が必要です。学習の段階で前者の2つは自動で作成されますが、`style_vectors.npy`は自分で作成する必要があります: 下の「スタイルの生成」を参照してください。
+
+### 学習
+
+`Train.bat`をダブルクリックするとWebUIが起動します。
+
+### スタイルの生成
+
+- `Style.bat`をダブルクリックするとWebUIが起動します。
+- この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
+- 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
+
+
+## Bert-VITS2 v2.1と違う点
+- 感情埋め込みのモデルを変更（[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというより正確には話者埋め込みが近い）
+- 埋め込みもベクトル量子化を取り払い、単なる全結合層に。
+- スタイルベクトルファイル`style_vectors.npy`を作ることで、そのスタイルを使って効果の強さも連続的に指定しつつ音声を生成することができる。
+- 各種WebUIを作成（事前準備・学習・スタイルベクトルの生成・音声合成）
+- bf16での学習のサポート
+- safetensors形式のサポート、デフォルトでsafetensorsを使用するように
+- その他軽微なbugfixやリファクタリング
+
+## Bert-VITS2 v2.1と同じ点
+- [事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
+
+## 実験したいこと
+- [ ] 複数話者での学習の実験（原理的にはできるはず、スタイルがどう効くかが未知）
+- [ ] むしろ複数話者で単一話者扱いで学習しても、スタイル埋め込みが話者埋め込みでそこに話者の情報が含まれているので、スタイルベクトルを作ることで複数話者の音声を生成できるのではないか？
+- [ ] もしそうなら、大量の人数の音声を学習させれば、ある意味「話者空間から適当に選んだ話者（連続的に変えられる）の音声合成」ができるのでは？リファレンス音声も使えばゼロショットでの音声合成もできるのでは？
 
 
 以下本家のREADME.md

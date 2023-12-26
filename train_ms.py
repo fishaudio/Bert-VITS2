@@ -1,43 +1,34 @@
-# flake8: noqa: E402
-import platform
-import os
-import torch
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.cuda.amp import autocast, GradScaler
-from tqdm import tqdm
-import logging
-from config import config
 import argparse
 import datetime
 import gc
+import os
+import platform
+import shutil
+import sys
 
-logging.getLogger("numba").setLevel(logging.WARNING)
+import torch
+import torch.distributed as dist
+from torch.cuda.amp import GradScaler, autocast
+from torch.nn import functional as F
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
+
+# logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
 import utils
+from config import config
 from data_utils import (
-    TextAudioSpeakerLoader,
-    TextAudioSpeakerCollate,
     DistributedBucketSampler,
+    TextAudioSpeakerCollate,
+    TextAudioSpeakerLoader,
 )
-from models import (
-    SynthesizerTrn,
-    MultiPeriodDiscriminator,
-    DurationDiscriminator,
-    WavLMDiscriminator,
-)
-from losses import (
-    generator_loss,
-    discriminator_loss,
-    feature_loss,
-    kl_loss,
-    WavLMLoss,
-)
+from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
+from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
 from text.symbols import symbols
+from tools.log import logger
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -49,6 +40,7 @@ torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
+torch.backends.cuda.enable_math_sdp(True)
 global_step = 0
 
 
@@ -57,9 +49,9 @@ def run():
     envs = config.train_ms_config.env
     for env_name, env_value in envs.items():
         if env_name not in os.environ.keys():
-            print("加载config中的配置{}".format(str(env_value)))
+            logger.info("加载config中的配置{}".format(str(env_value)))
             os.environ[env_name] = str(env_value)
-    print(
+    logger.info(
         "加载环境变量 \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
             os.environ["MASTER_ADDR"],
             os.environ["MASTER_PORT"],
@@ -114,14 +106,17 @@ def run():
             data = f.read()
         with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
             f.write(data)
+    out_dir = os.path.join(config.out_dir, config.model_name)
+    os.makedirs(out_dir, exist_ok=True)
+    shutil.copy(args.config, os.path.join(out_dir, "config.json"))
 
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(local_rank)
 
     global global_step
     if rank == 0:
-        logger = utils.get_logger(hps.model_dir)
-        logger.info(hps)
+        # logger = utils.get_logger(hps.model_dir)
+        # logger.info(hps)
         utils.check_git_hash(hps.model_dir)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
@@ -160,18 +155,18 @@ def run():
         "use_noise_scaled_mas" in hps.model.keys()
         and hps.model.use_noise_scaled_mas is True
     ):
-        print("Using noise scaled MAS for VITS2")
+        logger.info("Using noise scaled MAS for VITS2")
         mas_noise_scale_initial = 0.01
         noise_scale_delta = 2e-6
     else:
-        print("Using normal MAS for VITS1")
+        logger.info("Using normal MAS for VITS1")
         mas_noise_scale_initial = 0.0
         noise_scale_delta = 0.0
     if (
         "use_duration_discriminator" in hps.model.keys()
         and hps.model.use_duration_discriminator is True
     ):
-        print("Using duration discriminator for VITS2")
+        logger.info("Using duration discriminator for VITS2")
         net_dur_disc = DurationDiscriminator(
             hps.model.hidden_channels,
             hps.model.hidden_channels,
@@ -179,8 +174,6 @@ def run():
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
         ).cuda(local_rank)
-    else:
-        net_dur_disc = None
     if (
         "use_spk_conditioned_encoder" in hps.model.keys()
         and hps.model.use_spk_conditioned_encoder is True
@@ -190,7 +183,7 @@ def run():
                 "n_speakers must be > 0 when using spk conditioned encoder to train multi-speaker model"
             )
     else:
-        print("Using normal encoder for VITS1")
+        logger.info("Using normal encoder for VITS1")
 
     net_g = SynthesizerTrn(
         len(symbols),
@@ -203,24 +196,21 @@ def run():
     ).cuda(local_rank)
 
     if getattr(hps.train, "freeze_ZH_bert", False):
-        print("Freezing ZH bert encoder !!!")
+        logger.info("Freezing ZH bert encoder !!!")
         for param in net_g.enc_p.bert_proj.parameters():
             param.requires_grad = False
 
     if getattr(hps.train, "freeze_EN_bert", False):
-        print("Freezing EN bert encoder !!!")
+        logger.info("Freezing EN bert encoder !!!")
         for param in net_g.enc_p.en_bert_proj.parameters():
             param.requires_grad = False
 
     if getattr(hps.train, "freeze_JP_bert", False):
-        print("Freezing JP bert encoder !!!")
+        logger.info("Freezing JP bert encoder !!!")
         for param in net_g.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
-    net_wd = WavLMDiscriminator(
-        hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
-    ).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -229,12 +219,6 @@ def run():
     )
     optim_d = torch.optim.AdamW(
         net_d.parameters(),
-        hps.train.learning_rate,
-        betas=hps.train.betas,
-        eps=hps.train.eps,
-    )
-    optim_wd = torch.optim.AdamW(
-        net_wd.parameters(),
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps,
@@ -248,28 +232,16 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
-    net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
-    net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
+    net_g = DDP(net_g, device_ids=[local_rank])
+    net_d = DDP(net_d, device_ids=[local_rank])
+    dur_resume_lr = None
     if net_dur_disc is not None:
         net_dur_disc = DDP(
-            net_dur_disc,
-            device_ids=[local_rank],
-            bucket_cap_mb=512,
+            net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
         )
 
-    # 下载底模
-    if config.train_ms_config.base["use_base_model"]:
-        utils.download_checkpoint(
-            hps.model_dir,
-            config.train_ms_config.base,
-            token=config.openi_token,
-            mirror=config.mirror,
-        )
-    dur_resume_lr = hps.train.learning_rate
-    wd_resume_lr = hps.train.learning_rate
-    if net_dur_disc is not None:
-        try:
+    if utils.is_resuming(hps.model_dir):
+        if net_dur_disc is not None:
             _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(
                 utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
                 net_dur_disc,
@@ -280,10 +252,6 @@ def run():
             )
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
-        except:
-            print("Initialize dur_disc")
-
-    try:
         _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
             utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
             net_g,
@@ -310,36 +278,36 @@ def run():
         global_step = int(
             utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"))
         )
-        print(
+        logger.info(
             f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
         )
-    except Exception as e:
-        print(e)
-        epoch_str = 1
-        global_step = 0
-
-    try:
-        _, optim_wd, wd_resume_lr, epoch_str = utils.load_checkpoint(
-            utils.latest_checkpoint_path(hps.model_dir, "WD_*.pth"),
-            net_wd,
-            optim_wd,
-            skip_optimizer=hps.train.skip_optimizer
-            if "skip_optimizer" in hps.train
-            else True,
-        )
-        if not optim_wd.param_groups[0].get("initial_lr"):
-            optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
-    except Exception as e:
-        print(e)
+    else:
+        try:
+            _ = utils.load_safetensors(
+                os.path.join(hps.model_dir, "G_0.safetensors"), net_g
+            )
+            _ = utils.load_safetensors(
+                os.path.join(hps.model_dir, "D_0.safetensors"), net_d
+            )
+            if net_dur_disc is not None:
+                _ = utils.load_safetensors(
+                    os.path.join(hps.model_dir, "DUR_0.safetensors"), net_dur_disc
+                )
+            logger.info("Loaded the pretrained models.")
+        except Exception as e:
+            logger.warning(e)
+            logger.warning(
+                "It seems that you are not using the pretrained models, so we will train from scratch."
+            )
+        finally:
+            epoch_str = 1
+            global_step = 0
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
-    )
-    scheduler_wd = torch.optim.lr_scheduler.ExponentialLR(
-        optim_wd, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
     if net_dur_disc is not None:
         scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
@@ -349,13 +317,6 @@ def run():
         scheduler_dur_disc = None
     scaler = GradScaler(enabled=hps.train.bf16_run)
 
-    wl = WavLMLoss(
-        hps.model.slm.model,
-        net_wd,
-        hps.data.sampling_rate,
-        hps.model.slm.sr,
-    ).to(local_rank)
-
     for epoch in range(epoch_str, hps.train.epochs + 1):
         if rank == 0:
             train_and_evaluate(
@@ -363,9 +324,9 @@ def run():
                 local_rank,
                 epoch,
                 hps,
-                [net_g, net_d, net_dur_disc, net_wd, wl],
-                [optim_g, optim_d, optim_dur_disc, optim_wd],
-                [scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd],
+                [net_g, net_d, net_dur_disc],
+                [optim_g, optim_d, optim_dur_disc],
+                [scheduler_g, scheduler_d, scheduler_dur_disc],
                 scaler,
                 [train_loader, eval_loader],
                 logger,
@@ -377,9 +338,9 @@ def run():
                 local_rank,
                 epoch,
                 hps,
-                [net_g, net_d, net_dur_disc, net_wd, wl],
-                [optim_g, optim_d, optim_dur_disc, optim_wd],
-                [scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd],
+                [net_g, net_d, net_dur_disc],
+                [optim_g, optim_d, optim_dur_disc],
+                [scheduler_g, scheduler_d, scheduler_dur_disc],
                 scaler,
                 [train_loader, None],
                 None,
@@ -387,16 +348,38 @@ def run():
             )
         scheduler_g.step()
         scheduler_d.step()
-        scheduler_wd.step()
         if net_dur_disc is not None:
             scheduler_dur_disc.step()
+
         if epoch == hps.train.epochs:
-            utils.save_compressed_models_checkpoint(
+            utils.save_checkpoint(
+                net_g,
+                optim_g,
+                hps.train.learning_rate,
+                epoch,
+                os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
+            )
+            utils.save_checkpoint(
+                net_d,
+                optim_d,
+                hps.train.learning_rate,
+                epoch,
+                os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
+            )
+            if net_dur_disc is not None:
+                utils.save_checkpoint(
+                    net_dur_disc,
+                    optim_dur_disc,
+                    hps.train.learning_rate,
+                    epoch,
+                    os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
+                )
+            utils.save_safetensors(
                 net_g,
                 epoch,
                 os.path.join(
-                    hps.model_dir,
-                    f"release_{global_step}.pth",
+                    out_dir,
+                    f"{config.model_name}.safetensors",
                 ),
             )
 
@@ -414,9 +397,9 @@ def train_and_evaluate(
     logger,
     writers,
 ):
-    net_g, net_d, net_dur_disc, net_wd, wl = nets
-    optim_g, optim_d, optim_dur_disc, optim_wd = optims
-    scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd = schedulers
+    net_g, net_d, net_dur_disc = nets
+    optim_g, optim_d, optim_dur_disc = optims
+    scheduler_g, scheduler_d, scheduler_dur_disc = schedulers
     train_loader, eval_loader = loaders
     if writers is not None:
         writer, writer_eval = writers
@@ -426,7 +409,6 @@ def train_and_evaluate(
 
     net_g.train()
     net_d.train()
-    net_wd.train()
     if net_dur_disc is not None:
         net_dur_disc.train()
     for batch_idx, (
@@ -442,7 +424,8 @@ def train_and_evaluate(
         bert,
         ja_bert,
         en_bert,
-    ) in enumerate(tqdm(train_loader)):
+        style_vec,
+    ) in enumerate(tqdm(train_loader, file=sys.stdout)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial
@@ -464,6 +447,7 @@ def train_and_evaluate(
         bert = bert.cuda(local_rank, non_blocking=True)
         ja_bert = ja_bert.cuda(local_rank, non_blocking=True)
         en_bert = en_bert.cuda(local_rank, non_blocking=True)
+        style_vec = style_vec.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
@@ -474,8 +458,7 @@ def train_and_evaluate(
                 x_mask,
                 z_mask,
                 (z, z_p, m_p, logs_p, m_q, logs_q),
-                (hidden_x, logw, logw_, logw_sdp),
-                g,
+                (hidden_x, logw, logw_),
             ) = net_g(
                 x,
                 x_lengths,
@@ -487,6 +470,7 @@ def train_and_evaluate(
                 bert,
                 ja_bert,
                 en_bert,
+                style_vec,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -523,21 +507,8 @@ def train_and_evaluate(
                 loss_disc_all = loss_disc
             if net_dur_disc is not None:
                 y_dur_hat_r, y_dur_hat_g = net_dur_disc(
-                    hidden_x.detach(),
-                    x_mask.detach(),
-                    logw_.detach(),
-                    logw.detach(),
-                    g.detach(),
+                    hidden_x.detach(), x_mask.detach(), logw.detach(), logw_.detach()
                 )
-                y_dur_hat_r_sdp, y_dur_hat_g_sdp = net_dur_disc(
-                    hidden_x.detach(),
-                    x_mask.detach(),
-                    logw_.detach(),
-                    logw_sdp.detach(),
-                    g.detach(),
-                )
-                y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
-                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
                     (
@@ -549,12 +520,7 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                # torch.nn.utils.clip_grad_norm_(
-                #     parameters=net_dur_disc.parameters(), max_norm=100
-                # )
-                grad_norm_dur = commons.clip_grad_value_(
-                    net_dur_disc.parameters(), None
-                )
+                commons.clip_grad_value_(net_dur_disc.parameters(), None)
                 scaler.step(optim_dur_disc)
 
         optim_d.zero_grad()
@@ -566,24 +532,10 @@ def train_and_evaluate(
         scaler.step(optim_d)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
-            loss_slm = wl.discriminator(
-                y.detach().squeeze(), y_hat.detach().squeeze()
-            ).mean()
-
-        optim_wd.zero_grad()
-        scaler.scale(loss_slm).backward()
-        scaler.unscale_(optim_wd)
-        # torch.nn.utils.clip_grad_norm_(parameters=net_wd.parameters(), max_norm=200)
-        grad_norm_wd = commons.clip_grad_value_(net_wd.parameters(), None)
-        scaler.step(optim_wd)
-
-        with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
             if net_dur_disc is not None:
-                _, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw_, logw, g)
-                _, y_dur_hat_g_sdp = net_dur_disc(hidden_x, x_mask, logw_, logw_sdp, g)
-                y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
+                y_dur_hat_r, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw, logw_)
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
@@ -591,19 +543,7 @@ def train_and_evaluate(
 
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-
-                loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
-                loss_lm_gen = wl.generator(y_hat.squeeze())
-
-                loss_gen_all = (
-                    loss_gen
-                    + loss_fm
-                    + loss_mel
-                    + loss_dur
-                    + loss_kl
-                    + loss_lm
-                    + loss_lm_gen
-                )
+                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
                     loss_gen_all += loss_dur_gen
@@ -620,22 +560,19 @@ def train_and_evaluate(
             if global_step % hps.train.log_interval == 0:
                 lr = optim_g.param_groups[0]["lr"]
                 losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl]
-                logger.info(
-                    "Train Epoch: {} [{:.0f}%]".format(
-                        epoch, 100.0 * batch_idx / len(train_loader)
-                    )
-                )
-                logger.info([x.item() for x in losses] + [global_step, lr])
+                # logger.info(
+                #     "Train Epoch: {} [{:.0f}%]".format(
+                #         epoch, 100.0 * batch_idx / len(train_loader)
+                #     )
+                # )
+                # logger.info([x.item() for x in losses] + [global_step, lr])
 
                 scalar_dict = {
                     "loss/g/total": loss_gen_all,
                     "loss/d/total": loss_disc_all,
-                    "loss/wd/total": loss_slm,
                     "learning_rate": lr,
                     "grad_norm_d": grad_norm_d,
                     "grad_norm_g": grad_norm_g,
-                    "grad_norm_dur": grad_norm_dur,
-                    "grad_norm_wd": grad_norm_wd,
                 }
                 scalar_dict.update(
                     {
@@ -643,8 +580,6 @@ def train_and_evaluate(
                         "loss/g/mel": loss_mel,
                         "loss/g/dur": loss_dur,
                         "loss/g/kl": loss_kl,
-                        "loss/g/lm": loss_lm,
-                        "loss/g/lm_gen": loss_lm_gen,
                     }
                 )
                 scalar_dict.update(
@@ -656,30 +591,6 @@ def train_and_evaluate(
                 scalar_dict.update(
                     {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
                 )
-
-                if net_dur_disc is not None:
-                    scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all})
-
-                    scalar_dict.update(
-                        {
-                            "loss/dur_disc_g/{}".format(i): v
-                            for i, v in enumerate(losses_dur_disc_g)
-                        }
-                    )
-                    scalar_dict.update(
-                        {
-                            "loss/dur_disc_r/{}".format(i): v
-                            for i, v in enumerate(losses_dur_disc_r)
-                        }
-                    )
-
-                    scalar_dict.update({"loss/g/dur_gen": loss_dur_gen})
-                    scalar_dict.update(
-                        {
-                            "loss/g/dur_gen_{}".format(i): v
-                            for i, v in enumerate(losses_dur_gen)
-                        }
-                    )
 
                 image_dict = {
                     "slice/mel_org": utils.plot_spectrogram_to_numpy(
@@ -702,7 +613,7 @@ def train_and_evaluate(
                     scalars=scalar_dict,
                 )
 
-            if global_step % hps.train.eval_interval == 0:
+            if global_step % hps.train.eval_interval == 0 and global_step != 0:
                 evaluate(hps, net_g, eval_loader, writer_eval)
                 utils.save_checkpoint(
                     net_g,
@@ -717,13 +628,6 @@ def train_and_evaluate(
                     hps.train.learning_rate,
                     epoch,
                     os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
-                )
-                utils.save_checkpoint(
-                    net_wd,
-                    optim_wd,
-                    hps.train.learning_rate,
-                    epoch,
-                    os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
                 )
                 if net_dur_disc is not None:
                     utils.save_checkpoint(
@@ -740,32 +644,28 @@ def train_and_evaluate(
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
                     )
-                if (
-                    "save_compressed_models" in hps.train.keys()
-                    and hps.train.save_compressed_models is True
-                ):
-                    utils.save_compressed_models_checkpoint(
-                        net_g,
-                        epoch,
-                        os.path.join(
-                            hps.model_dir,
-                            f"release_{global_step}.pth",
-                        ),
-                    )
+                utils.save_safetensors(
+                    net_g,
+                    epoch,
+                    os.path.join(
+                        config.out_dir,
+                        config.model_name,
+                        f"{config.model_name}_e{epoch}_s{global_step}.safetensors",
+                    ),
+                )
 
         global_step += 1
-
     gc.collect()
     torch.cuda.empty_cache()
     if rank == 0:
-        logger.info("====> Epoch: {}".format(epoch))
+        logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 
 
 def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
     image_dict = {}
     audio_dict = {}
-    print("Evaluating ...")
+    logger.info("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (
             x,
@@ -780,6 +680,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert,
             ja_bert,
             en_bert,
+            style_vec,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -790,6 +691,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            style_vec = style_vec.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
@@ -800,6 +702,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     bert,
                     ja_bert,
                     en_bert,
+                    style_vec,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,

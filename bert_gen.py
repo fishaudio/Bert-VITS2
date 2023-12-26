@@ -1,12 +1,15 @@
-import torch
+import argparse
+import sys
 from multiprocessing import Pool
+
+import torch
+import torch.multiprocessing as mp
+from tqdm import tqdm
+
 import commons
 import utils
-from tqdm import tqdm
-from text import check_bert_models, cleaned_text_to_sequence, get_bert
-import argparse
-import torch.multiprocessing as mp
 from config import config
+from text import cleaned_text_to_sequence, get_bert
 
 
 def process_line(x):
@@ -59,7 +62,6 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
     config_path = args.config
     hps = utils.get_hparams_from_file(config_path)
-    check_bert_models()
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
@@ -74,8 +76,9 @@ if __name__ == "__main__":
             for _ in tqdm(
                 pool.imap_unordered(process_line, zip(lines, add_blank)),
                 total=len(lines),
+                file=sys.stdout,
             ):
                 # 这里是缩进的代码块，表示循环体
                 pass  # 使用pass语句作为占位符
 
-    print(f"bert生成完毕!, 共有{len(lines)}个bert.pt生成!")
+    print(f"bert.pt is generated! total: {len(lines)} bert.pt files.")

@@ -1,21 +1,22 @@
+"""
+Original models in Bert-VITS2 ver 2.1.
+"""
 import math
-import warnings
-
 import torch
 from torch import nn
-from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
 
-import attentions
 import commons
 import modules
+import attentions
 import monotonic_align
-from commons import get_padding, init_weights
-from text import num_languages, num_tones, symbols
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
+from torch.nn import Conv1d, ConvTranspose1d, Conv2d
+from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
+from vector_quantize_pytorch import VectorQuantize
+
+from commons import init_weights, get_padding
+from .text import symbols, num_tones, num_languages
 
 
 class DurationDiscriminator(nn.Module):  # vits2
@@ -346,7 +347,16 @@ class TextEncoder(nn.Module):
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.style_proj = nn.Linear(256, hidden_channels)
+        self.emo_proj = nn.Linear(1024, 1024)
+        self.emo_quantizer = VectorQuantize(
+            dim=1024,
+            codebook_size=10,
+            decay=0.8,
+            commitment_weight=1.0,
+            learnable_codebook=True,
+            ema_update=False,
+        )
+        self.emo_q_proj = nn.Linear(1024, hidden_channels)
 
         self.encoder = attentions.Encoder(
             hidden_channels,
@@ -360,23 +370,30 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(
-        self,
-        x,
-        x_lengths,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
-        style_vec,
-        sid,
-        g=None,
+        self, x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=None
     ):
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
-        style_emb = self.style_proj(style_vec.unsqueeze(1))
-
+        if emo.size(-1) == 1024:
+            emo_emb = self.emo_proj(emo.unsqueeze(1))
+            emo_commit_loss = torch.zeros(1).to(emo_emb.device)
+            emo_emb_ = []
+            for i in range(emo_emb.size(0)):
+                temp_emo_emb, _, temp_emo_commit_loss = self.emo_quantizer(
+                    emo_emb[i].unsqueeze(0)
+                )
+                emo_commit_loss += temp_emo_commit_loss
+                emo_emb_.append(temp_emo_emb)
+            emo_emb = torch.cat(emo_emb_, dim=0).to(emo_emb.device)
+            emo_commit_loss = emo_commit_loss.to(emo_emb.device)
+        else:
+            emo_emb = (
+                self.emo_quantizer.get_output_from_indices(emo.to(torch.int))
+                .unsqueeze(0)
+                .to(emo.device)
+            )
+            emo_commit_loss = torch.zeros(1)
         x = (
             self.emb(x)
             + self.tone_emb(tone)
@@ -384,7 +401,7 @@ class TextEncoder(nn.Module):
             + bert_emb
             + ja_bert_emb
             + en_bert_emb
-            + style_emb
+            + self.emo_q_proj(emo_emb)
         ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
@@ -397,7 +414,7 @@ class TextEncoder(nn.Module):
         stats = self.proj(x) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x, m, logs, x_mask
+        return x, m, logs, x_mask, emo_commit_loss
 
 
 class ResidualCouplingBlock(nn.Module):
@@ -789,7 +806,7 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=4,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        **kwargs,
+        **kwargs
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -898,14 +915,14 @@ class SynthesizerTrn(nn.Module):
         bert,
         ja_bert,
         en_bert,
-        style_vec,
+        emo=None,
     ):
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, style_vec, sid, g=g
+        x, m_p, logs_p, x_mask, loss_commit = self.enc_p(
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
@@ -948,11 +965,9 @@ class SynthesizerTrn(nn.Module):
 
         logw_ = torch.log(w + 1e-6) * x_mask
         logw = self.dp(x, x_mask, g=g)
-        # logw_sdp = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=1.0)
         l_length_dp = torch.sum((logw - logw_) ** 2, [1, 2]) / torch.sum(
             x_mask
         )  # for averaging
-        # l_length_sdp += torch.sum((logw_sdp - logw_) ** 2, [1, 2]) / torch.sum(x_mask)
 
         l_length = l_length_dp + l_length_sdp
 
@@ -973,6 +988,7 @@ class SynthesizerTrn(nn.Module):
             y_mask,
             (z, z_p, m_p, logs_p, m_q, logs_q),
             (x, logw, logw_),
+            loss_commit,
         )
 
     def infer(
@@ -985,7 +1001,7 @@ class SynthesizerTrn(nn.Module):
         bert,
         ja_bert,
         en_bert,
-        style_vec,
+        emo=None,
         noise_scale=0.667,
         length_scale=1,
         noise_scale_w=0.8,
@@ -999,8 +1015,8 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, style_vec, sid, g=g
+        x, m_p, logs_p, x_mask, _ = self.enc_p(
+            x, x_lengths, tone, language, bert, ja_bert, en_bert, emo, sid, g=g
         )
         logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
             sdp_ratio

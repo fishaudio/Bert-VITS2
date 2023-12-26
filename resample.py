@@ -1,8 +1,9 @@
-import os
 import argparse
-import librosa
+import os
+import sys
 from multiprocessing import Pool, cpu_count
 
+import librosa
 import soundfile
 from tqdm import tqdm
 
@@ -38,17 +39,17 @@ if __name__ == "__main__":
         help="path to target dir",
     )
     parser.add_argument(
-        "--processes",
+        "--num_processes",
         type=int,
-        default=0,
+        default=4,
         help="cpu_processes",
     )
     args, _ = parser.parse_known_args()
     # autodl 无卡模式会识别出46个cpu
-    if args.processes == 0:
+    if args.num_processes == 0:
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
-        processes = args.processes
+        processes = args.num_processes
     pool = Pool(processes=processes)
 
     tasks = []
@@ -64,12 +65,10 @@ if __name__ == "__main__":
                 twople = (spk_dir, filename, args)
                 tasks.append(twople)
 
-    for _ in tqdm(
-        pool.imap_unordered(process, tasks),
-    ):
+    for _ in tqdm(pool.imap_unordered(process, tasks), file=sys.stdout):
         pass
 
     pool.close()
     pool.join()
 
-    print("音频重采样完毕!")
+    print("Resampling Done!")

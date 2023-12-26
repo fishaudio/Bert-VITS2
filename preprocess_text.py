@@ -1,14 +1,15 @@
 import json
+import os
+import sys
 from collections import defaultdict
 from random import shuffle
 from typing import Optional
-import os
 
-from tqdm import tqdm
 import click
-from text.cleaner import clean_text
+from tqdm import tqdm
+
 from config import config
-from infer import latest_version
+from text.cleaner import clean_text
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -51,7 +52,7 @@ def preprocess(
                 lines = trans_file.readlines()
                 # print(lines, ' ', len(lines))
                 if len(lines) != 0:
-                    for line in tqdm(lines):
+                    for line in tqdm(lines, file=sys.stdout):
                         try:
                             utt, spk, language, text = line.strip().split("|")
                             norm_text, phones, tones, word2ph = clean_text(
@@ -70,7 +71,9 @@ def preprocess(
                             )
                         except Exception as e:
                             print(line)
-                            print(f"生成训练集和验证集时发生错误！, 详细信息:\n{e}")
+                            print(
+                                f"An error occurred while generating the training set and validation set! Details:\n{e}"
+                            )
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -85,12 +88,12 @@ def preprocess(
             utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
             if utt in audioPaths:
                 # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
-                print(f"重复音频文本：{line}")
+                print(f"Same audio matches multiple texts: {line}")
                 countSame += 1
                 continue
             if not os.path.isfile(utt):
                 # 过滤数据集错误：不存在对应音频
-                print(f"没有找到对应的音频：{utt}")
+                print(f"Audio not found: {utt}")
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
@@ -98,7 +101,9 @@ def preprocess(
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
-        print(f"总重复音频数：{countSame}，总未找到的音频数:{countNotFound}")
+        print(
+            f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
+        )
 
     train_list = []
     val_list = []
@@ -134,7 +139,7 @@ def preprocess(
     )
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
-    print("训练集和验证集生成完成！")
+    print("Training set and validation set generation from texts is complete!")
 
 
 if __name__ == "__main__":

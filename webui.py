@@ -1,3 +1,6 @@
+"""
+Original `webui.py` for Bert-VITS2, not working with Style Bert-VITS2 yet.
+"""
 # flake8: noqa: E402
 import os
 import logging

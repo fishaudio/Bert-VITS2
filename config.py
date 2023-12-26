@@ -91,20 +91,18 @@ class Bert_gen_config:
         return cls(**data)
 
 
-class Emo_gen_config:
-    """emo_gen 配置"""
+class Style_gen_config:
+    """style_gen 配置"""
 
     def __init__(
         self,
         config_path: str,
         num_processes: int = 2,
         device: str = "cuda",
-        use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
         self.device = device
-        self.use_multi_device = use_multi_device
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
@@ -120,14 +118,14 @@ class Train_ms_config:
         self,
         config_path: str,
         env: Dict[str, any],
-        base: Dict[str, any],
+        # base: Dict[str, any],
         model: str,
         num_workers: int,
         spec_cache: bool,
         keep_ckpts: int,
     ):
         self.env = env  # 需要加载的环境变量
-        self.base = base  # 底模配置
+        # self.base = base  # 底模配置
         self.model = model  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
         self.config_path = config_path  # 配置文件路径
         self.num_workers = num_workers  # worker数量
@@ -202,17 +200,25 @@ class Config:
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
             shutil.copy(src="default_config.yml", dst=config_path)
             print(
-                f"已根据默认配置文件default_config.yml生成配置文件{config_path}。请按该配置文件的说明进行配置后重新运行。"
+                f"A configuration file {config_path} has been generated based on the default configuration file default_config.yml."
             )
-            print("如无特殊需求，请勿修改default_config.yml或备份该文件。")
+            print(
+                "If you have no special needs, please do not modify default_config.yml."
+            )
             sys.exit(0)
         with open(file=config_path, mode="r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
-            dataset_path: str = yaml_config["dataset_path"]
-            openi_token: str = yaml_config["openi_token"]
+            model_name: str = yaml_config["model_name"]
+            self.model_name: str = model_name
+            if "dataset_path" in yaml_config:
+                dataset_path = yaml_config["dataset_path"]
+            else:
+                dataset_path = f"Data/{model_name}"
+            self.out_dir = yaml_config["out_dir"]
+            # openi_token: str = yaml_config["openi_token"]
             self.dataset_path: str = dataset_path
-            self.mirror: str = yaml_config["mirror"]
-            self.openi_token: str = openi_token
+            # self.mirror: str = yaml_config["mirror"]
+            # self.openi_token: str = openi_token
             self.resample_config: Resample_config = Resample_config.from_dict(
                 dataset_path, yaml_config["resample"]
             )
@@ -224,8 +230,8 @@ class Config:
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
             )
-            self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
-                dataset_path, yaml_config["emo_gen"]
+            self.style_gen_config: Style_gen_config = Style_gen_config.from_dict(
+                dataset_path, yaml_config["style_gen"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
@@ -236,9 +242,9 @@ class Config:
             self.server_config: Server_config = Server_config.from_dict(
                 yaml_config["server"]
             )
-            self.translate_config: Translate_config = Translate_config.from_dict(
-                yaml_config["translate"]
-            )
+            # self.translate_config: Translate_config = Translate_config.from_dict(
+            #     yaml_config["translate"]
+            # )
 
 
 parser = argparse.ArgumentParser()
