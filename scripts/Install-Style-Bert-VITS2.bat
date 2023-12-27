@@ -25,6 +25,6 @@ xcopy /QSY .\lib\%STYLE_BERT_VITS2_DIR%\scripts .
 
 call src\Setup.bat
 
-start HiyoriUi.bat
+popd
 
-popd rem %~dp0..
+pause
