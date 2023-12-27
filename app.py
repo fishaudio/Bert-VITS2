@@ -1,17 +1,18 @@
 import argparse
+import datetime
 import os
 import sys
+import warnings
 
 import gradio as gr
 import numpy as np
 import torch
-import warnings
 from gradio.processing_utils import convert_to_16_bit_wav
 
 import utils
+from config import config
 from infer import get_net_g, infer
 from tools.log import logger
-from config import config
 
 is_hf_spaces = os.getenv("SYSTEM") == "spaces"
 limit = 100
@@ -226,6 +227,8 @@ def tts_fn(
 
     assert model_holder.current_model is not None
 
+    start_time = datetime.datetime.now()
+
     sr, audio = model_holder.current_model.infer(
         text=text,
         language=language,
@@ -242,7 +245,10 @@ def tts_fn(
         style=emotion,
         emotion_weight=emotion_weight,
     )
-    return "Success", (sr, audio)
+
+    end_time = datetime.datetime.now()
+    duration = (end_time - start_time).total_seconds()
+    return f"Success, time: {duration} seconds.", (sr, audio)
 
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
@@ -345,7 +351,8 @@ TODO: 現在のところはspeaker_id = 0に固定しており複数話者の合
 style_md = """
 - プリセットまたは音声ファイルから読み上げの声音・感情・スタイルのようなものを制御できます。
 - デフォルトのNeutralでも、十分に読み上げる文に応じた感情で感情豊かに読み上げられます。このスタイル制御は、それを重み付きで上書きするような感じです。
-- 重みを大きくしすぎると発音が変になったり声にならなかったりと崩壊することがあります。
+- 強さを大きくしすぎると発音が変になったり声にならなかったりと崩壊することがあります。
+- どのくらいに強さがいいかはモデルやスタイルによって異なるようです。
 - 音声ファイルを入力する場合は、学習データと似た声音の話者（特に同じ性別）でないとよい効果が出ないかもしれません。
 """
 
@@ -415,7 +422,7 @@ if __name__ == "__main__":
 
                 line_split = gr.Checkbox(label="改行で分けて生成", value=True)
                 split_interval = gr.Slider(
-                    minimum=0.1,
+                    minimum=0.0,
                     maximum=2,
                     value=0.5,
                     step=0.1,
@@ -464,11 +471,13 @@ if __name__ == "__main__":
                     value="プリセットから選ぶ",
                 )
                 style = gr.Dropdown(
-                    label="スタイル（Neutralが平均スタイル）", choices=["モデルをロードしてください"], value=0
+                    label="スタイル（Neutralが平均スタイル）",
+                    choices=["モデルをロードしてください"],
+                    value="モデルをロードしてください",
                 )
                 style_weight = gr.Slider(
                     minimum=0,
-                    maximum=20,
+                    maximum=50,
                     value=1,
                     step=0.1,
                     label="スタイルの強さ",

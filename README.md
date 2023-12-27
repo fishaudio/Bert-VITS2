@@ -4,13 +4,14 @@ Bert-VITS2 with more controllable voice styles.
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
 
-## これは何？
+**概要**
+
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
-- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)のように、GitやPythonがない人でも簡単にインストールできるやつもあります（まだ少し未検証）。
+- GitやPythonがない人でも（WindowsユーザーでNVIDIAのグラボがあるなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。
 
 ## 使い方
 
-詳しくは[こちら](docs/tutorial.md)を参照してください。
+<!-- 詳しくは[こちら](docs/tutorial.md)を参照してください。 -->
 
 ### インストール
 
@@ -18,11 +19,15 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 #### GitやPythonに馴染みが無い方
 
-[これ](https://github.com/litagin02/Style-Bert-VITS2/raw/master/scripts/Install-Style-Bert-VITS2.bat)をダウンロードして、スペースを含まない英数字のみのパスで実行してください（まだ動作未確認なので後でちゃんとチェックします）。
+1. [このzipファイル](TODO)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
+2. 待つと自動で必要な環境がインストールされます。
+3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるので、そのまま遊ぶことができます。
+
+またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
 #### GitやPython使える人
 
-Python 3.10で動作確認しています。
+Windowsの通常環境のPython 3.10で動作確認しています。
 
 ```bash
 git clone https://github.com/litagin02/Style-Bert-VITS2.git
@@ -39,7 +44,7 @@ python initialize.py
 
 `App.bat`をダブルクリックするとWebUIが起動します。
 
-ディレクトリ構造:
+合成に必要なモデルファイルたちは以下のように配置します。
 ```
 model_assets
 ├── your_model
@@ -67,11 +72,17 @@ model_assets
 
 - `Dataset.bat`をダブルクリックすると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
 
-## Bert-VITS2 v2.1と違う点
+## Bert-VITS2 v2.1との関係
+
+基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
+
+具体的には以下の点が異なります。
+
+- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)のように、PythonやGitを知らない人でも簡単に使える。
 - 感情埋め込みのモデルを変更（[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというより正確には話者埋め込みが近い）
 - 埋め込みもベクトル量子化を取り払い、単なる全結合層に。
 - スタイルベクトルファイル`style_vectors.npy`を作ることで、そのスタイルを使って効果の強さも連続的に指定しつつ音声を生成することができる。
-- 各種WebUIを作成（事前準備・学習・スタイルベクトルの生成・音声合成）
+- 各種WebUIを作成
 - bf16での学習のサポート
 - safetensors形式のサポート、デフォルトでsafetensorsを使用するように
 - その他軽微なbugfixやリファクタリング
@@ -81,8 +92,6 @@ model_assets
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
 
-## Bert-VITS2 v2.1と同じ点
-- [事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
 
 ## 実験したいこと
 - [ ] 複数話者での学習の実験（原理的にはできるはず、スタイルがどう効くかが未知）

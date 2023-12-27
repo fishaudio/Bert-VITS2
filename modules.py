@@ -5,15 +5,12 @@ import torch
 from torch import nn
 from torch.nn import Conv1d
 from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 import commons
 from attentions import Encoder
 from commons import get_padding, init_weights
 from transforms import piecewise_rational_quadratic_transform
-
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from torch.nn.utils import remove_weight_norm, weight_norm
 
 LRELU_SLOPE = 0.1
 

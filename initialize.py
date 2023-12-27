@@ -47,9 +47,9 @@ def download_jvnv_models():
         "jvnv-M1/config.json",
         "jvnv-M1/jvnv-M1.safetensors",
         "jvnv-M1/style_vectors.npy",
-        # "jvnv-M2/config.json",
-        # "jvnv-M2/jvnv-M2.safetensors",
-        # "jvnv-M2/style_vectors.npy",
+        "jvnv-M2/config.json",
+        "jvnv-M2/jvnv-M2.safetensors",
+        "jvnv-M2/style_vectors.npy",
     ]
     for file in files:
         if not Path(f"model_assets/{file}").exists():
