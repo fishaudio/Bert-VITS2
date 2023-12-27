@@ -69,6 +69,7 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 細かいパラメータ調整とかがしたい人は、`slice.py`と`transcribe.py`を眺めて直接実行してください。
 
 また、出来上がった音声ファイルたちは`Data/{モデル名}/raw`に、書き起こしファイルは`Data/{モデル名}/esd.list`に保存されます。
+書き起こしの結果は、**そこまで正確に誤字や誤りを修正しなくても、それなりの質になる**ので、あまり修正は必要ないかもしれません（私は手動修正したことないです）。
 
 **ffmpeg のインストールが別途必要のよう**です、「Couldn't find ffmpeg」とか怒られたら、「Windows ffmpeg インストール」等でググって別途インストールしてください。
 """
@@ -80,7 +81,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         slice_button = gr.Button("音声のスライス")
         result1 = gr.Textbox(label="結果")
     with gr.Row():
-        transcribe_button = gr.Button("2. 音声の文字起こし")
+        transcribe_button = gr.Button("音声の文字起こし")
         result2 = gr.Textbox(label="結果")
     slice_button.click(
         do_slice,

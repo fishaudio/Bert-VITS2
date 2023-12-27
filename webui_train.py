@@ -29,7 +29,7 @@ def get_path(model_name):
     return dataset_path, lbl_path, train_path, val_path, config_path
 
 
-def initialize(model_name, batch_size, epochs):
+def initialize(model_name, batch_size, epochs, bf16_run):
     dataset_path, _, train_path, val_path, config_path = get_path(model_name)
     if os.path.isfile(config_path):
         config = json.load(open(config_path, "r", encoding="utf-8"))
@@ -41,6 +41,7 @@ def initialize(model_name, batch_size, epochs):
     config["data"]["validation_files"] = val_path
     config["train"]["batch_size"] = batch_size
     config["train"]["epochs"] = epochs
+    config["train"]["bf16_run"] = bf16_run
 
     model_path = os.path.join(dataset_path, "models")
     try:
@@ -198,23 +199,27 @@ if __name__ == "__main__":
         with gr.Row():
             with gr.Column():
                 gr.Markdown(value="### Step 1: 設定ファイルの生成")
-                with gr.Row():
-                    batch_size = gr.Slider(
-                        label="バッチサイズ",
-                        info="VRAM 12GBで4くらい",
-                        value=4,
-                        minimum=1,
-                        maximum=64,
-                        step=1,
-                    )
-                    epochs = gr.Slider(
-                        label="エポック数",
-                        info="100もあれば十分そう",
-                        value=100,
-                        minimum=1,
-                        maximum=1000,
-                        step=1,
-                    )
+                batch_size = gr.Slider(
+                    label="バッチサイズ",
+                    info="VRAM 12GBで4くらい",
+                    value=4,
+                    minimum=1,
+                    maximum=64,
+                    step=1,
+                )
+                epochs = gr.Slider(
+                    label="エポック数",
+                    info="100もあれば十分そう",
+                    value=100,
+                    minimum=1,
+                    maximum=1000,
+                    step=1,
+                )
+                bf16_run = gr.Checkbox(
+                    label="bfloat16を使う",
+                    info="新しめのグラボだと学習が早くなるかも、古いグラボだと動かないかも",
+                    value=True,
+                )
                 generate_config_btn = gr.Button(value="実行", variant="primary")
             with gr.Column():
                 gr.Markdown(value="### Step 2: 音声ファイルの前処理")
@@ -234,7 +239,9 @@ if __name__ == "__main__":
                 train_btn = gr.Button(value="学習", variant="primary")
 
         generate_config_btn.click(
-            initialize, inputs=[model_name, batch_size, epochs], outputs=[info]
+            initialize,
+            inputs=[model_name, batch_size, epochs, bf16_run],
+            outputs=[info],
         )
         resample_btn.click(resample, inputs=[model_name], outputs=[info])
         preprocess_text_btn.click(preprocess_text, inputs=[model_name], outputs=[info])

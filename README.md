@@ -63,6 +63,9 @@ model_assets
 - この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
 
+### データセット作り
+
+- `Dataset.bat`をダブルクリックすると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
 
 ## Bert-VITS2 v2.1と違う点
 - 感情埋め込みのモデルを変更（[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというより正確には話者埋め込みが近い）
@@ -77,7 +80,6 @@ model_assets
 - [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
-- [ ] 音声ファイルだけ与えられた時にスライスしたり書き起こしたりしてデータセットを作れてすぐ学習できる機能をつける？[このライブラリ](https://github.com/litagin02/slice-and-transcribe)を組み込む？
 
 ## Bert-VITS2 v2.1と同じ点
 - [事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
