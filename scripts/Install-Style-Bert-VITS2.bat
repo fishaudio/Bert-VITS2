@@ -15,18 +15,29 @@ if not exist %CURL_CMD% (
 if not exist lib\ ( mkdir lib )
 
 %CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/main.zip
+	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 %PS_CMD% Expand-Archive -Path Style-Bert-VITS2.zip -DestinationPath . -Force
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-del lib\Style-Bert-VITS2.zip
+del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-xcopy /QSY .\lib\%STYLE_BERT_VITS2_DIR%\scripts .
+ren Style-Bert-VITS2-master Style-Bert-VITS2
 
-call src\Setup.bat
+call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
+if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
+
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+pip install -r Style-Bert-VITS2\requirements.txt
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+pushd Style-Bert-VITS2
+python initialize.py
+popd
 
 popd
 
