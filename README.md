@@ -76,12 +76,12 @@ model_assets
 
 ## Bert-VITS2 v2.1との関係
 
-基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
+基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
 
 具体的には以下の点が異なります。
 
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)のように、PythonやGitを知らない人でも簡単に使える。
-- 感情埋め込みのモデルを変更（[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというより正確には話者埋め込みが近い）
+- 感情埋め込みのモデルを変更（1024次元の[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から256次元の[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというよりは話者識別のための埋め込み）
 - 埋め込みもベクトル量子化を取り払い、単なる全結合層に。
 - スタイルベクトルファイル`style_vectors.npy`を作ることで、そのスタイルを使って効果の強さも連続的に指定しつつ音声を生成することができる。
 - 各種WebUIを作成
@@ -93,6 +93,7 @@ model_assets
 - [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
+- [ ] モデルのマージで声音と感情表現を混ぜる機能の実装
 
 
 ## 実験したいこと
@@ -106,8 +107,7 @@ In addition to the original reference (written below), I used the following repo
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)
 
-The pretrained model is essentially taken from (so all the credits go to the original author(maybe Fish Audio group)):
-- https://huggingface.co/Garydesu/bert-vits2_base_model-2.1
+The pretrained model is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
 
 
 Below is the original README.md.
