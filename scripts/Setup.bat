@@ -1,4 +1,5 @@
 @REM https://github.com/Zuntan03/EasyBertVits2 より引用・改変
+@REM 改行コードがLFでうまくいかないのでCRLFに変更
 
 @echo off
 chcp 65001 > NUL

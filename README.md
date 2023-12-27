@@ -83,7 +83,17 @@ model_assets
 - [ ] もしそうなら、大量の人数の音声を学習させれば、ある意味「話者空間から適当に選んだ話者（連続的に変えられる）の音声合成」ができるのでは？リファレンス音声も使えばゼロショットでの音声合成もできるのでは？
 
 
-以下本家のREADME.md
+## References
+In addition to the original reference (written below), I used the following repositories:
+- [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)
+- [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)
+
+The pretrained model is essentially taken from (so all the credits go to the original author(maybe Fish Audio group)):
+- https://huggingface.co/Garydesu/bert-vits2_base_model-2.1
+
+
+Below is the original README.md.
+---
 
 <div align="center">
 
