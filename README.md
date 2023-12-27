@@ -4,6 +4,8 @@ Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
 
+Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
+
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
 
 **概要**
