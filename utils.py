@@ -73,7 +73,7 @@ def load_checkpoint(
             # For upgrading from the old version
             if "ja_bert_proj" in k:
                 v = torch.zeros_like(v)
-                logger.warn(
+                logger.warning(
                     f"Seems you are using the old version of the model, the {k} is automatically set to zero for backward compatibility"
                 )
             elif "enc_q" in k and for_infer:
@@ -88,9 +88,7 @@ def load_checkpoint(
     else:
         model.load_state_dict(new_state_dict, strict=False)
 
-    logger.info(
-        "Loaded checkpoint '{}' (iteration {})".format(checkpoint_path, iteration)
-    )
+    logger.info("Loaded '{}' (iteration {})".format(checkpoint_path, iteration))
 
     return model, optimizer, learning_rate, iteration
 
@@ -165,9 +163,9 @@ def load_safetensors(checkpoint_path, model, for_infer=False):
             continue
         logger.warning(f"Unexpected key: {key}")
     if iteration is None:
-        logger.info(f"Loaded safetensors '{checkpoint_path}'")
+        logger.info(f"Loaded '{checkpoint_path}'")
     else:
-        logger.info(f"Loaded safetensors '{checkpoint_path}' (iteration {iteration})")
+        logger.info(f"Loaded '{checkpoint_path}' (iteration {iteration})")
     return model, iteration
 
 
@@ -382,7 +380,7 @@ def get_hparams_from_file(config_path):
 def check_git_hash(model_dir):
     source_dir = os.path.dirname(os.path.realpath(__file__))
     if not os.path.exists(os.path.join(source_dir, ".git")):
-        logger.warn(
+        logger.warning(
             "{} is not a git repository, therefore hash value comparison will be ignored.".format(
                 source_dir
             )
@@ -395,7 +393,7 @@ def check_git_hash(model_dir):
     if os.path.exists(path):
         saved_hash = open(path).read()
         if saved_hash != cur_hash:
-            logger.warn(
+            logger.warning(
                 "git hash values are different. {}(saved) != {}(current)".format(
                     saved_hash[:8], cur_hash[:8]
                 )

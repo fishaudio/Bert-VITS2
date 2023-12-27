@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import gradio as gr
 import numpy as np
@@ -248,6 +249,13 @@ initial_text = "こんにちは、初めまして。あなたの名前はなん�
 
 example_local = [
     [initial_text, "JP"],
+    [
+        """あなたがそんなこと言うなんて、私はとっても嬉しい。
+あなたがそんなこと言うなんて、私はとっても怒ってる。
+あなたがそんなこと言うなんて、私はとっても驚いてる。
+あなたがそんなこと言うなんて、私はとっても辛い。""",
+        "JP",
+    ],
     [  # ChatGPTに考えてもらった告白セリフ
         """私、ずっと前からあなたのことを見てきました。あなたの笑顔、優しさ、強さに、心惹かれていたんです。
 友達として過ごす中で、あなたのことがだんだんと特別な存在になっていくのがわかりました。
@@ -268,7 +276,7 @@ example_local = [
         "JP",
     ],
     [  # ChatGPTと考えた、感情を表すセリフ
-        """やったー！テストで満点取れたよ！私とっても嬉しいな！
+        """やったー！テストで満点取れた！私とっても嬉しいな！
 どうして私の意見を無視するの？許せない！ムカつく！あんたなんか死ねばいいのに。
 あはははっ！この漫画めっちゃ笑える、見てよこれ、ふふふ、あはは。
 あなたがいなくなって、私は一人になっちゃって、泣いちゃいそうなほど悲しい。""",
@@ -306,19 +314,39 @@ example_hf_spaces = [
 ]
 
 initial_md = """
-# Bert-VITS2 okiba TTS デモ
+# Style-Bert-VITS2 音声合成
 
-[bert_vits2_okiba](https://huggingface.co/litagin/bert_vits2_okiba) のモデルのデモです。
-モデル名は[rvc_okiba](https://huggingface.co/litagin/rvc_okiba)のモデル名と対応しています。
-モデルは随時追加していきます。現在のモデルはすべてBert-VITS2のver 2.1のものです。
+注意: 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ja)です。とくに**商用利用は不可**です。
+"""
 
-**定形サンプルは[こちら](https://huggingface.co/litagin/bert_vits2_okiba/blob/main/examples.md)から聴くほうが速いです。**
+how_to_md = """
+下のように`model_assets`ディレクトリの中にモデルファイルたちを置いてください。
+```
+model_assets
+├── your_model
+│   ├── config.json
+│   ├── your_model_file1.safetensors
+│   ├── your_model_file2.safetensors
+│   ├── ...
+│   └── style_vectors.npy
+└── another_model
+    ├── ...
+```
+各モデルにはファイルたちが必要です：
+- `config.json`：学習時の設定ファイル
+- `*.safetensors`：学習済みモデルファイル（1つ以上が必要、複数可）
+- `style_vectors.npy`：スタイルベクトルファイル
 
-- huggingfaceのcpuで動くので、何故かやたら遅いことが多かったりなんか不安定で動かないときもあるみたいです。
-- huggingface上では最大100文字にしています。
-- Style textの実装あたりで本家の内部コードを改造しているので、このapp.pyをそのまま本家に使っても今のところは動きません。
+上2つは`Train.bat`による学習で自動的に正しい位置に保存されます。`style_vectors.npy`は`Style.bat`を実行して指示に従って生成してください。
 
-現在のところはspeaker_id = 0に固定しています。
+TODO: 現在のところはspeaker_id = 0に固定しており複数話者の合成には対応していません。
+"""
+
+style_md = """
+- プリセットまたは音声ファイルから読み上げの声音・感情・スタイルのようなものを制御できます。
+- デフォルトのNeutralでも、十分に読み上げる文に応じた感情で感情豊かに読み上げられます。このスタイル制御は、それを重み付きで上書きするような感じです。
+- 重みを大きくしすぎると発音が変になったり声にならなかったりと崩壊することがあります。
+- 音声ファイルを入力する場合は、学習データと似た声音の話者（特に同じ性別）でないとよい効果が出ないかもしれません。
 """
 
 
@@ -331,8 +359,8 @@ def make_non_interactive():
 
 
 def gr_util(item):
-    if item == "クラスタから選ぶ":
-        return (gr.update(visible=True), gr.update(visible=False))
+    if item == "プリセットから選ぶ":
+        return (gr.update(visible=True), gr.Audio(visible=False, value=None))
     else:
         return (gr.update(visible=False), gr.update(visible=True))
 
@@ -357,11 +385,16 @@ if __name__ == "__main__":
     examples = example_hf_spaces if is_hf_spaces else example_local
 
     model_names = model_holder.model_names
+    if len(model_names) == 0:
+        logger.error(f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。")
+        sys.exit(1)
     initial_id = 1 if is_hf_spaces else 0
     initial_pth_files = model_holder.model_files_dict[model_names[initial_id]]
 
     with gr.Blocks(theme="NoCrypt/miku") as app:
         gr.Markdown(initial_md)
+        with gr.Accordion(label="使い方", open=False):
+            gr.Markdown(how_to_md)
         with gr.Row():
             with gr.Column():
                 with gr.Row():
@@ -376,35 +409,17 @@ if __name__ == "__main__":
                             choices=initial_pth_files,
                             value=initial_pth_files[0],
                         )
-                    refresh_button = gr.Button(
-                        "モデル一覧を更新", scale=1, visible=not is_hf_spaces
-                    )
-                    load_button = gr.Button("モデルをロード", scale=1)
+                    refresh_button = gr.Button("更新", scale=1, visible=not is_hf_spaces)
+                    load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
-                use_style_text = gr.Checkbox(label="Style textを使う", value=False)
-                style_text = gr.Textbox(
-                    label="Style text",
-                    placeholder="どうして私の意見を無視するの？許せない、ムカつく！死ねばいいのに。",
-                    info="このテキストの読み上げと似た声音・感情になりやすくなります。ただ抑揚やテンポ等が犠牲になるかも。",
-                    visible=False,
-                )
-                style_text_weight = gr.Slider(
-                    minimum=0,
-                    maximum=1,
-                    value=0.7,
-                    step=0.1,
-                    label="Style textの強さ",
-                    visible=False,
-                )
-                use_style_text.change(
-                    lambda x: (gr.Textbox(visible=x), gr.Slider(visible=x)),
-                    inputs=[use_style_text],
-                    outputs=[style_text, style_text_weight],
-                )
 
                 line_split = gr.Checkbox(label="改行で分けて生成", value=True)
                 split_interval = gr.Slider(
-                    minimum=0.1, maximum=2, value=0.5, step=0.1, label="分けた場合に挟む無音の長さ"
+                    minimum=0.1,
+                    maximum=2,
+                    value=0.5,
+                    step=0.1,
+                    label="分けた場合に挟む無音の長さ（秒）",
                 )
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
@@ -420,14 +435,36 @@ if __name__ == "__main__":
                     length_scale = gr.Slider(
                         minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
                     )
+                    use_style_text = gr.Checkbox(label="Style textを使う", value=False)
+                    style_text = gr.Textbox(
+                        label="Style text",
+                        placeholder="どうして私の意見を無視するの？許せない、ムカつく！死ねばいいのに。",
+                        info="このテキストの読み上げと似た声音・感情になりやすくなります。ただ抑揚やテンポ等が犠牲になる傾向があります。",
+                        visible=False,
+                    )
+                    style_text_weight = gr.Slider(
+                        minimum=0,
+                        maximum=1,
+                        value=0.7,
+                        step=0.1,
+                        label="Style textの強さ",
+                        visible=False,
+                    )
+                    use_style_text.change(
+                        lambda x: (gr.Textbox(visible=x), gr.Slider(visible=x)),
+                        inputs=[use_style_text],
+                        outputs=[style_text, style_text_weight],
+                    )
             with gr.Column():
+                with gr.Accordion("スタイルについて詳細", open=False):
+                    gr.Markdown(style_md)
                 style_mode = gr.Radio(
-                    ["クラスタから選ぶ", "音声ファイルを入力"],
+                    ["プリセットから選ぶ", "音声ファイルを入力"],
                     label="スタイルの指定方法",
-                    value="クラスタから選ぶ",
+                    value="プリセットから選ぶ",
                 )
                 style = gr.Dropdown(
-                    label="スタイル（0が平均スタイル）", choices=list(range(7)), value=0
+                    label="スタイル（Neutralが平均スタイル）", choices=["モデルをロードしてください"], value=0
                 )
                 style_weight = gr.Slider(
                     minimum=0,
@@ -442,7 +479,8 @@ if __name__ == "__main__":
                 )
                 text_output = gr.Textbox(label="情報")
                 audio_output = gr.Audio(label="結果")
-                gr.Examples(examples, inputs=[text_input, language], label="テキスト例")
+                with gr.Accordion("テキスト例", open=False):
+                    gr.Examples(examples, inputs=[text_input, language])
 
         tts_button.click(
             tts_fn,

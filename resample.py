@@ -65,7 +65,9 @@ if __name__ == "__main__":
                 twople = (spk_dir, filename, args)
                 tasks.append(twople)
 
-    for _ in tqdm(pool.imap_unordered(process, tasks), file=sys.stdout):
+    for _ in tqdm(
+        pool.imap_unordered(process, tasks), file=sys.stdout, total=len(tasks)
+    ):
         pass
 
     pool.close()

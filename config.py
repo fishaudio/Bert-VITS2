@@ -205,7 +205,7 @@ class Config:
             print(
                 "If you have no special needs, please do not modify default_config.yml."
             )
-            sys.exit(0)
+            # sys.exit(0)
         with open(file=config_path, mode="r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
             model_name: str = yaml_config["model_name"]

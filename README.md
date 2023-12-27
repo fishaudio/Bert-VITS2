@@ -38,7 +38,6 @@ python initialize.py
 ### 音声合成
 
 `App.bat`をダブルクリックするとWebUIが起動します。
-TODO: デフォルトモデルをいくつかダウンロードするようにする
 
 ディレクトリ構造:
 ```
@@ -73,6 +72,12 @@ model_assets
 - bf16での学習のサポート
 - safetensors形式のサポート、デフォルトでsafetensorsを使用するように
 - その他軽微なbugfixやリファクタリング
+
+## TODO
+- [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
+- [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
+- [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
+- [ ] 音声ファイルだけ与えられた時にスライスしたり書き起こしたりしてデータセットを作れてすぐ学習できる機能をつける？[このライブラリ](https://github.com/litagin02/slice-and-transcribe)を組み込む？
 
 ## Bert-VITS2 v2.1と同じ点
 - [事前学習モデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。

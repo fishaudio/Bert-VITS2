@@ -2,10 +2,10 @@ import json
 import os
 import shutil
 import subprocess
-import yaml
+import sys
 
 import gradio as gr
-import sys
+import yaml
 
 python = sys.executable
 
@@ -143,8 +143,23 @@ def train(model_name):
     return "Final Step: 学習が完了しました!"
 
 
+initial_md = """
+# Style-Bert-VITS2 学習用WebUI
+
+## 使い方
+
+- データを準備して、各ステップを順に実行してください。進捗状況等はターミナルに表示されます。
+
+- 途中から学習を再開する場合は、モデル名を入力してFinal Stepだけ実行すればよいです。
+
+注意: 音声合成で使うには、スタイルベクトルファイル`style_vectors.npy`を作る必要があります。これは、`Style.bat`を実行してそこで作成してください。
+動作は軽いはずなので、学習中でも実行でき、何度でも繰り返して試せます。
+"""
+
 prepare_md = """
-次のようにデータを置いてください。
+まず音声データ（wavファイルで1ファイルが2-15秒程度の、長すぎず短すぎない発話のものをいくつか）と、書き起こしテキストを用意してください。
+
+それを次のように配置します。
 ```
 ├── Data
 │   ├── {モデルの名前}
@@ -168,13 +183,12 @@ wav_next.wav|taro|JP|はい、聞こえています……。
 english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 ...
 ```
-もちろん日本語話者の単一話者データセットでも構いません。
+日本語話者の単一話者データセットでも構いません。
 """
 
 if __name__ == "__main__":
     with gr.Blocks(theme="NoCrypt/miku") as app:
-        gr.Markdown("# Style Bert-VITS2 データ前処理")
-        gr.Markdown("途中から学習を再開する場合は、モデル名を入力してFinal Stepだけ実行すればよいです。")
+        gr.Markdown(initial_md)
         with gr.Accordion(label="データの前準備", open=False):
             gr.Markdown(prepare_md)
         model_name = gr.Textbox(

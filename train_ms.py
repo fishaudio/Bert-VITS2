@@ -352,6 +352,7 @@ def run():
             scheduler_dur_disc.step()
 
         if epoch == hps.train.epochs:
+            # Save the final models
             utils.save_checkpoint(
                 net_g,
                 optim_g,
@@ -379,8 +380,9 @@ def run():
                 epoch,
                 os.path.join(
                     out_dir,
-                    f"{config.model_name}.safetensors",
+                    f"{config.model_name}_e{epoch}_s{global_step}.safetensors",
                 ),
+                for_infer=True,
             )
 
 
@@ -652,6 +654,7 @@ def train_and_evaluate(
                         config.model_name,
                         f"{config.model_name}_e{epoch}_s{global_step}.safetensors",
                     ),
+                    for_infer=True,
                 )
 
         global_step += 1
