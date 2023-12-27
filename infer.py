@@ -12,6 +12,7 @@ import commons
 from text import cleaned_text_to_sequence, get_bert
 
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
+from typing import Union
 from text.cleaner import clean_text
 import utils
 
@@ -148,7 +149,7 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
 
 def infer(
     text,
-    emotion,
+    emotion: Union[int, str],
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -193,7 +194,6 @@ def infer(
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
         if version in inferMap_V4.keys():
-            emotion = ""  # Use empty emotion prompt
             return inferMap_V4[version](
                 text,
                 emotion,
@@ -213,7 +213,6 @@ def infer(
                 style_weight,
             )
         if version in inferMap_V3.keys():
-            emotion = 0
             return inferMap_V3[version](
                 text,
                 sdp_ratio,
