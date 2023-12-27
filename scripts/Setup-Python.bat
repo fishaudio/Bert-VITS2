@@ -1,8 +1,8 @@
+chcp 65001 > NUL
+
 @REM https://github.com/Zuntan03/EasyBertVits2 より引用・改変
-@REM 改行コードがLFだとエラーが出るのでCRLFにしないといけない……
 
 @echo off
-chcp 65001 > NUL
 set PS_CMD=PowerShell -Version 5.1 -ExecutionPolicy Bypass
 set CURL_CMD=C:\Windows\System32\curl.exe
 

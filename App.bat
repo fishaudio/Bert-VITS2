@@ -1,5 +1,4 @@
-@REM 改行コードがLFだとエラーが出るのでCRLFにしないといけない……
-
+chcp 65001 > NUL
 @echo off
 
 echo Running app.py...

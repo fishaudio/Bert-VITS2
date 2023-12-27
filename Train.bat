@@ -1,3 +1,5 @@
+chcp 65001 > NUL
+
 @echo off
 
 echo Running webui_train.py...
