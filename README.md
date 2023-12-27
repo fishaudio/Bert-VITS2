@@ -2,6 +2,8 @@
 
 Bert-VITS2 with more controllable voice styles.
 
+https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
+
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
 
 **概要**
@@ -21,7 +23,10 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 1. [このzipファイル](TODO)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
-3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるので、そのまま遊ぶことができます。
+3. その後、自動的に音声合成するため
+
+
+のWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるので、そのまま遊ぶことができます。
 
 またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
