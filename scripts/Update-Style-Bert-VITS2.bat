@@ -28,6 +28,15 @@ xcopy /QSY .\Style-Bert-VITS2-master .\Style-Bert-VITS2
 rmdir /s /q Style-Bert-VITS2-master
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+@REM 仮想環境のpip requirements.txtを更新
+
+echo call .\Style-Bert-VITS2\scripts\activate.bat
+call .\Style-Bert-VITS2\venv\Scripts\activate.bat
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+pip install -U -r Style-Bert-VITS2\requirements.txt
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
 echo Style-Bert-VITS2のアップデートが完了しました。
 
 pause
