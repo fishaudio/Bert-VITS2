@@ -124,10 +124,10 @@ def bert_gen(model_name):
     return "Step 4: BERT特徴ファイルの生成が完了しました"
 
 
-def style_gen(model_name):
+def style_gen(model_name, num_processes):
     dataset_path, _, _, _, config_path = get_path(model_name)
     result = subprocess_wrapper(
-        [python, "style_gen.py", "--config", config_path, "--model", dataset_path]
+        [python, "style_gen.py", "--config", config_path, "--num_processes", str(num_processes)]
     )
     if result.stderr:
         return f"{result.stderr}"
@@ -232,6 +232,13 @@ if __name__ == "__main__":
                 bert_gen_btn = gr.Button(value="実行", variant="primary")
             with gr.Column():
                 gr.Markdown(value="### Step 5: スタイル特徴ファイルの生成")
+                num_processes = gr.Slider(
+                    label="スレッドサイズ",
+                    value=2,
+                    minimum=1,
+                    maximum=16,
+                    step=1,
+                )
                 style_gen_btn = gr.Button(value="実行", variant="primary")
         with gr.Row():
             with gr.Column():
@@ -246,7 +253,7 @@ if __name__ == "__main__":
         resample_btn.click(resample, inputs=[model_name], outputs=[info])
         preprocess_text_btn.click(preprocess_text, inputs=[model_name], outputs=[info])
         bert_gen_btn.click(bert_gen, inputs=[model_name], outputs=[info])
-        style_gen_btn.click(style_gen, inputs=[model_name], outputs=[info])
+        style_gen_btn.click(style_gen, inputs=[model_name, num_processes], outputs=[info])
         train_btn.click(train, inputs=[model_name], outputs=[info])
 
     app.launch(share=False, inbrowser=True)
