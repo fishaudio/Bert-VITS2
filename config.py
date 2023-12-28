@@ -172,11 +172,13 @@ class Webui_config:
 
 class Server_config:
     def __init__(
-        self, models: List[Dict[str, any]], port: int = 5000, device: str = "cuda"
+        self,
+        port: int = 5000, device: str = "cuda", limit: int = 100, language: str = "JP"
     ):
-        self.models: List[Dict[str, any]] = models  # 需要加载的所有模型的配置
-        self.port: int = port  # 端口号
-        self.device: str = device  # 模型默认使用设备
+        self.port: int = port
+        self.device: str = device
+        self.language: str = language
+        self.limit: int = limit
 
     @classmethod
     def from_dict(cls, data: Dict[str, any]):

@@ -65,17 +65,8 @@ webui:
   language_identification_library: "langid"
 
 # server_fastapi's config
-# TODO: `server_fastapi.py` is not implemented yet for this version
 server:
   port: 5000
   device: "cuda"
-  models:
-    - model: ""
-      config: ""
-      device: "cuda"
-      language: "ZH"
-    - model: ""
-      config: ""
-      device: "cpu"
-      language: "JP"
-      speakers: []
+  language: "JP"
+  limit: 100

@@ -21,6 +21,10 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 <!-- 詳しくは[こちら](docs/tutorial.md)を参照してください。 -->
 
+### 動作環境
+
+各UIとAPI Serverにおいて、Windows コマンドプロンプト・WSL2・Linux(Ubuntu Desktop)での動作を確認しています(WSLでのパス指定は相対パスなど工夫ください)。
+
 ### インストール
 
 Windows環境で最近のNVIDIA製グラボがあることを前提にしています。
@@ -83,6 +87,12 @@ model_assets
 
 注意: データセットの手動修正やノイズ除去や、より高品質なデータセットを作りたい場合は、[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うのをおすすめします。
 
+### API Server
+
+構築した環境下で`python server_fastapi.py`するとAPIサーバーが起動します。
+
+API仕様は起動後に`/docs`にて確認ください。
+
 ## Bert-VITS2 v2.1との関係
 
 基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
@@ -102,7 +112,7 @@ model_assets
 - [ ] LinuxやWSL等、Windowsの通常環境以外でのサポート？
 - [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
-- [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
+- [x] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
 - [ ] モデルのマージで声音と感情表現を混ぜる機能の実装
 - [ ] 英語等多言語対応？
 
