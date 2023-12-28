@@ -65,6 +65,8 @@ if __name__ == "__main__":
                 twople = (spk_dir, filename, args)
                 tasks.append(twople)
 
+    if len(tasks) == 0:
+        raise ValueError(f"No wav files found in {args.in_dir}")
     for _ in tqdm(
         pool.imap_unordered(process, tasks), file=sys.stdout, total=len(tasks)
     ):
