@@ -25,7 +25,7 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.0/Style-Bert-VITS2.zip)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
-3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるので、そのまま遊ぶことができます。
+3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
 またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
@@ -40,15 +40,15 @@ python -m venv venv
 venv\Scripts\activate
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
-python initialize.py
+python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
 最後を忘れずに。
 
 ### 音声合成
 
-`App.bat`をダブルクリックするとWebUIが起動します。
+`App.bat`をダブルクリックするとWebUIが起動します。インストール時にデフォルトのモデルがダウンロードされているので、学習していなくてもそれを使うことができます。
 
-合成に必要なモデルファイルたちは以下のように配置します。
+音声合成に必要なモデルファイルたちの構造は以下の通りです（手動で配置する必要はありません）。
 ```
 model_assets
 ├── your_model
@@ -71,6 +71,7 @@ model_assets
 - `Style.bat`をダブルクリックするとWebUIが起動します。
 - この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
+- スタイルについての詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
 ### データセット作り
 
@@ -96,6 +97,7 @@ model_assets
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
 - [ ] モデルのマージで声音と感情表現を混ぜる機能の実装
+- [ ] 英語等多言語対応？
 
 
 ## 実験したいこと
@@ -109,7 +111,7 @@ In addition to the original reference (written below), I used the following repo
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)
 
-The pretrained model is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
+[The pretrained model](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base) is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
 
 
 Below is the original README.md.
