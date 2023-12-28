@@ -125,9 +125,16 @@ def bert_gen(model_name):
 
 
 def style_gen(model_name, num_processes):
-    dataset_path, _, _, _, config_path = get_path(model_name)
+    _, _, _, _, config_path = get_path(model_name)
     result = subprocess_wrapper(
-        [python, "style_gen.py", "--config", config_path, "--num_processes", str(num_processes)]
+        [
+            python,
+            "style_gen.py",
+            "--config",
+            config_path,
+            "--num_processes",
+            str(num_processes),
+        ]
     )
     if result.stderr:
         return f"{result.stderr}"
@@ -187,8 +194,16 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 日本語話者の単一話者データセットでも構いません。
 """
 
+css = """
+/* マークダウン要素のスタイル */
+div.panel {
+    justify-content: space-between;
+}
+
+"""
+
 if __name__ == "__main__":
-    with gr.Blocks(theme="NoCrypt/miku") as app:
+    with gr.Blocks(theme="NoCrypt/miku", css=css) as app:
         gr.Markdown(initial_md)
         with gr.Accordion(label="データの前準備", open=False):
             gr.Markdown(prepare_md)
@@ -196,9 +211,9 @@ if __name__ == "__main__":
             label="モデル名",
         )
         info = gr.Textbox(label="状況")
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown(value="### Step 1: 設定ファイルの生成")
+        with gr.Row(variant="panel"):
+            with gr.Column(variant="panel", min_width=160):
+                gr.Markdown(value="Step 1: 設定ファイルの生成")
                 batch_size = gr.Slider(
                     label="バッチサイズ",
                     info="VRAM 12GBで4くらい",
@@ -221,28 +236,28 @@ if __name__ == "__main__":
                     value=True,
                 )
                 generate_config_btn = gr.Button(value="実行", variant="primary")
-            with gr.Column():
-                gr.Markdown(value="### Step 2: 音声ファイルの前処理")
+            with gr.Column(variant="panel", min_width=160):
+                gr.Markdown(value="Step 2: 音声ファイルの前処理")
                 resample_btn = gr.Button(value="実行", variant="primary")
-            with gr.Column():
-                gr.Markdown(value="### Step 3: 書き起こしファイルの前処理")
+            with gr.Column(variant="panel", min_width=160):
+                gr.Markdown(value="Step 3: 書き起こしファイルの前処理")
                 preprocess_text_btn = gr.Button(value="実行", variant="primary")
-            with gr.Column():
-                gr.Markdown(value="### Step 4: BERT特徴ファイルの生成")
+            with gr.Column(variant="panel", min_width=160):
+                gr.Markdown(value="Step 4: BERT特徴ファイルの生成")
                 bert_gen_btn = gr.Button(value="実行", variant="primary")
-            with gr.Column():
-                gr.Markdown(value="### Step 5: スタイル特徴ファイルの生成")
+            with gr.Column(variant="panel", min_width=160):
+                gr.Markdown(value="Step 5: スタイル特徴ファイルの生成")
                 num_processes = gr.Slider(
-                    label="スレッドサイズ",
-                    value=2,
+                    label="プロセス数",
+                    value=4,
                     minimum=1,
                     maximum=16,
                     step=1,
                 )
                 style_gen_btn = gr.Button(value="実行", variant="primary")
-        with gr.Row():
+        with gr.Row(variant="panel"):
             with gr.Column():
-                gr.Markdown(value="### Final Step: 学習")
+                gr.Markdown(value="Final Step: 学習")
                 train_btn = gr.Button(value="学習", variant="primary")
 
         generate_config_btn.click(
@@ -253,7 +268,9 @@ if __name__ == "__main__":
         resample_btn.click(resample, inputs=[model_name], outputs=[info])
         preprocess_text_btn.click(preprocess_text, inputs=[model_name], outputs=[info])
         bert_gen_btn.click(bert_gen, inputs=[model_name], outputs=[info])
-        style_gen_btn.click(style_gen, inputs=[model_name, num_processes], outputs=[info])
+        style_gen_btn.click(
+            style_gen, inputs=[model_name, num_processes], outputs=[info]
+        )
         train_btn.click(train, inputs=[model_name], outputs=[info])
 
     app.launch(share=False, inbrowser=True)
