@@ -249,4 +249,4 @@ if __name__ == "__main__":
         style_gen_btn.click(style_gen, inputs=[model_name], outputs=[info])
         train_btn.click(train, inputs=[model_name], outputs=[info])
 
-    app.launch(share=False, server_port=7860, inbrowser=True)
+    app.launch(share=False, inbrowser=True)
