@@ -510,7 +510,7 @@ def train_and_evaluate(
                     logw_.detach(),
                     logw_sdp.detach(),
                     g.detach(),
-                #
+                )
                 y_dur_hat_r = y_dur_hat_r + y_dur_hat_r_sdp
                 y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
