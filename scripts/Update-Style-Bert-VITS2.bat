@@ -24,7 +24,7 @@ del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-master .\Style-Bert-VITS2
+xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
 rmdir /s /q Style-Bert-VITS2-master
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 

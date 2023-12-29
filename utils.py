@@ -348,7 +348,7 @@ def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_tim
     ]
 
     def del_info(fn):
-        return logger.info(f".. Free up space by deleting ckpt {fn}")
+        return logger.info(f"Free up space by deleting ckpt {fn}")
 
     def del_routine(x):
         return [os.remove(x), del_info(x)]

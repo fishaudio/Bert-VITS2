@@ -41,7 +41,7 @@ call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
 if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
 
 @REM 依存関係インストール
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pip install -r Style-Bert-VITS2\requirements.txt
@@ -60,7 +60,6 @@ python initialize.py
 echo ----------------------------------------
 echo モデルのダウンロードが完了し、インストールが完了しました！
 echo 音声合成のWebUIを起動します。
-echo いつでもこのウィンドウを閉じて終了できます。
 echo ----------------------------------------
 
 @REM 音声合成WebUIの起動

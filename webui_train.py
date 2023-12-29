@@ -62,7 +62,7 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
     return True, "Step 1, Success: 初期設定が完了しました"
 
 
-def resample(model_name, normalize, num_processes):
+def resample(model_name, normalize, trim, num_processes):
     logger.info("Step 2: start resampling...")
     dataset_path, _, _, _, _ = get_path(model_name)
     in_dir = os.path.join(dataset_path, "raw")
@@ -80,6 +80,8 @@ def resample(model_name, normalize, num_processes):
     ]
     if normalize:
         cmd.append("--normalize")
+    if trim:
+        cmd.append("--trim")
     success, message = run_script_with_log(cmd)
     if not success:
         logger.error(f"Step 2: resampling failed.")
@@ -174,7 +176,14 @@ def style_gen(model_name, num_processes):
 
 
 def preprocess_all(
-    model_name, batch_size, epochs, save_every_steps, bf16_run, num_processes, normalize
+    model_name,
+    batch_size,
+    epochs,
+    save_every_steps,
+    bf16_run,
+    num_processes,
+    normalize,
+    trim,
 ):
     if model_name == "":
         return False, "Error: モデル名を入力してください"
@@ -183,7 +192,7 @@ def preprocess_all(
     )
     if not success:
         return False, message
-    success, message = resample(model_name, normalize, num_processes)
+    success, message = resample(model_name, normalize, trim, num_processes)
     if not success:
         return False, message
     success, message = preprocess_text(model_name)
@@ -313,6 +322,10 @@ if __name__ == "__main__":
                     label="音声の音量を正規化する",
                     value=True,
                 )
+                trim = gr.Checkbox(
+                    label="音声の最初と最後の無音を取り除く",
+                    value=True,
+                )
             with gr.Column():
                 preprocess_button = gr.Button(value="自動前処理を実行", variant="primary")
                 info_all = gr.Textbox(label="状況")
@@ -360,6 +373,10 @@ if __name__ == "__main__":
                     )
                     normalize_resample = gr.Checkbox(
                         label="音声の音量を正規化する",
+                        value=True,
+                    )
+                    trim_resample = gr.Checkbox(
+                        label="音声の最初と最後の無音を取り除く",
                         value=True,
                     )
                 with gr.Column():
@@ -413,6 +430,7 @@ if __name__ == "__main__":
                 bf16_run,
                 num_processes,
                 normalize,
+                trim,
             ],
             outputs=[info_all],
         )
@@ -429,7 +447,12 @@ if __name__ == "__main__":
         )
         resample_btn.click(
             second_elem_of(resample),
-            inputs=[model_name, normalize_resample, num_processes_resample],
+            inputs=[
+                model_name,
+                normalize_resample,
+                trim_resample,
+                num_processes_resample,
+            ],
             outputs=[info_resample],
         )
         preprocess_text_btn.click(
