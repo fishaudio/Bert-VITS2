@@ -16,6 +16,7 @@ numba
 numpy
 psutil
 pyannote.audio>=3.1.0
+pyloudnorm
 pyopenjtalk-prebuilt
 pypinyin
 PyYAML

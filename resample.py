@@ -4,10 +4,20 @@ import sys
 from multiprocessing import Pool, cpu_count
 
 import librosa
+import pyloudnorm as pyln
 import soundfile
 from tqdm import tqdm
 
 from config import config
+from tools.log import logger
+
+
+def normalize_audio(data, sr):
+    meter = pyln.Meter(sr)  # create BS.1770 meter
+    loudness = meter.integrated_loudness(data)
+    # logger.info(f"loudness: {loudness}")
+    data = pyln.normalize.loudness(data, loudness, -23.0)
+    return data
 
 
 def process(item):
@@ -15,6 +25,8 @@ def process(item):
     wav_path = os.path.join(args.in_dir, spkdir, wav_name)
     if os.path.exists(wav_path) and wav_path.lower().endswith(".wav"):
         wav, sr = librosa.load(wav_path, sr=args.sr)
+        if args.normalize:
+            wav = normalize_audio(wav, sr)
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
 
@@ -44,13 +56,18 @@ if __name__ == "__main__":
         default=4,
         help="cpu_processes",
     )
+    parser.add_argument(
+        "--normalize",
+        action="store_true",
+        default=True,
+        help="loudness normalize audio",
+    )
     args, _ = parser.parse_known_args()
     # autodl 无卡模式会识别出46个cpu
     if args.num_processes == 0:
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
         processes = args.num_processes
-    pool = Pool(processes=processes)
 
     tasks = []
 
@@ -66,7 +83,10 @@ if __name__ == "__main__":
                 tasks.append(twople)
 
     if len(tasks) == 0:
+        logger.error(f"No wav files found in {args.in_dir}")
         raise ValueError(f"No wav files found in {args.in_dir}")
+
+    pool = Pool(processes=processes)
     for _ in tqdm(
         pool.imap_unordered(process, tasks), file=sys.stdout, total=len(tasks)
     ):
