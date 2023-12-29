@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--normalize",
         action="store_true",
-        default=True,
+        default=False,
         help="loudness normalize audio",
     )
     args, _ = parser.parse_known_args()
