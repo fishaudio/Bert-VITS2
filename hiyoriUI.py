@@ -1,5 +1,6 @@
 """
-api服务 多版本多模型 fastapi实现
+api服务，网页后端 多版本多模型 fastapi实现
+原 server_fastapi
 """
 import logging
 import gc
@@ -26,7 +27,7 @@ from urllib.parse import unquote
 from infer import infer, get_net_g, latest_version
 import tools.translate as trans
 from tools.sentence import split_by_language
-from re_matching import cut_sent, validate_text, text_matching
+from re_matching import cut_sent
 
 
 from config import config
@@ -252,42 +253,42 @@ if __name__ == "__main__":
 
         # 改动：增加使用 || 对文本进行主动切分
         # 切分优先级： || → auto/mix → auto_split
-        texts: List[str] = text.split("||")
+        text2 = text.replace("\n", "").lstrip()
+        texts: List[str] = text2.split("||")
 
         # 对于mix和auto的说明：出于版本兼容性的考虑，暂时无法使用multilang的方式进行推理
         if language == "MIX":
             text_language_speakers: List[Tuple[str, str, str]] = []
-            for text in texts:
-                state = 2  # 状态  0 记录文本 1 识别语言 2 识别说话人
-                temp = ("", "", "")  # 临时存储t_l_s
-                sub_list = []
-                for char in text:
-                    if char == "[":
-                        if state == 0:
-                            if temp[1].upper() not in ["ZH", "JP", "EN"]:
-                                return {
-                                    "status": 21,
-                                    "detail": f"mix语法错误",
-                                }
-                            sub_list.append(temp)
-                            temp = ("", "", "")
-                            state = 0
-                        elif state == 1:
+            for _text in texts:
+                speaker_pieces = _text.split("[")  # 按说话人分割多块
+                for speaker_piece in speaker_pieces:
+                    if speaker_piece == "":
+                        continue
+                    speaker_piece2 = speaker_piece.split("]")
+                    if len(speaker_piece2) != 2:
+                        return {
+                            "status": 21,
+                            "detail": f"MIX语法错误",
+                        }
+                    speaker = speaker_piece2[0].strip()
+                    lang_pieces = speaker_piece2[1].split("<")
+                    for lang_piece in lang_pieces:
+                        if lang_piece == "":
+                            continue
+                        lang_piece2 = lang_piece.split(">")
+                        if len(lang_piece2) != 2:
                             return {
                                 "status": 21,
-                                "detail": f"mix语法错误",
+                                "detail": f"MIX语法错误",
                             }
-                    elif char == "]" or ">":
-                        continue
-                    elif char == "<":
-                        state = 1
-                    else:
-                        temp[state] += char
-                sub_list = [
-                    (_text, lang.upper(), speaker) for _text, lang, speaker in sub_list
-                ]
-                if len(sub_list) != 0:
-                    text_language_speakers += sub_list
+                        lang = lang_piece2[0].strip()
+                        if lang.upper() not in ["ZH", "EN", "JP"]:
+                            return {
+                                "status": 21,
+                                "detail": f"MIX语法错误",
+                            }
+                        t = lang_piece2[1]
+                        text_language_speakers.append((t, lang.upper(), speaker))
 
         elif language == "AUTO":
             text_language_speakers: List[Tuple[str, str, str]] = [
@@ -333,8 +334,8 @@ if __name__ == "__main__":
                         style_weight=style_weight,
                     )
                 )
-                audios.append(np.zeros(int(44100 * 0.2)))
-            audios.pop()
+                # audios.append(np.zeros(int(44100 * 0.2)))
+            # audios.pop()
             audio = np.concatenate(audios)
             audio = gradio.processing_utils.convert_to_16_bit_wav(audio)
         with BytesIO() as wavContent:
@@ -407,7 +408,7 @@ if __name__ == "__main__":
         style_text: Optional[str] = Query(None, description="风格文本"),
         style_weight: float = Query(0.7, description="风格权重"),
     ):
-        """语音接口"""
+        """语音接口，不建议使用"""
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
