@@ -360,6 +360,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dir", "-d", type=str, help="Model directory", default=config.out_dir
     )
+    parser.add_argument(
+        "--share", action="store_true", help="Share this app publicly", default=False
+    )
     args = parser.parse_args()
     model_dir = args.dir
 
@@ -518,4 +521,4 @@ if __name__ == "__main__":
             outputs=[style, ref_audio_path],
         )
 
-    app.launch(inbrowser=True)
+    app.launch(inbrowser=True, share=args.share)
