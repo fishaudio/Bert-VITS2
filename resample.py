@@ -27,6 +27,9 @@ def process(item):
         wav, sr = librosa.load(wav_path, sr=args.sr)
         if args.normalize:
             wav = normalize_audio(wav, sr)
+        if args.trim:
+            wav, _ = librosa.effects.trim(wav, top_db=30)
+            logger.debug(f"trim: {wav_name}")
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
 
@@ -59,8 +62,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--normalize",
         action="store_true",
-        default=True,
+        default=False,
         help="loudness normalize audio",
+    )
+    parser.add_argument(
+        "--trim",
+        action="store_true",
+        default=False,
+        help="trim silence (start and end only)",
     )
     args, _ = parser.parse_known_args()
     # autodl 无卡模式会识别出46个cpu
