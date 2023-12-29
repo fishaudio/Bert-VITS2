@@ -16,3 +16,4 @@ venv/
 /pretrained/*.pth
 
 /scripts/test/
+*.zip

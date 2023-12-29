@@ -10,6 +10,8 @@ Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
 
+- [更新履歴](docs/CHANGELOG.md)
+
 **概要**
 
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
