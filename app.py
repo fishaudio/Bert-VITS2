@@ -14,9 +14,6 @@ from config import config
 from infer import get_net_g, infer
 from tools.log import logger
 
-is_hf_spaces = os.getenv("SYSTEM") == "spaces"
-limit = 100
-
 
 class Model:
     def __init__(self, model_path, config_path, style_vec_path, device):
@@ -222,9 +219,6 @@ def tts_fn(
     emotion,
     emotion_weight,
 ):
-    if is_hf_spaces and len(text) > limit:
-        raise Exception(f"文字数が{limit}文字を超えています")
-
     assert model_holder.current_model is not None
 
     start_time = datetime.datetime.now()
@@ -253,7 +247,7 @@ def tts_fn(
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
 
-example_local = [
+examples = [
     [initial_text, "JP"],
     [
         """あなたがそんなこと言うなんて、私はとっても嬉しい。
@@ -305,18 +299,6 @@ example_local = [
         "EN",
     ],
     ["语音合成是人工制造人类语音。用于此目的的计算机系统称为语音合成器，可以通过软件或硬件产品实现。", "ZH"],
-]
-
-example_hf_spaces = [
-    [initial_text, "JP"],
-    ["えっと、私、あなたのことが好きです！もしよければ付き合ってくれませんか？", "JP"],
-    ["吾輩は猫である。名前はまだ無い。", "JP"],
-    ["どこで生れたかとんと見当がつかぬ。なんでも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。", "JP"],
-    ["やったー！テストで満点取れたよ！私とっても嬉しいな！", "JP"],
-    ["どうして私の意見を無視するの？許せない！ムカつく！あんたなんか死ねばいいのに。", "JP"],
-    ["あはははっ！この漫画めっちゃ笑える、見てよこれ、ふふふ、あはは。", "JP"],
-    ["あなたがいなくなって、私は一人になっちゃって、泣いちゃいそうなほど悲しい。", "JP"],
-    ["深層学習の応用により、感情やアクセントを含む声質の微妙な変化も再現されている。", "JP"],
 ]
 
 initial_md = """
@@ -389,13 +371,12 @@ if __name__ == "__main__":
     model_holder = ModelHolder(model_dir, device)
 
     languages = ["JP", "EN", "ZH"]
-    examples = example_hf_spaces if is_hf_spaces else example_local
 
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。")
         sys.exit(1)
-    initial_id = 1 if is_hf_spaces else 0
+    initial_id = 0
     initial_pth_files = model_holder.model_files_dict[model_names[initial_id]]
 
     with gr.Blocks(theme="NoCrypt/miku") as app:
@@ -416,7 +397,7 @@ if __name__ == "__main__":
                             choices=initial_pth_files,
                             value=initial_pth_files[0],
                         )
-                    refresh_button = gr.Button("更新", scale=1, visible=not is_hf_spaces)
+                    refresh_button = gr.Button("更新", scale=1, visible=True)
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
 

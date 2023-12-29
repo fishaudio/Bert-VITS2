@@ -48,7 +48,7 @@ python initialize.py  # 必要なモデルとデフォルトTTSモデルをダ�
 
 ### 音声合成
 
-`App.bat`をダブルクリックするとWebUIが起動します。インストール時にデフォルトのモデルがダウンロードされているので、学習していなくてもそれを使うことができます。
+`App.bat`をダブルクリックか、`python app.py`するとWebUIが起動します。インストール時にデフォルトのモデルがダウンロードされているので、学習していなくてもそれを使うことができます。
 
 音声合成に必要なモデルファイルたちの構造は以下の通りです（手動で配置する必要はありません）。
 ```
@@ -66,18 +66,20 @@ model_assets
 
 ### 学習
 
-`Train.bat`をダブルクリックするとWebUIが起動します。
+`Train.bat`をダブルクリックか`python webui_train.py`するとWebUIが起動します。
 
 ### スタイルの生成
 
-- `Style.bat`をダブルクリックするとWebUIが起動します。
+- `Style.bat`をダブルクリックか`python webui_style_vectors.py`するとWebUIが起動します。
 - この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
 - スタイルについての詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
 ### データセット作り
 
-- `Dataset.bat`をダブルクリックすると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
+- `Dataset.bat`をダブルクリックか`python webui_dataset.py`すると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
+
+注意: データセットの手動修正やノイズ除去や、より高品質なデータセットを作りたい場合は、[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うのをおすすめします。
 
 ## Bert-VITS2 v2.1との関係
 

@@ -97,7 +97,7 @@ class Style_gen_config:
     def __init__(
         self,
         config_path: str,
-        num_processes: int = 2,
+        num_processes: int = 4,
         device: str = "cuda",
     ):
         self.config_path = config_path
