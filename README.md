@@ -3,6 +3,7 @@
 Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
+**注意**: 上記動画のライセンス表記は誤っていました、正しくはCC BY-SA 4.0で商用利用に制限はありません。近日訂正版動画に差し替えます。
 
 Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
 
