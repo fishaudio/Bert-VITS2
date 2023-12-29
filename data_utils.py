@@ -1,15 +1,18 @@
 import os
 import random
+import sys
+
+import numpy as np
 import torch
 import torch.utils.data
 from tqdm import tqdm
-import numpy as np
-from tools.log import logger
+
 import commons
-from mel_processing import spectrogram_torch, mel_spectrogram_torch
-from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence
 from config import config
+from mel_processing import mel_spectrogram_torch, spectrogram_torch
+from text import cleaned_text_to_sequence
+from tools.log import logger
+from utils import load_filepaths_and_text, load_wav_to_torch
 
 """Multi speaker version"""
 
@@ -61,7 +64,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         skipped = 0
         logger.info("Init dataset...")
         for _id, spk, language, text, phones, tone, word2ph in tqdm(
-            self.audiopaths_sid_text
+            self.audiopaths_sid_text, file=sys.stdout
         ):
             audiopath = f"{_id}"
             if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
