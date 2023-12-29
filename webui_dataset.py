@@ -1,43 +1,35 @@
 import os
-import subprocess
-import sys
 
 import gradio as gr
 
-python = sys.executable
+from tools.log import logger
+from tools.subprocess_utils import run_script_with_log, second_elem_of
 
 
-def subprocess_wrapper(cmd):
-    return subprocess.run(
-        cmd,
-        stdout=sys.stdout,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-
-def do_slice(model_name):
+def do_slice(model_name, normalize):
+    logger.info("Start slicing...")
     input_dir = "inputs"
     output_dir = os.path.join("Data", model_name, "raw")
-    result = subprocess_wrapper(
-        [
-            python,
-            "slice.py",
-            "--input_dir",
-            input_dir,
-            "--output_dir",
-            output_dir,
-        ]
-    )
-    return "ターミナルを見て結果を確認してください。"
+    cmd = [
+        "slice.py",
+        "--input_dir",
+        input_dir,
+        "--output_dir",
+        output_dir,
+    ]
+    if normalize:
+        cmd.append("--normalize")
+    success, message = run_script_with_log(cmd)
+    if not success:
+        return f"Error: {message}"
+    return "音声のスライスが完了しました。"
 
 
 def do_transcribe(model_name):
     input_dir = os.path.join("Data", model_name, "raw")
     output_file = os.path.join("Data", model_name, "esd.list")
-    result = subprocess_wrapper(
+    result = run_script_with_log(
         [
-            python,
             "transcribe.py",
             "--input_dir",
             input_dir,
@@ -47,13 +39,13 @@ def do_transcribe(model_name):
             model_name,
         ]
     )
-    if result.stderr:
-        return f"{result.stderr}"
     return "音声の文字起こしが完了しました。"
 
 
 initial_md = """
-# 学習用データセット作成ツール
+# 簡易学習用データセット作成ツール
+
+**注意**：より精密で高品質なデータセットを作成したい・書き起こしをいろいろ修正したい場合は、[Aivis Dataset](https://github.com/litagin02/Aivis-Dataset)をおすすめします。書き起こし部分もかなり工夫されています。このツールはあくまでスライスして書き起こすという簡易的なことしかしていません。
 
 Style-Bert-VITS2の学習用データセットを作成するためのツールです。与えられた音声からちょうどいい長さの発話区間を切り取りスライスし、それぞれの音声に対して文字起こしを行います。
 
@@ -69,23 +61,24 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 細かいパラメータ調整とかがしたい人は、`slice.py`と`transcribe.py`を眺めて直接実行してください。
 
 また、出来上がった音声ファイルたちは`Data/{モデル名}/raw`に、書き起こしファイルは`Data/{モデル名}/esd.list`に保存されます。
-書き起こしの結果は、**そこまで正確に誤字や誤りを修正しなくても、それなりの質になる**ので、あまり修正は必要ないかもしれません（私は手動修正したことないです）。
-
-**ffmpeg のインストールが別途必要のよう**です、「Couldn't find ffmpeg」とか怒られたら、「Windows ffmpeg インストール」等でググって別途インストールしてください。
+書き起こしの結果をどれだけ修正すればいいかはデータセットに依存しそうです。
 """
 
 with gr.Blocks(theme="NoCrypt/miku") as app:
     gr.Markdown(initial_md)
     model_name = gr.Textbox(label="モデル名を入力してください（話者名としても使われます）。")
-    with gr.Row():
-        slice_button = gr.Button("音声のスライス")
-        result1 = gr.Textbox(label="結果")
+    with gr.Accordion("音声のスライス"):
+        with gr.Row():
+            with gr.Column():
+                normalize = gr.Checkbox(label="スライスされた音声の音量を正規化する", value=True)
+                slice_button = gr.Button("スライスを実行")
+            result1 = gr.Textbox(label="結果")
     with gr.Row():
         transcribe_button = gr.Button("音声の文字起こし")
         result2 = gr.Textbox(label="結果")
     slice_button.click(
         do_slice,
-        inputs=[model_name],
+        inputs=[model_name, normalize],
         outputs=[result1],
     )
     transcribe_button.click(

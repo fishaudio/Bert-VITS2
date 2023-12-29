@@ -4,9 +4,13 @@ Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
 
+**注意**: 上記動画のライセンス表記は誤っていました、正しくはCC BY-SA 4.0で商用利用に制限はありません。近日訂正版動画に差し替えます。
+
 Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
+
+- [更新履歴](docs/CHANGELOG.md)
 
 **概要**
 
@@ -25,7 +29,7 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.0/Style-Bert-VITS2.zip)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
-3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるので、そのまま遊ぶことができます。
+3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
 またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
@@ -40,15 +44,15 @@ python -m venv venv
 venv\Scripts\activate
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
-python initialize.py
+python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
 最後を忘れずに。
 
 ### 音声合成
 
-`App.bat`をダブルクリックするとWebUIが起動します。
+`App.bat`をダブルクリックか、`python app.py`するとWebUIが起動します。インストール時にデフォルトのモデルがダウンロードされているので、学習していなくてもそれを使うことができます。
 
-合成に必要なモデルファイルたちは以下のように配置します。
+音声合成に必要なモデルファイルたちの構造は以下の通りです（手動で配置する必要はありません）。
 ```
 model_assets
 ├── your_model
@@ -64,17 +68,20 @@ model_assets
 
 ### 学習
 
-`Train.bat`をダブルクリックするとWebUIが起動します。
+`Train.bat`をダブルクリックか`python webui_train.py`するとWebUIが起動します。
 
 ### スタイルの生成
 
-- `Style.bat`をダブルクリックするとWebUIが起動します。
+- `Style.bat`をダブルクリックか`python webui_style_vectors.py`するとWebUIが起動します。
 - この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
+- スタイルについての詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
 ### データセット作り
 
-- `Dataset.bat`をダブルクリックすると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
+- `Dataset.bat`をダブルクリックか`python webui_dataset.py`すると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
+
+注意: データセットの手動修正やノイズ除去や、より高品質なデータセットを作りたい場合は、[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うのをおすすめします。
 
 ## Bert-VITS2 v2.1との関係
 
@@ -92,10 +99,12 @@ model_assets
 - その他軽微なbugfixやリファクタリング
 
 ## TODO
+- [ ] LinuxやWSL等、Windowsの通常環境以外でのサポート？
 - [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [ ] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
 - [ ] モデルのマージで声音と感情表現を混ぜる機能の実装
+- [ ] 英語等多言語対応？
 
 
 ## 実験したいこと
@@ -109,7 +118,7 @@ In addition to the original reference (written below), I used the following repo
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)
 
-The pretrained model is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
+[The pretrained model](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base) is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
 
 
 Below is the original README.md.

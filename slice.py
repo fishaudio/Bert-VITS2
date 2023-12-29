@@ -3,8 +3,8 @@ import os
 import shutil
 import sys
 
+import soundfile as sf
 import torch
-from pydub import AudioSegment
 from tqdm import tqdm
 
 vad_model, utils = torch.hub.load(
@@ -52,16 +52,9 @@ def split_wav(
         audio_file, min_silence_dur_ms=min_silence_dur_ms, min_sec=min_sec
     )
 
-    # WAVファイルを読み込む
-    audio = AudioSegment.from_wav(audio_file)
+    data, sr = sf.read(audio_file)
 
-    # リサンプリング（44100Hz）
-    audio = audio.set_frame_rate(44100)
-
-    # ステレオをモノラルに変換
-    audio = audio.set_channels(1)
-
-    total_ms = len(audio)
+    total_ms = len(data) / sr * 1000
 
     file_name = os.path.basename(audio_file).split(".")[0]
     os.makedirs(target_dir, exist_ok=True)
@@ -74,8 +67,15 @@ def split_wav(
         end_ms = min(ts["end"] / 16 + margin, total_ms)
         if end_ms - start_ms > upper_bound_ms:
             continue
-        segment = audio[start_ms:end_ms]
-        segment.export(os.path.join(target_dir, f"{file_name}-{i}.wav"), format="wav")
+
+        start_sample = int(start_ms / 1000 * sr)
+        end_sample = int(end_ms / 1000 * sr)
+        segment = data[start_sample:end_sample]
+
+        if normalize:
+            segment = normalize_audio(segment, sr)
+
+        sf.write(os.path.join(target_dir, f"{file_name}-{i}.wav"), segment, sr)
         total_time_ms += end_ms - start_ms
 
     return total_time_ms / 1000

@@ -658,8 +658,9 @@ def train_and_evaluate(
                 )
 
         global_step += 1
-    gc.collect()
-    torch.cuda.empty_cache()
+    # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
+    # gc.collect()
+    # torch.cuda.empty_cache()
     if rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 
