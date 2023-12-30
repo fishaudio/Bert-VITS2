@@ -25,6 +25,10 @@ class StdoutWrapper:
         # 一時ファイルを閉じる
         self.temp_file.close()
 
+    def fileno(self):
+        # 一時ファイルのファイルディスクリプタを返す
+        return self.temp_file.fileno()
+
 
 def get_stdout():
     # Colab 環境をチェックする
