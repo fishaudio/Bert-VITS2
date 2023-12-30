@@ -2,7 +2,7 @@
 api服务 多版本多模型 fastapi实现
 """
 import argparse
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, status, HTTPException
 from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
@@ -19,7 +19,7 @@ from config import config
 from app import (
     Model,
     ModelHolder,
-    languages,
+    Languages,
     DEFAULT_SDP_RATIO,
     DEFAULT_NOISE,
     DEFAULT_NOISEW,
@@ -32,6 +32,18 @@ from app import (
 from webui_style_vectors import DEFAULT_EMOTION
 
 ln = config.server_config.language
+
+
+def raise_validation_error(msg: str, param: str):
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=[dict(type='invalid_params', msg=msg, loc=['query', param])]
+    )
+
+
+class AudioResponse(Response):
+    media_type = "audio/wav"
+
 
 def load_models(model_holder: ModelHolder):
     model_holder.models = []
@@ -81,43 +93,52 @@ if __name__ == "__main__":
         )
     app.logger = logger
 
-    async def _voice(
-        text: str,
-        model_id: int = 0,
-        speaker_name: str = None,
-        speaker_id: int = 0,
-        sdp_ratio: float = DEFAULT_SDP_RATIO,
-        noise: float = DEFAULT_NOISE,
-        noisew: float = DEFAULT_NOISEW,
-        length: float = DEFAULT_LENGTH,
-        language: str = ln,
-        auto_split: bool = DEFAULT_LINE_SPLIT,
-        split_interval: float = DEFAULT_SPLIT_INTERVAL,
-        style_text: Optional[str] = None,
-        style_weight: float = DEFAULT_STYLE_WEIGHT,
-        emotion: Optional[Union[int, str]] = DEFAULT_EMOTION,
-        emotion_weight: float = DEFAULT_EMOTION_WEIGHT,
-        reference_audio_path: str = None,
-    ) -> Union[Response, Dict[str, any]]:
-        if model_id >= len(model_holder.models):
-            return {"status": 10, "detail": f"model_id={model_id} not found"}
-        elif len(text) > limit:
-            return {"status": 9, "detail": f"too long text: over {limit}"}
+    @app.get("/voice", response_class=AudioResponse)
+    async def voice(
+        request: Request,
+        text: str = Query(..., min_length=1, max_length=limit, description=f"セリフ"),
+        encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
+        model_id: int = Query(0, description="モデルID。`GET /models/info`のkeyの値を指定ください"),
+        speaker_name: str = Query(
+            None, description="話者名(speaker_idより優先)。esd.listの2列目の文字列を指定"
+        ),
+        speaker_id: int = Query(
+            0, description="話者ID。model_assets>[model]>config.json内のspk2idを確認"
+        ),
+        sdp_ratio: float = Query(DEFAULT_SDP_RATIO, description="SDP(Stochastic Duration Predictor)/DP混合比。比率が高くなるほどトーンのばらつきが大きくなる"),
+        noise: float = Query(DEFAULT_NOISE, description="サンプルノイズの割合。大きくするほどランダム性が高まる"),
+        noisew: float = Query(DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる"),
+        length: float = Query(DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる"),
+        language: Languages = Query(ln, description=f"textの言語"),
+        auto_split: bool = Query(DEFAULT_LINE_SPLIT, description="改行で分けて生成"),
+        split_interval: float = Query(DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"),
+        style_text: Optional[str] = Query(
+            None, description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある"
+        ),
+        style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="style_textの強さ"),
+        emotion: Optional[Union[int, str]] = Query(DEFAULT_EMOTION, description="スタイル"),
+        emotion_weight: float = Query(DEFAULT_EMOTION_WEIGHT, description="emotionの強さ"),
+        reference_audio_path: Optional[str] = Query(None, description="emotionを音声ファイルで行う"),
+    ):
+        """Infer text to speech(テキストから感情付き音声を生成する)"""
+        logger.info(
+            f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
+        )
+        if model_id >= len(model_holder.models):  # /models/refresh があるためQuery(le)で表現不可
+            raise_validation_error(f"model_id={model_id} not found", "model_id")
 
         model = model_holder.models[model_id]
         if speaker_name is None:
-            if speaker_id is None:
-                return {"status": 11, "detail": "Required speaker_name or speaker_id"}
             if speaker_id not in model.id2spk.keys():
-                return {"status": 12, "detail": f"peaker_id={speaker_id} not found"}
+                raise_validation_error(f"speaker_id={speaker_id} not found", "speaker_id")
         else:
             if speaker_name not in model.spk2id.keys():
-                return {"status": 13, "detail": f"speaker_name={speaker_name} not found"}
+                raise_validation_error(f"speaker_name={speaker_name} not found", "speaker_name")
             speaker_id = model.spk2id[speaker_name]
         if emotion not in model.style2id.keys():
-            return {"status": 14, "detail": f"emotion={speaker_name} not found"}
-        if language not in languages:
-            language = ln
+            raise_validation_error(f"emotion={emotion} not found", "emotion")
+        if encoding is not None:
+            text = unquote(text, encoding=encoding)
         sr, audio = model.infer(
             text=text,
             language=language,
@@ -139,60 +160,10 @@ if __name__ == "__main__":
             wavfile.write(
                 wavContent, sr, audio
             )
-            response = Response(content=wavContent.getvalue(), media_type="audio/wav")
-            return response
-
-    @app.get("/voice")
-    async def voice(
-        request: Request,
-        text: str = Query(..., description="セリフ"),
-        encoding: str = Query(None, description="'utf-8'と指定するとtextをUTF8でURLデコードする。"),
-        model_id: int = Query(0, description="モデルID。`GET /models/info`のkeyの値を指定ください。"),
-        speaker_name: str = Query(
-            None, description="話者名(speaker_idより優先)。esd.listの2列目記載の文字列を指定。"
-        ),
-        speaker_id: int = Query(
-            0, description="話者ID。model_assets.[model].config.json内のspk2idを確認。"),
-        sdp_ratio: float = Query(DEFAULT_SDP_RATIO, description="SDP(Stochastic Duration Predictor)/DP混合比。比率が高くなるほど、トーンのばらつきが大きくなる。"),
-        noise: float = Query(DEFAULT_NOISE, description="サンプルノイズの割合。大きくするほどランダム性が高まる"),
-        noisew: float = Query(DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる。"),
-        length: float = Query(DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる。"),
-        language: str = Query(ln, description=f"{'/'.join(languages)}のいずれか。"),
-        auto_split: bool = Query(True, description="改行で分けて生成"),
-        split_interval: float = Query(DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"),
-        style_text: Optional[str] = Query(
-            None, description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある。"
-        ),
-        style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="style_textの強さ"),
-        emotion: Optional[Union[int, str]] = Query(DEFAULT_EMOTION, description="スタイル"),
-        emotion_weight: float = Query(DEFAULT_EMOTION_WEIGHT, description="emotionの強さ"),
-        reference_audio_path: Optional[str] = Query(None, description="emotionを音声ファイルで行う。"),
-    ):
-        """Infer text to speech(テキストから感情付き音声を生成する)"""
-        logger.info(
-            f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
-        )
-        return await _voice(
-            text=text if encoding is None else unquote(text, encoding=encoding),
-            model_id=model_id,
-            speaker_name=speaker_name,
-            speaker_id=speaker_id,
-            sdp_ratio=sdp_ratio,
-            noise=noise,
-            noisew=noisew,
-            length=length,
-            language=language,
-            auto_split=auto_split,
-            split_interval=split_interval,
-            style_text=style_text,
-            style_weight=style_weight,
-            emotion=emotion,
-            emotion_weight=emotion_weight,
-            reference_audio_path=reference_audio_path,
-        )
+            return Response(content=wavContent.getvalue(), media_type="audio/wav")
 
     @app.get("/models/info")
-    def get_loaded_models_info(request: Request):
+    def get_loaded_models_info():
         """ロードされたモデル情報の取得"""
 
         result: Dict[str, Dict] = dict()
@@ -207,12 +178,12 @@ if __name__ == "__main__":
             }
         return result
 
-    @app.get("/models/refresh")
+    @app.post("/models/refresh")
     def refresh():
         """モデルをパスに追加/削除した際などに読み込ませる"""
         model_holder.refresh()
         load_models(model_holder)
-        return {}
+        return get_loaded_models_info()
 
     @app.get("/status")
     def get_status():
@@ -250,19 +221,17 @@ if __name__ == "__main__":
             "gpu": gpuInfo,
         }
 
-    @app.get("/tools/get_audio")
+    @app.get("/tools/get_audio", response_class=AudioResponse)
     def get_audio(request: Request, path: str = Query(..., description="local wav path")):
         """wavデータを取得する"""
         logger.info(
             f"{request.client.host}:{request.client.port}/tools/get_audio  { unquote(str(request.query_params) )}"
         )
         if not os.path.isfile(path):
-            logger.error(f"/tools/get_audio 获取音频错误：指定音频{path}不存在")
-            return {"status": 18, "detail": "指定音频不存在"}
+            raise_validation_error(f"path={path} not found", "path")
         if not path.lower().endswith(".wav"):
-            logger.error(f"/tools/get_audio 获取音频错误：音频{path}非wav文件")
-            return {"status": 19, "detail": "非wav格式文件"}
-        return FileResponse(path=path)
+            raise_validation_error(f"wav file not found in {path}", "path")
+        return FileResponse(path=path, media_type="audio/wav")
 
 
     logger.info(f"server listen: http://127.0.0.1:{config.server_config.port}")

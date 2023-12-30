@@ -3,6 +3,7 @@ import datetime
 import os
 import sys
 import warnings
+import enum
 
 import gradio as gr
 import numpy as np
@@ -15,7 +16,14 @@ from config import config
 from infer import get_net_g, infer
 from tools.log import logger
 
-languages = ["JP", "EN", "ZH"]
+
+class Languages(str, enum.Enum):
+    JP = "JP"
+    EN = "EN"
+    ZH = "ZH"
+
+
+languages = [l.value for l in Languages]
 
 DEFAULT_SDP_RATIO: float = 0.2
 DEFAULT_NOISE: float = 0.6
