@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
+import default_style
 import utils
 from config import config
 from data_utils import (
@@ -29,6 +30,7 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
 from text.symbols import symbols
 from tools.log import logger
+from tools.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -41,6 +43,14 @@ torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
+
+try:
+    import google.colab
+
+    IS_COLAB = True
+except ImportError:
+    IS_COLAB = False
+
 global_step = 0
 
 
@@ -106,9 +116,39 @@ def run():
             data = f.read()
         with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
             f.write(data)
+
+    """
+    Path constants are a bit complicated...
+    TODO: Refactor or rename these?
+    (Both `config.yml` and `config.json` are used, which is confusing I think.)
+
+    args.model: For saving all info needed for training.
+        default: `Data/{model_name}`.
+    hps.model_dir = model_dir: For saving checkpoints (for resuming training).
+        default: `Data/{model_name}/models`.
+
+    config.out_dir: Root directory of model assets needed for inference.
+        default: `model_assets`.
+
+    out_dir: For saving resulting models (for inference).
+        default: `model_assets/{model_name}`, which is used for inference.
+    """
+    if IS_COLAB:
+        config.out_dir = "/content/drive/MyDrive/Style-Bert-VITS2/model_assets"
+        logger.info(
+            "Colab detected, so use mounted Google Drive as directory for saving resulting models:"
+        )
+        logger.info(config.out_dir)
+        os.makedirs(config.out_dir, exist_ok=True)
     out_dir = os.path.join(config.out_dir, config.model_name)
     os.makedirs(out_dir, exist_ok=True)
-    shutil.copy(args.config, os.path.join(out_dir, "config.json"))
+
+    # Save default style to out_dir
+    default_style.set_style_config(args.config, os.path.join(out_dir, "config.json"))
+    default_style.save_mean_vector(
+        os.path.join(args.model, "wavs"),
+        os.path.join(out_dir, "style_vectors.npy"),
+    )
 
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(local_rank)
@@ -427,7 +467,7 @@ def train_and_evaluate(
         ja_bert,
         en_bert,
         style_vec,
-    ) in enumerate(tqdm(train_loader, file=sys.stdout)):
+    ) in enumerate(tqdm(train_loader, file=SAFE_STDOUT)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial

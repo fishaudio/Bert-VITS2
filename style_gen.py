@@ -1,6 +1,5 @@
 import argparse
 import concurrent.futures
-import sys
 import warnings
 
 import numpy as np
@@ -9,6 +8,7 @@ from tqdm import tqdm
 
 import utils
 from config import config
+from tools.stdout_wrapper import SAFE_STDOUT
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
@@ -25,8 +25,13 @@ def extract_style_vector(wav_path):
 
 def save_style_vector(wav_path):
     style_vec = extract_style_vector(wav_path)
-    # `test.wav` -> `test.wav.npy`
-    np.save(f"{wav_path}.npy", style_vec)
+    np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
+    return style_vec
+
+
+def save_average_style_vector(style_vectors, filename="style_vectors.npy"):
+    average_vector = np.mean(style_vectors, axis=0)
+    np.save(filename, average_vector)
 
 
 if __name__ == "__main__":
@@ -59,7 +64,7 @@ if __name__ == "__main__":
             tqdm(
                 executor.map(save_style_vector, wavnames),
                 total=len(wavnames),
-                file=sys.stdout,
+                file=SAFE_STDOUT,
             )
         )
 
