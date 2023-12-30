@@ -2,11 +2,13 @@
 @Desc: 全局配置文件读取
 """
 import argparse
-import yaml
-from typing import Dict, List
 import os
 import shutil
-import sys
+from typing import Dict, List
+
+import yaml
+
+from tools.log import logger
 
 
 class Resample_config:
@@ -173,7 +175,11 @@ class Webui_config:
 class Server_config:
     def __init__(
         self,
-        port: int = 5000, device: str = "cuda", limit: int = 100, language: str = "JP", origins: List[str] = None
+        port: int = 5000,
+        device: str = "cuda",
+        limit: int = 100,
+        language: str = "JP",
+        origins: List[str] = None,
     ):
         self.port: int = port
         self.device: str = device
@@ -254,4 +260,10 @@ parser = argparse.ArgumentParser()
 # 为避免与以前的config.json起冲突，将其更名如下
 parser.add_argument("-y", "--yml_config", type=str, default="config.yml")
 args, _ = parser.parse_known_args()
-config = Config(args.yml_config)
+
+try:
+    config = Config(args.yml_config)
+except TypeError:
+    logger.warning("Old config.yml found. Replace it with default_config.yml.")
+    shutil.copy(src="default_config.yml", dst="config.yml")
+    config = Config("config.yml")
