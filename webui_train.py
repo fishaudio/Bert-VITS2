@@ -10,7 +10,12 @@ import yaml
 from tools.log import logger
 from tools.subprocess_utils import run_script_with_log, second_elem_of
 
-IS_COLAB = "google.colab" in sys.modules
+try:
+    import google.colab
+
+    IS_COLAB = True
+except ImportError:
+    IS_COLAB = False
 
 
 def get_path(model_name):
@@ -48,9 +53,12 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
 
     model_path = os.path.join(dataset_path, "models")
     try:
-        shutil.copytree(src="pretrained", dst=model_path)
+        shutil.copytree(
+            src="pretrained",
+            dst=model_path,
+        )
     except FileExistsError:
-        logger.error(f"Step 1: {model_path} already exists.")
+        logger.warning(f"Step 1: {model_path} already exists.")
         return False, f"Step1, Error: モデルフォルダ {model_path} が既に存在します。問題なければ削除してください。"
     except FileNotFoundError:
         logger.error("Step 1: `pretrained` folder not found.")

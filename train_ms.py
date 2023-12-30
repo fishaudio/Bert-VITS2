@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
+import default_style
 import utils
 from config import config
 from data_utils import (
@@ -30,7 +31,6 @@ from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerT
 from text.symbols import symbols
 from tools.log import logger
 from tools.stdout_wrapper import get_stdout
-import default_style
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -44,7 +44,12 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 )  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
 
-IS_COLAB = "google.colab" in sys.modules
+try:
+    import google.colab
+
+    IS_COLAB = True
+except ImportError:
+    IS_COLAB = False
 
 global_step = 0
 
