@@ -4,29 +4,25 @@ import tempfile
 
 class StdoutWrapper:
     def __init__(self):
-        # 一時ファイルの作成とオープン
         self.temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False)
+        self.original_stdout = sys.stdout
 
     def write(self, message: str):
-        # メッセージを一時ファイルに書き込む
         self.temp_file.write(message)
         self.temp_file.flush()
+        print(message, end="", file=self.original_stdout)
 
     def flush(self):
-        # 一時ファイルのフラッシュ
         self.temp_file.flush()
 
     def read(self):
-        # ファイルの内容を読み出す
-        self.temp_file.seek(0)  # ファイルの先頭にシーク
+        self.temp_file.seek(0)
         return self.temp_file.read()
 
     def close(self):
-        # 一時ファイルを閉じる
         self.temp_file.close()
 
     def fileno(self):
-        # 一時ファイルのファイルディスクリプタを返す
         return self.temp_file.fileno()
 
 
