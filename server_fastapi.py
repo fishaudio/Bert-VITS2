@@ -31,7 +31,6 @@ from app import (
 from webui_style_vectors import DEFAULT_EMOTION
 
 ln = config.server_config.language
-available_languages = languages + ["mix", "auto"]
 
 def load_models(model_holder: ModelHolder):
     model_holder.models = []
@@ -106,7 +105,7 @@ if __name__ == "__main__":
             speaker_id = model.spk2id[speaker_name]
         if emotion not in model.style2id.keys():
             return {"status": 14, "detail": f"emotion={speaker_name} not found"}
-        if language not in available_languages:
+        if language not in languages:
             language = ln
         sr, audio = model.infer(
             text=text,
@@ -146,7 +145,7 @@ if __name__ == "__main__":
         noise: float = Query(DEFAULT_NOISE, description="サンプルノイズの割合。大きくするほどランダム性が高まる"),
         noisew: float = Query(DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる。"),
         length: float = Query(DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる。"),
-        language: str = Query(ln, description=f"{'/'.join(available_languages)}のいずれか。"),
+        language: str = Query(ln, description=f"{'/'.join(languages)}のいずれか。"),
         auto_split: bool = Query(True, description="改行で分けて生成"),
         split_interval: float = Query(DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"),
         style_text: Optional[str] = Query(
