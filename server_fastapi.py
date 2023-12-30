@@ -37,7 +37,7 @@ ln = config.server_config.language
 def raise_validation_error(msg: str, param: str):
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail=[dict(type='invalid_params', msg=msg, loc=['query', param])]
+        detail=[dict(type="invalid_params", msg=msg, loc=["query", param])],
     )
 
 
@@ -51,7 +51,9 @@ def load_models(model_holder: ModelHolder):
         model = Model(
             model_path=model_paths[0],
             config_path=os.path.join(model_holder.root_dir, model_name, "config.json"),
-            style_vec_path=os.path.join(model_holder.root_dir, model_name, "style_vectors.npy"),
+            style_vec_path=os.path.join(
+                model_holder.root_dir, model_name, "style_vectors.npy"
+            ),
             device=model_holder.device,
         )
         model.load_net_g()
@@ -77,13 +79,15 @@ if __name__ == "__main__":
         logger.error(f"Models not found in {model_dir}.")
         sys.exit(1)
 
-    logger.info('Loading models...')
+    logger.info("Loading models...")
     load_models(model_holder)
     limit = config.server_config.limit
     app = FastAPI()
     allow_origins = config.server_config.origins
     if allow_origins:
-        logger.warning(f"CORS allow_origins={config.server_config.origins}. If you don't want, modify config.yml")
+        logger.warning(
+            f"CORS allow_origins={config.server_config.origins}. If you don't want, modify config.yml"
+        )
         app.add_middleware(
             CORSMiddleware,
             allow_origins=config.server_config.origins,
@@ -105,20 +109,31 @@ if __name__ == "__main__":
         speaker_id: int = Query(
             0, description="話者ID。model_assets>[model]>config.json内のspk2idを確認"
         ),
-        sdp_ratio: float = Query(DEFAULT_SDP_RATIO, description="SDP(Stochastic Duration Predictor)/DP混合比。比率が高くなるほどトーンのばらつきが大きくなる"),
+        sdp_ratio: float = Query(
+            DEFAULT_SDP_RATIO,
+            description="SDP(Stochastic Duration Predictor)/DP混合比。比率が高くなるほどトーンのばらつきが大きくなる",
+        ),
         noise: float = Query(DEFAULT_NOISE, description="サンプルノイズの割合。大きくするほどランダム性が高まる"),
-        noisew: float = Query(DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる"),
-        length: float = Query(DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる"),
+        noisew: float = Query(
+            DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる"
+        ),
+        length: float = Query(
+            DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる"
+        ),
         language: Languages = Query(ln, description=f"textの言語"),
         auto_split: bool = Query(DEFAULT_LINE_SPLIT, description="改行で分けて生成"),
-        split_interval: float = Query(DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"),
+        split_interval: float = Query(
+            DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"
+        ),
         style_text: Optional[str] = Query(
             None, description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある"
         ),
         style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="style_textの強さ"),
         emotion: Optional[Union[int, str]] = Query(DEFAULT_EMOTION, description="スタイル"),
         emotion_weight: float = Query(DEFAULT_EMOTION_WEIGHT, description="emotionの強さ"),
-        reference_audio_path: Optional[str] = Query(None, description="emotionを音声ファイルで行う"),
+        reference_audio_path: Optional[str] = Query(
+            None, description="emotionを音声ファイルで行う"
+        ),
     ):
         """Infer text to speech(テキストから感情付き音声を生成する)"""
         logger.info(
@@ -130,10 +145,14 @@ if __name__ == "__main__":
         model = model_holder.models[model_id]
         if speaker_name is None:
             if speaker_id not in model.id2spk.keys():
-                raise_validation_error(f"speaker_id={speaker_id} not found", "speaker_id")
+                raise_validation_error(
+                    f"speaker_id={speaker_id} not found", "speaker_id"
+                )
         else:
             if speaker_name not in model.spk2id.keys():
-                raise_validation_error(f"speaker_name={speaker_name} not found", "speaker_name")
+                raise_validation_error(
+                    f"speaker_name={speaker_name} not found", "speaker_name"
+                )
             speaker_id = model.spk2id[speaker_name]
         if emotion not in model.style2id.keys():
             raise_validation_error(f"emotion={emotion} not found", "emotion")
@@ -157,9 +176,7 @@ if __name__ == "__main__":
             emotion_weight=emotion_weight,
         )
         with BytesIO() as wavContent:
-            wavfile.write(
-                wavContent, sr, audio
-            )
+            wavfile.write(wavContent, sr, audio)
             return Response(content=wavContent.getvalue(), media_type="audio/wav")
 
     @app.get("/models/info")
@@ -222,7 +239,9 @@ if __name__ == "__main__":
         }
 
     @app.get("/tools/get_audio", response_class=AudioResponse)
-    def get_audio(request: Request, path: str = Query(..., description="local wav path")):
+    def get_audio(
+        request: Request, path: str = Query(..., description="local wav path")
+    ):
         """wavデータを取得する"""
         logger.info(
             f"{request.client.host}:{request.client.port}/tools/get_audio  { unquote(str(request.query_params) )}"
@@ -232,7 +251,6 @@ if __name__ == "__main__":
         if not path.lower().endswith(".wav"):
             raise_validation_error(f"wav file not found in {path}", "path")
         return FileResponse(path=path, media_type="audio/wav")
-
 
     logger.info(f"server listen: http://127.0.0.1:{config.server_config.port}")
     logger.info(f"API docs: http://127.0.0.1:{config.server_config.port}/docs")

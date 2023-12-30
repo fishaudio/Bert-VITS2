@@ -186,6 +186,7 @@ class ModelHolder:
                 logger.info(
                     f"No model files found in {self.root_dir}/{model_name}, so skip it"
                 )
+                continue
             self.model_files_dict[model_name] = model_files
             self.model_names.append(model_name)
 
@@ -428,16 +429,32 @@ if __name__ == "__main__":
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(
-                        minimum=0, maximum=1, value=DEFAULT_SDP_RATIO, step=0.1, label="SDP Ratio"
+                        minimum=0,
+                        maximum=1,
+                        value=DEFAULT_SDP_RATIO,
+                        step=0.1,
+                        label="SDP Ratio",
                     )
                     noise_scale = gr.Slider(
-                        minimum=0.1, maximum=2, value=DEFAULT_NOISE, step=0.1, label="Noise"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_NOISE,
+                        step=0.1,
+                        label="Noise",
                     )
                     noise_scale_w = gr.Slider(
-                        minimum=0.1, maximum=2, value=DEFAULT_NOISEW, step=0.1, label="Noise_W"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_NOISEW,
+                        step=0.1,
+                        label="Noise_W",
                     )
                     length_scale = gr.Slider(
-                        minimum=0.1, maximum=2, value=DEFAULT_LENGTH, step=0.1, label="Length"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_LENGTH,
+                        step=0.1,
+                        label="Length",
                     )
                     use_style_text = gr.Checkbox(label="Style textを使う", value=False)
                     style_text = gr.Textbox(
