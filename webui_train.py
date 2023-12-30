@@ -10,16 +10,17 @@ import yaml
 from tools.log import logger
 from tools.subprocess_utils import run_script_with_log, second_elem_of
 
-
-is_colab = "google.colab" in sys.modules
+IS_COLAB = "google.colab" in sys.modules
 
 
 def get_path(model_name):
     assert model_name != "", "モデル名は空にできません"
-    if is_colab:
+    if IS_COLAB:
+        logger.info("Colab detected, so use mounted Google Drive as dataset path:")
         dataset_path = os.path.join(
             "/content/drive/MyDrive/Style-Bert-VITS2/Data", model_name
         )
+        logger.info(dataset_path)
     else:
         dataset_path = os.path.join("Data", model_name)
     lbl_path = os.path.join(dataset_path, "esd.list")
