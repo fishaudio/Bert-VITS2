@@ -11,8 +11,15 @@ from tools.log import logger
 from tools.subprocess_utils import run_script_with_log, second_elem_of
 
 
+is_colab = "google.colab" in sys.modules
+
+
 def get_path(model_name):
     assert model_name != "", "モデル名は空にできません"
+    if is_colab:
+        dataset_path = os.path.join(
+            "/content/drive/MyDrive/Style-Bert-VITS2/Data", model_name
+        )
     dataset_path = os.path.join("Data", model_name)
     lbl_path = os.path.join(dataset_path, "esd.list")
     train_path = os.path.join(dataset_path, "train.list")
