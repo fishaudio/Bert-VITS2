@@ -20,7 +20,8 @@ def get_path(model_name):
         dataset_path = os.path.join(
             "/content/drive/MyDrive/Style-Bert-VITS2/Data", model_name
         )
-    dataset_path = os.path.join("Data", model_name)
+    else:
+        dataset_path = os.path.join("Data", model_name)
     lbl_path = os.path.join(dataset_path, "esd.list")
     train_path = os.path.join(dataset_path, "train.list")
     val_path = os.path.join(dataset_path, "val.list")
