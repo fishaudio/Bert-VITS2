@@ -24,4 +24,5 @@ requests
 safetensors
 scipy
 tensorboard
+torch # For users without GPU
 transformers
