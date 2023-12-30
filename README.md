@@ -27,7 +27,7 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 #### GitやPythonに馴染みが無い方
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.0/Style-Bert-VITS2.zip)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.1/Style-Bert-VITS2.zip)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
 3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
