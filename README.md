@@ -6,6 +6,8 @@ https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e
 
 **注意**: 上記動画のライセンス表記は誤っていました、正しくはCC BY-SA 4.0で商用利用に制限はありません。近日訂正版動画に差し替えます。
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
+
 Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!

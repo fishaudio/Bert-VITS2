@@ -320,9 +320,12 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
 
         self.buckets, self.num_samples_per_bucket = self._create_buckets()
         logger.info(f"Bucket info: {self.num_samples_per_bucket}")
-        logger.info(
-            f"Unused samples: {len(self.lengths) - sum(self.num_samples_per_bucket)}"
-        )
+        # logger.info(
+        #     f"Unused samples: {len(self.lengths) - sum(self.num_samples_per_bucket)}"
+        # )
+        # ↑マイナスになることあるし、別にこれは使われないサンプル数ではないようだ……
+        # バケットの仕組みはよく分からない
+
         self.total_size = sum(self.num_samples_per_bucket)
         self.num_samples = self.total_size // self.num_replicas
 

@@ -29,7 +29,6 @@ def process(item):
             wav = normalize_audio(wav, sr)
         if args.trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
-            logger.debug(f"trim: {wav_name}")
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
 
 
