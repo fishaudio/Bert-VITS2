@@ -6,7 +6,7 @@ import soundfile as sf
 import torch
 from tqdm import tqdm
 
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         shutil.rmtree(output_dir)
 
     total_sec = 0
-    for wav_file in tqdm(wav_files, file=get_stdout()):
+    for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
         time_sec = split_wav(
             wav_file,
             output_dir,

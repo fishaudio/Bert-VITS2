@@ -9,7 +9,7 @@ import commons
 import utils
 from config import config
 from text import cleaned_text_to_sequence, get_bert
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 
 def process_line(x):
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             for _ in tqdm(
                 pool.imap_unordered(process_line, zip(lines, add_blank)),
                 total=len(lines),
-                file=get_stdout(),
+                file=SAFE_STDOUT,
             ):
                 # 这里是缩进的代码块，表示循环体
                 pass  # 使用pass语句作为占位符

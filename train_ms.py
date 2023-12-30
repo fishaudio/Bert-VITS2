@@ -30,7 +30,7 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
 from text.symbols import symbols
 from tools.log import logger
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -467,7 +467,7 @@ def train_and_evaluate(
         ja_bert,
         en_bert,
         style_vec,
-    ) in enumerate(tqdm(train_loader, file=get_stdout())):
+    ) in enumerate(tqdm(train_loader, file=SAFE_STDOUT)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial

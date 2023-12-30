@@ -26,9 +26,9 @@ class StdoutWrapper:
         return self.temp_file.fileno()
 
 
-def get_stdout():
-    # Colab 環境をチェックする
-    if "google.colab" in sys.modules:
-        return StdoutWrapper()
-    else:
-        return sys.stdout
+try:
+    import google.colab
+
+    SAFE_STDOUT = StdoutWrapper()
+except ImportError:
+    SAFE_STDOUT = sys.stdout

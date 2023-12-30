@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import utils
 from config import config
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             tqdm(
                 executor.map(save_style_vector, wavnames),
                 total=len(wavnames),
-                file=get_stdout(),
+                file=SAFE_STDOUT,
             )
         )
 

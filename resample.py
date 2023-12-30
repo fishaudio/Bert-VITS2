@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from config import config
 from tools.log import logger
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 
 def normalize_audio(data, sr):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     pool = Pool(processes=processes)
     for _ in tqdm(
-        pool.imap_unordered(process, tasks), file=get_stdout(), total=len(tasks)
+        pool.imap_unordered(process, tasks), file=SAFE_STDOUT, total=len(tasks)
     ):
         pass
 

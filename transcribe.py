@@ -5,7 +5,7 @@ import sys
 from faster_whisper import WhisperModel
 from tqdm import tqdm
 
-from tools.stdout_wrapper import get_stdout
+from tools.stdout_wrapper import SAFE_STDOUT
 
 
 def transcribe(wav_path, initial_prompt=None):
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         os.rename(output_file, output_file + ".bak")
 
     with open(output_file, "w", encoding="utf-8") as f:
-        for wav_file in tqdm(wav_files, file=get_stdout()):
+        for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
             file_name = os.path.basename(wav_file)
             text = transcribe(wav_file, initial_prompt=initial_prompt)
             f.write(f"{file_name}|{speaker_name}|JP|{text}\n")
