@@ -90,8 +90,10 @@ model_assets
 ### API Server
 
 構築した環境下で`python server_fastapi.py`するとAPIサーバーが起動します。
-
 API仕様は起動後に`/docs`にて確認ください。
+
+デフォルトではCORS設定を全てのドメインで許可しています。
+できる限り、`config.yml`の`server.origins`の値を変更し、信頼できるドメインに制限ください(キーを消せばCORS設定を無効にできます)。
 
 ## Bert-VITS2 v2.1との関係
 

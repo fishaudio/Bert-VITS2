@@ -4,6 +4,7 @@ api服务 多版本多模型 fastapi实现
 import argparse
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import Response, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
 from scipy.io import wavfile
 import uvicorn
@@ -68,6 +69,16 @@ if __name__ == "__main__":
     load_models(model_holder)
     limit = config.server_config.limit
     app = FastAPI()
+    allow_origins = config.server_config.origins
+    if allow_origins:
+        logger.warning(f"CORS allow_origins={config.server_config.origins}. If you don't want, modify config.yml")
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=config.server_config.origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     app.logger = logger
 
     async def _voice(

@@ -70,3 +70,5 @@ server:
   device: "cuda"
   language: "JP"
   limit: 100
+  origins:
+    - "*"

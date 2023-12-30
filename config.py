@@ -173,12 +173,13 @@ class Webui_config:
 class Server_config:
     def __init__(
         self,
-        port: int = 5000, device: str = "cuda", limit: int = 100, language: str = "JP"
+        port: int = 5000, device: str = "cuda", limit: int = 100, language: str = "JP", origins: List[str] = None
     ):
         self.port: int = port
         self.device: str = device
         self.language: str = language
         self.limit: int = limit
+        self.origins: List[str] = origins
 
     @classmethod
     def from_dict(cls, data: Dict[str, any]):
