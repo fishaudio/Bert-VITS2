@@ -25,8 +25,13 @@ def extract_style_vector(wav_path):
 
 def save_style_vector(wav_path):
     style_vec = extract_style_vector(wav_path)
-    # `test.wav` -> `test.wav.npy`
-    np.save(f"{wav_path}.npy", style_vec)
+    np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
+    return style_vec
+
+
+def save_average_style_vector(style_vectors, filename="style_vectors.npy"):
+    average_vector = np.mean(style_vectors, axis=0)
+    np.save(filename, average_vector)
 
 
 if __name__ == "__main__":
