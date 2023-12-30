@@ -2,6 +2,7 @@ import subprocess
 import sys
 
 from .log import logger
+from .stdout_wrapper import get_stdout
 
 python = sys.executable
 
@@ -10,7 +11,7 @@ def run_script_with_log(cmd: list[str]) -> tuple[bool, str]:
     logger.info(f"Running: {' '.join(cmd)}")
     result = subprocess.run(
         [python] + cmd,
-        stdout=sys.stdout,
+        stdout=get_stdout(),  # type: ignore
         stderr=subprocess.PIPE,
         text=True,
     )

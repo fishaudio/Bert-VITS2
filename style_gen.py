@@ -1,6 +1,5 @@
 import argparse
 import concurrent.futures
-import sys
 import warnings
 
 import numpy as np
@@ -9,6 +8,7 @@ from tqdm import tqdm
 
 import utils
 from config import config
+from tools.stdout_wrapper import get_stdout
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             tqdm(
                 executor.map(save_style_vector, wavnames),
                 total=len(wavnames),
-                file=sys.stdout,
+                file=get_stdout(),
             )
         )
 

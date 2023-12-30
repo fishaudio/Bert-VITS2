@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 from collections import defaultdict
 from random import shuffle
 from typing import Optional
@@ -10,6 +9,7 @@ from tqdm import tqdm
 
 from config import config
 from text.cleaner import clean_text
+from tools.stdout_wrapper import get_stdout
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -52,7 +52,7 @@ def preprocess(
                 lines = trans_file.readlines()
                 # print(lines, ' ', len(lines))
                 if len(lines) != 0:
-                    for line in tqdm(lines, file=sys.stdout):
+                    for line in tqdm(lines, file=get_stdout()):
                         try:
                             utt, spk, language, text = line.strip().split("|")
                             norm_text, phones, tones, word2ph = clean_text(

@@ -2,8 +2,8 @@
 logger封装
 """
 from loguru import logger
-import sys
 
+from .stdout_wrapper import get_stdout
 
 # 移除所有默认的处理器
 logger.remove()
@@ -13,4 +13,4 @@ log_format = (
     "<g>{time:MM-DD HH:mm:ss}</g> |<lvl>{level:^8}</lvl>| {file}:{line} | {message}"
 )
 
-logger.add(sys.stdout, format=log_format, backtrace=True, diagnose=True)
+logger.add(get_stdout(), format=log_format, backtrace=True, diagnose=True)
