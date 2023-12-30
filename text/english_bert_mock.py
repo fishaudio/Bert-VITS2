@@ -28,7 +28,7 @@ def get_bert_feature(
         device = "mps"
     if not device:
         device = "cuda"
-    if device = "cuda" and not torch.cuda.is_available():
+    if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
     if device not in models.keys():
         models[device] = DebertaV2Model.from_pretrained(LOCAL_PATH).to(device)
