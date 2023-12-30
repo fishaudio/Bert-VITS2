@@ -146,6 +146,7 @@ if __name__ == "__main__":
     async def voice(
         request: Request,
         text: str = Query(..., description="セリフ"),
+        encoding: str = Query(None, description="'utf-8'と指定するとtextをUTF8でURLデコードする。"),
         model_id: int = Query(0, description="モデルID。`GET /models/info`のkeyの値を指定ください。"),
         speaker_name: str = Query(
             None, description="話者名(speaker_idより優先)。esd.listの2列目記載の文字列を指定。"
@@ -165,14 +166,14 @@ if __name__ == "__main__":
         style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="style_textの強さ"),
         emotion: Optional[Union[int, str]] = Query(DEFAULT_EMOTION, description="スタイル"),
         emotion_weight: float = Query(DEFAULT_EMOTION_WEIGHT, description="emotionの強さ"),
-        reference_audio_path: Optional[str] = Query(None, description="emotionを音声ファイルで行う"),
+        reference_audio_path: Optional[str] = Query(None, description="emotionを音声ファイルで行う。"),
     ):
         """Infer text to speech(テキストから感情付き音声を生成する)"""
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
         return await _voice(
-            text=text,
+            text=text if encoding is None else unquote(text, encoding=encoding),
             model_id=model_id,
             speaker_name=speaker_name,
             speaker_id=speaker_id,
