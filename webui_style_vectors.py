@@ -67,7 +67,7 @@ def do_clustering(n_clusters=4, method="KMeans"):
 
 def closest_wav_files():
     # centroidを強調した点からの距離が最も近い音声を選ぶ
-    centroid_enhanced = mean + 10 * (centroids - mean)
+    centroid_enhanced = mean + 5 * (centroids - mean)
     closest_wav_files = []
     indices = []
     for i in range(len(centroids)):
@@ -92,7 +92,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
             x_tsne[y_pred == i, 0],
             x_tsne[y_pred == i, 1],
             color=cmap(i),
-            label=f"Style {i+1}",
+            label=f"Style {i + 1}",
         )
     plt.legend()
 
@@ -112,40 +112,12 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
     )
 
 
-def save_only_mean(model_name):
-    global mean
-    if len(x) == 0:
-        return "Error: スタイルベクトルを読み込んでください。"
-    result_dir = os.path.join(config.out_dir, model_name)
-    os.makedirs(result_dir, exist_ok=True)
-    mean = np.mean(x, axis=0)
-    style_vectors = np.stack([mean])
-    style_vector_path = os.path.join(result_dir, "style_vectors.npy")
-    if os.path.exists(style_vector_path):
-        return f"{style_vector_path}が既に存在します。削除するか別の名前にバックアップしてください。"
-    np.save(style_vector_path, style_vectors)
-
-    # config.jsonの更新
-    config_path = os.path.join(result_dir, "config.json")
-    if not os.path.exists(config_path):
-        return f"{config_path}が存在しません。"
-    with open(config_path, "r") as f:
-        json_dict = json.load(f)
-    json_dict["data"]["num_styles"] = 1
-    json_dict["data"]["style2id"] = {"Neutral": 0}
-    with open(config_path, "w") as f:
-        json.dump(json_dict, f, indent=2)
-    return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
-
-
 def save_style_vectors(model_name, style_names: str):
     """centerとcentroidsを保存する"""
     result_dir = os.path.join(config.out_dir, model_name)
     os.makedirs(result_dir, exist_ok=True)
     style_vectors = np.stack([mean] + centroids)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
-    if os.path.exists(style_vector_path):
-        return f"{style_vector_path}が既に存在します。削除するか別の名前にバックアップしてください。"
     np.save(style_vector_path, style_vectors)
 
     # config.jsonの更新
@@ -219,21 +191,20 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
 initial_md = """
 # Style Bert-VITS2 スタイルベクトルの作成
 
-Style-Bert-VITS2で音声合成するには、スタイルベクトルのファイル`style_vectors.npy`が必要です。これをモデルごとに作成する必要があります。
+Style-Bert-VITS2でこまかくスタイルを指定して音声合成するには、モデルごとにスタイルベクトルのファイル`style_vectors.npy`を手動で作成する必要があります。
+
+ただし、学習の過程で自動的に平均スタイル「Neutral」のみは作成されるので、それをそのまま使うこともできます（その場合はこのWebUIは使いません）。
+
 このプロセスは学習とは全く関係がないので、何回でも独立して繰り返して試せます。また学習中にもたぶん軽いので動くはずです。
 
 ## 方法
 
-どうやってスタイルベクトルファイルを作るかはいくつか方法があります。
-- 方法1: めんどくさいから平均スタイルのみを使う（使えるスタイルは標準のNeutralのみ）
-- 方法2: 音声ファイルを自動でスタイル別に分け、その各スタイルの平均を取って保存
-- 方法3: スタイルを代表する音声ファイルを手動で選んで、その音声のスタイルベクトルを保存
-- 方法4: 自分でもっと頑張ってこだわって作る（JVNVコーパスなど、もともとスタイルラベル等が利用可能な場合はこれがよいかも）
-
-基本的には方法2を使うことを、めんどくさかったりあまり感情に幅がないデータセットなら方法1をおすすめします。
+- 方法1: 音声ファイルを自動でスタイル別に分け、その各スタイルの平均を取って保存
+- 方法2: スタイルを代表する音声ファイルを手動で選んで、その音声のスタイルベクトルを保存
+- 方法3: 自分でもっと頑張ってこだわって作る（JVNVコーパスなど、もともとスタイルラベル等が利用可能な場合はこれがよいかも）
 """
 
-method2 = """
+method1 = """
 学習の時に取り出したスタイルベクトルを読み込んで、可視化を見ながらスタイルを分けていきます。
 
 手順:
@@ -255,13 +226,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         load_button = gr.Button("スタイルベクトルを読み込む", variant="primary")
     output = gr.Plot(label="音声スタイルの可視化")
     load_button.click(load, inputs=[model_name], outputs=[output])
-    with gr.Tab("方法1: 平均スタイルのみを保存"):
-        gr.Markdown("平均（Neutral）スタイルのみを保存する場合は、以下のボタンを押してください。")
-        with gr.Row():
-            save_button1 = gr.Button("スタイルベクトルを保存", variant="primary")
-            info1 = gr.Textbox(label="保存結果")
-        save_button1.click(save_only_mean, inputs=[model_name], outputs=[info1])
-    with gr.Tab("方法2: スタイル分けを自動で行う"):
+    with gr.Tab("方法1: スタイル分けを自動で行う"):
         n_clusters = gr.Slider(
             minimum=2,
             maximum=10,
@@ -318,7 +283,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         save_button.click(
             save_style_vectors, inputs=[model_name, style_names], outputs=[info2]
         )
-    with gr.Tab("方法3: 手動でスタイルを選ぶ"):
+    with gr.Tab("方法2: 手動でスタイルを選ぶ"):
         gr.Markdown("下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。")
         gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
         gr.Markdown("注意: Neutralスタイルは自動的に保存されます、手動ではNeutralという名前のスタイルは指定しないでください。")
@@ -337,7 +302,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 inputs=[model_name, audio_files_text, style_names_text],
                 outputs=[info3],
             )
-    with gr.Tab("方法4: がんばる"):
+    with gr.Tab("方法3: がんばる"):
         gr.Markdown(
             "`clustering.ipynb`にjvnvコーパスの場合の作り方とかクラスタ分けのいろいろを書いています。これを参考に自分で頑張って作ってください。"
         )

@@ -17,7 +17,8 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 **概要**
 
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
-- GitやPythonがない人でも（WindowsユーザーでNVIDIAのグラボがあるなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。
+- GitやPythonがない人でも（Windowsユーザーなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。
+- 音声合成のみに使う場合は、グラボがなくてもCPUで動作します。
 
 ## 使い方
 
@@ -25,11 +26,13 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 ### インストール
 
-Windows環境で最近のNVIDIA製グラボがあることを前提にしています。
-
 #### GitやPythonに馴染みが無い方
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.0/Style-Bert-VITS2.zip)をダウンロードして展開し、中にある`Install-Style-Bert-VITS2.bat`をダブルクリックします。
+Windowsを前提としています。
+
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.2/Style-Bert-VITS2.zip)をダウンロードして展開します。
+  - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
+  - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
 3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
@@ -37,14 +40,14 @@ Windows環境で最近のNVIDIA製グラボがあることを前提にしてい�
 
 #### GitやPython使える人
 
-Windowsの通常環境のPython 3.10で動作確認しています。
+Windowsの通常環境のPython 3.10で動作確認していますが、他の環境でも動くと思います。
 
 ```bash
 git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
@@ -66,7 +69,9 @@ model_assets
 └── another_model
     ├── ...
 ```
-このように、推論には`config.json`と`*.safetensors`と`style_vectors.npy`が必要です。学習の段階で前者の2つは自動で作成されますが、`style_vectors.npy`は自分で作成する必要があります: 下の「スタイルの生成」を参照してください。
+このように、推論には`config.json`と`*.safetensors`と`style_vectors.npy`が必要です。
+`style_vectors.npy`はスタイルを制御するために必要なファイルで、学習の時にデフォルトで平均スタイル「Neutral」が生成されます。
+複数スタイルを使いたい方は、下の「スタイルの生成」を参照してください。
 
 ### 学習
 
@@ -74,8 +79,8 @@ model_assets
 
 ### スタイルの生成
 
+- デフォルトスタイル「Neutral」以外のスタイルを使いたい人向けです。
 - `Style.bat`をダブルクリックか`python webui_style_vectors.py`するとWebUIが起動します。
-- この手順は、音声ファイルたちからスタイルを作るのに必要な手順です。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
 - スタイルについての詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
