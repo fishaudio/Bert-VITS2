@@ -145,7 +145,6 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
 
 def infer(
     text,
-    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
