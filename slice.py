@@ -7,6 +7,7 @@ import torch
 from tqdm import tqdm
 
 from common.stdout_wrapper import SAFE_STDOUT
+from resample import normalize_audio
 
 vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",
@@ -44,7 +45,7 @@ def get_stamps(audio_file, min_silence_dur_ms=700, min_sec=2):
 
 
 def split_wav(
-    audio_file, target_dir="raw", max_sec=12, min_silence_dur_ms=700, min_sec=2
+    audio_file, target_dir="raw", max_sec=12, min_silence_dur_ms=700, min_sec=2, normalize=False
 ):
     margin = 200  # ミリ秒単位で、音声の前後に余裕を持たせる
     upper_bound_ms = max_sec * 1000  # これ以上の長さの音声は無視する
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("--min_silence_dur_ms", "-s", type=int, default=700)
     parser.add_argument("--input_dir", "-i", type=str, default="inputs")
     parser.add_argument("--output_dir", "-t", type=str, default="raw")
+    parser.add_argument("--normalize", action="store_true")
     args = parser.parse_args()
 
     input_dir = args.input_dir
@@ -96,6 +98,7 @@ if __name__ == "__main__":
     min_sec = args.min_sec
     max_sec = args.max_sec
     min_silence_dur_ms = args.min_silence_dur_ms
+    normalize = args.normalize
 
     wav_files = [
         os.path.join(input_dir, f)
@@ -114,6 +117,7 @@ if __name__ == "__main__":
             max_sec=max_sec,
             min_sec=min_sec,
             min_silence_dur_ms=min_silence_dur_ms,
+            normalize=normalize
         )
         total_sec += time_sec
 
