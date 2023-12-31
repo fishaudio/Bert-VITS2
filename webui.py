@@ -41,7 +41,6 @@ def generate_audio(
     speaker,
     language,
     reference_audio,
-    emotion,
     style_text,
     style_weight,
     skip_start=False,
@@ -55,8 +54,6 @@ def generate_audio(
             skip_end = idx != len(slices) - 1
             audio = infer(
                 piece,
-                reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -84,8 +81,6 @@ def generate_audio_multilang(
     length_scale,
     speaker,
     language,
-    reference_audio,
-    emotion,
     skip_start=False,
     skip_end=False,
 ):
@@ -97,8 +92,6 @@ def generate_audio_multilang(
             skip_end = idx != len(slices) - 1
             audio = infer_multilang(
                 piece,
-                reference_audio=reference_audio,
-                emotion=emotion,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -127,8 +120,6 @@ def tts_split(
     cut_by_sent,
     interval_between_para,
     interval_between_sent,
-    reference_audio,
-    emotion,
     style_text,
     style_weight,
 ):
@@ -148,8 +139,6 @@ def tts_split(
                 noise_scale_w,
                 length_scale,
                 language,
-                reference_audio,
-                emotion,
                 style_text,
                 style_weight,
             )
@@ -168,8 +157,6 @@ def tts_split(
                     noise_scale_w,
                     length_scale,
                     language,
-                    reference_audio,
-                    emotion,
                     style_text,
                     style_weight,
                 )
@@ -233,8 +220,6 @@ def process_text(
     noise_scale_w,
     length_scale,
     language,
-    reference_audio,
-    emotion,
     style_text=None,
     style_weight=0,
 ):
@@ -260,8 +245,6 @@ def process_text(
                     length_scale,
                     _speaker,
                     _lang,
-                    reference_audio,
-                    emotion,
                 )
             )
     elif language.lower() == "auto":
@@ -276,8 +259,6 @@ def process_text(
                 length_scale,
                 speaker,
                 _lang,
-                reference_audio,
-                emotion,
             )
         )
     else:
@@ -290,8 +271,6 @@ def process_text(
                 length_scale,
                 speaker,
                 language,
-                reference_audio,
-                emotion,
                 style_text,
                 style_weight,
             )
@@ -307,8 +286,6 @@ def tts_fn(
     noise_scale_w,
     length_scale,
     language,
-    reference_audio,
-    emotion,
     prompt_mode,
     style_text=None,
     style_weight=0,
@@ -331,8 +308,6 @@ def tts_fn(
         noise_scale_w,
         length_scale,
         language,
-        reference_audio,
-        emotion,
         style_text,
         style_weight,
     )
