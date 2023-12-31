@@ -3,16 +3,36 @@ import datetime
 import os
 import sys
 import warnings
+import enum
 
 import gradio as gr
 import numpy as np
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
+from typing import Dict, List
 
 import utils
 from config import config
 from infer import get_net_g, infer
 from tools.log import logger
+
+
+class Languages(str, enum.Enum):
+    JP = "JP"
+    EN = "EN"
+    ZH = "ZH"
+
+
+languages = [l.value for l in Languages]
+
+DEFAULT_SDP_RATIO: float = 0.2
+DEFAULT_NOISE: float = 0.6
+DEFAULT_NOISEW: float = 0.8
+DEFAULT_LENGTH: float = 1
+DEFAULT_LINE_SPLIT: bool = True
+DEFAULT_SPLIT_INTERVAL: float = 0.5
+DEFAULT_STYLE_WEIGHT: float = 0.7
+DEFAULT_EMOTION_WEIGHT: float = 1.0
 
 
 class Model:
@@ -21,11 +41,9 @@ class Model:
         self.config_path = config_path
         self.device = device
         self.style_vec_path = style_vec_path
-        self.load()
-
-    def load(self):
         self.hps = utils.get_hparams_from_file(self.config_path)
-        self.spk2id = self.hps.data.spk2id
+        self.spk2id: Dict[str, int] = self.hps.data.spk2id
+        self.id2spk: Dict[int, str] = {v: k for k, v in self.spk2id.items()}
         self.num_styles = self.hps.data.num_styles
         if hasattr(self.hps.data, "style2id"):
             self.style2id = self.hps.data.style2id
@@ -63,17 +81,17 @@ class Model:
         language="JP",
         sid=0,
         reference_audio_path=None,
-        sdp_ratio=0.2,
-        noise=0.6,
-        noisew=0.8,
-        length=1.0,
-        line_split=True,
-        split_interval=0.2,
+        sdp_ratio=DEFAULT_SDP_RATIO,
+        noise=DEFAULT_NOISE,
+        noisew=DEFAULT_NOISEW,
+        length=DEFAULT_LENGTH,
+        line_split=DEFAULT_LINE_SPLIT,
+        split_interval=DEFAULT_SPLIT_INTERVAL,
         style_text="",
-        style_weight=0.7,
+        style_weight=DEFAULT_STYLE_WEIGHT,
         use_style_text=False,
         style="0",
-        emotion_weight=1.0,
+        emotion_weight=DEFAULT_EMOTION_WEIGHT,
     ):
         if reference_audio_path == "":
             reference_audio_path = None
@@ -149,8 +167,8 @@ class ModelHolder:
         self.refresh()
 
     def refresh(self):
-        self.model_files_dict = {}
-        self.model_names = []
+        self.model_files_dict: Dict[str, List[str]] = {}
+        self.model_names: List[str] = []
         self.current_model = None
         model_dirs = [
             d
@@ -168,6 +186,7 @@ class ModelHolder:
                 logger.info(
                     f"No model files found in {self.root_dir}/{model_name}, so skip it"
                 )
+                continue
             self.model_files_dict[model_name] = model_files
             self.model_names.append(model_name)
 
@@ -373,8 +392,6 @@ if __name__ == "__main__":
 
     model_holder = ModelHolder(model_dir, device)
 
-    languages = ["JP", "EN", "ZH"]
-
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。")
@@ -404,27 +421,43 @@ if __name__ == "__main__":
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
 
-                line_split = gr.Checkbox(label="改行で分けて生成", value=True)
+                line_split = gr.Checkbox(label="改行で分けて生成", value=DEFAULT_LINE_SPLIT)
                 split_interval = gr.Slider(
                     minimum=0.0,
                     maximum=2,
-                    value=0.5,
+                    value=DEFAULT_SPLIT_INTERVAL,
                     step=0.1,
                     label="分けた場合に挟む無音の長さ（秒）",
                 )
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(
-                        minimum=0, maximum=1, value=0.2, step=0.1, label="SDP Ratio"
+                        minimum=0,
+                        maximum=1,
+                        value=DEFAULT_SDP_RATIO,
+                        step=0.1,
+                        label="SDP Ratio",
                     )
                     noise_scale = gr.Slider(
-                        minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_NOISE,
+                        step=0.1,
+                        label="Noise",
                     )
                     noise_scale_w = gr.Slider(
-                        minimum=0.1, maximum=2, value=0.8, step=0.1, label="Noise_W"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_NOISEW,
+                        step=0.1,
+                        label="Noise_W",
                     )
                     length_scale = gr.Slider(
-                        minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length"
+                        minimum=0.1,
+                        maximum=2,
+                        value=DEFAULT_LENGTH,
+                        step=0.1,
+                        label="Length",
                     )
                     use_style_text = gr.Checkbox(label="Style textを使う", value=False)
                     style_text = gr.Textbox(
@@ -436,7 +469,7 @@ if __name__ == "__main__":
                     style_text_weight = gr.Slider(
                         minimum=0,
                         maximum=1,
-                        value=0.7,
+                        value=DEFAULT_STYLE_WEIGHT,
                         step=0.1,
                         label="Style textの強さ",
                         visible=False,
@@ -462,7 +495,7 @@ if __name__ == "__main__":
                 style_weight = gr.Slider(
                     minimum=0,
                     maximum=50,
-                    value=1,
+                    value=DEFAULT_EMOTION_WEIGHT,
                     step=0.1,
                     label="スタイルの強さ",
                 )

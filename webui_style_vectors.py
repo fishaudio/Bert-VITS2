@@ -9,6 +9,7 @@ from sklearn.manifold import TSNE
 from config import config
 
 MAX_CLUSTER_NUM = 10
+DEFAULT_EMOTION: str = "Neutral"
 
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
 
@@ -124,7 +125,7 @@ def save_style_vectors(model_name, style_names: str):
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = ["Neutral"]
+    style_name_list = [DEFAULT_EMOTION]
     style_name_list = style_name_list + style_names.split(",")
     if len(style_name_list) != len(centroids) + 1:
         return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names}"
@@ -173,7 +174,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = ["Neutral"]
+    style_name_list = [DEFAULT_EMOTION]
     style_name_list = style_name_list + style_names
     assert len(style_name_list) == len(style_vectors)
 
@@ -188,7 +189,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
-initial_md = """
+initial_md = f"""
 # Style Bert-VITS2 スタイルベクトルの作成
 
 Style-Bert-VITS2でこまかくスタイルを指定して音声合成するには、モデルごとにスタイルベクトルのファイル`style_vectors.npy`を手動で作成する必要があります。
@@ -216,7 +217,7 @@ method1 = """
 
 詳細: スタイルベクトル(256次元)たちを適当なアルゴリズムでクラスタリングして、各クラスタの中心のベクトル（と全体の平均ベクトル）を保存します。
 
-平均スタイル（Neutral）は自動的に保存されます。
+平均スタイル（{DEFAULT_EMOTION}）は自動的に保存されます。
 """
 
 with gr.Blocks(theme="NoCrypt/miku") as app:
@@ -274,7 +275,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         style_names = gr.Textbox(
             "Angry, Sad, Happy",
             label="スタイルの名前",
-            info="スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声はNeutralとして自動的に保存されます。",
+            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_EMOTION}として自動的に保存されます。",
         )
         with gr.Row():
             save_button = gr.Button("スタイルベクトルを保存", variant="primary")
@@ -286,7 +287,9 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
     with gr.Tab("方法2: 手動でスタイルを選ぶ"):
         gr.Markdown("下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。")
         gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
-        gr.Markdown("注意: Neutralスタイルは自動的に保存されます、手動ではNeutralという名前のスタイルは指定しないでください。")
+        gr.Markdown(
+            f"注意: {DEFAULT_EMOTION}スタイルは自動的に保存されます、手動では{DEFAULT_EMOTION}という名前のスタイルは指定しないでください。"
+        )
         with gr.Row():
             audio_files_text = gr.Textbox(
                 label="音声ファイル名", placeholder="angry.wav, sad.wav, happy.wav"
@@ -307,5 +310,4 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             "`clustering.ipynb`にjvnvコーパスの場合の作り方とかクラスタ分けのいろいろを書いています。これを参考に自分で頑張って作ってください。"
         )
 
-
-app.launch(inbrowser=True)
+    app.launch(inbrowser=True)
