@@ -7,9 +7,9 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
 from config import config
+from common.constants import DEFAULT_STYLE
 
 MAX_CLUSTER_NUM = 10
-DEFAULT_EMOTION: str = "Neutral"
 
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
 
@@ -125,7 +125,7 @@ def save_style_vectors(model_name, style_names: str):
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = [DEFAULT_EMOTION]
+    style_name_list = [DEFAULT_STYLE]
     style_name_list = style_name_list + style_names.split(",")
     if len(style_name_list) != len(centroids) + 1:
         return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names}"
@@ -174,7 +174,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = [DEFAULT_EMOTION]
+    style_name_list = [DEFAULT_STYLE]
     style_name_list = style_name_list + style_names
     assert len(style_name_list) == len(style_vectors)
 
@@ -194,7 +194,7 @@ initial_md = f"""
 
 Style-Bert-VITS2でこまかくスタイルを指定して音声合成するには、モデルごとにスタイルベクトルのファイル`style_vectors.npy`を手動で作成する必要があります。
 
-ただし、学習の過程で自動的に平均スタイル「Neutral」のみは作成されるので、それをそのまま使うこともできます（その場合はこのWebUIは使いません）。
+ただし、学習の過程で自動的に平均スタイル「{DEFAULT_STYLE}」のみは作成されるので、それをそのまま使うこともできます（その場合はこのWebUIは使いません）。
 
 このプロセスは学習とは全く関係がないので、何回でも独立して繰り返して試せます。また学習中にもたぶん軽いので動くはずです。
 
@@ -275,7 +275,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         style_names = gr.Textbox(
             "Angry, Sad, Happy",
             label="スタイルの名前",
-            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_EMOTION}として自動的に保存されます。",
+            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
         )
         with gr.Row():
             save_button = gr.Button("スタイルベクトルを保存", variant="primary")
@@ -288,7 +288,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         gr.Markdown("下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。")
         gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
         gr.Markdown(
-            f"注意: {DEFAULT_EMOTION}スタイルは自動的に保存されます、手動では{DEFAULT_EMOTION}という名前のスタイルは指定しないでください。"
+            f"注意: {DEFAULT_STYLE}スタイルは自動的に保存されます、手動では{DEFAULT_STYLE}という名前のスタイルは指定しないでください。"
         )
         with gr.Row():
             audio_files_text = gr.Textbox(

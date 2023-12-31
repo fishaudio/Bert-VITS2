@@ -2,8 +2,8 @@ import os
 
 import gradio as gr
 
-from tools.log import logger
-from tools.subprocess_utils import run_script_with_log, second_elem_of
+from common.log import logger
+from common.subprocess_utils import run_script_with_log, second_elem_of
 
 
 def do_slice(model_name, normalize):

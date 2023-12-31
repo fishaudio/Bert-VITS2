@@ -6,7 +6,7 @@ import soundfile as sf
 import torch
 from tqdm import tqdm
 
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.stdout_wrapper import SAFE_STDOUT
 
 vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",

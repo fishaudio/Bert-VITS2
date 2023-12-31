@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import utils
 from config import config
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.stdout_wrapper import SAFE_STDOUT
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model

@@ -8,7 +8,7 @@ from typing import Dict, List
 
 import yaml
 
-from tools.log import logger
+from common.log import logger
 
 
 class Resample_config:

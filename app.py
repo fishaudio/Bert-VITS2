@@ -2,224 +2,29 @@ import argparse
 import datetime
 import os
 import sys
-import warnings
-import enum
 
 import gradio as gr
 import numpy as np
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
-from typing import Dict, List
 
-import utils
+from common.constants import (
+    DEFAULT_ASSIST_TEXT_WEIGHT,
+    DEFAULT_LENGTH,
+    DEFAULT_LINE_SPLIT,
+    DEFAULT_NOISE,
+    DEFAULT_NOISEW,
+    DEFAULT_SDP_RATIO,
+    DEFAULT_SPLIT_INTERVAL,
+    DEFAULT_STYLE,
+    DEFAULT_STYLE_WEIGHT,
+    Languages,
+)
+from common.log import logger
+from common.tts_model import ModelHolder
 from config import config
-from infer import get_net_g, infer
-from tools.log import logger
-
-
-class Languages(str, enum.Enum):
-    JP = "JP"
-    EN = "EN"
-    ZH = "ZH"
-
 
 languages = [l.value for l in Languages]
-
-DEFAULT_SDP_RATIO: float = 0.2
-DEFAULT_NOISE: float = 0.6
-DEFAULT_NOISEW: float = 0.8
-DEFAULT_LENGTH: float = 1
-DEFAULT_LINE_SPLIT: bool = True
-DEFAULT_SPLIT_INTERVAL: float = 0.5
-DEFAULT_STYLE_WEIGHT: float = 0.7
-DEFAULT_EMOTION_WEIGHT: float = 1.0
-
-
-class Model:
-    def __init__(self, model_path, config_path, style_vec_path, device):
-        self.model_path = model_path
-        self.config_path = config_path
-        self.device = device
-        self.style_vec_path = style_vec_path
-        self.hps = utils.get_hparams_from_file(self.config_path)
-        self.spk2id: Dict[str, int] = self.hps.data.spk2id
-        self.id2spk: Dict[int, str] = {v: k for k, v in self.spk2id.items()}
-        self.num_styles = self.hps.data.num_styles
-        if hasattr(self.hps.data, "style2id"):
-            self.style2id = self.hps.data.style2id
-        else:
-            self.style2id = {str(i): i for i in range(self.num_styles)}
-
-        self.style_vectors = np.load(self.style_vec_path)
-        self.net_g = None
-
-    def load_net_g(self):
-        self.net_g = get_net_g(
-            model_path=self.model_path,
-            version=self.hps.version,
-            device=self.device,
-            hps=self.hps,
-        )
-
-    def get_style_vector(self, style_id, weight=1.0):
-        mean = self.style_vectors[0]
-        style_vec = self.style_vectors[style_id]
-        style_vec = mean + (style_vec - mean) * weight
-        return style_vec
-
-    def get_style_vector_from_audio(self, audio_path, weight=1.0):
-        from style_gen import extract_style_vector
-
-        xvec = extract_style_vector(audio_path)
-        mean = self.style_vectors[0]
-        xvec = mean + (xvec - mean) * weight
-        return xvec
-
-    def infer(
-        self,
-        text,
-        language="JP",
-        sid=0,
-        reference_audio_path=None,
-        sdp_ratio=DEFAULT_SDP_RATIO,
-        noise=DEFAULT_NOISE,
-        noisew=DEFAULT_NOISEW,
-        length=DEFAULT_LENGTH,
-        line_split=DEFAULT_LINE_SPLIT,
-        split_interval=DEFAULT_SPLIT_INTERVAL,
-        style_text="",
-        style_weight=DEFAULT_STYLE_WEIGHT,
-        use_style_text=False,
-        style="0",
-        emotion_weight=DEFAULT_EMOTION_WEIGHT,
-    ):
-        if reference_audio_path == "":
-            reference_audio_path = None
-        if style_text == "" or not use_style_text:
-            style_text = None
-
-        if self.net_g is None:
-            self.load_net_g()
-        if reference_audio_path is None:
-            style_id = self.style2id[style]
-            style_vector = self.get_style_vector(style_id, emotion_weight)
-        else:
-            style_vector = self.get_style_vector_from_audio(
-                reference_audio_path, emotion_weight
-            )
-        if not line_split:
-            with torch.no_grad():
-                audio = infer(
-                    text=text,
-                    sdp_ratio=sdp_ratio,
-                    noise_scale=noise,
-                    noise_scale_w=noisew,
-                    length_scale=length,
-                    sid=sid,
-                    language=language,
-                    hps=self.hps,
-                    net_g=self.net_g,
-                    device=self.device,
-                    style_text=style_text,
-                    style_weight=style_weight,
-                    style_vec=style_vector,
-                )
-        else:
-            texts = text.split("\n")
-            texts = [t for t in texts if t != ""]
-            audios = []
-            with torch.no_grad():
-                for i, t in enumerate(texts):
-                    audios.append(
-                        infer(
-                            text=t,
-                            sdp_ratio=sdp_ratio,
-                            noise_scale=noise,
-                            noise_scale_w=noisew,
-                            length_scale=length,
-                            sid=sid,
-                            language=language,
-                            hps=self.hps,
-                            net_g=self.net_g,
-                            device=self.device,
-                            style_text=style_text,
-                            style_weight=style_weight,
-                            style_vec=style_vector,
-                        )
-                    )
-                    if i != len(texts) - 1:
-                        audios.append(np.zeros(int(44100 * split_interval)))
-                audio = np.concatenate(audios)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                audio = convert_to_16_bit_wav(audio)
-        return (self.hps.data.sampling_rate, audio)
-
-
-class ModelHolder:
-    def __init__(self, root_dir, device):
-        self.root_dir = root_dir
-        self.device = device
-        self.model_files_dict = {}
-        self.current_model = None
-        self.model_names = []
-        self.models = []
-        self.refresh()
-
-    def refresh(self):
-        self.model_files_dict: Dict[str, List[str]] = {}
-        self.model_names: List[str] = []
-        self.current_model = None
-        model_dirs = [
-            d
-            for d in os.listdir(self.root_dir)
-            if os.path.isdir(os.path.join(self.root_dir, d))
-        ]
-        for model_name in model_dirs:
-            model_dir = os.path.join(self.root_dir, model_name)
-            model_files = [
-                os.path.join(model_dir, f)
-                for f in os.listdir(model_dir)
-                if f.endswith(".pth") or f.endswith(".pt") or f.endswith(".safetensors")
-            ]
-            if len(model_files) == 0:
-                logger.info(
-                    f"No model files found in {self.root_dir}/{model_name}, so skip it"
-                )
-                continue
-            self.model_files_dict[model_name] = model_files
-            self.model_names.append(model_name)
-
-    def load_model(self, model_name, model_path):
-        if model_name not in self.model_files_dict:
-            raise Exception(f"モデル名{model_name}は存在しません")
-        if model_path not in self.model_files_dict[model_name]:
-            raise Exception(f"pthファイル{model_path}は存在しません")
-        self.current_model = Model(
-            model_path=model_path,
-            config_path=os.path.join(self.root_dir, model_name, "config.json"),
-            style_vec_path=os.path.join(self.root_dir, model_name, "style_vectors.npy"),
-            device=self.device,
-        )
-        styles = list(self.current_model.style2id.keys())
-        return (
-            gr.Dropdown(choices=styles, value=styles[0]),
-            gr.update(interactive=True, value="音声合成"),
-        )
-
-    def update_model_files_dropdown(self, model_name):
-        model_files = self.model_files_dict[model_name]
-        return gr.Dropdown(choices=model_files, value=model_files[0])
-
-    def update_model_names_dropdown(self):
-        self.refresh()
-        initial_model_name = self.model_names[0]
-        initial_model_files = self.model_files_dict[initial_model_name]
-        return (
-            gr.Dropdown(choices=self.model_names, value=initial_model_name),
-            gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),
-            gr.update(interactive=False),  # For tts_button
-        )
 
 
 def tts_fn(
@@ -232,11 +37,11 @@ def tts_fn(
     length_scale,
     line_split,
     split_interval,
-    style_text,
+    assist_text,
+    assist_text_weight,
+    use_assist_text,
+    style,
     style_weight,
-    use_style_text,
-    emotion,
-    emotion_weight,
 ):
     assert model_holder.current_model is not None
 
@@ -252,11 +57,11 @@ def tts_fn(
         length=length_scale,
         line_split=line_split,
         split_interval=split_interval,
-        style_text=style_text,
+        assist_text=assist_text,
+        assist_text_weight=assist_text_weight,
+        use_assist_text=use_assist_text,
+        style=style,
         style_weight=style_weight,
-        use_style_text=use_style_text,
-        style=emotion,
-        emotion_weight=emotion_weight,
     )
 
     end_time = datetime.datetime.now()
@@ -349,9 +154,9 @@ model_assets
 TODO: 現在のところはspeaker_id = 0に固定しており複数話者の合成には対応していません。
 """
 
-style_md = """
+style_md = f"""
 - プリセットまたは音声ファイルから読み上げの声音・感情・スタイルのようなものを制御できます。
-- デフォルトのNeutralでも、十分に読み上げる文に応じた感情で感情豊かに読み上げられます。このスタイル制御は、それを重み付きで上書きするような感じです。
+- デフォルトの{DEFAULT_STYLE}でも、十分に読み上げる文に応じた感情で感情豊かに読み上げられます。このスタイル制御は、それを重み付きで上書きするような感じです。
 - 強さを大きくしすぎると発音が変になったり声にならなかったりと崩壊することがあります。
 - どのくらいに強さがいいかはモデルやスタイルによって異なるようです。
 - 音声ファイルを入力する場合は、学習データと似た声音の話者（特に同じ性別）でないとよい効果が出ないかもしれません。
@@ -459,25 +264,25 @@ if __name__ == "__main__":
                         step=0.1,
                         label="Length",
                     )
-                    use_style_text = gr.Checkbox(label="Style textを使う", value=False)
-                    style_text = gr.Textbox(
-                        label="Style text",
+                    use_assist_text = gr.Checkbox(label="Assist textを使う", value=False)
+                    assist_text = gr.Textbox(
+                        label="Assist text",
                         placeholder="どうして私の意見を無視するの？許せない、ムカつく！死ねばいいのに。",
                         info="このテキストの読み上げと似た声音・感情になりやすくなります。ただ抑揚やテンポ等が犠牲になる傾向があります。",
                         visible=False,
                     )
-                    style_text_weight = gr.Slider(
+                    assist_text_weight = gr.Slider(
                         minimum=0,
                         maximum=1,
-                        value=DEFAULT_STYLE_WEIGHT,
+                        value=DEFAULT_ASSIST_TEXT_WEIGHT,
                         step=0.1,
                         label="Style textの強さ",
                         visible=False,
                     )
-                    use_style_text.change(
+                    use_assist_text.change(
                         lambda x: (gr.Textbox(visible=x), gr.Slider(visible=x)),
-                        inputs=[use_style_text],
-                        outputs=[style_text, style_text_weight],
+                        inputs=[use_assist_text],
+                        outputs=[assist_text, assist_text_weight],
                     )
             with gr.Column():
                 with gr.Accordion("スタイルについて詳細", open=False):
@@ -488,14 +293,14 @@ if __name__ == "__main__":
                     value="プリセットから選ぶ",
                 )
                 style = gr.Dropdown(
-                    label="スタイル（Neutralが平均スタイル）",
+                    label="スタイル（{DEFAULT_STYLE}が平均スタイル）",
                     choices=["モデルをロードしてください"],
                     value="モデルをロードしてください",
                 )
                 style_weight = gr.Slider(
                     minimum=0,
                     maximum=50,
-                    value=DEFAULT_EMOTION_WEIGHT,
+                    value=DEFAULT_STYLE_WEIGHT,
                     step=0.1,
                     label="スタイルの強さ",
                 )
@@ -520,9 +325,9 @@ if __name__ == "__main__":
                 length_scale,
                 line_split,
                 split_interval,
-                style_text,
-                style_text_weight,
-                use_style_text,
+                assist_text,
+                assist_text_weight,
+                use_assist_text,
                 style,
                 style_weight,
             ],
@@ -530,7 +335,7 @@ if __name__ == "__main__":
         )
 
         model_name.change(
-            model_holder.update_model_files_dropdown,
+            model_holder.update_model_files_gr,
             inputs=[model_name],
             outputs=[model_path],
         )
@@ -538,12 +343,12 @@ if __name__ == "__main__":
         model_path.change(make_non_interactive, outputs=[tts_button])
 
         refresh_button.click(
-            model_holder.update_model_names_dropdown,
+            model_holder.update_model_names_gr,
             outputs=[model_name, model_path, tts_button],
         )
 
         load_button.click(
-            model_holder.load_model,
+            model_holder.load_model_gr,
             inputs=[model_name, model_path],
             outputs=[style, tts_button],
         )

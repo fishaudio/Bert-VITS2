@@ -23,13 +23,13 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     if model_path.endswith(".pth") or model_path.endswith(".pt"):
         _ = utils.load_checkpoint(model_path, net_g, None, skip_optimizer=True)
     elif model_path.endswith(".safetensors"):
-        _ = utils.load_safetensors(model_path, net_g, device)
+        _ = utils.load_safetensors(model_path, net_g, True)
     else:
         raise ValueError(f"Unknown model format: {model_path}")
     return net_g
 
 
-def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
+def get_text(text, language_str, hps, device, assist_text=None, assist_text_weight=0.7):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -42,7 +42,7 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
     bert_ori = get_bert(
-        norm_text, word2ph, language_str, device, style_text, style_weight
+        norm_text, word2ph, language_str, device, assist_text, assist_text_weight
     )
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
@@ -86,16 +86,16 @@ def infer(
     device,
     skip_start=False,
     skip_end=False,
-    style_text=None,
-    style_weight=0.7,
+    assist_text=None,
+    assist_text_weight=0.7,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text,
         language,
         hps,
         device,
-        style_text=style_text,
-        style_weight=style_weight,
+        assist_text=assist_text,
+        assist_text_weight=assist_text_weight,
     )
     if skip_start:
         phones = phones[3:]

@@ -5,7 +5,7 @@ import sys
 from faster_whisper import WhisperModel
 from tqdm import tqdm
 
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.stdout_wrapper import SAFE_STDOUT
 
 
 def transcribe(wav_path, initial_prompt=None):

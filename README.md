@@ -44,8 +44,6 @@ Windowsを前提としています。
 
 #### GitやPython使える人
 
-Windowsの通常環境のPython 3.10で動作確認していますが、他の環境でも動くと思います。
-
 ```bash
 git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from config import config
 from text.cleaner import clean_text
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.stdout_wrapper import SAFE_STDOUT
 
 preprocess_text_config = config.preprocess_text_config
 

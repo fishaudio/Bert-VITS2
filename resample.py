@@ -8,8 +8,8 @@ import soundfile
 from tqdm import tqdm
 
 from config import config
-from tools.log import logger
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.log import logger
+from common.stdout_wrapper import SAFE_STDOUT
 
 
 def normalize_audio(data, sr):

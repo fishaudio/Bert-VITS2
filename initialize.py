@@ -3,7 +3,7 @@ from pathlib import Path
 
 from huggingface_hub import hf_hub_download
 
-from tools.log import logger
+from common.log import logger
 
 
 def download_bert_models():

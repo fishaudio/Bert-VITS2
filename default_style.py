@@ -1,5 +1,6 @@
 import os
-from tools.log import logger
+from common.log import logger
+from common.constants import DEFAULT_STYLE
 
 import numpy as np
 import json
@@ -9,10 +10,10 @@ def set_style_config(json_path, output_path):
     with open(json_path, "r") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = 1
-    json_dict["data"]["style2id"] = {"Neutral": 0}
+    json_dict["data"]["style2id"] = {DEFAULT_STYLE: 0}
     with open(output_path, "w") as f:
         json.dump(json_dict, f, indent=2)
-    logger.info(f"Update style config (only Neutral style) to {output_path}")
+    logger.info(f"Save style config (only {DEFAULT_STYLE}) to {output_path}")
 
 
 def save_mean_vector(wav_dir, output_path):

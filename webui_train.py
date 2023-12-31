@@ -7,8 +7,8 @@ from multiprocessing import cpu_count
 import gradio as gr
 import yaml
 
-from tools.log import logger
-from tools.subprocess_utils import run_script_with_log, second_elem_of
+from common.log import logger
+from common.subprocess_utils import run_script_with_log, second_elem_of
 
 try:
     import google.colab

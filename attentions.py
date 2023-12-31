@@ -4,7 +4,7 @@ from torch import nn
 from torch.nn import functional as F
 
 import commons
-from tools.log import logger as logging
+from common.log import logger as logging
 
 
 class LayerNorm(nn.Module):

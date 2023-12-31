@@ -29,8 +29,8 @@ from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
 from text.symbols import symbols
-from tools.log import logger
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.log import logger
+from common.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -157,6 +157,7 @@ def run():
     if rank == 0:
         # logger = utils.get_logger(hps.model_dir)
         # logger.info(hps)
+        logger.add(os.path.join(hps.model_dir, "train.log"))
         utils.check_git_hash(hps.model_dir)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))

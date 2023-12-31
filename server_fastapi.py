@@ -1,40 +1,43 @@
 """
-api服务 多版本多模型 fastapi实现
+API server for TTS
 """
 import argparse
-from fastapi import FastAPI, Query, Request, status, HTTPException
-from fastapi.responses import Response, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+import os
+import sys
 from io import BytesIO
-from scipy.io import wavfile
-import uvicorn
-import torch
-import psutil
-import GPUtil
-from typing import Dict, Optional, List, Union
-import os, sys
-from tools.log import logger
+from typing import Dict, Optional, Union
 from urllib.parse import unquote
-from config import config
-from app import (
-    Model,
-    ModelHolder,
-    Languages,
-    DEFAULT_SDP_RATIO,
-    DEFAULT_NOISE,
-    DEFAULT_NOISEW,
+
+import GPUtil
+import psutil
+import torch
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
+from scipy.io import wavfile
+
+from common.constants import (
+    DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
+    DEFAULT_NOISE,
+    DEFAULT_NOISEW,
+    DEFAULT_SDP_RATIO,
     DEFAULT_SPLIT_INTERVAL,
+    DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
-    DEFAULT_EMOTION_WEIGHT,
+    Languages,
 )
-from webui_style_vectors import DEFAULT_EMOTION
+from common.log import logger
+from common.tts_model import Model, ModelHolder
+from config import config
 
 ln = config.server_config.language
 
 
 def raise_validation_error(msg: str, param: str):
+    logger.warning(f"Validation error: {msg}")
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         detail=[dict(type="invalid_params", msg=msg, loc=["query", param])],
@@ -125,15 +128,15 @@ if __name__ == "__main__":
         split_interval: float = Query(
             DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"
         ),
-        style_text: Optional[str] = Query(
+        assist_text: Optional[str] = Query(
             None, description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある"
         ),
-        style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="style_textの強さ"),
-        emotion: Optional[Union[int, str]] = Query(DEFAULT_EMOTION, description="スタイル"),
-        emotion_weight: float = Query(DEFAULT_EMOTION_WEIGHT, description="emotionの強さ"),
-        reference_audio_path: Optional[str] = Query(
-            None, description="emotionを音声ファイルで行う"
+        assist_text_weight: float = Query(
+            DEFAULT_ASSIST_TEXT_WEIGHT, description="assist_textの強さ"
         ),
+        style: Optional[Union[int, str]] = Query(DEFAULT_STYLE, description="スタイル"),
+        style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="スタイルの強さ"),
+        reference_audio_path: Optional[str] = Query(None, description="スタイルを音声ファイルで行う"),
     ):
         """Infer text to speech(テキストから感情付き音声を生成する)"""
         logger.info(
@@ -154,8 +157,8 @@ if __name__ == "__main__":
                     f"speaker_name={speaker_name} not found", "speaker_name"
                 )
             speaker_id = model.spk2id[speaker_name]
-        if emotion not in model.style2id.keys():
-            raise_validation_error(f"emotion={emotion} not found", "emotion")
+        if style not in model.style2id.keys():
+            raise_validation_error(f"style={style} not found", "style")
         if encoding is not None:
             text = unquote(text, encoding=encoding)
         sr, audio = model.infer(
@@ -169,12 +172,13 @@ if __name__ == "__main__":
             length=length,
             line_split=auto_split,
             split_interval=split_interval,
-            style_text=style_text,
+            assist_text=assist_text,
+            assist_text_weight=assist_text_weight,
+            use_assist_text=bool(assist_text),
+            style=style,
             style_weight=style_weight,
-            use_style_text=bool(style_text),
-            style=emotion,
-            emotion_weight=emotion_weight,
         )
+        logger.success("Audio data generated and sent successfully")
         with BytesIO() as wavContent:
             wavfile.write(wavContent, sr, audio)
             return Response(content=wavContent.getvalue(), media_type="audio/wav")

@@ -13,7 +13,7 @@ from safetensors import safe_open
 from safetensors.torch import save_file
 from scipy.io.wavfile import read
 
-from tools.log import logger
+from common.log import logger
 
 MATPLOTLIB_FLAG = False
 

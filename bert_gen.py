@@ -9,7 +9,7 @@ import commons
 import utils
 from config import config
 from text import cleaned_text_to_sequence, get_bert
-from tools.stdout_wrapper import SAFE_STDOUT
+from common.stdout_wrapper import SAFE_STDOUT
 
 
 def process_line(x):

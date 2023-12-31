@@ -11,7 +11,7 @@ import commons
 from config import config
 from mel_processing import mel_spectrogram_torch, spectrogram_torch
 from text import cleaned_text_to_sequence
-from tools.log import logger
+from common.log import logger
 from utils import load_filepaths_and_text, load_wav_to_torch
 
 """Multi speaker version"""
