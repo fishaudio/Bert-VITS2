@@ -114,6 +114,7 @@ def run():
     ):
         with open(args.config, "r", encoding="utf-8") as f:
             data = f.read()
+        os.makedirs(os.path.dirname(config.train_ms_config.config_path), exist_ok=True)
         with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
             f.write(data)
 
