@@ -7,7 +7,7 @@ import json
 
 
 def set_style_config(json_path, output_path):
-    with open(json_path, "r") as f:
+    with open(json_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = 1
     json_dict["data"]["style2id"] = {DEFAULT_STYLE: 0}
