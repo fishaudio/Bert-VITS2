@@ -308,7 +308,7 @@ if __name__ == "__main__":
                 )
                 epochs = gr.Slider(
                     label="エポック数",
-                    info="100もあれば十分そう",
+                    info="100もあれば十分そうだけどもっと回すと質が上がるかもしれない",
                     value=100,
                     minimum=1,
                     maximum=1000,
