@@ -187,7 +187,7 @@ def update_two_model_names_dropdown():
     return new_names, new_files, new_names, new_files
 
 
-def get_styles_gr(model_name_a, model_name_b):
+def load_styles_gr(model_name_a, model_name_b):
     config_path_a = os.path.join(model_dir, model_name_a, "config.json")
     with open(config_path_a) as f:
         config_a = json.load(f)
@@ -303,7 +303,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         with gr.Column(variant="panel"):
             gr.Markdown(style_merge_md)
             with gr.Row():
-                load_button = gr.Button("スタイル一覧をロード", scale=1)
+                load_style_button = gr.Button("スタイル一覧をロード", scale=1)
                 styles_a = gr.Textbox(label="モデルAのスタイル一覧")
                 styles_b = gr.Textbox(label="モデルBのスタイル一覧")
             style_triple_list = gr.TextArea(
@@ -346,8 +346,8 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
         outputs=[model_name_a, model_path_a, model_name_b, model_path_b],
     )
 
-    load_button.click(
-        get_styles_gr,
+    load_style_button.click(
+        load_styles_gr,
         inputs=[model_name_a, model_name_b],
         outputs=[styles_a, styles_b],
     )
