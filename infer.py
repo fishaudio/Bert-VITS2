@@ -222,7 +222,7 @@ def infer(
     #     emo = get_clap_text_feature(emotion, device)
     # emo = torch.squeeze(emo, dim=1)
 
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
+    bert, phones, tones, lang_ids = get_text(
         text,
         language,
         hps,
