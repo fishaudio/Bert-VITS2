@@ -293,7 +293,7 @@ if __name__ == "__main__":
                     value="プリセットから選ぶ",
                 )
                 style = gr.Dropdown(
-                    label="スタイル（{DEFAULT_STYLE}が平均スタイル）",
+                    label=f"スタイル（{DEFAULT_STYLE}が平均スタイル）",
                     choices=["モデルをロードしてください"],
                     value="モデルをロードしてください",
                 )
