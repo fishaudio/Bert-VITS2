@@ -1,10 +1,9 @@
 import sys
 import torch
-from transformers import AutoModelForMaskedLM, AutoTokenizer
 from config import config
-
+from transformers import MegatronBertModel, BertTokenizer
 LOCAL_PATH = "./bert/Erlangshen-MegatronBert-3.9B-Chinese"
-tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
+tokenizer = BertTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
@@ -25,13 +24,13 @@ def get_bert_feature(
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+        models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
         res = models[device](**inputs, output_hidden_states=True)
-        res = res["hidden_states"][-1][0].cpu()
+        res = torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
         if style_text:
             style_inputs = tokenizer(style_text, return_tensors="pt")
             for i in style_inputs:
