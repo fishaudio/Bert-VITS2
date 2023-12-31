@@ -40,7 +40,6 @@ def generate_audio(
     length_scale,
     speaker,
     language,
-    reference_audio,
     style_text,
     style_weight,
     skip_start=False,
