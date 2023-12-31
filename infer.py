@@ -271,6 +271,7 @@ def infer(
         # emo = emo.to(device).unsqueeze(0)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
+        print(noise_scale)
         audio = (
             net_g.infer(
                 x_tst,
