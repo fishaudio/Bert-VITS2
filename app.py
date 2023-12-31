@@ -276,7 +276,7 @@ if __name__ == "__main__":
                         maximum=1,
                         value=DEFAULT_ASSIST_TEXT_WEIGHT,
                         step=0.1,
-                        label="Style textの強さ",
+                        label="Assist textの強さ",
                         visible=False,
                     )
                     use_assist_text.change(
