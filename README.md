@@ -16,9 +16,12 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 **概要**
 
-- [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、正確に感情や発話スタイルを強弱混みで指定して音声を生成することができるようにしたものです。
-- GitやPythonがない人でも（Windowsユーザーなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。
+- 入力されたテキストの内容をもとに感情豊かな音声を生成する[Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1を元に、感情や発話スタイルを強弱込みで自由に制御できるようにしたものです。
+- GitやPythonがない人でも（Windowsユーザーなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。またGoogle Colabでの学習もサポートしています: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
 - 音声合成のみに使う場合は、グラボがなくてもCPUで動作します。
+- 他との連携に使えるAPIサーバーも同梱しています (@darai0512 様によるPRです、ありがとうございます)。
+- 元々が「楽しそうな文章は楽しそうに、悲しそうな文章は悲しそうに」読むのがBert-VITS2の強みですので、このフォークで付加されたスタイル指定を無理に使わずとも感情豊かな音声を生成することができます。
+
 
 ## 使い方
 
@@ -71,9 +74,10 @@ model_assets
 └── another_model
     ├── ...
 ```
-このように、推論には`config.json`と`*.safetensors`と`style_vectors.npy`が必要です。
-`style_vectors.npy`はスタイルを制御するために必要なファイルで、学習の時にデフォルトで平均スタイル「Neutral」が生成されます。
-複数スタイルを使いたい方は、下の「スタイルの生成」を参照してください。
+このように、推論には`config.json`と`*.safetensors`と`style_vectors.npy`が必要です。モデルを共有する場合は、この3つのファイルを共有してください。
+
+このうち`style_vectors.npy`はスタイルを制御するために必要なファイルで、学習の時にデフォルトで平均スタイル「Neutral」が生成されます。
+複数スタイルを使ってより詳しくスタイルを制御したい方は、下の「スタイルの生成」を参照してください（平均スタイルのみでも、学習データが感情豊かならば十分感情豊かな音声が生成されます）。
 
 ### 学習
 
@@ -100,6 +104,11 @@ API仕様は起動後に`/docs`にて確認ください。
 デフォルトではCORS設定を全てのドメインで許可しています。
 できる限り、`config.yml`の`server.origins`の値を変更し、信頼できるドメインに制限ください(キーを消せばCORS設定を無効にできます)。
 
+### マージ
+
+2つのモデルを、「声音」「感情表現」「テンポ」の3点で混ぜ合わせて、新しいモデルを作ることが出来ます。
+`Merge.bat`をダブルクリックか`python webui_merge.py`するとWebUIが起動します。
+
 ## Bert-VITS2 v2.1との関係
 
 基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
@@ -116,11 +125,11 @@ API仕様は起動後に`/docs`にて確認ください。
 - その他軽微なbugfixやリファクタリング
 
 ## TODO
-- [ ] LinuxやWSL等、Windowsの通常環境以外でのサポート？
+- [x] LinuxやWSL等、Windowsの通常環境以外でのサポート ← おそらく問題ないとの報告あり
 - [ ] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [x] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
-- [ ] モデルのマージで声音と感情表現を混ぜる機能の実装
+- [x] モデルのマージで声音と感情表現を混ぜる機能の実装
 - [ ] 英語等多言語対応？
 
 
