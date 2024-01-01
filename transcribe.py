@@ -34,7 +34,12 @@ if __name__ == "__main__":
     output_file = args.output_file
     initial_prompt = args.initial_prompt
 
-    model = WhisperModel("large-v3", device="cuda", compute_type="bfloat16")
+    try:
+        model = WhisperModel("large-v3", device="cuda", compute_type="bfloat16")
+    except Exception as e:
+        # Maybe bfloat16 is not supported (e.g. in colab)
+        # I don't know actually bf16 is better than fp16 or not...
+        model = WhisperModel("large-v3", device="cuda", compute_type="float16")
 
     wav_files = [
         os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".wav")
