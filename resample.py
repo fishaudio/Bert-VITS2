@@ -11,10 +11,18 @@ from config import config
 from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
 
+DEFAULT_BLOCK_SIZE: float = 0.400  # seconds
+
+class BlockSizeException(Exception):
+    pass
+
 
 def normalize_audio(data, sr):
-    meter = pyln.Meter(sr)  # create BS.1770 meter
-    loudness = meter.integrated_loudness(data)
+    meter = pyln.Meter(sr, block_size=DEFAULT_BLOCK_SIZE)  # create BS.1770 meter
+    try:
+        loudness = meter.integrated_loudness(data)
+    except ValueError as e:
+        raise BlockSizeException(e)
     # logger.info(f"loudness: {loudness}")
     data = pyln.normalize.loudness(data, loudness, -23.0)
     return data
@@ -26,7 +34,10 @@ def process(item):
     if os.path.exists(wav_path) and wav_path.lower().endswith(".wav"):
         wav, sr = librosa.load(wav_path, sr=args.sr)
         if args.normalize:
-            wav = normalize_audio(wav, sr)
+            try:
+                wav = normalize_audio(wav, sr)
+            except BlockSizeException:
+                logger.info(f"Skip normalize due to less than {DEFAULT_BLOCK_SIZE} second audio: {wav_path}")
         if args.trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
