@@ -131,12 +131,12 @@ def save_style_vectors(model_name, style_names: str):
         return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names}"
     style_name_list = [name.strip() for name in style_name_list]
 
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = len(style_name_list)
     style_dict = {name: i for i, name in enumerate(style_name_list)}
     json_dict["data"]["style2id"] = style_dict
-    with open(config_path, "w") as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_dict, f, indent=2)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
@@ -178,13 +178,13 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     style_name_list = style_name_list + style_names
     assert len(style_name_list) == len(style_vectors)
 
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = len(style_name_list)
     style_dict = {name: i for i, name in enumerate(style_name_list)}
     json_dict["data"]["style2id"] = style_dict
 
-    with open(config_path, "w") as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_dict, f, indent=2)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 

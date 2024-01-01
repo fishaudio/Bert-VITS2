@@ -42,9 +42,13 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     style_vectors_b = np.load(
         os.path.join(model_dir, model_name_b, "style_vectors.npy")
     )  # (style_num_b, 256)
-    with open(os.path.join(model_dir, model_name_a, "config.json")) as f:
+    with open(
+        os.path.join(model_dir, model_name_a, "config.json"), encoding="utf-8"
+    ) as f:
         config_a = json.load(f)
-    with open(os.path.join(model_dir, model_name_b, "config.json")) as f:
+    with open(
+        os.path.join(model_dir, model_name_b, "config.json"), encoding="utf-8"
+    ) as f:
         config_b = json.load(f)
     style2id_a = config_a["data"]["style2id"]
     style2id_b = config_b["data"]["style2id"]
@@ -72,7 +76,9 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     new_config["model_name"] = output_name
-    with open(os.path.join(model_dir, output_name, "config.json"), "w") as f:
+    with open(
+        os.path.join(model_dir, output_name, "config.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(new_config, f, indent=2)
 
     return output_style_path, list(new_style2id.keys())
@@ -189,12 +195,12 @@ def update_two_model_names_dropdown():
 
 def load_styles_gr(model_name_a, model_name_b):
     config_path_a = os.path.join(model_dir, model_name_a, "config.json")
-    with open(config_path_a) as f:
+    with open(config_path_a, encoding="utf-8") as f:
         config_a = json.load(f)
     styles_a = list(config_a["data"]["style2id"].keys())
 
     config_path_b = os.path.join(model_dir, model_name_b, "config.json")
-    with open(config_path_b) as f:
+    with open(config_path_b, encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
     return gr.Textbox(value=", ".join(styles_a)), gr.Textbox(value=", ".join(styles_b))

@@ -39,10 +39,12 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
     logger.info("Step 1: start initialization...")
     dataset_path, _, train_path, val_path, config_path = get_path(model_name)
     if os.path.isfile(config_path):
-        config = json.load(open(config_path, "r", encoding="utf-8"))
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
     else:
         # Use default config
-        config = json.load(open("configs/config.json", "r", encoding="utf-8"))
+        with open("configs/config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
     config["model_name"] = model_name
     config["data"]["training_files"] = train_path
     config["data"]["validation_files"] = val_path
