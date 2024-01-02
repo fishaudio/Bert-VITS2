@@ -13,6 +13,7 @@ from common.stdout_wrapper import SAFE_STDOUT
 
 DEFAULT_BLOCK_SIZE: float = 0.400  # seconds
 
+
 class BlockSizeException(Exception):
     pass
 
@@ -37,7 +38,9 @@ def process(item):
             try:
                 wav = normalize_audio(wav, sr)
             except BlockSizeException:
-                logger.info(f"Skip normalize due to less than {DEFAULT_BLOCK_SIZE} second audio: {wav_path}")
+                logger.info(
+                    f"Skip normalize due to less than {DEFAULT_BLOCK_SIZE} second audio: {wav_path}"
+                )
         if args.trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
         soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)

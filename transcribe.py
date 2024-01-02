@@ -1,16 +1,17 @@
 import argparse
 import os
-import sys
 
 from faster_whisper import WhisperModel
 from tqdm import tqdm
 
+from common.constants import Languages
+from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
 
 
-def transcribe(wav_path, initial_prompt=None):
+def transcribe(wav_path, initial_prompt=None, language="ja"):
     segments, _ = model.transcribe(
-        wav_path, beam_size=5, language="ja", initial_prompt=initial_prompt
+        wav_path, beam_size=5, language=language, initial_prompt=initial_prompt
     )
     texts = [segment.text for segment in segments]
     return "".join(texts)
@@ -23,8 +24,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--initial_prompt", type=str, default="こんにちは。元気、ですかー？私は……ちゃんと元気だよ！"
     )
-    parser.add_argument("--speaker_name", type=str, default=None, required=True)
+    parser.add_argument(
+        "--language", type=str, default="ja", choices=["ja", "en", "zh"]
+    )
+    parser.add_argument("--speaker_name", type=str, required=True)
     parser.add_argument("--model", type=str, default="large-v3")
+    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--compute_type", type=str, default="bfloat16")
 
     args = parser.parse_args()
 
@@ -33,26 +39,40 @@ if __name__ == "__main__":
     input_dir = args.input_dir
     output_file = args.output_file
     initial_prompt = args.initial_prompt
+    language = args.language
+    device = args.device
+    compute_type = args.compute_type
 
+    logger.info(
+        f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
+    )
     try:
-        model = WhisperModel("large-v3", device="cuda", compute_type="bfloat16")
-    except Exception as e:
-        # Maybe bfloat16 is not supported (e.g. in colab)
-        # I don't know actually bf16 is better than fp16 or not...
-        model = WhisperModel("large-v3", device="cuda", compute_type="float16")
+        model = WhisperModel(args.model, device=device, compute_type=compute_type)
+    except ValueError as e:
+        logger.warning(f"Failed to load model: {e}")
+        model = WhisperModel(args.model, device=device)
 
     wav_files = [
         os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".wav")
     ]
     if os.path.exists(output_file):
-        print(f"{output_file}が存在するので、バックアップを{output_file}.bakに作成します。")
+        logger.warning(f"{output_file} exists, backing up to {output_file}.bak")
         if os.path.exists(output_file + ".bak"):
-            print(f"{output_file}.bakも存在するので、削除します。")
+            logger.warning(f"{output_file}.bak exists, deleting...")
             os.remove(output_file + ".bak")
         os.rename(output_file, output_file + ".bak")
 
+    if language == "ja":
+        language = Languages.JP
+    elif language == "en":
+        language = Languages.EN
+    elif language == "zh":
+        language = Languages.ZH
+    else:
+        raise ValueError(f"{language} is not supported.")
     with open(output_file, "w", encoding="utf-8") as f:
         for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
             file_name = os.path.basename(wav_file)
             text = transcribe(wav_file, initial_prompt=initial_prompt)
-            f.write(f"{file_name}|{speaker_name}|JP|{text}\n")
+            f.write(f"{file_name}|{speaker_name}|{language}|{text}\n")
+            f.flush()

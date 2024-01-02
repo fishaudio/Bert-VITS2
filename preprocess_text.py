@@ -74,6 +74,7 @@ def preprocess(
                             print(
                                 f"An error occurred while generating the training set and validation set! Details:\n{e}"
                             )
+                            raise e
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)

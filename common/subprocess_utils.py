@@ -7,7 +7,7 @@ from .stdout_wrapper import SAFE_STDOUT
 python = sys.executable
 
 
-def run_script_with_log(cmd: list[str]) -> tuple[bool, str]:
+def run_script_with_log(cmd: list[str], ignore_warning=False) -> tuple[bool, str]:
     logger.info(f"Running: {' '.join(cmd)}")
     result = subprocess.run(
         [python] + cmd,
@@ -19,7 +19,7 @@ def run_script_with_log(cmd: list[str]) -> tuple[bool, str]:
         logger.error(f"Error: {' '.join(cmd)}")
         print(result.stderr)
         return False, result.stderr
-    elif result.stderr:
+    elif result.stderr and not ignore_warning:
         logger.warning(f"Warning: {' '.join(cmd)}")
         print(result.stderr)
         return True, result.stderr

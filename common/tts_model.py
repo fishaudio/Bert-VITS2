@@ -189,9 +189,9 @@ class ModelHolder:
         self, model_name: str, model_path: str
     ) -> tuple[gr.Dropdown, gr.Button]:
         if model_name not in self.model_files_dict:
-            raise Exception(f"モデル名{model_name}は存在しません")
+            raise ValueError(f"Model `{model_name}` is not found")
         if model_path not in self.model_files_dict[model_name]:
-            raise Exception(f"pthファイル{model_path}は存在しません")
+            raise ValueError(f"Model file `{model_path}` is not found")
         self.current_model = Model(
             model_path=model_path,
             config_path=os.path.join(self.root_dir, model_name, "config.json"),
