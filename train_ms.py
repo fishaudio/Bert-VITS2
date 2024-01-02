@@ -281,6 +281,8 @@ def run():
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
         except:
+            if not optim_dur_disc.param_groups[0].get("initial_lr"):
+                optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
             print("Initialize dur_disc")
     if net_wd is not None:
         try:
@@ -295,6 +297,8 @@ def run():
             if not optim_wd.param_groups[0].get("initial_lr"):
                 optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
         except:
+            if not optim_wd.param_groups[0].get("initial_lr"):
+                optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
             print("Initialize wavlm")
 
     try:
