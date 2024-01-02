@@ -1,24 +1,20 @@
-# Global configuration file for Bert-VITS2
-
 model_name: "model_name"
 
-out_dir: "model_assets"
-
 # If you want to use a specific dataset path, uncomment the following line.
-# Otherwise, the dataset path is `Data/{model_name}`.
+# Otherwise, the dataset path is `{dataset_root}/{model_name}`.
 
 # dataset_path: "your/dataset/path"
 
 resample:
   sampling_rate: 44100
-  in_dir: "audios/raw"
-  out_dir: "audios/wavs"
+  in_dir: "raw"
+  out_dir: "wavs"
 
 preprocess_text:
-  transcription_path: "filelists/esd.list"
+  transcription_path: "esd.list"
   cleaned_path: ""
-  train_path: "filelists/train.list"
-  val_path: "filelists/val.list"
+  train_path: "train.list"
+  val_path: "val.list"
   config_path: "config.json"
   val_per_lang: 4
   max_val_total: 12
@@ -42,13 +38,13 @@ train_ms:
     WORLD_SIZE: 1
     LOCAL_RANK: 0
     RANK: 0
-  model: "models"
+  model_dir: "models"  # The directory to save the model (for training), relative to `{dataset_root}/{model_name}`.
   config_path: "config.json"
   num_workers: 16
   spec_cache: True
   keep_ckpts: 1 # Set this to 0 to keep all checkpoints
 
-webui:
+webui:  # For `webui.py`, which is not supported yet in Style-Bert-VITS2.
   # 推理设备
   device: "cuda"
   # 模型路径

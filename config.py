@@ -205,7 +205,7 @@ class Translate_config:
 
 
 class Config:
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str, path_config: dict[str, str]):
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
             shutil.copy(src="default_config.yml", dst=config_path)
             print(
@@ -222,12 +222,10 @@ class Config:
             if "dataset_path" in yaml_config:
                 dataset_path = yaml_config["dataset_path"]
             else:
-                dataset_path = f"Data/{model_name}"
-            self.out_dir = yaml_config["out_dir"]
-            # openi_token: str = yaml_config["openi_token"]
+                dataset_path = os.path.join(path_config["dataset_root"], model_name)
             self.dataset_path: str = dataset_path
-            # self.mirror: str = yaml_config["mirror"]
-            # self.openi_token: str = openi_token
+            self.assets_root: str = path_config["assets_root"]
+            self.out_dir = os.path.join(self.assets_root, model_name)
             self.resample_config: Resample_config = Resample_config.from_dict(
                 dataset_path, yaml_config["resample"]
             )
@@ -256,14 +254,27 @@ class Config:
             # )
 
 
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    # Should contain the following keys:
+    # - dataset_root: the root directory of the dataset, default to "Data"
+    # - assets_root: the root directory of the assets, default to "model_assets"
+
 parser = argparse.ArgumentParser()
 # 为避免与以前的config.json起冲突，将其更名如下
-parser.add_argument("-y", "--yml_config", type=str, default="config.yml")
-args, _ = parser.parse_known_args()
+parser.add_argument(
+    "-y",
+    "--yml_config",
+    type=str,
+    default="config.yml",
+    help="Path to setting yaml file.",
+)
+
+args = parser.parse_args()
 
 try:
-    config = Config(args.yml_config)
+    config = Config(args.yml_config, path_config)
 except TypeError:
     logger.warning("Old config.yml found. Replace it with default_config.yml.")
     shutil.copy(src="default_config.yml", dst="config.yml")
-    config = Config("config.yml")
+    config = Config("config.yml", path_config)

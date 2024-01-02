@@ -114,7 +114,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
 
 def save_style_vectors(model_name, style_names: str):
     """centerとcentroidsを保存する"""
-    result_dir = os.path.join(config.out_dir, model_name)
+    result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
     style_vectors = np.stack([mean] + centroids)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
@@ -136,7 +136,7 @@ def save_style_vectors(model_name, style_names: str):
     style_dict = {name: i for i, name in enumerate(style_name_list)}
     json_dict["data"]["style2id"] = style_dict
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(json_dict, f, indent=2)
+        json.dump(json_dict, f, indent=2, ensure_ascii=False)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
@@ -147,7 +147,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
         return "Error: スタイルベクトルを読み込んでください。"
     mean = np.mean(x, axis=0)
 
-    result_dir = os.path.join(config.out_dir, model_name)
+    result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
     audio_files = audio_files_text.split(",")
     style_names = style_names_text.split(",")
@@ -182,7 +182,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     json_dict["data"]["style2id"] = style_dict
 
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(json_dict, f, indent=2)
+        json.dump(json_dict, f, indent=2, ensure_ascii=False)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 

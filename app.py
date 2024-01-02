@@ -4,9 +4,8 @@ import os
 import sys
 
 import gradio as gr
-import numpy as np
 import torch
-from gradio.processing_utils import convert_to_16_bit_wav
+import yaml
 
 from common.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
@@ -22,7 +21,12 @@ from common.constants import (
 )
 from common.log import logger
 from common.tts_model import ModelHolder
-from config import config
+
+# Get path settings
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    # dataset_root = path_config["dataset_root"]
+    assets_root = path_config["assets_root"]
 
 languages = [l.value for l in Languages]
 
@@ -182,7 +186,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cpu", action="store_true", help="Use CPU instead of GPU")
     parser.add_argument(
-        "--dir", "-d", type=str, help="Model directory", default=config.out_dir
+        "--dir", "-d", type=str, help="Model directory", default=assets_root
     )
     parser.add_argument(
         "--share", action="store_true", help="Share this app publicly", default=False

@@ -1,14 +1,22 @@
 import os
 
 import gradio as gr
+import yaml
 
 from common.log import logger
-from common.subprocess_utils import run_script_with_log, second_elem_of
+from common.subprocess_utils import run_script_with_log
+
+# Get path settings
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    dataset_root = path_config["dataset_root"]
+    # assets_root = path_config["assets_root"]
 
 
 def do_slice(model_name: str, min_sec: float, max_sec: float, input_dir="inputs"):
     logger.info("Start slicing...")
-    output_dir = os.path.join("Data", model_name, "raw")
+    input_dir = "inputs"
+    output_dir = os.path.join(dataset_root, model_name, "raw")
     cmd = [
         "slice.py",
         "--input_dir",
@@ -30,8 +38,8 @@ def do_transcribe(model_name, whisper_model, compute_type, language, initial_pro
     if initial_prompt == "":
         initial_prompt = "こんにちは。元気、ですかー？私は……ちゃんと元気だよ！"
     logger.debug(f"initial_prompt: {initial_prompt}")
-    input_dir = os.path.join("Data", model_name, "raw")
-    output_file = os.path.join("Data", model_name, "esd.list")
+    input_dir = os.path.join(dataset_root, model_name, "raw")
+    output_file = os.path.join(dataset_root, model_name, "esd.list")
     result = run_script_with_log(
         [
             "transcribe.py",
