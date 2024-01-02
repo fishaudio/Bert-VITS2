@@ -27,6 +27,9 @@ def do_slice(model_name: str, min_sec: float, max_sec: float, input_dir="inputs"
 
 
 def do_transcribe(model_name, whisper_model, compute_type, language, initial_prompt):
+    if initial_prompt == "":
+        initial_prompt = "こんにちは。元気、ですかー？私は……ちゃんと元気だよ！"
+    logger.debug(f"initial_prompt: {initial_prompt}")
     input_dir = os.path.join("Data", model_name, "raw")
     output_file = os.path.join("Data", model_name, "esd.list")
     result = run_script_with_log(
@@ -45,7 +48,7 @@ def do_transcribe(model_name, whisper_model, compute_type, language, initial_pro
             "--language",
             language,
             "--initial_prompt",
-            initial_prompt,
+            '"initial_prompt"',
         ]
     )
     return "音声の文字起こしが完了しました。"
@@ -89,8 +92,9 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             result1 = gr.Textbox(label="結果")
     with gr.Row():
         with gr.Column():
-            whisper_model = gr.Radio(
+            whisper_model = gr.Dropdown(
                 ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"],
+                label="Whisperモデル",
                 value="large-v3",
             )
             compute_type = gr.Dropdown(
@@ -104,10 +108,13 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                     "bfloat16",
                     "float32",
                 ],
+                label="計算精度",
                 value="bfloat16",
             )
-            language = gr.Dropdown(["ja", "en", "zh"], value="ja")
-            initial_prompt = gr.Textbox(label="初期プロンプトを入力してください（省略可）")
+            language = gr.Dropdown(["ja", "en", "zh"], value="ja", label="言語")
+            initial_prompt = gr.Textbox(
+                label="初期プロンプト（日本語の場合は省略可）", placeholder="こんにちは。元気、ですかー？私は……ちゃんと元気だよ！"
+            )
         transcribe_button = gr.Button("音声の文字起こし")
         result2 = gr.Textbox(label="結果")
     slice_button.click(

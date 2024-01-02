@@ -24,12 +24,11 @@ centroids = []
 def load(model_name):
     global wav_files, x, x_tsne, mean
     wavs_dir = os.path.join("Data", model_name, "wavs")
-    wav_files = [
-        os.path.join(wavs_dir, wav_path)
-        for wav_path in os.listdir(wavs_dir)
-        if wav_path.endswith(".wav")
+    style_vector_files = [
+        os.path.join(wavs_dir, f) for f in os.listdir(wavs_dir) if f.endswith(".npy")
     ]
-    style_vectors = [np.load(f"{wav_path}.npy") for wav_path in wav_files]
+    wav_files = [f.replace(".npy", "") for f in style_vector_files]
+    style_vectors = [np.load(f) for f in style_vector_files]
     x = np.array(style_vectors)
     mean = np.mean(x, axis=0)
 
@@ -166,8 +165,6 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
         style_vectors.append(np.load(f"{path}.npy"))
     style_vectors = np.stack(style_vectors)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
-    if os.path.exists(style_vector_path):
-        return f"{style_vector_path}が既に存在します。削除するか別の名前にバックアップしてください。"
     np.save(style_vector_path, style_vectors)
 
     # config.jsonの更新
