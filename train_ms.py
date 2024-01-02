@@ -183,7 +183,7 @@ def run():
         net_dur_disc = None
     if (
         "use_wavlm_discriminator" in hps.model.keys()
-        and hps.model.wavlm_discriminator is True
+        and hps.model.use_wavlm_discriminator is True
     ):
         net_wd = WavLMDiscriminator(
             hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
