@@ -649,13 +649,7 @@ def train_and_evaluate(
                     scalar_dict.update({
                         "loss/dur_disc/total": loss_dur_disc_all,
                         "grad_norm_dur": grad_norm_dur,})
-                if net_wd is not None:
-                    scalar_dict.update({
-                        "loss/wd/total": loss_slm,
-                        "grad_norm_wd": grad_norm_wd,
-                        "loss/g/lm": loss_lm,
-                        "loss/g/lm_gen": loss_lm_gen,})
-                    scalar_dict.update(
+                                        scalar_dict.update(
                         {
                             "loss/dur_disc_g/{}".format(i): v
                             for i, v in enumerate(losses_dur_disc_g)
@@ -675,7 +669,12 @@ def train_and_evaluate(
                             for i, v in enumerate(losses_dur_gen)
                         }
                     )
-
+                if net_wd is not None:
+                    scalar_dict.update({
+                        "loss/wd/total": loss_slm,
+                        "grad_norm_wd": grad_norm_wd,
+                        "loss/g/lm": loss_lm,
+                        "loss/g/lm_gen": loss_lm_gen,})
                 image_dict = {
                     "slice/mel_org": utils.plot_spectrogram_to_numpy(
                         y_mel[0].data.cpu().numpy()
