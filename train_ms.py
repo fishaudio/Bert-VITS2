@@ -19,6 +19,8 @@ from tqdm import tqdm
 import commons
 import default_style
 import utils
+from common.log import logger
+from common.stdout_wrapper import SAFE_STDOUT
 from config import config
 from data_utils import (
     DistributedBucketSampler,
@@ -29,8 +31,6 @@ from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
 from text.symbols import symbols
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -44,12 +44,6 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 )  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
 
-try:
-    import google.colab
-
-    IS_COLAB = True
-except ImportError:
-    IS_COLAB = False
 
 global_step = 0
 
@@ -86,7 +80,7 @@ def run():
     # 命令行/config.yml配置解析
     # hps = utils.get_hparams()
     parser = argparse.ArgumentParser()
-    # 非必要不建议使用命令行配置，请使用config.yml文件
+    # Command line configuration is not recommended unless necessary, use config.yml
     parser.add_argument(
         "-c",
         "--config",
@@ -102,12 +96,26 @@ def run():
         help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
         default=config.dataset_path,
     )
+    parser.add_argument(
+        "--assets_root",
+        type=str,
+        help="Root directory of model assets needed for inference.",
+        default=config.assets_root,
+    )
+    parser.add_argument(
+        "--skip_default_style",
+        action="store_true",
+        help="Skip saving default style config and mean vector.",
+    )
     args = parser.parse_args()
     model_dir = os.path.join(args.model, config.train_ms_config.model)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     hps = utils.get_hparams_from_file(args.config)
+
+    # This is needed because we have to pass `model_dir` to `train_and_evaluate()`
     hps.model_dir = model_dir
+
     # 比较路径是否相同
     if os.path.realpath(args.config) != os.path.realpath(
         config.train_ms_config.config_path
@@ -125,31 +133,27 @@ def run():
 
     args.model: For saving all info needed for training.
         default: `Data/{model_name}`.
-    hps.model_dir = model_dir: For saving checkpoints (for resuming training).
+    hps.model_dir := model_dir: For saving checkpoints (for resuming training).
         default: `Data/{model_name}/models`.
+        (Use `hps` since we have to pass `model_dir` to `train_and_evaluate()`.
 
-    config.out_dir: Root directory of model assets needed for inference.
-        default: `model_assets`.
+    args.assets_root: The root directory of model assets needed for inference.
+        default: config.assets_root == `model_assets`.
 
-    out_dir: For saving resulting models (for inference).
-        default: `model_assets/{model_name}`, which is used for inference.
+    config.out_dir: The directory for model assets of this model (for inference).
+        default: `model_assets/{model_name}`.
     """
-    if IS_COLAB:
-        config.out_dir = "/content/drive/MyDrive/Style-Bert-VITS2/model_assets"
-        logger.info(
-            "Colab detected, so use mounted Google Drive as directory for saving resulting models:"
-        )
-        logger.info(config.out_dir)
-        os.makedirs(config.out_dir, exist_ok=True)
-    out_dir = os.path.join(config.out_dir, config.model_name)
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(config.out_dir, exist_ok=True)
 
-    # Save default style to out_dir
-    default_style.set_style_config(args.config, os.path.join(out_dir, "config.json"))
-    default_style.save_mean_vector(
-        os.path.join(args.model, "wavs"),
-        os.path.join(out_dir, "style_vectors.npy"),
-    )
+    if not args.skip_default_style:
+        # Save default style to out_dir
+        default_style.set_style_config(
+            args.config, os.path.join(config.out_dir, "config.json")
+        )
+        default_style.save_mean_vector(
+            os.path.join(args.model, "wavs"),
+            os.path.join(config.out_dir, "style_vectors.npy"),
+        )
 
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(local_rank)
@@ -158,10 +162,10 @@ def run():
     if rank == 0:
         # logger = utils.get_logger(hps.model_dir)
         # logger.info(hps)
-        logger.add(os.path.join(hps.model_dir, "train.log"))
-        utils.check_git_hash(hps.model_dir)
-        writer = SummaryWriter(log_dir=hps.model_dir)
-        writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
+        logger.add(os.path.join(model_dir, "train.log"))
+        utils.check_git_hash(model_dir)
+        writer = SummaryWriter(log_dir=model_dir)
+        writer_eval = SummaryWriter(log_dir=os.path.join(model_dir, "eval"))
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
     train_sampler = DistributedBucketSampler(
         train_dataset,
@@ -284,10 +288,10 @@ def run():
             net_dur_disc, device_ids=[local_rank], find_unused_parameters=True
         )
 
-    if utils.is_resuming(hps.model_dir):
+    if utils.is_resuming(model_dir):
         if net_dur_disc is not None:
             _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
+                utils.latest_checkpoint_path(model_dir, "DUR_*.pth"),
                 net_dur_disc,
                 optim_dur_disc,
                 skip_optimizer=hps.train.skip_optimizer
@@ -297,7 +301,7 @@ def run():
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
         _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
-            utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
+            utils.latest_checkpoint_path(model_dir, "G_*.pth"),
             net_g,
             optim_g,
             skip_optimizer=hps.train.skip_optimizer
@@ -305,7 +309,7 @@ def run():
             else True,
         )
         _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
-            utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
+            utils.latest_checkpoint_path(model_dir, "D_*.pth"),
             net_d,
             optim_d,
             skip_optimizer=hps.train.skip_optimizer
@@ -320,7 +324,7 @@ def run():
         epoch_str = max(epoch_str, 1)
         # global_step = (epoch_str - 1) * len(train_loader)
         global_step = int(
-            utils.get_steps(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"))
+            utils.get_steps(utils.latest_checkpoint_path(model_dir, "G_*.pth"))
         )
         logger.info(
             f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
@@ -328,14 +332,14 @@ def run():
     else:
         try:
             _ = utils.load_safetensors(
-                os.path.join(hps.model_dir, "G_0.safetensors"), net_g
+                os.path.join(model_dir, "G_0.safetensors"), net_g
             )
             _ = utils.load_safetensors(
-                os.path.join(hps.model_dir, "D_0.safetensors"), net_d
+                os.path.join(model_dir, "D_0.safetensors"), net_d
             )
             if net_dur_disc is not None:
                 _ = utils.load_safetensors(
-                    os.path.join(hps.model_dir, "DUR_0.safetensors"), net_dur_disc
+                    os.path.join(model_dir, "DUR_0.safetensors"), net_dur_disc
                 )
             logger.info("Loaded the pretrained models.")
         except Exception as e:
@@ -402,14 +406,14 @@ def run():
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
+                os.path.join(model_dir, "G_{}.pth".format(global_step)),
             )
             utils.save_checkpoint(
                 net_d,
                 optim_d,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
+                os.path.join(model_dir, "D_{}.pth".format(global_step)),
             )
             if net_dur_disc is not None:
                 utils.save_checkpoint(
@@ -417,13 +421,13 @@ def run():
                     optim_dur_disc,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
+                    os.path.join(model_dir, "DUR_{}.pth".format(global_step)),
                 )
             utils.save_safetensors(
                 net_g,
                 epoch,
                 os.path.join(
-                    out_dir,
+                    config.out_dir,
                     f"{config.model_name}_e{epoch}_s{global_step}.safetensors",
                 ),
                 for_infer=True,
@@ -690,12 +694,12 @@ def train_and_evaluate(
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
                     )
+                # Save safetensors (for inference) to `model_assets/{model_name}`
                 utils.save_safetensors(
                     net_g,
                     epoch,
                     os.path.join(
                         config.out_dir,
-                        config.model_name,
                         f"{config.model_name}_e{epoch}_s{global_step}.safetensors",
                     ),
                     for_infer=True,

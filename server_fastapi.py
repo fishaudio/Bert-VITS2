@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cpu", action="store_true", help="Use CPU instead of GPU")
     parser.add_argument(
-        "--dir", "-d", type=str, help="Model directory", default=config.out_dir
+        "--dir", "-d", type=str, help="Model directory", default=config.assets_root
     )
     args = parser.parse_args()
 

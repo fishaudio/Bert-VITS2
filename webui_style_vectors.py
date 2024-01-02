@@ -115,7 +115,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
 
 def save_style_vectors(model_name, style_names: str):
     """centerとcentroidsを保存する"""
-    result_dir = os.path.join(config.out_dir, model_name)
+    result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
     style_vectors = np.stack([mean] + centroids)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
@@ -148,7 +148,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
         return "Error: スタイルベクトルを読み込んでください。"
     mean = np.mean(x, axis=0)
 
-    result_dir = os.path.join(config.out_dir, model_name)
+    result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
     audio_files = audio_files_text.split(",")
     style_names = style_names_text.split(",")

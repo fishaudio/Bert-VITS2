@@ -5,14 +5,13 @@ import sys
 import gradio as gr
 import numpy as np
 import torch
+import yaml
 from safetensors import safe_open
 from safetensors.torch import save_file
 
-
-from config import config
-from common.tts_model import Model, ModelHolder
-from common.log import logger
 from common.constants import DEFAULT_STYLE
+from common.log import logger
+from common.tts_model import Model, ModelHolder
 
 voice_keys = ["dec", "flow"]
 speech_style_keys = ["enc_p"]
@@ -20,8 +19,13 @@ tempo_keys = ["sdp", "dp"]
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model_dir = config.out_dir
-model_holder = ModelHolder(model_dir, device)
+# Get path settings
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    # dataset_root = path_config["dataset_root"]
+    assets_root = path_config["assets_root"]
+
+model_holder = ModelHolder(assets_root, device)
 
 
 def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_list):

@@ -17,3 +17,5 @@ venv/
 
 /scripts/test/
 *.zip
+*.csv
+*.bak

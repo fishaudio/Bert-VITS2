@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-import sys
 from multiprocessing import cpu_count
 
 import gradio as gr
@@ -10,24 +9,16 @@ import yaml
 from common.log import logger
 from common.subprocess_utils import run_script_with_log, second_elem_of
 
-try:
-    import google.colab
-
-    IS_COLAB = True
-except ImportError:
-    IS_COLAB = False
+# Get path settings
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    dataset_root = path_config["dataset_root"]
+    # assets_root = path_config["assets_root"]
 
 
 def get_path(model_name):
     assert model_name != "", "モデル名は空にできません"
-    if IS_COLAB:
-        logger.info("Colab detected, so use mounted Google Drive as dataset path:")
-        dataset_path = os.path.join(
-            "/content/drive/MyDrive/Style-Bert-VITS2/Data", model_name
-        )
-        logger.info(dataset_path)
-    else:
-        dataset_path = os.path.join("Data", model_name)
+    dataset_path = os.path.join(dataset_root, model_name)
     lbl_path = os.path.join(dataset_path, "esd.list")
     train_path = os.path.join(dataset_path, "train.list")
     val_path = os.path.join(dataset_path, "val.list")
@@ -61,7 +52,6 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
         )
     except FileExistsError:
         logger.warning(f"Step 1: {model_path} already exists.")
-        return False, f"Step1, Error: モデルフォルダ {model_path} が既に存在します。問題なければ削除してください。"
     except FileNotFoundError:
         logger.error("Step 1: `pretrained` folder not found.")
         return False, "Step 1, Error: pretrainedフォルダが見つかりません。"
