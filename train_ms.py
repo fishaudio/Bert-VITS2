@@ -646,10 +646,9 @@ def train_and_evaluate(
                 )
 
                 if net_dur_disc is not None:
-                    scalar_dict.update({
-                        "loss/dur_disc/total": loss_dur_disc_all,
-                        "grad_norm_dur": grad_norm_dur,})
-                                        scalar_dict.update(
+                    scalar_dict.update({"loss/dur_disc/total": loss_dur_disc_all})
+
+                    scalar_dict.update(
                         {
                             "loss/dur_disc_g/{}".format(i): v
                             for i, v in enumerate(losses_dur_disc_g)
@@ -669,6 +668,7 @@ def train_and_evaluate(
                             for i, v in enumerate(losses_dur_gen)
                         }
                     )
+
                 if net_wd is not None:
                     scalar_dict.update({
                         "loss/wd/total": loss_slm,
