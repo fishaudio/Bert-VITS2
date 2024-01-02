@@ -268,7 +268,7 @@ if __name__ == "__main__":
                     if len(speaker_piece2) != 2:
                         return {
                             "status": 21,
-                            "detail": f"MIX语法错误",
+                            "detail": "MIX语法错误",
                         }
                     speaker = speaker_piece2[0].strip()
                     lang_pieces = speaker_piece2[1].split("<")
@@ -279,13 +279,13 @@ if __name__ == "__main__":
                         if len(lang_piece2) != 2:
                             return {
                                 "status": 21,
-                                "detail": f"MIX语法错误",
+                                "detail": "MIX语法错误",
                             }
                         lang = lang_piece2[0].strip()
                         if lang.upper() not in ["ZH", "EN", "JP"]:
                             return {
                                 "status": 21,
-                                "detail": f"MIX语法错误",
+                                "detail": "MIX语法错误",
                             }
                         t = lang_piece2[1]
                         text_language_speakers.append((t, lang.upper(), speaker))
