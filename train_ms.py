@@ -551,7 +551,7 @@ def train_and_evaluate(
                     net_dur_disc.parameters(), None
                 )
                 scaler.step(optim_dur_disc)
-                
+            if net_wd is not None:  
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     loss_slm = wl.discriminator(
                         y.detach().squeeze(), y_hat.detach().squeeze()
