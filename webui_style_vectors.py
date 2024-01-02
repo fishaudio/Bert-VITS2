@@ -137,7 +137,7 @@ def save_style_vectors(model_name, style_names: str):
     style_dict = {name: i for i, name in enumerate(style_name_list)}
     json_dict["data"]["style2id"] = style_dict
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(json_dict, f, indent=2)
+        json.dump(json_dict, f, indent=2, ensure_ascii=False)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
@@ -185,7 +185,7 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
     json_dict["data"]["style2id"] = style_dict
 
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(json_dict, f, indent=2)
+        json.dump(json_dict, f, indent=2, ensure_ascii=False)
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 

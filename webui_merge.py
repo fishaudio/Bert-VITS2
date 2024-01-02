@@ -41,17 +41,17 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         raise ValueError("No element with {DEFAULT_STYLE} output style name found.")
 
     style_vectors_a = np.load(
-        os.path.join(model_dir, model_name_a, "style_vectors.npy")
+        os.path.join(assets_root, model_name_a, "style_vectors.npy")
     )  # (style_num_a, 256)
     style_vectors_b = np.load(
-        os.path.join(model_dir, model_name_b, "style_vectors.npy")
+        os.path.join(assets_root, model_name_b, "style_vectors.npy")
     )  # (style_num_b, 256)
     with open(
-        os.path.join(model_dir, model_name_a, "config.json"), encoding="utf-8"
+        os.path.join(assets_root, model_name_a, "config.json"), encoding="utf-8"
     ) as f:
         config_a = json.load(f)
     with open(
-        os.path.join(model_dir, model_name_b, "config.json"), encoding="utf-8"
+        os.path.join(assets_root, model_name_b, "config.json"), encoding="utf-8"
     ) as f:
         config_b = json.load(f)
     style2id_a = config_a["data"]["style2id"]
@@ -73,7 +73,7 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         new_style2id[style_out] = len(new_style_vecs) - 1
     new_style_vecs = np.array(new_style_vecs)
 
-    output_style_path = os.path.join(model_dir, output_name, "style_vectors.npy")
+    output_style_path = os.path.join(assets_root, output_name, "style_vectors.npy")
     np.save(output_style_path, new_style_vecs)
 
     new_config = config_a.copy()
@@ -81,9 +81,9 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     new_config["data"]["style2id"] = new_style2id
     new_config["model_name"] = output_name
     with open(
-        os.path.join(model_dir, output_name, "config.json"), "w", encoding="utf-8"
+        os.path.join(assets_root, output_name, "config.json"), "w", encoding="utf-8"
     ) as f:
-        json.dump(new_config, f, indent=2)
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
 
     return output_style_path, list(new_style2id.keys())
 
@@ -124,7 +124,7 @@ def merge_models(
         )
 
     merged_model_path = os.path.join(
-        model_dir, output_name, f"{output_name}.safetensors"
+        assets_root, output_name, f"{output_name}.safetensors"
     )
     os.makedirs(os.path.dirname(merged_model_path), exist_ok=True)
     save_file(merged_model_weight, merged_model_path)
@@ -184,9 +184,9 @@ def merge_style_gr(
 
 
 def simple_tts(model_name, text, style=DEFAULT_STYLE, emotion_weight=1.0):
-    model_path = os.path.join(model_dir, model_name, f"{model_name}.safetensors")
-    config_path = os.path.join(model_dir, model_name, "config.json")
-    style_vec_path = os.path.join(model_dir, model_name, "style_vectors.npy")
+    model_path = os.path.join(assets_root, model_name, f"{model_name}.safetensors")
+    config_path = os.path.join(assets_root, model_name, "config.json")
+    style_vec_path = os.path.join(assets_root, model_name, "style_vectors.npy")
 
     model = Model(model_path, config_path, style_vec_path, device)
     return model.infer(text, style=style, style_weight=emotion_weight)
@@ -198,12 +198,12 @@ def update_two_model_names_dropdown():
 
 
 def load_styles_gr(model_name_a, model_name_b):
-    config_path_a = os.path.join(model_dir, model_name_a, "config.json")
+    config_path_a = os.path.join(assets_root, model_name_a, "config.json")
     with open(config_path_a, encoding="utf-8") as f:
         config_a = json.load(f)
     styles_a = list(config_a["data"]["style2id"].keys())
 
-    config_path_b = os.path.join(model_dir, model_name_b, "config.json")
+    config_path_b = os.path.join(assets_root, model_name_b, "config.json")
     with open(config_path_b, encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
@@ -249,7 +249,7 @@ Happy, Surprise, HappySurprise
 
 model_names = model_holder.model_names
 if len(model_names) == 0:
-    logger.error(f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。")
+    logger.error(f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。")
     sys.exit(1)
 initial_id = 0
 initial_model_files = model_holder.model_files_dict[model_names[initial_id]]

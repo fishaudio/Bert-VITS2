@@ -57,7 +57,7 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
         return False, "Step 1, Error: pretrainedフォルダが見つかりません。"
 
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2)
+        json.dump(config, f, indent=2, ensure_ascii=False)
     if not os.path.exists("config.yml"):
         shutil.copy(src="default_config.yml", dst="config.yml")
     # yml_data = safe_load(open("config.yml", "r", encoding="utf-8"))
