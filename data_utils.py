@@ -104,7 +104,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         else:
             emo = self.empty_emo
 
-        return (phones, spec, wav, sid, tone, language, bert)
+        return (phones, spec, wav, sid, tone, language, bert, emo)
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
