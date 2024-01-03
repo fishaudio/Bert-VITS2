@@ -43,6 +43,9 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         self.add_blank = hparams.add_blank
         self.min_text_len = getattr(hparams, "min_text_len", 1)
         self.max_text_len = getattr(hparams, "max_text_len", 384)
+        self.empty_emo = torch.squeeze(
+            torch.load("empty_emo.npy", map_location="cpu"), dim=1
+        )
 
         random.seed(1234)
         random.shuffle(self.audiopaths_sid_text)
@@ -93,6 +96,13 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
+        if np.random.rand() > 0.1:
+            emo = torch.squeeze(
+                torch.load(audiopath.replace(".wav", ".emo.npy"), map_location="cpu"),
+                dim=1,
+            )
+        else:
+            emo = self.empty_emo
 
         return (phones, spec, wav, sid, tone, language, bert)
 
@@ -199,7 +209,8 @@ class TextAudioSpeakerCollate:
         text_padded = torch.LongTensor(len(batch), max_text_len)
         tone_padded = torch.LongTensor(len(batch), max_text_len)
         language_padded = torch.LongTensor(len(batch), max_text_len)
-        bert_padded = torch.FloatTensor(len(batch), 2048, max_text_len)
+        bert_padded = torch.FloatTensor(len(batch), 2048, max_text_len)+
+        emo = torch.FloatTensor(len(batch), 512)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
         wav_padded = torch.FloatTensor(len(batch), 1, max_wav_len)
@@ -209,6 +220,7 @@ class TextAudioSpeakerCollate:
         spec_padded.zero_()
         wav_padded.zero_()
         bert_padded.zero_()
+        emo.zero_()
 
         for i in range(len(ids_sorted_decreasing)):
             row = batch[ids_sorted_decreasing[i]]
@@ -236,6 +248,8 @@ class TextAudioSpeakerCollate:
             bert = row[6]
             bert_padded[i, :, : bert.size(1)] = bert
 
+            emo[i, :] = row[7]
+
 
         return (
             text_padded,
@@ -248,6 +262,7 @@ class TextAudioSpeakerCollate:
             tone_padded,
             language_padded,
             bert_padded,
+            emo,
         )
 
 
