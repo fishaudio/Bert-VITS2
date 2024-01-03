@@ -209,7 +209,7 @@ class TextAudioSpeakerCollate:
         text_padded = torch.LongTensor(len(batch), max_text_len)
         tone_padded = torch.LongTensor(len(batch), max_text_len)
         language_padded = torch.LongTensor(len(batch), max_text_len)
-        bert_padded = torch.FloatTensor(len(batch), 2048, max_text_len)+
+        bert_padded = torch.FloatTensor(len(batch), 2048, max_text_len)
         emo = torch.FloatTensor(len(batch), 512)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
