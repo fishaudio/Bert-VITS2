@@ -128,7 +128,7 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
         return [
             plt,
             gr.Slider(maximum=MAX_CLUSTER_NUM),
-            f"クラスタ数が多すぎま、パラメータを変えてみてください。: {n_clusters}",
+            f"クラスタ数が多すぎます、パラメータを変えてみてください。: {n_clusters}",
         ] + [gr.Audio(visible=False)] * MAX_AUDIO_NUM
 
     elif n_clusters == 0:
