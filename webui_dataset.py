@@ -56,7 +56,7 @@ def do_transcribe(model_name, whisper_model, compute_type, language, initial_pro
             "--language",
             language,
             "--initial_prompt",
-            '"initial_prompt"',
+            f'"{initial_prompt}"',
         ]
     )
     return "音声の文字起こしが完了しました。"

@@ -70,6 +70,7 @@ if __name__ == "__main__":
         language = Languages.ZH
     else:
         raise ValueError(f"{language} is not supported.")
+    logger.debug(f"Initial prompt: {initial_prompt}")
     with open(output_file, "w", encoding="utf-8") as f:
         for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
             file_name = os.path.basename(wav_file)

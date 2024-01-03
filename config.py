@@ -260,20 +260,9 @@ with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     # - dataset_root: the root directory of the dataset, default to "Data"
     # - assets_root: the root directory of the assets, default to "model_assets"
 
-parser = argparse.ArgumentParser()
-# 为避免与以前的config.json起冲突，将其更名如下
-parser.add_argument(
-    "-y",
-    "--yml_config",
-    type=str,
-    default="config.yml",
-    help="Path to setting yaml file.",
-)
-
-args = parser.parse_args()
 
 try:
-    config = Config(args.yml_config, path_config)
+    config = Config("config.yml", path_config)
 except TypeError:
     logger.warning("Old config.yml found. Replace it with default_config.yml.")
     shutil.copy(src="default_config.yml", dst="config.yml")

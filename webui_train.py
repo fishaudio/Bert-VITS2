@@ -302,9 +302,9 @@ if __name__ == "__main__":
                     label="エポック数",
                     info="100もあれば十分そうだけどもっと回すと質が上がるかもしれない",
                     value=100,
-                    minimum=1,
+                    minimum=10,
                     maximum=1000,
-                    step=1,
+                    step=10,
                 )
                 save_every_steps = gr.Slider(
                     label="何ステップごとに結果を保存するか",

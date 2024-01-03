@@ -3,6 +3,8 @@ import csv
 import warnings
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import pandas as pd
 import torch
 from tqdm import tqdm
 
@@ -71,9 +73,6 @@ for model_file in tqdm(safetensors_files):
         score = predictor(torch.from_numpy(audio).unsqueeze(0), sr).item()
         scores.append(score)
         logger.info(f"score: {score}")
-    mean = sum(scores) / len(scores)
-    logger.success(f"mean: {mean}")
-    scores.append(mean)
     # `test_e10_s1000.safetensors`` -> 1000を取り出す
     step = int(model_file.stem.split("_")[2][1:])
     results.append((model_file.name, step, scores))
@@ -90,3 +89,36 @@ with open(args.output, "w", encoding="utf-8", newline="") as f:
     writer.writerow(["model_path"] + ["step"] + test_texts + ["mean"])
     for model_file, step, scores in results:
         writer.writerow([model_file] + [step] + scores)
+
+# step countと各MOSの値を格納するリストを初期化
+steps = []
+mos_values = []
+
+# resultsからデータを抽出
+for _, step, scores in results:
+    steps.append(step)
+    mos_values.append(scores)  # scores は MOS1, MOS2, MOS3,... のリスト
+
+# DataFrame形式に変換
+df = pd.DataFrame(mos_values, index=steps)
+# ステップ数でソート
+df = df.sort_index()
+
+# 各MOSと平均値についての折れ線グラフを描画
+for col in df.columns:
+    plt.plot(df.index, df[col], label=f"MOS{col + 1}")
+
+# 平均値の計算と描画
+df["mean"] = df.mean(axis=1)
+plt.plot(df.index, df["mean"], label="Mean", color="black", linewidth=2)
+
+# グラフのタイトルと軸ラベルを設定
+plt.title("TTS Model Naturalness MOS")
+plt.xlabel("Step Count")
+plt.ylabel("MOS")
+
+# 凡例を表示
+plt.legend()
+
+# グラフを表示
+plt.show()
