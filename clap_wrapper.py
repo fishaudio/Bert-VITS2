@@ -19,7 +19,7 @@ def get_clap_audio_feature(audio_data, device=config.bert_gen_config.device):
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = ClapModel.from_pretrained("./emotional/clap-htsat-fused").to(
+        models[device] = ClapModel.from_pretrained("./emotional/clap-htsat-fused").half().to(
             device
         )
     with torch.no_grad():
