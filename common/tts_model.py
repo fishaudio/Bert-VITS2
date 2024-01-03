@@ -48,7 +48,7 @@ class Model:
 
         self.style_vectors: np.ndarray = np.load(self.style_vec_path)
         if self.style_vectors.shape[0] != self.num_styles:
-            logger.warning(
+            raise ValueError(
                 f"The number of styles ({self.num_styles}) does not match the number of style vectors ({self.style_vectors.shape[0]})"
             )
 
