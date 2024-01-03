@@ -40,7 +40,7 @@ def get_bert_feature(
             repeat_feature = res[i].repeat(word2phone[i], 1)
         phone_level_feature.append(repeat_feature)
 
-    phone_level_feature = torch.cat(phone_level_feature, dim=0)
+    phone_level_feature = torch.cat(phone_level_feature, dim=0).float()
 
     return phone_level_feature.T
 
