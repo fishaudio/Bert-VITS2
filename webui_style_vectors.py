@@ -4,12 +4,16 @@ import os
 import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering, KMeans
+from scipy.spatial.distance import cdist
+from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
-from config import config
+
 from common.constants import DEFAULT_STYLE
+from common.log import logger
+from config import config
 
 MAX_CLUSTER_NUM = 10
+MAX_AUDIO_NUM = 10
 
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
 
@@ -40,7 +44,7 @@ def load(model_name):
 
 
 def do_clustering(n_clusters=4, method="KMeans"):
-    global centroids
+    global centroids, x_tsne
     if method == "KMeans":
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
         y_pred = model.fit_predict(x)
@@ -48,11 +52,13 @@ def do_clustering(n_clusters=4, method="KMeans"):
         model = AgglomerativeClustering(n_clusters=n_clusters)
         y_pred = model.fit_predict(x)
     elif method == "KMeans after t-SNE":
-        x_tsne = tsne.fit_transform(x)
+        if x_tsne is None:
+            x_tsne = tsne.fit_transform(x)
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
         y_pred = model.fit_predict(x_tsne)
     elif method == "Agglomerative after t-SNE":
-        x_tsne = tsne.fit_transform(x)
+        if x_tsne is None:
+            x_tsne = tsne.fit_transform(x)
         model = AgglomerativeClustering(n_clusters=n_clusters)
         y_pred = model.fit_predict(x_tsne)
     else:
@@ -65,22 +71,90 @@ def do_clustering(n_clusters=4, method="KMeans"):
     return y_pred, centroids
 
 
-def closest_wav_files():
+def do_dbscan(eps=2.5, min_samples=15):
+    global centroids, x_tsne
+    model = DBSCAN(eps=eps, min_samples=min_samples)
+    if x_tsne is None:
+        x_tsne = tsne.fit_transform(x)
+    y_pred = model.fit_predict(x_tsne)
+    n_clusters = max(y_pred) + 1
+    centroids = []
+    for i in range(n_clusters):
+        centroids.append(np.mean(x[y_pred == i], axis=0))
+    return y_pred, centroids
+
+
+def closest_wav_files(cluster_index, num_files=1, weight=5):
     # centroidを強調した点からの距離が最も近い音声を選ぶ
-    centroid_enhanced = mean + 5 * (centroids - mean)
-    closest_wav_files = []
-    indices = []
-    for i in range(len(centroids)):
-        index = np.argmin(np.linalg.norm(x - centroid_enhanced[i], axis=1))
-        indices.append(index)
-        closest_wav_files.append(wav_files[index])
-    return closest_wav_files, indices
+    centroid_enhanced = mean + weight * (centroids - mean)
+    # セントロイドと全ての点との距離を計算
+    distances = cdist(centroid_enhanced[cluster_index : cluster_index + 1], x)
+    # 距離が小さい順にソートし、上位のインデックスを取得
+    closest_indices = np.argsort(distances[0])[:num_files]
+
+    return closest_indices
+
+
+def do_dbscan_gradio(eps=2.5, min_samples=15):
+    global x_tsne, centroids
+
+    y_pred, centroids = do_dbscan(eps, min_samples)
+
+    if x_tsne is None:
+        x_tsne = tsne.fit_transform(x)
+
+    cmap = plt.get_cmap("tab10")
+    plt.figure(figsize=(6, 6))
+    for i in range(max(y_pred) + 1):
+        plt.scatter(
+            x_tsne[y_pred == i, 0],
+            x_tsne[y_pred == i, 1],
+            color=cmap(i),
+            label=f"Style {i + 1}",
+        )
+    # Noise cluster (-1) is black
+    plt.scatter(
+        x_tsne[y_pred == -1, 0],
+        x_tsne[y_pred == -1, 1],
+        color="black",
+        label="Noise",
+    )
+    plt.legend()
+
+    n_clusters = max(y_pred) + 1
+
+    if n_clusters > MAX_CLUSTER_NUM:
+        # raise ValueError(f"The number of clusters is too large: {n_clusters}")
+        return [
+            plt,
+            gr.Slider(maximum=MAX_CLUSTER_NUM),
+            f"クラスタ数が多すぎま、パラメータを変えてみてください。: {n_clusters}",
+        ] + [gr.Audio(visible=False)] * MAX_AUDIO_NUM
+
+    elif n_clusters == 0:
+        return [
+            plt,
+            gr.Slider(maximum=MAX_CLUSTER_NUM),
+            f"クラスタが数が0です。パラメータを変えてみてください。",
+        ] + [gr.Audio(visible=False)] * MAX_AUDIO_NUM
+
+    return [plt, gr.Slider(maximum=n_clusters), n_clusters] + [
+        gr.Audio(visible=False)
+    ] * MAX_AUDIO_NUM
+
+
+def closest_wav_files_gradio(cluster_index, num_files=1, weight=1):
+    cluster_index = cluster_index - 1  # UIでは1から始まるので0からにする
+    closest_indices = closest_wav_files(cluster_index, num_files, weight)
+    return [
+        gr.Audio(wav_files[i], visible=True, label=wav_files[i])
+        for i in closest_indices
+    ] + [gr.update(visible=False)] * (MAX_AUDIO_NUM - num_files)
 
 
 def do_clustering_gradio(n_clusters=4, method="KMeans"):
     global x_tsne, centroids
     y_pred, centroids = do_clustering(n_clusters, method)
-    representatives, indices = closest_wav_files()
 
     if x_tsne is None:
         x_tsne = tsne.fit_transform(x)
@@ -96,20 +170,9 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
         )
     plt.legend()
 
-    plt.scatter(x_tsne[indices, 0], x_tsne[indices, 1], c="black", marker="x", s=100)
-
-    return (
-        [plt]
-        + [gr.Audio(wav_path, visible=True) for wav_path in representatives]
-        + [gr.update(visible=False)] * (MAX_CLUSTER_NUM - n_clusters)
-        + [
-            gr.Markdown(
-                value=f"Style {i + 1}: {os.path.basename(wav_path)}", visible=True
-            )
-            for i, wav_path in enumerate(representatives)
-        ]
-        + [gr.update(visible=False)] * (MAX_CLUSTER_NUM - n_clusters)
-    )
+    return [plt.gcf(), gr.Slider(maximum=n_clusters)] + [
+        gr.Audio(visible=False)
+    ] * MAX_AUDIO_NUM
 
 
 def save_style_vectors(model_name, style_names: str):
@@ -217,6 +280,17 @@ method1 = """
 平均スタイル（{DEFAULT_EMOTION}）は自動的に保存されます。
 """
 
+dbscan_md = """
+DBSCANという方法でスタイル分けを行います。
+こちらの方が方法1よりも特徴がより良く出るものができるかもしれません。
+
+ただし事前にスタイル数は指定できません。
+
+パラメータ：
+- eps: この値より近い点同士をどんどん繋げて同じスタイル分類とする。小さいほどスタイル数が増え、大きいほどスタイル数が減る。
+- min_samples: クラスタとみなすために必要な点の数。小さいほどスタイル数が増え、大きいほどスタイル数が減る。
+"""
+
 with gr.Blocks(theme="NoCrypt/miku") as app:
     gr.Markdown(initial_md)
     with gr.Row():
@@ -225,49 +299,91 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
     output = gr.Plot(label="音声スタイルの可視化")
     load_button.click(load, inputs=[model_name], outputs=[output])
     with gr.Tab("方法1: スタイル分けを自動で行う"):
-        n_clusters = gr.Slider(
-            minimum=2,
-            maximum=10,
-            step=1,
-            value=4,
-            label="作るスタイルの数（平均スタイルを除く）",
-            info="上の図を見ながらスタイルの数を試行錯誤してください。",
-        )
-        c_method = gr.Radio(
-            choices=[
-                "Agglomerative after t-SNE",
-                "KMeans after t-SNE",
-                "Agglomerative",
-                "KMeans",
-            ],
-            label="アルゴリズム",
-            info="分類する（クラスタリング）アルゴリズムを選択します。いろいろ試してみてください。",
-            value="Agglomerative after t-SNE",
-        )
-        c_button = gr.Button("スタイル分けを実行")
-        audio_list = []
-        md_list = []
-        gr.Markdown("スタイル分けの結果と、各スタイルの特徴的な代表音声（図の黒い x 印）")
+        with gr.Tab("スタイル分け1"):
+            n_clusters = gr.Slider(
+                minimum=2,
+                maximum=10,
+                step=1,
+                value=4,
+                label="作るスタイルの数（平均スタイルを除く）",
+                info="上の図を見ながらスタイルの数を試行錯誤してください。",
+            )
+            c_method = gr.Radio(
+                choices=[
+                    "Agglomerative after t-SNE",
+                    "KMeans after t-SNE",
+                    "Agglomerative",
+                    "KMeans",
+                ],
+                label="アルゴリズム",
+                info="分類する（クラスタリング）アルゴリズムを選択します。いろいろ試してみてください。",
+                value="Agglomerative after t-SNE",
+            )
+            c_button = gr.Button("スタイル分けを実行")
+        with gr.Tab("スタイル分け2: DBSCAN"):
+            gr.Markdown(dbscan_md)
+            eps = gr.Slider(
+                minimum=0.1,
+                maximum=10,
+                step=0.1,
+                value=2.5,
+                label="eps",
+                info="小さいほどスタイル数が増える",
+            )
+            min_samples = gr.Slider(
+                minimum=1,
+                maximum=100,
+                step=1,
+                value=15,
+                label="min_samples",
+                info="小さいほどスタイル数が増える",
+            )
+            with gr.Row():
+                dbscan_button = gr.Button("スタイル分けを実行")
+                num_styles_result = gr.Textbox(label="スタイル数")
+        gr.Markdown("スタイル分けの結果")
         gr.Markdown("注意: もともと256次元なものをを2次元に落としているので、正確なベクトルの位置関係ではありません。")
         with gr.Row():
             gr_plot = gr.Plot()
-            with gr.Row():
-                for i in range(MAX_CLUSTER_NUM):
-                    with gr.Column():
-                        md_list.append(gr.Markdown(visible=False))
+            with gr.Column():
+                with gr.Row():
+                    cluster_index = gr.Slider(
+                        minimum=1,
+                        maximum=MAX_CLUSTER_NUM,
+                        step=1,
+                        value=1,
+                        label="スタイル番号",
+                        info="選択したスタイルの代表音声を表示します。",
+                    )
+                    num_files = gr.Slider(
+                        minimum=1,
+                        maximum=MAX_AUDIO_NUM,
+                        step=1,
+                        value=5,
+                        label="代表音声の数をいくつ表示するか",
+                    )
+                    get_audios_button = gr.Button("代表音声を取得")
+                with gr.Row():
+                    audio_list = []
+                    for i in range(MAX_AUDIO_NUM):
                         audio_list.append(
-                            gr.Audio(
-                                visible=False,
-                                scale=1,
-                                show_label=True,
-                                label=f"スタイル{i+1}",
-                            )
+                            gr.Audio(visible=False, scale=1, show_label=True)
                         )
-        c_button.click(
-            do_clustering_gradio,
-            inputs=[n_clusters, c_method],
-            outputs=[gr_plot] + audio_list + md_list,
-        )
+            c_button.click(
+                do_clustering_gradio,
+                inputs=[n_clusters, c_method],
+                outputs=[gr_plot, cluster_index] + audio_list,
+            )
+            dbscan_button.click(
+                do_dbscan_gradio,
+                inputs=[eps, min_samples],
+                outputs=[gr_plot, cluster_index, num_styles_result] + audio_list,
+            )
+            get_audios_button.click(
+                closest_wav_files_gradio,
+                inputs=[cluster_index, num_files],
+                outputs=audio_list,
+            )
         gr.Markdown("結果が良さそうなら、これを保存します。")
         style_names = gr.Textbox(
             "Angry, Sad, Happy",
@@ -302,9 +418,14 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 inputs=[model_name, audio_files_text, style_names_text],
                 outputs=[info3],
             )
-    with gr.Tab("方法3: がんばる"):
-        gr.Markdown(
-            "`clustering.ipynb`にjvnvコーパスの場合の作り方とかクラスタ分けのいろいろを書いています。これを参考に自分で頑張って作ってください。"
+        gr.Markdown("結果が良さそうなら、これを保存します。")
+        style_names2 = gr.Textbox(
+            "Angry, Sad, Happy",
+            label="スタイルの名前",
+            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
         )
+        with gr.Row():
+            save_button2 = gr.Button("スタイルベクトルを保存", variant="primary")
+            info4 = gr.Textbox(label="保存結果")
 
     app.launch(inbrowser=True)
