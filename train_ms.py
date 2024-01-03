@@ -484,6 +484,7 @@ def train_and_evaluate(
                 tone,
                 language,
                 bert,
+                emo,
             )
             mel = spec_to_mel_torch(
                 spec,
@@ -781,6 +782,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     tone,
                     language,
                     bert,
+                    emo,
                     y=spec,
                     max_len=1000,
                     sdp_ratio=0.0 if not use_sdp else 1.0,
