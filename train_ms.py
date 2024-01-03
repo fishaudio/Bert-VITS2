@@ -441,6 +441,7 @@ def train_and_evaluate(
         tone,
         language,
         bert,
+        emo,
     ) in enumerate(tqdm(train_loader)):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
@@ -461,6 +462,7 @@ def train_and_evaluate(
         tone = tone.cuda(local_rank, non_blocking=True)
         language = language.cuda(local_rank, non_blocking=True)
         bert = bert.cuda(local_rank, non_blocking=True)
+        emo = emo.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (
@@ -761,6 +763,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             tone,
             language,
             bert,
+            emo,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -769,6 +772,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             bert = bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
+            emo = emo.cuda()
             for use_sdp in [True, False]:
                 y_hat, attn, mask, *_ = generator.module.infer(
                     x,
