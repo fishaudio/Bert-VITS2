@@ -217,6 +217,7 @@ def infer(
             )
     # 在此处实现当前版本的推理
     #emo = get_emo_(reference_audio, emotion, sid)
+    language = "ZH"
     if isinstance(reference_audio, np.ndarray):
          emo = get_clap_audio_feature(reference_audio, device)
     else:
@@ -250,7 +251,7 @@ def infer(
         emo = emo.to(device).unsqueeze(0)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
-        print(noise_scale)
+        print(text)
         audio = (
             net_g.infer(
                 x_tst,
