@@ -138,6 +138,7 @@ def infer(
     hps,
     net_g,
     device,
+    emotion,
     reference_audio=None,
     skip_start=False,
     skip_end=False,
