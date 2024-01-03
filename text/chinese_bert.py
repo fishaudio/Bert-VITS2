@@ -4,9 +4,8 @@ from config import config
 from transformers import MegatronBertModel, BertTokenizer
 LOCAL_PATH = "./bert/Erlangshen-MegatronBert-1.3B-Chinese"
 tokenizer = BertTokenizer.from_pretrained(LOCAL_PATH)
-
-models = dict()
-
+devide = "cuda"
+models = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
 
 def get_bert_feature(
     text,
@@ -15,16 +14,6 @@ def get_bert_feature(
     style_text=None,
     style_weight=0.7,
 ):
-    if (
-        sys.platform == "darwin"
-        and torch.backends.mps.is_available()
-        and device == "cpu"
-    ):
-        device = "mps"
-    if not device:
-        device = "cuda"
-    if device not in models.keys():
-        models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
