@@ -21,12 +21,15 @@ def get_bert_feature(
         res = models(**inputs, output_hidden_states=True)
         res = torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
         if style_text:
-            style_inputs = tokenizer(style_text, return_tensors="pt")
-            for i in style_inputs:
-                style_inputs[i] = style_inputs[i].to(device)
-            style_res = models(**style_inputs, output_hidden_states=True)
-            torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
-            style_res_mean = style_res.mean(0)
+            try:
+                style_inputs = tokenizer(style_text, return_tensors="pt")
+                for i in style_inputs:
+                    style_inputs[i] = style_inputs[i].to(device)
+                style_res = models(**style_inputs, output_hidden_states=True)
+                torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
+                style_res_mean = style_res.mean(0)
+            except:
+                style_res_mean = res
     assert len(word2ph) == len(text) + 2
     word2phone = word2ph
     phone_level_feature = []
