@@ -302,7 +302,6 @@ def infer_multilang(
     style_weight=0.7,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    emo = get_emo_(reference_audio, emotion, sid)
     if isinstance(reference_audio, np.ndarray):
          emo = get_clap_audio_feature(reference_audio, device)
     else:
