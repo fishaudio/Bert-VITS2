@@ -298,6 +298,8 @@ def infer_multilang(
     emotion=None,
     skip_start=False,
     skip_end=False,
+    style_text=None,
+    style_weight=0.7,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
     emo = get_emo_(reference_audio, emotion, sid)
@@ -314,7 +316,12 @@ def infer_multilang(
             temp_phones,
             temp_tones,
             temp_lang_ids,
-        ) = get_text(txt, lang, hps, device)
+        ) = get_text(txt, 
+                     lang, 
+                     hps, 
+                     device,
+                    style_text=style_text,
+                    style_weight=style_weight,)
         if _skip_start:
             temp_bert = temp_bert[:, 3:]
             temp_phones = temp_phones[3:]
