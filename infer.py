@@ -216,7 +216,7 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    emo = get_emo_(reference_audio, emotion, sid)
+    #emo = get_emo_(reference_audio, emotion, sid)
     if isinstance(reference_audio, np.ndarray):
          emo = get_clap_audio_feature(reference_audio, device)
     else:
