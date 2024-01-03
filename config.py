@@ -121,14 +121,14 @@ class Train_ms_config:
         config_path: str,
         env: Dict[str, any],
         # base: Dict[str, any],
-        model: str,
+        model_dir: str,
         num_workers: int,
         spec_cache: bool,
         keep_ckpts: int,
     ):
         self.env = env  # 需要加载的环境变量
         # self.base = base  # 底模配置
-        self.model = model  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
+        self.model_dir = model_dir  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
         self.config_path = config_path  # 配置文件路径
         self.num_workers = num_workers  # worker数量
         self.spec_cache = spec_cache  # 是否启用spec缓存

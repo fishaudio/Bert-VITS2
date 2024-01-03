@@ -108,7 +108,7 @@ def run():
         help="Skip saving default style config and mean vector.",
     )
     args = parser.parse_args()
-    model_dir = os.path.join(args.model, config.train_ms_config.model)
+    model_dir = os.path.join(args.model, config.train_ms_config.model_dir)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     hps = utils.get_hparams_from_file(args.config)
