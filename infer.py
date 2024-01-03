@@ -215,12 +215,12 @@ def infer(
                 device,
             )
     # 在此处实现当前版本的推理
-    # emo = get_emo_(reference_audio, emotion, sid)
-    # if isinstance(reference_audio, np.ndarray):
-    #     emo = get_clap_audio_feature(reference_audio, device)
-    # else:
-    #     emo = get_clap_text_feature(emotion, device)
-    # emo = torch.squeeze(emo, dim=1)
+    emo = get_emo_(reference_audio, emotion, sid)
+    if isinstance(reference_audio, np.ndarray):
+         emo = get_clap_audio_feature(reference_audio, device)
+     else:
+         emo = get_clap_text_feature(emotion, device)
+     emo = torch.squeeze(emo, dim=1)
 
     bert, phones, tones, lang_ids = get_text(
         text,
@@ -246,7 +246,7 @@ def infer(
         lang_ids = lang_ids.to(device).unsqueeze(0)
         bert = bert.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
-        # emo = emo.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         print(noise_scale)
@@ -258,6 +258,7 @@ def infer(
                 tones,
                 lang_ids,
                 bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -274,6 +275,7 @@ def infer(
             bert,
             x_tst_lengths,
             speakers,
+            emo,
         )  # , emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -297,12 +299,12 @@ def infer_multilang(
     skip_end=False,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    # emo = get_emo_(reference_audio, emotion, sid)
-    # if isinstance(reference_audio, np.ndarray):
-    #     emo = get_clap_audio_feature(reference_audio, device)
-    # else:
-    #     emo = get_clap_text_feature(emotion, device)
-    # emo = torch.squeeze(emo, dim=1)
+    emo = get_emo_(reference_audio, emotion, sid)
+    if isinstance(reference_audio, np.ndarray):
+         emo = get_clap_audio_feature(reference_audio, device)
+    else:
+         emo = get_clap_text_feature(emotion, device)
+    emo = torch.squeeze(emo, dim=1)
     for idx, (txt, lang) in enumerate(zip(text, language)):
         _skip_start = (idx != 0) or (skip_start and idx == 0)
         _skip_end = (idx != len(language) - 1) or skip_end
@@ -335,7 +337,7 @@ def infer_multilang(
         tones = tones.to(device).unsqueeze(0)
         lang_ids = lang_ids.to(device).unsqueeze(0)
         bert = bert.to(device).unsqueeze(0)
-        # emo = emo.to(device).unsqueeze(0)
+        emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
@@ -347,6 +349,7 @@ def infer_multilang(
                 tones,
                 lang_ids,
                 bert,
+                emo,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -363,6 +366,7 @@ def infer_multilang(
             bert,
             x_tst_lengths,
             speakers,
+            emo,
         )  # , emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
