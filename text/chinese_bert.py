@@ -4,7 +4,7 @@ from config import config
 from transformers import MegatronBertModel, BertTokenizer
 LOCAL_PATH = "./bert/Erlangshen-MegatronBert-1.3B-Chinese"
 tokenizer = BertTokenizer.from_pretrained(LOCAL_PATH)
-devide = "cuda"
+device = "cuda"
 models = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
 
 def get_bert_feature(
