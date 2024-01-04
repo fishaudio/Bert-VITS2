@@ -13,7 +13,6 @@ import logging
 from config import config
 import argparse
 import datetime
-import gc
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
