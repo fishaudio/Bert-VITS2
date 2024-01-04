@@ -87,14 +87,16 @@ model_assets
 
 - デフォルトスタイル「Neutral」以外のスタイルを使いたい人向けです。
 - `Style.bat`をダブルクリックか`python webui_style_vectors.py`するとWebUIが起動します。
-- 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます。
-- スタイルについての詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
+- 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます（前処理は終わらせている必要があります）。
+- スタイルについての仕様の詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
 ### データセット作り
 
 - `Dataset.bat`をダブルクリックか`python webui_dataset.py`すると、音声ファイルからデータセットを作るためのWebUIが起動します。音声ファイルのみからでもこれを使って学習できます。
 
-注意: データセットの手動修正やノイズ除去や、より高品質なデータセットを作りたい場合は、[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うのをおすすめします。
+注意: データセットの手動修正やノイズ除去等、細かい修正を行いたい場合は[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うといいかもしれません。ですがファイル数が多い場合などは、このツールで簡易的に切り出してデータセットを作るだけでも十分という気もしています。
+
+データセットがどのようなものがいいかは各自試行錯誤中してください。
 
 ### API Server
 

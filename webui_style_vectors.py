@@ -138,7 +138,7 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
             f"クラスタが数が0です。パラメータを変えてみてください。",
         ] + [gr.Audio(visible=False)] * MAX_AUDIO_NUM
 
-    return [plt, gr.Slider(maximum=n_clusters), n_clusters] + [
+    return [plt, gr.Slider(maximum=n_clusters, value=1), n_clusters] + [
         gr.Audio(visible=False)
     ] * MAX_AUDIO_NUM
 
@@ -170,7 +170,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
         )
     plt.legend()
 
-    return [plt.gcf(), gr.Slider(maximum=n_clusters)] + [
+    return [plt.gcf(), gr.Slider(maximum=n_clusters, value=1)] + [
         gr.Audio(visible=False)
     ] * MAX_AUDIO_NUM
 

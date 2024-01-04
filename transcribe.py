@@ -19,10 +19,10 @@ def transcribe(wav_path, initial_prompt=None, language="ja"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dir", type=str, default="raw")
-    parser.add_argument("--output_file", type=str, default="esd.list")
+    parser.add_argument("--input_dir", "-i", type=str, default="raw")
+    parser.add_argument("--output_file", "-o", type=str, default="esd.list")
     parser.add_argument(
-        "--initial_prompt", type=str, default="こんにちは。元気、ですかー？私は……ちゃんと元気だよ！"
+        "--initial_prompt", type=str, default="こんにちは。元気、ですかー？ふふっ、私は……ちゃんと元気だよ！"
     )
     parser.add_argument(
         "--language", type=str, default="ja", choices=["ja", "en", "zh"]
@@ -43,13 +43,15 @@ if __name__ == "__main__":
     device = args.device
     compute_type = args.compute_type
 
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
     logger.info(
         f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
     )
     try:
         model = WhisperModel(args.model, device=device, compute_type=compute_type)
     except ValueError as e:
-        logger.warning(f"Failed to load model: {e}")
+        logger.warning(f"Failed to load model, so use `auto` compute_type: {e}")
         model = WhisperModel(args.model, device=device)
 
     wav_files = [

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 from tqdm import tqdm
+import numpy as np
 
 from common.log import logger
 from common.tts_model import Model
@@ -35,8 +36,7 @@ predictor = torch.hub.load(
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", "-m", type=str, required=True)
-parser.add_argument("--device", "-d", type=str, default="cuda")
-parser.add_argument("--output", "-o", type=str, default="mos.csv")
+parser.add_argument("--device", "-d", type=str, default="cuda"))
 
 args = parser.parse_args()
 
@@ -84,11 +84,13 @@ results = sorted(results, key=lambda x: x[2][-1], reverse=True)
 for model_file, step, scores in results:
     logger.info(f"{model_file}: {scores[-1]}")
 
-with open(args.output, "w", encoding="utf-8", newline="") as f:
+with open(f"mos_{model_name}.csv", "w", encoding="utf-8", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["model_path"] + ["step"] + test_texts + ["mean"])
     for model_file, step, scores in results:
         writer.writerow([model_file] + [step] + scores)
+
+logger.info(f"mos_{model_name}.csv has been saved.")
 
 # step countと各MOSの値を格納するリストを初期化
 steps = []
@@ -117,8 +119,24 @@ plt.title("TTS Model Naturalness MOS")
 plt.xlabel("Step Count")
 plt.ylabel("MOS")
 
+# ステップ数の軸ラベルを1000単位で表示するように調整
+plt.xticks(
+    ticks=np.arange(0, max(steps) + 1000, 1000),
+    labels=[f"{int(x/1000)}k" for x in np.arange(0, max(steps) + 1000, 5000)],
+)
+
+# 縦の補助線を追加
+plt.grid(True, axis="x")
+
+# 凡例をグラフの外側に配置
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
 # 凡例を表示
 plt.legend()
 
 # グラフを表示
 plt.show()
+
+plt.savefig(f"mos_{model_name}.png", bbox_inches="tight")
+
+logger.info(f"mos_{model_name}.png has been saved.")

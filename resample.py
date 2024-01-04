@@ -56,12 +56,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--in_dir",
+        "-i",
         type=str,
         default=config.resample_config.in_dir,
         help="path to source dir",
     )
     parser.add_argument(
         "--out_dir",
+        "-o",
         type=str,
         default=config.resample_config.out_dir,
         help="path to target dir",
