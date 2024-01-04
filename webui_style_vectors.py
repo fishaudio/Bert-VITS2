@@ -170,7 +170,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
         )
     plt.legend()
 
-    return [plt.gcf(), gr.Slider(maximum=n_clusters, value=1)] + [
+    return [plt, gr.Slider(maximum=n_clusters, value=1)] + [
         gr.Audio(visible=False)
     ] * MAX_AUDIO_NUM
 

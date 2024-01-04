@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from faster_whisper import WhisperModel
 from tqdm import tqdm
@@ -79,3 +80,4 @@ if __name__ == "__main__":
             text = transcribe(wav_file, initial_prompt=initial_prompt)
             f.write(f"{file_name}|{speaker_name}|{language}|{text}\n")
             f.flush()
+    sys.exit(0)

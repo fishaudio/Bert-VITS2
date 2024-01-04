@@ -7,9 +7,9 @@
 - クラウド実行等の際にパスの指定をこちらでできるように、パスの設定を`configs/paths.yml`にまとめました（colabの[ノートブック](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)もそれに伴って変えたので新しいものを使ってください）。デフォルトは`dataset_root: Data`と`assets_root: model_assets`です。クラウド等でやる方はここを変更してください。
 - どのステップ数の出力がよいかの「一つの」指標として [SpeechMOS](https://github.com/tarepan/SpeechMOS) を使うスクリプトを追加：
 ```bash
-python speech_mos.py -m <model_name> [-o <output_csv_file>]
+python speech_mos.py -m <model_name>
 ```
-ステップごとの自然性評価が表示されるはず。読み上げさせたい文章を変えたかったら中のファイルを弄って各自調整してください。またあくまで目安のひとつなので、実際に読み上げさせて選別するのが一番だと思います。
+ステップごとの自然性評価が表示され、`mos_{model_name}.csv`と`mos_{model_name}.png`に結果が保存される。読み上げさせたい文章を変えたかったら中のファイルを弄って各自調整してください。またあくまで目安のひとつなので、実際に読み上げさせて選別するのが一番だと思います。
 
 ## v1.2 (2023-12-31)
 

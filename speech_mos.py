@@ -36,7 +36,7 @@ predictor = torch.hub.load(
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", "-m", type=str, required=True)
-parser.add_argument("--device", "-d", type=str, default="cuda"))
+parser.add_argument("--device", "-d", type=str, default="cuda")
 
 args = parser.parse_args()
 
@@ -121,22 +121,20 @@ plt.ylabel("MOS")
 
 # ステップ数の軸ラベルを1000単位で表示するように調整
 plt.xticks(
-    ticks=np.arange(0, max(steps) + 1000, 1000),
-    labels=[f"{int(x/1000)}k" for x in np.arange(0, max(steps) + 1000, 5000)],
+    ticks=np.arange(0, max(steps) + 1000, 2000),
+    labels=[f"{int(x/1000)}" for x in np.arange(0, max(steps) + 1000, 2000)],
 )
 
 # 縦の補助線を追加
 plt.grid(True, axis="x")
 
-# 凡例をグラフの外側に配置
-plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+# 凡例をグラフの右外側に配置
+plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
 
-# 凡例を表示
-plt.legend()
+plt.tight_layout()
+
+# グラフを画像として保存（plt.show() の前に実行する）
+plt.savefig(f"mos_{model_name}.png")
 
 # グラフを表示
 plt.show()
-
-plt.savefig(f"mos_{model_name}.png", bbox_inches="tight")
-
-logger.info(f"mos_{model_name}.png has been saved.")

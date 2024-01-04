@@ -329,11 +329,11 @@ if __name__ == "__main__":
                 )
                 normalize = gr.Checkbox(
                     label="音声の音量を正規化する",
-                    value=True,
+                    value=False,
                 )
                 trim = gr.Checkbox(
                     label="音声の最初と最後の無音を取り除く",
-                    value=True,
+                    value=False,
                 )
             with gr.Column():
                 preprocess_button = gr.Button(value="自動前処理を実行", variant="primary")
@@ -400,14 +400,6 @@ if __name__ == "__main__":
             with gr.Row(variant="panel"):
                 with gr.Column():
                     gr.Markdown(value="#### Step 4: BERT特徴ファイルの生成")
-                    # num_processes_bert = gr.Slider(
-                    #     label="プロセス数",
-                    #     value=cpu_count() // 2,
-                    #     minimum=1,
-                    #     maximum=cpu_count(),
-                    #     step=1,
-                    # )
-                    # bert_genは重いようで、初期の4がよいみたい
                 with gr.Column():
                     bert_gen_btn = gr.Button(value="実行", variant="primary")
                     info_bert = gr.Textbox(label="状況")

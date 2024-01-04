@@ -14,6 +14,7 @@ vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",
     model="silero_vad",
     onnx=True,
+    trust_repo=True,
 )
 
 (get_speech_timestamps, _, read_audio, *_) = utils
