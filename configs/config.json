@@ -4,7 +4,7 @@
     "eval_interval": 1000,
     "seed": 42,
     "epochs": 1000,
-    "learning_rate": 0.0004,
+    "learning_rate": 0.0002,
     "betas": [
       0.8,
       0.99
