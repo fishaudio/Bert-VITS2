@@ -39,7 +39,7 @@ def process_line(x):
 
     try:
         bert = torch.load(bert_path)
-        assert bert.shape[-1] == len(phone)
+        assert bert.shape[0] == 2048
     except Exception:
         bert = get_bert(text, word2ph, language_str, device)
         assert bert.shape[-1] == len(phone)
