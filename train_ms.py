@@ -214,6 +214,10 @@ def run():
         print("Freezing ZH bert encoder !!!")
         for param in net_g.enc_p.bert_proj.parameters():
             param.requires_grad = False
+    if getattr(hps.train, "freeze_emo", False):
+        print("Freezing emo vq !!!")
+        for param in net_g.enc_p.emo_vq.parameters():
+            param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
