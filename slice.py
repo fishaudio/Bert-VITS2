@@ -131,6 +131,7 @@ if __name__ == "__main__":
 
     wav_files = Path(input_dir).glob("**/*.wav")
     wav_files = list(wav_files)
+    logger.info(f"Found {len(wav_files)} wav files.")
     if os.path.exists(output_dir):
         logger.warning(f"Output directory {output_dir} already exists, deleting...")
         shutil.rmtree(output_dir)

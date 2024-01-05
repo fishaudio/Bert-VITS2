@@ -4,6 +4,7 @@ import os
 import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
+from umap import UMAP
 from scipy.spatial.distance import cdist
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
@@ -17,16 +18,17 @@ MAX_AUDIO_NUM = 10
 
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
 
+umap = UMAP(n_components=2, random_state=42, metric="cosine")
 
 wav_files = []
 x = np.array([])
-x_tsne = None
+x_reduced = None
 mean = np.array([])
 centroids = []
 
 
-def load(model_name):
-    global wav_files, x, x_tsne, mean
+def load(model_name, reduction_method):
+    global wav_files, x, x_reduced, mean
     wavs_dir = os.path.join("Data", model_name, "wavs")
     style_vector_files = [
         os.path.join(wavs_dir, f) for f in os.listdir(wavs_dir) if f.endswith(".npy")
@@ -35,32 +37,34 @@ def load(model_name):
     style_vectors = [np.load(f) for f in style_vector_files]
     x = np.array(style_vectors)
     mean = np.mean(x, axis=0)
-
-    x_tsne = tsne.fit_transform(x)
-
+    if reduction_method == "t-SNE":
+        x_reduced = tsne.fit_transform(x)
+    elif reduction_method == "UMAP":
+        x_reduced = umap.fit_transform(x)
+    else:
+        raise ValueError("Invalid reduction method")
+    x_reduced = np.asarray(x_reduced)
     plt.figure(figsize=(6, 6))
-    plt.scatter(x_tsne[:, 0], x_tsne[:, 1])
+    plt.scatter(x_reduced[:, 0], x_reduced[:, 1])
     return plt
 
 
 def do_clustering(n_clusters=4, method="KMeans"):
-    global centroids, x_tsne
+    global centroids, x_reduced
     if method == "KMeans":
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
         y_pred = model.fit_predict(x)
     elif method == "Agglomerative":
         model = AgglomerativeClustering(n_clusters=n_clusters)
         y_pred = model.fit_predict(x)
-    elif method == "KMeans after t-SNE":
-        if x_tsne is None:
-            x_tsne = tsne.fit_transform(x)
+    elif method == "KMeans after reduction":
+        assert x_reduced is not None
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
-        y_pred = model.fit_predict(x_tsne)
-    elif method == "Agglomerative after t-SNE":
-        if x_tsne is None:
-            x_tsne = tsne.fit_transform(x)
+        y_pred = model.fit_predict(x_reduced)
+    elif method == "Agglomerative after reduction":
+        assert x_reduced is not None
         model = AgglomerativeClustering(n_clusters=n_clusters)
-        y_pred = model.fit_predict(x_tsne)
+        y_pred = model.fit_predict(x_reduced)
     else:
         raise ValueError("Invalid method")
 
@@ -72,11 +76,10 @@ def do_clustering(n_clusters=4, method="KMeans"):
 
 
 def do_dbscan(eps=2.5, min_samples=15):
-    global centroids, x_tsne
+    global centroids, x_reduced
     model = DBSCAN(eps=eps, min_samples=min_samples)
-    if x_tsne is None:
-        x_tsne = tsne.fit_transform(x)
-    y_pred = model.fit_predict(x_tsne)
+    assert x_reduced is not None
+    y_pred = model.fit_predict(x_reduced)
     n_clusters = max(y_pred) + 1
     centroids = []
     for i in range(n_clusters):
@@ -84,11 +87,15 @@ def do_dbscan(eps=2.5, min_samples=15):
     return y_pred, centroids
 
 
-def closest_wav_files(cluster_index, num_files=1, weight=5):
+def closest_wav_files(cluster_index, num_files=1, weight=1):
     # centroidを強調した点からの距離が最も近い音声を選ぶ
     centroid_enhanced = mean + weight * (centroids - mean)
     # セントロイドと全ての点との距離を計算
-    distances = cdist(centroid_enhanced[cluster_index : cluster_index + 1], x)
+    distances = cdist(
+        umap.transform(centroid_enhanced[cluster_index : cluster_index + 1]),
+        x_reduced,
+        metric="euclidean",
+    )
     # 距離が小さい順にソートし、上位のインデックスを取得
     closest_indices = np.argsort(distances[0])[:num_files]
 
@@ -96,26 +103,25 @@ def closest_wav_files(cluster_index, num_files=1, weight=5):
 
 
 def do_dbscan_gradio(eps=2.5, min_samples=15):
-    global x_tsne, centroids
+    global x_reduced, centroids
 
     y_pred, centroids = do_dbscan(eps, min_samples)
 
-    if x_tsne is None:
-        x_tsne = tsne.fit_transform(x)
+    assert x_reduced is not None
 
     cmap = plt.get_cmap("tab10")
     plt.figure(figsize=(6, 6))
     for i in range(max(y_pred) + 1):
         plt.scatter(
-            x_tsne[y_pred == i, 0],
-            x_tsne[y_pred == i, 1],
+            x_reduced[y_pred == i, 0],
+            x_reduced[y_pred == i, 1],
             color=cmap(i),
             label=f"Style {i + 1}",
         )
     # Noise cluster (-1) is black
     plt.scatter(
-        x_tsne[y_pred == -1, 0],
-        x_tsne[y_pred == -1, 1],
+        x_reduced[y_pred == -1, 0],
+        x_reduced[y_pred == -1, 1],
         color="black",
         label="Noise",
     )
@@ -153,18 +159,16 @@ def closest_wav_files_gradio(cluster_index, num_files=1, weight=1):
 
 
 def do_clustering_gradio(n_clusters=4, method="KMeans"):
-    global x_tsne, centroids
+    global x_reduced, centroids
     y_pred, centroids = do_clustering(n_clusters, method)
 
-    if x_tsne is None:
-        x_tsne = tsne.fit_transform(x)
-
+    assert x_reduced is not None
     cmap = plt.get_cmap("tab10")
     plt.figure(figsize=(6, 6))
     for i in range(n_clusters):
         plt.scatter(
-            x_tsne[y_pred == i, 0],
-            x_tsne[y_pred == i, 1],
+            x_reduced[y_pred == i, 0],
+            x_reduced[y_pred == i, 1],
             color=cmap(i),
             label=f"Style {i + 1}",
         )
@@ -294,10 +298,17 @@ DBSCANという方法でスタイル分けを行います。
 with gr.Blocks(theme="NoCrypt/miku") as app:
     gr.Markdown(initial_md)
     with gr.Row():
-        model_name = gr.Textbox("your_model_name", label="モデル名")
+        model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
+        # 削減方法を選択：UMAP or t-SNE
+        reduction_method = gr.Radio(
+            choices=["UMAP", "t-SNE"],
+            label="次元削減方法",
+            info="v 1.3以前はt-SNEでしたがUMAPのほうがよい可能性もあります。",
+            value="UMAP",
+        )
         load_button = gr.Button("スタイルベクトルを読み込む", variant="primary")
     output = gr.Plot(label="音声スタイルの可視化")
-    load_button.click(load, inputs=[model_name], outputs=[output])
+    load_button.click(load, inputs=[model_name, reduction_method], outputs=[output])
     with gr.Tab("方法1: スタイル分けを自動で行う"):
         with gr.Tab("スタイル分け1"):
             n_clusters = gr.Slider(
@@ -310,14 +321,14 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             )
             c_method = gr.Radio(
                 choices=[
-                    "Agglomerative after t-SNE",
-                    "KMeans after t-SNE",
+                    "Agglomerative after reduction",
+                    "KMeans after reduction",
                     "Agglomerative",
                     "KMeans",
                 ],
                 label="アルゴリズム",
                 info="分類する（クラスタリング）アルゴリズムを選択します。いろいろ試してみてください。",
-                value="Agglomerative after t-SNE",
+                value="Agglomerative after reduction",
             )
             c_button = gr.Button("スタイル分けを実行")
         with gr.Tab("スタイル分け2: DBSCAN"):
@@ -325,14 +336,14 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             eps = gr.Slider(
                 minimum=0.1,
                 maximum=10,
-                step=0.1,
+                step=0.05,
                 value=2.5,
                 label="eps",
                 info="小さいほどスタイル数が増える",
             )
             min_samples = gr.Slider(
                 minimum=1,
-                maximum=100,
+                maximum=50,
                 step=1,
                 value=15,
                 label="min_samples",
