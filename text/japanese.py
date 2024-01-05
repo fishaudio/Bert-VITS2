@@ -38,9 +38,6 @@ def hiragana2p(text: str) -> str:
     # 2文字からなる変換規則
     text = text.replace("ぅ゛", " v u")
 
-    # ゔの処理を追加
-    text = text.replace("ゔ", " v u")
-
     text = text.replace("あぁ", " a a")
     text = text.replace("いぃ", " i i")
     text = text.replace("いぇ", " i e")
@@ -244,6 +241,7 @@ def hiragana2p(text: str) -> str:
     text = text.replace("あ", " a")
     text = text.replace("い", " i")
     text = text.replace("う", " u")
+    text = text.replace("ゔ", " v u")  # ゔの処理を追加
     text = text.replace("え", " e")
     text = text.replace("お", " o")
     text = text.replace("か", " k a")
