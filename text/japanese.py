@@ -18,17 +18,26 @@ def hiragana2p(text: str) -> str:
     Modification of `jaconv.hiragana2julius`.
     - avoid using `:`, instead, `あーーー` -> `a a a a`.
     - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
-    - avoid using `N` for `ん` (for compatibility)
+    - use `v` for `ゔ` related text.
     """
-    # 3文字以上からなる変換規則
-    text = text.replace("う゛ぁ", " b a")
-    text = text.replace("う゛ぃ", " b i")
-    text = text.replace("う゛ぇ", " b e")
-    text = text.replace("う゛ぉ", " b o")
+    text = text.replace("う゛ぁ", " v a")
+    text = text.replace("う゛ぃ", " v i")
+    text = text.replace("う゛ぇ", " v e")
+    text = text.replace("う゛ぉ", " v o")
     text = text.replace("う゛ゅ", " by u")
 
+    # ゔ等の処理を追加
+    text = text.replace("ゔぁ", " v a")
+    text = text.replace("ゔぃ", " v i")
+    text = text.replace("ゔぇ", " v e")
+    text = text.replace("ゔぉ", " v o")
+    text = text.replace("ゔゅ", " by u")
+
     # 2文字からなる変換規則
-    text = text.replace("ぅ゛", " b u")
+    text = text.replace("ぅ゛", " v u")
+
+    # ゔの処理を追加
+    text = text.replace("ゔ", " v u")
 
     text = text.replace("あぁ", " a a")
     text = text.replace("いぃ", " i i")
@@ -334,7 +343,7 @@ def hiragana2p(text: str) -> str:
     replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))
 
     text = re.sub(pattern, replacement, text)
-    text = text.replace("N", "n")  # 促音のNをnに変換
+    # text = text.replace("N", "n")  # 促音のNをnに変換
     return text
 
 
