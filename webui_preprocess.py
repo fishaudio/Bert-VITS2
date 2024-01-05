@@ -85,6 +85,16 @@ def bert_gen(data_dir):
     return "BERT 特征文件生成完成"
 
 
+def clap_gen(data_dir):
+    assert data_dir != "", "数据集名称不能为空"
+    _, _, _, _, config_path = get_path(data_dir)
+    subprocess.run(
+        f".\\venv\\python.exe clap_gen.py " f"--config {config_path}",
+        shell=True,
+    )
+    return "CLAP 特征文件生成完成"
+
+
 if __name__ == "__main__":
     with gr.Blocks() as app:
         with gr.Row():
@@ -148,6 +158,8 @@ if __name__ == "__main__":
                 preprocess_text_btn = gr.Button(value="执行", variant="primary")
                 _ = gr.Markdown(value="## 第四步：生成 BERT 特征文件")
                 bert_gen_btn = gr.Button(value="执行", variant="primary")
+                _ = gr.Markdown(value="## 第五步：生成 CLAP 特征文件")
+                clap_gen_btn = gr.Button(value="执行", variant="primary")
                 _ = gr.Markdown(
                     value="## 训练模型及部署：\n"
                     "修改根目录下的 `config.yml` 中 `dataset_path` 一项为 `data/{你的数据集名称}`\n"
@@ -161,6 +173,7 @@ if __name__ == "__main__":
         resample_btn.click(resample, inputs=[data_dir], outputs=[info])
         preprocess_text_btn.click(preprocess_text, inputs=[data_dir], outputs=[info])
         bert_gen_btn.click(bert_gen, inputs=[data_dir], outputs=[info])
+        clap_gen_btn.click(clap_gen, inputs=[data_dir], outputs=[info])
 
     webbrowser.open("http://127.0.0.1:7860")
     app.launch(share=False, server_port=7860)
