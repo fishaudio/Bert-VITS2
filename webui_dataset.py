@@ -26,8 +26,6 @@ def do_slice(
     output_dir = os.path.join(dataset_root, model_name, "raw")
     cmd = [
         "slice.py",
-        "--input_dir",
-        input_dir,
         "--output_dir",
         output_dir,
         "--min_sec",
@@ -37,6 +35,8 @@ def do_slice(
         "--min_silence_dur_ms",
         str(min_silence_dur_ms),
     ]
+    if input_dir != "":
+        cmd += ["--input_dir", input_dir]
     # onnxの警告が出るので無視する
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
@@ -123,7 +123,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 input_dir = gr.Textbox(
                     label="入力フォルダ名（デフォルトはinputs）",
                     placeholder="inputs",
-                    info="inputsフォルダにwavファイルを入れておいてください",
+                    info="下記フォルダにwavファイルを入れておいてください",
                 )
                 min_sec = gr.Slider(
                     minimum=0, maximum=10, value=2, step=0.5, label="この秒数未満は切り捨てる"
