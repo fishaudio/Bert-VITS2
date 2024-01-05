@@ -1,3 +1,4 @@
+# 2024-01-05に、日本語の処理部分にあった大きいバグを修正しました。アップデートして使うのを強くおすすめします。（学習もし直すといいかもしれません。）
 # Style-Bert-VITS2
 
 Bert-VITS2 with more controllable voice styles.
