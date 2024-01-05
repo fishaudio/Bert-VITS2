@@ -107,6 +107,11 @@ def run():
         action="store_true",
         help="Skip saving default style config and mean vector.",
     )
+    parser.add_argument(
+        '--no_progress_bar',
+        action='store_true',
+        help='Do not show the progress bar while training.'
+    )
     args = parser.parse_args()
     model_dir = os.path.join(args.model, config.train_ms_config.model_dir)
     if not os.path.exists(model_dir):
@@ -364,9 +369,12 @@ def run():
     else:
         scheduler_dur_disc = None
     scaler = GradScaler(enabled=hps.train.bf16_run)
+    logger.info("Start training.")
 
     diff = abs(epoch_str * len(train_loader) - (hps.train.epochs + 1) * len(train_loader))
-    pbar = tqdm(total=global_step + diff, initial=global_step, smoothing=0.05, file=SAFE_STDOUT)
+    pbar = None
+    if not args.no_progress_bar:
+        pbar = tqdm(total=global_step + diff, initial=global_step, smoothing=0.05, file=SAFE_STDOUT)
     initial_step = global_step
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
@@ -441,7 +449,8 @@ def run():
                 for_infer=True,
             )
 
-    pbar.close()
+    if pbar is not None:
+        pbar.close()
 
 
 def train_and_evaluate(
@@ -724,7 +733,8 @@ def train_and_evaluate(
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
     # gc.collect()
     # torch.cuda.empty_cache()
-
+    if pbar is None and rank == 0:
+        logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 
 def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
