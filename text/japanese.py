@@ -21,6 +21,7 @@ def hiragana2p(text: str) -> str:
     - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
     - avoid using `N` for `ん` (for compatibility)
     - use `v` for `ゔ` related text.
+    - add bare `ゃ` `ゅ` `ょ` to `y a` `y u` `y o` (for compatibility).
     """
     # 3文字以上からなる変換規則
     text = text.replace("う゛ぁ", " v a")
@@ -321,6 +322,11 @@ def hiragana2p(text: str) -> str:
     text = text.replace("ぉ", " o")
     text = text.replace("ゎ", " w a")
     text = text.replace("ぉ", " o")
+
+    # ここまでに処理されていないゅ等もそのまま大文字扱い（追加）
+    text = text.replace("ゃ", " y a")
+    text = text.replace("ゅ", " y u")
+    text = text.replace("ょ", " y o")
 
     # 長音の処理
     # for (pattern, replace_str) in JULIUS_LONG_VOWEL:
