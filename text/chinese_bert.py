@@ -2,6 +2,7 @@ import sys
 import torch
 from config import config
 from transformers import MegatronBertModel, BertTokenizer
+
 LOCAL_PATH = "./bert/Erlangshen-MegatronBert-1.3B-Chinese"
 tokenizer = BertTokenizer.from_pretrained(LOCAL_PATH)
 
@@ -30,13 +31,17 @@ def get_bert_feature(
         for i in inputs:
             inputs[i] = inputs[i].to(device)
         res = models[device](**inputs, output_hidden_states=True)
-        res = torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
+        res = torch.nn.functional.normalize(
+            torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0
+        ).cpu()
         if style_text:
             style_inputs = tokenizer(style_text, return_tensors="pt")
             for i in style_inputs:
                 style_inputs[i] = style_inputs[i].to(device)
             style_res = models[device](**style_inputs, output_hidden_states=True)
-            torch.nn.functional.normalize(torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0).cpu()
+            torch.nn.functional.normalize(
+                torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0
+            ).cpu()
             style_res_mean = style_res.mean(0)
     assert len(word2ph) == len(text) + 2
     word2phone = word2ph

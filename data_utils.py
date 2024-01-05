@@ -71,7 +71,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
                 phones = phones.split(" ")
                 tone = [int(i) for i in tone.split(" ")]
                 word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append( 
+                audiopaths_sid_text_new.append(
                     [audiopath, spk, language, text, phones, tone, word2ph]
                 )
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
@@ -249,7 +249,6 @@ class TextAudioSpeakerCollate:
             bert_padded[i, :, : bert.size(1)] = bert
 
             emo[i, :] = row[7]
-
 
         return (
             text_padded,

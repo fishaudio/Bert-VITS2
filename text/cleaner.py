@@ -1,5 +1,6 @@
 from text import chinese, cleaned_text_to_sequence
 
+
 def clean_text(text, language):
     norm_text = chinese.text_normalize(text)
     phones, tones, word2ph = chinese.g2p(norm_text)
