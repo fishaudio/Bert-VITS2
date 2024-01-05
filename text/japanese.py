@@ -8,6 +8,7 @@ from transformers import AutoTokenizer
 from text import punctuation, symbols
 
 from num2words import num2words
+from common.log import logger
 
 import pyopenjtalk
 import jaconv
@@ -21,14 +22,24 @@ def hiragana2p(text: str) -> str:
     - avoid using `N` for `ん` (for compatibility)
     """
     # 3文字以上からなる変換規則
-    text = text.replace("う゛ぁ", " b a")
-    text = text.replace("う゛ぃ", " b i")
-    text = text.replace("う゛ぇ", " b e")
-    text = text.replace("う゛ぉ", " b o")
+    text = text.replace("う゛ぁ", " v a")
+    text = text.replace("う゛ぃ", " v i")
+    text = text.replace("う゛ぇ", " v e")
+    text = text.replace("う゛ぉ", " v o")
     text = text.replace("う゛ゅ", " by u")
 
+    # ゔ等の処理を追加
+    text = text.replace("ゔぁ", " v a")
+    text = text.replace("ゔぃ", " v i")
+    text = text.replace("ゔぇ", " v e")
+    text = text.replace("ゔぉ", " v o")
+    text = text.replace("ゔゅ", " by u")
+
     # 2文字からなる変換規則
-    text = text.replace("ぅ゛", " b u")
+    text = text.replace("ぅ゛", " v u")
+
+    # ゔの処理を追加
+    text = text.replace("ゔ", " v u")
 
     text = text.replace("あぁ", " a a")
     text = text.replace("いぃ", " i i")
@@ -340,6 +351,7 @@ def hiragana2p(text: str) -> str:
 
 def kata2phoneme(text: str) -> str:
     """Convert katakana text to phonemes."""
+    logger.debug(f"Kata2phoneme: {text}")
     text = text.strip()
     if text == "ー":
         return ["ー"]
@@ -357,6 +369,9 @@ def kata2phoneme(text: str) -> str:
                 res.append(prev[-1])
             text = text[1:]
             continue
+        logger.debug(f"text: {text}")
+        logger.debug(jaconv.kata2hira(text))
+        logger.debug(hiragana2p(jaconv.kata2hira(text)))
         res += hiragana2p(jaconv.kata2hira(text)).split(" ")
         break
     # res = _COLON_RX.sub(":", res)

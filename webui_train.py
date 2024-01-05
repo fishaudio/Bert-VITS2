@@ -219,6 +219,13 @@ def preprocess_all(
 
 def train(model_name):
     dataset_path, _, _, _, config_path = get_path(model_name)
+    # 学習再開の場合は念のためconfig.ymlの名前等を更新
+    with open("config.yml", "r", encoding="utf-8") as f:
+        yml_data = yaml.safe_load(f)
+    yml_data["model_name"] = model_name
+    yml_data["dataset_path"] = dataset_path
+    with open("config.yml", "w", encoding="utf-8") as f:
+        yaml.dump(yml_data, f, allow_unicode=True)
     success, message = run_script_with_log(
         ["train_ms.py", "--config", config_path, "--model", dataset_path]
     )

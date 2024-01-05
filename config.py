@@ -263,7 +263,7 @@ with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
 
 try:
     config = Config("config.yml", path_config)
-except TypeError:
+except (TypeError, KeyError):
     logger.warning("Old config.yml found. Replace it with default_config.yml.")
     shutil.copy(src="default_config.yml", dst="config.yml")
     config = Config("config.yml", path_config)
