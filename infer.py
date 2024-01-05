@@ -12,6 +12,7 @@ import commons
 from text import cleaned_text_to_sequence, get_bert
 
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
+from typing import Union
 from text.cleaner import clean_text
 import utils
 
@@ -152,7 +153,7 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
 
 def infer(
     text,
-    emotion,
+    emotion: Union[int, str],
     sdp_ratio,
     noise_scale,
     noise_scale_w,
