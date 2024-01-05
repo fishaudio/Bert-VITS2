@@ -20,6 +20,7 @@ def hiragana2p(text: str) -> str:
     - avoid using `:`, instead, `あーーー` -> `a a a a`.
     - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
     - avoid using `N` for `ん` (for compatibility)
+    - use `v` for `ゔ` related text.
     """
     # 3文字以上からなる変換規則
     text = text.replace("う゛ぁ", " v a")
