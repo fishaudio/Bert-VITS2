@@ -20,10 +20,10 @@ def cleaned_text_to_sequence(cleaned_text, tones, language):
 
 def get_bert(norm_text, word2ph, language, device, style_text=None, style_weight=0.7):
     from .chinese_bert import get_bert_feature as zh_bert
-    bert = zh_bert(
-        norm_text, word2ph, device, style_text, style_weight
-    )
+
+    bert = zh_bert(norm_text, word2ph, device, style_text, style_weight)
     return bert
+
 
 def init_openjtalk():
     import platform
