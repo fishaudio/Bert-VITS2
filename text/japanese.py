@@ -415,8 +415,6 @@ def text2sep_kata(text: str):
             else:
                 res.append(word)
         sep.append(word)
-    logger.debug(f"Text2sep_kata: {text} -> {res}")
-    logger.debug(f"get_accent: {parsed}")
     return sep, res, get_accent(parsed)
 
 
@@ -684,9 +682,6 @@ def rearrange_tones(tones, phones):
 
 def g2p(norm_text):
     sep_text, sep_kata, acc = text2sep_kata(norm_text)
-    logger.debug(f"Sep_text: {sep_text}")
-    logger.debug(f"Sep_kata: {sep_kata}")
-    logger.debug(f"Acc: {acc}")
     sep_tokenized = []
     for i in sep_text:
         if i not in punctuation:
