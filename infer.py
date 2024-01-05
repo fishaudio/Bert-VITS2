@@ -12,13 +12,14 @@ import commons
 from text import cleaned_text_to_sequence, get_bert
 
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
-from typing import Union
 from text.cleaner import clean_text
 import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
 
+from oldVersion.ZH_Clap.models import SynthesizerTrn as ZH_ClapSynthesizerTrn
+from oldVersion.ZH_Clap.text import symbols as ZH_Clapsymbols
 from oldVersion.V220.models import SynthesizerTrn as V220SynthesizerTrn
 from oldVersion.V220.text import symbols as V220symbols
 from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
@@ -32,13 +33,14 @@ from oldVersion.V110.text import symbols as V110symbols
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
 
-from oldVersion import V111, V110, V101, V200, V210, V220
+from oldVersion import V111, V110, V101, V200, V210, V220,ZH_Clap
 
 # 当前版本信息
 latest_version = "2.3"
 
 # 版本兼容
 SynthesizerTrnMap = {
+    "ZH_Clap":ZH_ClapSynthesizerTrn,
     "2.2": V220SynthesizerTrn,
     "2.1": V210SynthesizerTrn,
     "2.0.2-fix": V200SynthesizerTrn,
@@ -54,6 +56,7 @@ SynthesizerTrnMap = {
 }
 
 symbolsMap = {
+    "ZH_Clap":ZH_Clapsymbols,
     "2.2": V220symbols,
     "2.1": V210symbols,
     "2.0.2-fix": V200symbols,
@@ -149,7 +152,7 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
 
 def infer(
     text,
-    emotion: Union[int, str],
+    emotion,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -165,6 +168,10 @@ def infer(
     style_text=None,
     style_weight=0.7,
 ):
+    # 2.3版也变了
+    inferMap_V5={
+        "ZH_Clap":ZH_Clap.infer,        
+    }
     # 2.2版本参数位置变了
     inferMap_V4 = {
         "2.2": V220.infer,
@@ -193,7 +200,27 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
+        if version in inferMap_V5.keys():
+            return inferMap_V5[version](
+                text,
+                emotion,
+                sdp_ratio,
+                noise_scale,
+                noise_scale_w,
+                length_scale,
+                sid,
+                language,
+                hps,
+                net_g,
+                device,
+                reference_audio,
+                skip_start,
+                skip_end,
+                style_text,
+                style_weight,
+            )        
         if version in inferMap_V4.keys():
+            emotion = ""  # Use empty emotion prompt
             return inferMap_V4[version](
                 text,
                 emotion,
@@ -213,6 +240,7 @@ def infer(
                 style_weight,
             )
         if version in inferMap_V3.keys():
+            emotion = 0
             return inferMap_V3[version](
                 text,
                 sdp_ratio,
