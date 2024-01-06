@@ -79,7 +79,12 @@ for model_file in tqdm(safetensors_files):
     del model
 
 logger.success("All models have been evaluated:")
-# meanの降順にソートして表示
+# meanを計算
+results = [
+    (model_file, step, scores + [np.mean(scores)])
+    for model_file, step, scores in results
+]
+# meanでソートして表示
 results = sorted(results, key=lambda x: x[2][-1], reverse=True)
 for model_file, step, scores in results:
     logger.info(f"{model_file}: {scores[-1]}")
@@ -99,20 +104,22 @@ mos_values = []
 # resultsからデータを抽出
 for _, step, scores in results:
     steps.append(step)
-    mos_values.append(scores)  # scores は MOS1, MOS2, MOS3,... のリスト
+    mos_values.append(scores)  # scores は MOS1, MOS2, MOS3,..., mean のリスト
 
 # DataFrame形式に変換
 df = pd.DataFrame(mos_values, index=steps)
 # ステップ数でソート
 df = df.sort_index()
 
-# 各MOSと平均値についての折れ線グラフを描画
-for col in df.columns:
-    plt.plot(df.index, df[col], label=f"MOS{col + 1}")
+plt.figure(figsize=(10, 5))
 
-# 平均値の計算と描画
-df["mean"] = df.mean(axis=1)
-plt.plot(df.index, df["mean"], label="Mean", color="black", linewidth=2)
+# 各MOSについての折れ線グラフを描画（最後の平均値の列は除外）
+for col in range(len(df.columns) - 1):
+    plt.plot(df.index, df.iloc[:, col], label=f"MOS{col + 1}")
+
+# 既存の平均値の列を使用
+plt.plot(df.index, df.iloc[:, -1], label="Mean", color="black", linewidth=2)
+
 
 # グラフのタイトルと軸ラベルを設定
 plt.title("TTS Model Naturalness MOS")
