@@ -22,7 +22,7 @@ import gradio as gr
 import webbrowser
 import numpy as np
 from config import config
-from tools.translate import translate
+from tools.gen_phones import gen_phones
 import librosa
 
 net_g = None
@@ -70,6 +70,7 @@ def generate_audio(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                text_mode=text_mode,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -115,6 +116,7 @@ def generate_audio_multilang(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                text_mode=text_mode,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -135,6 +137,7 @@ def tts_split(
     interval_between_sent,
     reference_audio,
     emotion,
+    text_mode
     style_text,
     style_weight,
 ):
@@ -167,6 +170,7 @@ def tts_split(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
+                text_mode=text_mode,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -198,6 +202,7 @@ def tts_split(
                     style_weight=style_weight,
                     skip_start=skip_start,
                     skip_end=skip_end,
+                    text_mode=text_mode,
                 )
                 audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
@@ -226,6 +231,7 @@ def tts_fn(
     reference_audio,
     emotion,
     prompt_mode,
+    text_mode
     style_text=None,
     style_weight=0,
 ):
@@ -432,10 +438,18 @@ if __name__ == "__main__":
                     另外，所有的语言选项都可以用'|'分割长段实现分句生成。
                     """,
                 )
-                trans = gr.Button("中翻日", variant="primary")
+                gen_phones_btn = gr.Button("中翻日", variant="primary")
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
+                )
+                _ = gr.Markdown(
+                    value="文本模式（Text mode）：可选文本或拼音序列，若选择pinyin序列则不经过g2p，可以在有发音问题时启用以手动纠正拼音。\n"
+                )
+                text_mode = gr.Radio(
+                    ["Text", "Phones Sequence"],
+                    label="Text Mode",
+                    value="Text",
                 )
                 _ = gr.Markdown(
                     value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
@@ -528,14 +542,15 @@ if __name__ == "__main__":
                 audio_prompt,
                 text_prompt,
                 prompt_mode,
+                text_mode,
                 style_text,
                 style_weight,
             ],
             outputs=[text_output, audio_output],
         )
 
-        trans.click(
-            translate,
+        gen_phones_btn.click(
+            gen_phones,
             inputs=[text],
             outputs=[text],
         )
@@ -554,6 +569,7 @@ if __name__ == "__main__":
                 interval_between_sent,
                 audio_prompt,
                 text_prompt,
+                text_mode,
                 style_text,
                 style_weight,
             ],
