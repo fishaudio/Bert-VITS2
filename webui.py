@@ -22,7 +22,6 @@ import gradio as gr
 import webbrowser
 import numpy as np
 from config import config
-from tools.gen_phones import gen_phones
 import librosa
 
 net_g = None
@@ -438,18 +437,9 @@ if __name__ == "__main__":
                     另外，所有的语言选项都可以用'|'分割长段实现分句生成。
                     """,
                 )
-                gen_phones_btn = gr.Button("中翻日", variant="primary")
                 slicer = gr.Button("快速切分", variant="primary")
                 speaker = gr.Dropdown(
                     choices=speakers, value=speakers[0], label="Speaker"
-                )
-                _ = gr.Markdown(
-                    value="文本模式（Text mode）：可选文本或拼音序列，若选择pinyin序列则不经过g2p，可以在有发音问题时启用以手动纠正拼音。\n"
-                )
-                text_mode = gr.Radio(
-                    ["Text", "Phones Sequence"],
-                    label="Text Mode",
-                    value="Text",
                 )
                 _ = gr.Markdown(
                     value="提示模式（Prompt mode）：可选文字提示或音频提示，用于生成文字或音频指定风格的声音。\n"
@@ -549,11 +539,6 @@ if __name__ == "__main__":
             outputs=[text_output, audio_output],
         )
 
-        gen_phones_btn.click(
-            gen_phones,
-            inputs=[text, language, style_text, style_weight],
-            outputs=[text],
-        )
         slicer.click(
             tts_split,
             inputs=[
