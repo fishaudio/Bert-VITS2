@@ -107,6 +107,11 @@ def run():
         action="store_true",
         help="Skip saving default style config and mean vector.",
     )
+    parser.add_argument(
+        '--no_progress_bar',
+        action='store_true',
+        help='Do not show the progress bar while training.'
+    )
     args = parser.parse_args()
     model_dir = os.path.join(args.model, config.train_ms_config.model_dir)
     if not os.path.exists(model_dir):
@@ -327,7 +332,7 @@ def run():
             utils.get_steps(utils.latest_checkpoint_path(model_dir, "G_*.pth"))
         )
         logger.info(
-            f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
+            f"******************Found the model. Current epoch is {epoch_str}, gloabl step is {global_step}*********************"
         )
     else:
         try:
@@ -364,6 +369,13 @@ def run():
     else:
         scheduler_dur_disc = None
     scaler = GradScaler(enabled=hps.train.bf16_run)
+    logger.info("Start training.")
+
+    diff = abs(epoch_str * len(train_loader) - (hps.train.epochs + 1) * len(train_loader))
+    pbar = None
+    if not args.no_progress_bar:
+        pbar = tqdm(total=global_step + diff, initial=global_step, smoothing=0.05, file=SAFE_STDOUT)
+    initial_step = global_step
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
         if rank == 0:
@@ -379,6 +391,8 @@ def run():
                 [train_loader, eval_loader],
                 logger,
                 [writer, writer_eval],
+                pbar,
+                initial_step,
             )
         else:
             train_and_evaluate(
@@ -393,6 +407,8 @@ def run():
                 [train_loader, None],
                 None,
                 None,
+                pbar,
+                initial_step,
             )
         scheduler_g.step()
         scheduler_d.step()
@@ -433,6 +449,9 @@ def run():
                 for_infer=True,
             )
 
+    if pbar is not None:
+        pbar.close()
+
 
 def train_and_evaluate(
     rank,
@@ -446,6 +465,8 @@ def train_and_evaluate(
     loaders,
     logger,
     writers,
+    pbar: tqdm,
+    initial_step: int
 ):
     net_g, net_d, net_dur_disc = nets
     optim_g, optim_d, optim_dur_disc = optims
@@ -475,7 +496,7 @@ def train_and_evaluate(
         ja_bert,
         en_bert,
         style_vec,
-    ) in enumerate(tqdm(train_loader, file=SAFE_STDOUT)):
+    ) in enumerate(train_loader):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial
@@ -663,7 +684,7 @@ def train_and_evaluate(
                     scalars=scalar_dict,
                 )
 
-            if global_step % hps.train.eval_interval == 0 and global_step != 0:
+            if global_step % hps.train.eval_interval == 0 and global_step != 0 and initial_step != global_step:
                 evaluate(hps, net_g, eval_loader, writer_eval)
                 utils.save_checkpoint(
                     net_g,
@@ -706,12 +727,14 @@ def train_and_evaluate(
                 )
 
         global_step += 1
+        if pbar is not None:
+            pbar.set_description("Epoch {}({:.0f}%)/{}".format(epoch, 100.0 * batch_idx / len(train_loader), hps.train.epochs))
+            pbar.update()
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
     # gc.collect()
     # torch.cuda.empty_cache()
-    if rank == 0:
+    if pbar is None and rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
-
 
 def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
