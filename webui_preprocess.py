@@ -89,7 +89,7 @@ def clap_gen(data_dir):
     assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
     subprocess.run(
-        f".\\venv\\python.exe clap_gen.py " f"--config {config_path}",
+        f"python.exe clap_gen.py " f"--config {config_path}",
         shell=True,
     )
     return "CLAP 特征文件生成完成"
