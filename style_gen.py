@@ -19,12 +19,13 @@ device = torch.device(config.style_gen_config.device)
 inference.to(device)
 
 
-def extract_style_vector(wav_path):
-    return inference(wav_path)
-
-
 def save_style_vector(wav_path):
-    style_vec = extract_style_vector(wav_path)
+    try:
+        style_vec = inference(wav_path)
+    except Exception as e:
+        print(f"\nIncluding any problems: {wav_path}")
+        print(e)
+        raise
     np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
     return style_vec
 
