@@ -39,7 +39,7 @@ def get_bert_feature(
             for i in style_inputs:
                 style_inputs[i] = style_inputs[i].to(device)
             style_res = models[device](**style_inputs, output_hidden_states=True)
-            torch.nn.functional.normalize(
+            style_res = torch.nn.functional.normalize(
                 torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0
             ).cpu()
             style_res_mean = style_res.mean(0)
@@ -62,7 +62,7 @@ def get_bert_feature(
 
 
 if __name__ == "__main__":
-    word_level_feature = torch.rand(38, 1024)  # 12个词,每个词1024维特征
+    word_level_feature = torch.rand(38, 2048)  # 12个词,每个词1024维特征
     word2phone = [
         1,
         2,
@@ -117,4 +117,4 @@ if __name__ == "__main__":
         phone_level_feature.append(repeat_feature)
 
     phone_level_feature = torch.cat(phone_level_feature, dim=0)
-    print(phone_level_feature.shape)  # torch.Size([36, 1024])
+    print(phone_level_feature.shape)  # torch.Size([36, 2048])
