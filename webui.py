@@ -137,7 +137,7 @@ def tts_split(
     interval_between_sent,
     reference_audio,
     emotion,
-    text_mode
+    text_mode,
     style_text,
     style_weight,
 ):
@@ -231,7 +231,7 @@ def tts_fn(
     reference_audio,
     emotion,
     prompt_mode,
-    text_mode
+    text_mode,
     style_text=None,
     style_weight=0,
 ):
