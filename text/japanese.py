@@ -3,14 +3,13 @@
 import re
 import unicodedata
 
+import jaconv
+import pyopenjtalk
+from num2words import num2words
 from transformers import AutoTokenizer
 
+from common.log import logger
 from text import punctuation, symbols
-
-from num2words import num2words
-
-import pyopenjtalk
-import jaconv
 
 
 def hiragana2p(text: str) -> str:
@@ -590,15 +589,26 @@ rep_map = {
 }
 
 
+def _numeric_feature_by_regex(regex, s):
+    match = re.search(regex, s)
+    if match is None:
+        return -50
+    return int(match.group(1))
+
+
 def replace_punctuation(text):
+    """句読点等を正規化し、日本語と句読点記号以外を削除"""
     pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
 
+    # 句読点を辞書で置換
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
     replaced_text = re.sub(
+        # ↓ ひらがな、カタカナ、漢字
         r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005"
-        + "".join(punctuation)
-        + r"]+",
+        # ↓ "!", "?", "…", ",", ".", "'", "-", 但し`…`はすでに`...`に変換されている
+        + "".join(punctuation) + r"]+",
+        # 上述以外の文字を削除
         "",
         replaced_text,
     )
@@ -607,12 +617,184 @@ def replace_punctuation(text):
 
 
 def text_normalize(text):
+    """
+    日本語のテキストを正規化する。
+    結果は、ちょうど次の文字のみからなる：
+    - ひらがな
+    - カタカナ（全角長音記号「ー」が入る！）
+    - 漢字
+    - `.` （句点`。`や`…`の一部や改行等）
+    - `,` （読点`、`や`:`等）
+    - `?` （疑問符`？`）
+    - `!` （感嘆符`！`）
+    - `'` （`「`や`」`等）
+    - `-` （`～`や`-`等、これいる？）
+
+    注意点:
+    - 三点リーダー`…`は`...`に変換される（`なるほど…。` → `なるほど....`）
+    - `～`は`-`に変換される！（`あ～、そっかー。` → `あ-, なるほどー.`）
+    - 数字は漢字に変換される（`1,100円` → `千百円`、`52.34` → `五十二点三四`）
+    - 読点や疑問符等の位置・個数等は保持される（`??あ、、！！！` → `??あ,,!!!`）
+    """
     res = unicodedata.normalize("NFKC", text)
-    res = japanese_convert_numbers_to_words(res)
+    res = japanese_convert_numbers_to_words(res)  # 「100円」→「百円」等
     # res = "".join([i for i in res if is_japanese_character(i)])
     res = replace_punctuation(res)
     res = res.replace("゙", "")
     return res
+
+
+def pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> list[str]:
+    """Extract phoneme + prosoody symbol sequence from input full-context labels.
+
+    The algorithm is based on `Prosodic features control by symbols as input of
+    sequence-to-sequence acoustic modeling for neural TTS`_ with some r9y9's tweaks.
+
+    Args:
+        text (str): Input text.
+        drop_unvoiced_vowels (bool): whether to drop unvoiced vowels.
+
+    Returns:
+        List[str]: List of phoneme + prosody symbols.
+
+    Examples:
+        >>> from espnet2.text.phoneme_tokenizer import pyopenjtalk_g2p_prosody
+        >>> pyopenjtalk_g2p_prosody("こんにちは。")
+        ['^', 'k', 'o', '[', 'N', 'n', 'i', 'ch', 'i', 'w', 'a', '$']
+
+    .. _`Prosodic features control by symbols as input of sequence-to-sequence acoustic
+        modeling for neural TTS`: https://doi.org/10.1587/transinf.2020EDP7104
+
+    """
+    labels = pyopenjtalk.make_label(pyopenjtalk.run_frontend(text))
+    N = len(labels)
+
+    phones = []
+    for n in range(N):
+        lab_curr = labels[n]
+
+        # current phoneme
+        p3 = re.search(r"\-(.*?)\+", lab_curr).group(1)
+        # deal unvoiced vowels as normal vowels
+        if drop_unvoiced_vowels and p3 in "AEIOU":
+            p3 = p3.lower()
+
+        # deal with sil at the beginning and the end of text
+        if p3 == "sil":
+            assert n == 0 or n == N - 1
+            if n == 0:
+                phones.append("^")
+            elif n == N - 1:
+                # check question form or not
+                e3 = _numeric_feature_by_regex(r"!(\d+)_", lab_curr)
+                if e3 == 0:
+                    phones.append("$")
+                elif e3 == 1:
+                    phones.append("?")
+            continue
+        elif p3 == "pau":
+            phones.append("_")
+            continue
+        else:
+            phones.append(p3)
+
+        # accent type and position info (forward or backward)
+        a1 = _numeric_feature_by_regex(r"/A:([0-9\-]+)\+", lab_curr)
+        a2 = _numeric_feature_by_regex(r"\+(\d+)\+", lab_curr)
+        a3 = _numeric_feature_by_regex(r"\+(\d+)/", lab_curr)
+
+        # number of mora in accent phrase
+        f1 = _numeric_feature_by_regex(r"/F:(\d+)_", lab_curr)
+
+        a2_next = _numeric_feature_by_regex(r"\+(\d+)\+", labels[n + 1])
+        # accent phrase border
+        if a3 == 1 and a2_next == 1 and p3 in "aeiouAEIOUNcl":
+            phones.append("#")
+        # pitch falling
+        elif a1 == 0 and a2_next == a2 + 1 and a2 != f1:
+            phones.append("]")
+        # pitch rising
+        elif a2 == 1 and a2_next == 2:
+            phones.append("[")
+
+    return phones
+
+
+def fix_tone(tones: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    # Fix tone to use only 0 and 1
+    tone_values = set(tone for _, tone in tones)
+    if len(tone_values) == 1:
+        assert tone_values == {0}, tone_values
+        return tones
+    elif len(tone_values) == 2:
+        if tone_values == {0, 1}:
+            return tones
+        elif tone_values == {-1, 0}:
+            return [(letter, 0 if tone == -1 else 1) for letter, tone in tones]
+        else:
+            raise ValueError(f"Unexpected tone values: {tone_values}")
+    else:
+        raise ValueError(f"Unexpected tone values: {tone_values}")
+
+
+def g2p_for_segment(text: str) -> list[tuple[str, int]]:
+    """
+    句読点等の記号を含まないテキストに対して、音素とアクセント（0か1）のペアのリストを返す
+    """
+    prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
+    result: list[tuple[str, int]] = []
+    current_phrase = []
+    current_tone = 0
+    for i, letter in enumerate(prosodies):
+        # 特殊記号の処理
+
+        # 文頭記号、無視する
+        if letter == "^":
+            assert i == 0, "Unexpected ^"
+        # アクセント句の終わりに来る記号
+        elif letter in ("$", "?", "_", "#"):
+            # 保持しているフレーズを、アクセント数値を0-1に修正し結果に追加
+            result.extend(fix_tone(current_phrase))
+            # 末尾に来る終了記号、無視（文中の疑問文は`_`になる）
+            if letter in ("$", "?"):
+                assert i == len(prosodies) - 1, "Unexpected $ or ?"
+            # pause記号、句読点等で発生するが、そもそも入力に無いはずなのでエラー起こす
+            elif letter == "_":
+                raise ValueError("Unexpected _")
+            # ここまでで記号は`#`（アクセント句境界）のみ
+            # 新しいフレーズを準備
+            current_phrase = []
+            current_tone = 0
+        # アクセント上昇記号
+        elif letter == "[":
+            current_tone += 1
+        # アクセント下降記号
+        elif letter == "]":
+            current_tone -= 1
+        # それ以外は通常の音素
+        else:
+            current_phrase.append((letter, current_tone))
+    return result
+
+
+def myg2p(text: str):
+    # 例: "こんにちは、世界ー。。元気？！"
+    text = text_normalize(text)
+    # こんにちは,世界ー..元気?!
+
+    # punctuationで`text`を分割
+    pattern = "(" + "|".join(re.escape(p) for p in punctuation) + ")"
+    sep_text: list[str] = [s for s in re.split(pattern, text) if s]
+    # ["こんにちは", ",", "世界ー", ".", ".", "元気", "?", "!"]
+
+    result = []
+    for segment in sep_text:
+        if segment in punctuation:
+            result.append((segment, 0))
+        else:
+            result.extend(g2p_for_segment(segment))
+    result = [("_", 0)] + result + [("_", 0)]
+    return [phoneme for phoneme, _ in result], [tone for _, tone in result]
 
 
 def distribute_phone(n_phone, n_word):
@@ -688,7 +870,6 @@ def g2p(norm_text):
             sep_tokenized.append(tokenizer.tokenize(i))
         else:
             sep_tokenized.append([i])
-
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
     # 异常处理，MeCab不认识的词的话会一路传到这里来，然后炸掉。目前来看只有那些超级稀有的生僻词会出现这种情况
     for i in sep_phonemes:
