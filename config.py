@@ -263,7 +263,7 @@ args, _ = parser.parse_known_args()
 
 try:
     config = Config(args.yml_config)
-except TypeError:
+except (TypeError, KeyError):
     logger.warning("Old config.yml found. Replace it with default_config.yml.")
     shutil.copy(src="default_config.yml", dst="config.yml")
     config = Config("config.yml")
