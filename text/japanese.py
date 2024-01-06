@@ -8,7 +8,6 @@ from transformers import AutoTokenizer
 from text import punctuation, symbols
 
 from num2words import num2words
-from common.log import logger
 
 import pyopenjtalk
 import jaconv
@@ -356,7 +355,6 @@ def hiragana2p(text: str) -> str:
 
 def kata2phoneme(text: str) -> str:
     """Convert katakana text to phonemes."""
-    logger.debug(f"Kata2phoneme: {text}")
     text = text.strip()
     if text == "ー":
         return ["ー"]
@@ -374,9 +372,6 @@ def kata2phoneme(text: str) -> str:
                 res.append(prev[-1])
             text = text[1:]
             continue
-        logger.debug(f"text: {text}")
-        logger.debug(jaconv.kata2hira(text))
-        logger.debug(hiragana2p(jaconv.kata2hira(text)))
         res += hiragana2p(jaconv.kata2hira(text)).split(" ")
         break
     # res = _COLON_RX.sub(":", res)
