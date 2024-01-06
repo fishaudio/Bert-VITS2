@@ -69,7 +69,7 @@ def generate_audio(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
-                text_mode=text_mode,
+
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -115,7 +115,6 @@ def generate_audio_multilang(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
-                text_mode=text_mode,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -136,7 +135,6 @@ def tts_split(
     interval_between_sent,
     reference_audio,
     emotion,
-    text_mode,
     style_text,
     style_weight,
 ):
@@ -169,7 +167,6 @@ def tts_split(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
-                text_mode=text_mode,
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
@@ -201,7 +198,6 @@ def tts_split(
                     style_weight=style_weight,
                     skip_start=skip_start,
                     skip_end=skip_end,
-                    text_mode=text_mode,
                 )
                 audio_list_sent.append(audio)
                 silence = np.zeros((int)(44100 * interval_between_sent))
@@ -230,7 +226,6 @@ def tts_fn(
     reference_audio,
     emotion,
     prompt_mode,
-    text_mode,
     style_text=None,
     style_weight=0,
 ):
@@ -532,7 +527,6 @@ if __name__ == "__main__":
                 audio_prompt,
                 text_prompt,
                 prompt_mode,
-                text_mode,
                 style_text,
                 style_weight,
             ],
@@ -554,7 +548,6 @@ if __name__ == "__main__":
                 interval_between_sent,
                 audio_prompt,
                 text_prompt,
-                text_mode,
                 style_text,
                 style_weight,
             ],
