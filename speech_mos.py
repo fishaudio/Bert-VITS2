@@ -1,13 +1,14 @@
 import argparse
 import csv
+import re
 import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
-import numpy as np
 
 from common.log import logger
 from common.tts_model import Model
@@ -65,6 +66,13 @@ safetensors_files = list(safetensors_files)
 logger.info(f"There are {len(safetensors_files)} models.")
 
 for model_file in tqdm(safetensors_files):
+    # `test_e10_s1000.safetensors`` -> 1000を取り出す
+    match = re.search(r"_s(\d+)\.safetensors$", model_file.name)
+    if match:
+        step = int(match.group(1))
+    else:
+        logger.warning(f"Step count not found in {model_file.name}, so skip it.")
+        continue
     model = get_model(model_file)
     scores = []
     for i, text in enumerate(test_texts):
@@ -73,8 +81,6 @@ for model_file in tqdm(safetensors_files):
         score = predictor(torch.from_numpy(audio).unsqueeze(0), sr).item()
         scores.append(score)
         logger.info(f"score: {score}")
-    # `test_e10_s1000.safetensors`` -> 1000を取り出す
-    step = int(model_file.stem.split("_")[2][1:])
     results.append((model_file.name, step, scores))
     del model
 
