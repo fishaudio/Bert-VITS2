@@ -23,7 +23,7 @@ def save_style_vector(wav_path):
     try:
         style_vec = inference(wav_path)
     except Exception as e:
-        print(f"\nIncluding any problems: {wav_path}")
+        print(f"\nError occurred with file: {wav_path}")
         print(e)
         raise
     np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
