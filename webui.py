@@ -416,6 +416,7 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
     hps = utils.get_hparams_from_file(config.webui_config.config_path)
     # 若config.json中未指定版本则默认为最新版本
+    add_blank = True if hps.data.add_blank else False
     version = hps.version if hasattr(hps, "version") else latest_version
     net_g = get_net_g(
         model_path=config.webui_config.model, version=version, device=device, hps=hps
@@ -551,7 +552,7 @@ if __name__ == "__main__":
 
         gen_phones_btn.click(
             gen_phones,
-            inputs=[text, language, hps,style_text, style_weight],
+            inputs=[text, language, add_blank, style_text, style_weight],
             outputs=[text],
         )
         slicer.click(
