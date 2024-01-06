@@ -229,7 +229,6 @@ def infer(
         device,
         style_text=style_text,
         style_weight=style_weight,
-        text_mode=text_mode,
     )
     if skip_start:
         phones = phones[3:]
