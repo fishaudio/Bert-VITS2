@@ -384,7 +384,7 @@ _MARKS = re.compile(
 )
 
 
-def text2sep_kata(text: str):
+def text2sep_kata(text: str) -> tuple[list[str], list[str]]:
     parsed = pyopenjtalk.run_frontend(text)
     res = []
     sep = []
@@ -414,7 +414,7 @@ def text2sep_kata(text: str):
             else:
                 res.append(word)
         sep.append(word)
-    return sep, res, get_accent(parsed)
+    return sep, res
 
 
 def get_accent(parsed):
@@ -773,28 +773,75 @@ def g2p_for_segment(text: str) -> list[tuple[str, int]]:
             current_tone -= 1
         # それ以外は通常の音素
         else:
+            if letter == "cl":  # 「っ」の処理
+                letter = "q"
+            elif letter == "N":  # 「ん」の処理
+                letter = "n"
             current_phrase.append((letter, current_tone))
     return result
 
 
-def myg2p(text: str):
+def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     # 例: "こんにちは、世界ー。。元気？！"
-    text = text_normalize(text)
+    # text = text_normalize(text) # 正規化はすでにされているという仮定
     # こんにちは,世界ー..元気?!
 
     # punctuationで`text`を分割
     pattern = "(" + "|".join(re.escape(p) for p in punctuation) + ")"
-    sep_text: list[str] = [s for s in re.split(pattern, text) if s]
+    punct_sep_text: list[str] = [s for s in re.split(pattern, text) if s]
     # ["こんにちは", ",", "世界ー", ".", ".", "元気", "?", "!"]
 
     result = []
-    for segment in sep_text:
+    for segment in punct_sep_text:
         if segment in punctuation:
             result.append((segment, 0))
         else:
             result.extend(g2p_for_segment(segment))
+
+    # word2phは、各文字に音素が何個割り当てられるかを表す
+    # 厳密な解答は不可能なので（「今日」「眼鏡」等の熟字訓が存在）、
+    # Bert-VITS2では、mecabでまず単語単位に細かく分割し、そのあと均等に分割する
+    sep_text, sep_kata = text2sep_kata(text)
+    # sep_text: 単語単位のリスト
+    # sep_kata: 単語単位のリスト（sep_textのカタカナ読みのリスト）
+
+    # sep_textから、各単語を1文字1文字分割してsep_tokenizedを作る
+    sep_tokenized = []
+    for i in sep_text:
+        if i not in punctuation:
+            sep_tokenized.append(tokenizer.tokenize(i))
+        else:
+            sep_tokenized.append([i])
+
+    # sep_phonemesは、各単語ごとの音素のリストのリスト
+    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
+
+    # 各単語について、音素の数と文字の数を比較して、均等っぽく分配する
+    word2ph = []
+    for token, phoneme in zip(sep_tokenized, sep_phonemes):
+        phone_len = len(phoneme)
+        word_len = len(token)
+        word2ph += distribute_phone(phone_len, word_len)
+
+    # 最初と最後に`_`記号を追加、アクセントは0（低）、word2phもそれに合わせて追加
     result = [("_", 0)] + result + [("_", 0)]
-    return [phoneme for phoneme, _ in result], [tone for _, tone in result]
+    word2ph = [1] + word2ph + [1]
+
+    # 2種類の経路で作られたphonemeが一致するかチェック
+    phones1 = [phoneme for phoneme, _ in result]  # こちらのほうが正確なはず
+    phones2 = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]  # sep_kataから作ったやつ
+    import difflib
+
+    if phones1 != phones2:
+        differ = difflib.Differ()
+        diff = list(differ.compare(phones1, phones2))
+        formatted_diff = ",".join(diff)
+        logger.warning(f"phones1 != phones2 for text: {text}\n{formatted_diff}")
+
+    tones = [tone for _, tone in result]
+    assert len(phones1) == sum(word2ph)
+
+    return phones1, tones, word2ph
 
 
 def distribute_phone(n_phone, n_word):
@@ -862,7 +909,7 @@ def rearrange_tones(tones, phones):
     return res
 
 
-def g2p(norm_text):
+def g2p_old(norm_text):
     sep_text, sep_kata, acc = text2sep_kata(norm_text)
     sep_tokenized = []
     for i in sep_text:
