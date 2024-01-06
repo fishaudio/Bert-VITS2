@@ -99,21 +99,18 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7,text_mode="Text"):
+def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
     style_text = None if style_text == "" else style_text
     # 在此处实现当前版本的get_text
-    if text_mode == "Phones Sequence":
-        norm_text, phone, tone, word2ph = text.spilt("|")
-    else:
-        norm_text, phone, tone, word2ph = clean_text(text, language_str)
-        phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-        if hps.data.add_blank:
-            phone = commons.intersperse(phone, 0)
-            tone = commons.intersperse(tone, 0)
-            language = commons.intersperse(language, 0)
-            for i in range(len(word2ph)):
-                word2ph[i] = word2ph[i] * 2
-            word2ph[0] += 1
+    norm_text, phone, tone, word2ph = clean_text(text, language_str)
+    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+    if hps.data.add_blank:
+        phone = commons.intersperse(phone, 0)
+        tone = commons.intersperse(tone, 0)
+        language = commons.intersperse(language, 0)
+        for i in range(len(word2ph)):
+            word2ph[i] = word2ph[i] * 2
+        word2ph[0] += 1
     bert = get_bert(norm_text, word2ph, language_str, device, style_text, style_weight)
     del word2ph
 
