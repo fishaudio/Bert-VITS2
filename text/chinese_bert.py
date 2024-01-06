@@ -40,7 +40,7 @@ def get_bert_feature(
                 style_inputs[i] = style_inputs[i].to(device)
             style_res = models[device](**style_inputs, output_hidden_states=True)
             style_res = torch.nn.functional.normalize(
-                torch.cat(res["hidden_states"][-3:-2], -1)[0], dim=0
+                torch.cat(style_res["hidden_states"][-3:-2], -1)[0], dim=0
             ).cpu()
             style_res_mean = style_res.mean(0)
     assert len(word2ph) == len(text) + 2
