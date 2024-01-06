@@ -8,6 +8,10 @@ import yaml
 
 from common.log import logger
 from common.subprocess_utils import run_script_with_log, second_elem_of
+from datetime import datetime
+
+
+logger_handler = None
 
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
@@ -27,8 +31,19 @@ def get_path(model_name):
 
 
 def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
-    logger.info("Step 1: start initialization...")
+    global logger_handler
     dataset_path, _, train_path, val_path, config_path = get_path(model_name)
+
+    # 前処理のログをファイルに保存する
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_name = f"preprocess_{timestamp}.log"
+    if logger_handler is not None:
+        logger.remove(logger_handler)
+    logger_handler = logger.add(os.path.join(dataset_path, file_name))
+
+    logger.info(
+        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, bf16_run: {bf16_run}"
+    )
     if os.path.isfile(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
@@ -230,13 +245,13 @@ def train(model_name):
         ["train_ms.py", "--config", config_path, "--model", dataset_path]
     )
     if not success:
-        logger.error(f"Final Step: train failed.")
-        return False, f"Final Step, Error: 学習に失敗しました:\n{message}"
+        logger.error(f"Train failed.")
+        return False, f"Error: 学習に失敗しました:\n{message}"
     elif message:
-        logger.warning(f"Final Step: train finished with stderr.")
-        return True, f"Final Step, Success: 学習が完了しました:\n{message}"
-    logger.success("Final Step: train finished.")
-    return True, "Final Step, Success: 学習が完了しました"
+        logger.warning(f"Train finished with stderr.")
+        return True, f"Success: 学習が完了しました:\n{message}"
+    logger.success("Train finished.")
+    return True, "Success: 学習が完了しました"
 
 
 initial_md = """
@@ -299,7 +314,6 @@ if __name__ == "__main__":
             with gr.Column():
                 batch_size = gr.Slider(
                     label="バッチサイズ",
-                    info="VRAM 12GBで4くらい",
                     value=4,
                     minimum=1,
                     maximum=64,
@@ -335,7 +349,7 @@ if __name__ == "__main__":
                     step=1,
                 )
                 normalize = gr.Checkbox(
-                    label="音声の音量を正規化する",
+                    label="音声の音量を正規化する(音量の大小が揃っていない場合など)",
                     value=False,
                 )
                 trim = gr.Checkbox(

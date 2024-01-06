@@ -3,8 +3,6 @@ import datetime
 import gc
 import os
 import platform
-import shutil
-import sys
 
 import torch
 import torch.distributed as dist
@@ -49,14 +47,53 @@ global_step = 0
 
 
 def run():
-    # 环境变量解析
+    # Command line configuration is not recommended unless necessary, use config.yml
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default=config.train_ms_config.config_path,
+        help="JSON file for configuration",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
+        default=config.dataset_path,
+    )
+    parser.add_argument(
+        "--assets_root",
+        type=str,
+        help="Root directory of model assets needed for inference.",
+        default=config.assets_root,
+    )
+    parser.add_argument(
+        "--skip_default_style",
+        action="store_true",
+        help="Skip saving default style config and mean vector.",
+    )
+    parser.add_argument(
+        "--no_progress_bar",
+        action="store_true",
+        help="Do not show the progress bar while training.",
+    )
+    args = parser.parse_args()
+
+    # Set log file
+    model_dir = os.path.join(args.model, config.train_ms_config.model_dir)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    logger.add(os.path.join(args.model, f"train_{timestamp}.log"))
+
+    # Parsing environment variables
     envs = config.train_ms_config.env
     for env_name, env_value in envs.items():
         if env_name not in os.environ.keys():
-            logger.info("加载config中的配置{}".format(str(env_value)))
+            logger.info("Loading configuration from config {}".format(str(env_value)))
             os.environ[env_name] = str(env_value)
     logger.info(
-        "加载环境变量 \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
+        "Loading environment variables \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
             os.environ["MASTER_ADDR"],
             os.environ["MASTER_PORT"],
             os.environ["WORLD_SIZE"],
@@ -77,47 +114,7 @@ def run():
     local_rank = int(os.environ["LOCAL_RANK"])
     n_gpus = dist.get_world_size()
 
-    # 命令行/config.yml配置解析
-    # hps = utils.get_hparams()
-    parser = argparse.ArgumentParser()
-    # Command line configuration is not recommended unless necessary, use config.yml
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        default=config.train_ms_config.config_path,
-        help="JSON file for configuration",
-    )
-
-    parser.add_argument(
-        "-m",
-        "--model",
-        type=str,
-        help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
-        default=config.dataset_path,
-    )
-    parser.add_argument(
-        "--assets_root",
-        type=str,
-        help="Root directory of model assets needed for inference.",
-        default=config.assets_root,
-    )
-    parser.add_argument(
-        "--skip_default_style",
-        action="store_true",
-        help="Skip saving default style config and mean vector.",
-    )
-    parser.add_argument(
-        '--no_progress_bar',
-        action='store_true',
-        help='Do not show the progress bar while training.'
-    )
-    args = parser.parse_args()
-    model_dir = os.path.join(args.model, config.train_ms_config.model_dir)
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
     hps = utils.get_hparams_from_file(args.config)
-
     # This is needed because we have to pass `model_dir` to `train_and_evaluate()`
     hps.model_dir = model_dir
 
@@ -167,7 +164,6 @@ def run():
     if rank == 0:
         # logger = utils.get_logger(hps.model_dir)
         # logger.info(hps)
-        logger.add(os.path.join(model_dir, "train.log"))
         utils.check_git_hash(model_dir)
         writer = SummaryWriter(log_dir=model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(model_dir, "eval"))
@@ -371,10 +367,17 @@ def run():
     scaler = GradScaler(enabled=hps.train.bf16_run)
     logger.info("Start training.")
 
-    diff = abs(epoch_str * len(train_loader) - (hps.train.epochs + 1) * len(train_loader))
+    diff = abs(
+        epoch_str * len(train_loader) - (hps.train.epochs + 1) * len(train_loader)
+    )
     pbar = None
     if not args.no_progress_bar:
-        pbar = tqdm(total=global_step + diff, initial=global_step, smoothing=0.05, file=SAFE_STDOUT)
+        pbar = tqdm(
+            total=global_step + diff,
+            initial=global_step,
+            smoothing=0.05,
+            file=SAFE_STDOUT,
+        )
     initial_step = global_step
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
@@ -466,7 +469,7 @@ def train_and_evaluate(
     logger,
     writers,
     pbar: tqdm,
-    initial_step: int
+    initial_step: int,
 ):
     net_g, net_d, net_dur_disc = nets
     optim_g, optim_d, optim_dur_disc = optims
@@ -684,7 +687,11 @@ def train_and_evaluate(
                     scalars=scalar_dict,
                 )
 
-            if global_step % hps.train.eval_interval == 0 and global_step != 0 and initial_step != global_step:
+            if (
+                global_step % hps.train.eval_interval == 0
+                and global_step != 0
+                and initial_step != global_step
+            ):
                 evaluate(hps, net_g, eval_loader, writer_eval)
                 utils.save_checkpoint(
                     net_g,
@@ -728,13 +735,18 @@ def train_and_evaluate(
 
         global_step += 1
         if pbar is not None:
-            pbar.set_description("Epoch {}({:.0f}%)/{}".format(epoch, 100.0 * batch_idx / len(train_loader), hps.train.epochs))
+            pbar.set_description(
+                "Epoch {}({:.0f}%)/{}".format(
+                    epoch, 100.0 * batch_idx / len(train_loader), hps.train.epochs
+                )
+            )
             pbar.update()
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
     # gc.collect()
     # torch.cuda.empty_cache()
     if pbar is None and rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
+
 
 def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()

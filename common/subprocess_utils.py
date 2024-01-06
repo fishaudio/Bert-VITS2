@@ -16,12 +16,10 @@ def run_script_with_log(cmd: list[str], ignore_warning=False) -> tuple[bool, str
         text=True,
     )
     if result.returncode != 0:
-        logger.error(f"Error: {' '.join(cmd)}")
-        print(result.stderr)
+        logger.error(f"Error: {' '.join(cmd)}\n{result.stderr}")
         return False, result.stderr
     elif result.stderr and not ignore_warning:
-        logger.warning(f"Warning: {' '.join(cmd)}")
-        print(result.stderr)
+        logger.warning(f"Warning: {' '.join(cmd)}\n{result.stderr}")
         return True, result.stderr
     logger.success(f"Success: {' '.join(cmd)}")
     return True, ""
