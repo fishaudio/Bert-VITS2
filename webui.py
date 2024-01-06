@@ -551,7 +551,7 @@ if __name__ == "__main__":
 
         gen_phones_btn.click(
             gen_phones,
-            inputs=[text],
+            inputs=[text, language, hps,style_text, style_weight],
             outputs=[text],
         )
         slicer.click(
