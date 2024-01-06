@@ -7,9 +7,9 @@ import pyloudnorm as pyln
 import soundfile
 from tqdm import tqdm
 
-from config import config
 from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
+from config import config
 
 DEFAULT_BLOCK_SIZE: float = 0.400  # seconds
 
@@ -119,4 +119,4 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
 
-    print("Resampling Done!")
+    logger.info("Resampling Done!")

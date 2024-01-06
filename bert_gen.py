@@ -7,9 +7,10 @@ from tqdm import tqdm
 
 import commons
 import utils
+from common.log import logger
+from common.stdout_wrapper import SAFE_STDOUT
 from config import config
 from text import cleaned_text_to_sequence, get_bert
-from common.stdout_wrapper import SAFE_STDOUT
 
 
 def process_line(x):
@@ -81,4 +82,4 @@ if __name__ == "__main__":
                 # 这里是缩进的代码块，表示循环体
                 pass  # 使用pass语句作为占位符
 
-    print(f"bert.pt is generated! total: {len(lines)} bert.pt files.")
+    logger.info(f"bert.pt is generated! total: {len(lines)} bert.pt files.")

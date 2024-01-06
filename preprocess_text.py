@@ -10,6 +10,7 @@ from tqdm import tqdm
 from config import config
 from text.cleaner import clean_text
 from common.stdout_wrapper import SAFE_STDOUT
+from common.log import logger
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -70,11 +71,10 @@ def preprocess(
                                 )
                             )
                         except Exception as e:
-                            print(line)
-                            print(
-                                f"An error occurred while generating the training set and validation set! Details:\n{e}"
+                            logger.error(
+                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
                             )
-                            raise e
+                            raise
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -89,12 +89,12 @@ def preprocess(
             utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
             if utt in audioPaths:
                 # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
-                print(f"Same audio matches multiple texts: {line}")
+                logger.warning(f"Same audio matches multiple texts: {line}")
                 countSame += 1
                 continue
             if not os.path.isfile(utt):
                 # 过滤数据集错误：不存在对应音频
-                print(f"Audio not found: {utt}")
+                logger.warning(f"Audio not found: {utt}")
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
@@ -102,7 +102,7 @@ def preprocess(
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
-        print(
+        logger.info(
             f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
         )
 
@@ -140,7 +140,7 @@ def preprocess(
     )
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
-    print("Training set and validation set generation from texts is complete!")
+    logger.info("Training set and validation set generation from texts is complete!")
 
 
 if __name__ == "__main__":

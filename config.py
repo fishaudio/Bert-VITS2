@@ -208,10 +208,10 @@ class Config:
     def __init__(self, config_path: str, path_config: dict[str, str]):
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
             shutil.copy(src="default_config.yml", dst=config_path)
-            print(
+            logger.info(
                 f"A configuration file {config_path} has been generated based on the default configuration file default_config.yml."
             )
-            print(
+            logger.info(
                 "If you have no special needs, please do not modify default_config.yml."
             )
             # sys.exit(0)
