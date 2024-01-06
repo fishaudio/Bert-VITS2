@@ -352,14 +352,14 @@ def hiragana2p(text: str) -> str:
     return text
 
 
-def kata2phoneme(text: str) -> str:
+def kata2phoneme(text: str) -> list[str]:
     """Convert katakana text to phonemes."""
     text = text.strip()
     if text == "ー":
         return ["ー"]
     elif text.startswith("ー"):
         return ["ー"] + kata2phoneme(text[1:])
-    res = []
+    res: list[str] = []
     prev = None
     while text:
         if re.match(_MARKS, text):
@@ -737,9 +737,10 @@ def fix_tone(tones: list[tuple[str, int]]) -> list[tuple[str, int]]:
         raise ValueError(f"Unexpected tone values: {tone_values}")
 
 
-def g2p_for_segment(text: str) -> list[tuple[str, int]]:
+def g2p_with_acc(text: str) -> list[tuple[str, int]]:
     """
-    句読点等の記号を含まないテキストに対して、音素とアクセント（0か1）のペアのリストを返す
+    テキストに対して、音素とアクセント（0か1）のペアのリストを返す。
+    ただし「!」「.」「?」等の非音素記号は全て消える（ポーズ記号も残さない）。
     """
     prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
     result: list[tuple[str, int]] = []
@@ -758,11 +759,8 @@ def g2p_for_segment(text: str) -> list[tuple[str, int]]:
             # 末尾に来る終了記号、無視（文中の疑問文は`_`になる）
             if letter in ("$", "?"):
                 assert i == len(prosodies) - 1, "Unexpected $ or ?"
-            # pause記号、句読点等で発生するが、そもそも入力に無いはずなのでエラー起こす
-            elif letter == "_":
-                raise ValueError("Unexpected _")
-            # ここまでで記号は`#`（アクセント句境界）のみ
-            # 新しいフレーズを準備
+            # あとは"_"（ポーズ）と"#"（アクセント句の境界）のみ
+            # 都合上ここは無視し、次のアクセント句に備える。
             current_phrase = []
             current_tone = 0
         # アクセント上昇記号
@@ -786,24 +784,27 @@ def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     # text = text_normalize(text) # 正規化はすでにされているという仮定
     # こんにちは,世界ー..元気?!
 
-    # punctuationで`text`を分割
-    pattern = "(" + "|".join(re.escape(p) for p in punctuation) + ")"
-    punct_sep_text: list[str] = [s for s in re.split(pattern, text) if s]
-    # ["こんにちは", ",", "世界ー", ".", ".", "元気", "?", "!"]
+    # `phone_tone_list_wo_punct`: punctuationがすべて消えた、音素とアクセントのタプルのリスト
+    phone_tone_list_wo_punct = g2p_with_acc(text)
 
-    result = []
-    for segment in punct_sep_text:
-        if segment in punctuation:
-            result.append((segment, 0))
-        else:
-            result.extend(g2p_for_segment(segment))
-
-    # word2phは、各文字に音素が何個割り当てられるかを表す
-    # 厳密な解答は不可能なので（「今日」「眼鏡」等の熟字訓が存在）、
-    # Bert-VITS2では、mecabでまず単語単位に細かく分割し、そのあと均等に分割する
-    sep_text, sep_kata = text2sep_kata(text)
     # sep_text: 単語単位のリスト
     # sep_kata: 単語単位のリスト（sep_textのカタカナ読みのリスト）
+    sep_text, sep_kata = text2sep_kata(text)
+
+    # sep_phonemes: 各単語ごとの音素のリストのリスト
+    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
+
+    # phone_w_punct: sep_phonemesを結合した、punctiationを含む音素列
+    phone_w_punct: list[str] = []
+    for i in sep_phonemes:
+        phone_w_punct += i
+
+    phone_tone_list = my_align_tones(phone_w_punct, phone_tone_list_wo_punct)
+    logger.debug(f"phone_tone_list:\n{phone_tone_list}")
+    logger.debug(f"len(phone_tone_list): {len(phone_tone_list)}")
+    # 最後の戻り値のword2phは、各文字に音素が何個割り当てられるかを表すリスト
+    # 厳密な解答は不可能なので（「今日」「眼鏡」等の熟字訓が存在）、
+    # Bert-VITS2では、mecabでまず単語単位に細かく分割し、そのあとだいたい均等に分割する
 
     # sep_textから、各単語を1文字1文字分割してsep_tokenizedを作る
     sep_tokenized = []
@@ -813,9 +814,7 @@ def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
         else:
             sep_tokenized.append([i])
 
-    # sep_phonemesは、各単語ごとの音素のリストのリスト
-    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
-
+    logger.debug(list(zip(sep_tokenized, sep_phonemes)))
     # 各単語について、音素の数と文字の数を比較して、均等っぽく分配する
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
@@ -823,25 +822,21 @@ def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
         word_len = len(token)
         word2ph += distribute_phone(phone_len, word_len)
 
+    logger.debug(f"sum(word2ph): {sum(word2ph)}")
+
     # 最初と最後に`_`記号を追加、アクセントは0（低）、word2phもそれに合わせて追加
-    result = [("_", 0)] + result + [("_", 0)]
+    phone_tone_list = [("_", 0)] + phone_tone_list + [("_", 0)]
     word2ph = [1] + word2ph + [1]
 
-    # 2種類の経路で作られたphonemeが一致するかチェック
-    phones1 = [phoneme for phoneme, _ in result]  # こちらのほうが正確なはず
-    phones2 = ["_"] + [j for i in sep_phonemes for j in i] + ["_"]  # sep_kataから作ったやつ
-    import difflib
+    phones = [phone for phone, _ in phone_tone_list]
+    tones = [tone for _, tone in phone_tone_list]
 
-    if phones1 != phones2:
-        differ = difflib.Differ()
-        diff = list(differ.compare(phones1, phones2))
-        formatted_diff = ",".join(diff)
-        logger.warning(f"phones1 != phones2 for text: {text}\n{formatted_diff}")
+    logger.info(f"phones: {phones}")
+    logger.info(f"tones: {tones}")
+    logger.info(f"word2ph: {word2ph}")
+    assert len(phones) == sum(word2ph), f"{len(phones)} != {sum(word2ph)}"
 
-    tones = [tone for _, tone in result]
-    assert len(phones1) == sum(word2ph)
-
-    return phones1, tones, word2ph
+    return phones, tones, word2ph
 
 
 def distribute_phone(n_phone, n_word):
@@ -853,7 +848,7 @@ def distribute_phone(n_phone, n_word):
     return phones_per_word
 
 
-def handle_long(sep_phonemes):
+def handle_long(sep_phonemes: list[list[str]]) -> list[list[str]]:
     for i in range(len(sep_phonemes)):
         if sep_phonemes[i][0] == "ー":
             sep_phonemes[i][0] = sep_phonemes[i - 1][-1]
@@ -887,6 +882,40 @@ def align_tones(phones, tones):
     res = [i for j in res for i in j]
     assert not any([i < 0 for i in res]) and not any([i > 1 for i in res])
     return res
+
+
+def my_align_tones(
+    phones_with_punct: list[str], phone_tone_list: list[tuple[str, int]]
+) -> list[tuple[str, int]]:
+    """
+    例:
+    …私は、、そう思う。
+    phones_with_punct:
+    [".", ".", ".", "w", "a", "t", "a", "sh", "i", "w", "a", ",", ",", "s", "o", "o", "o", "m", "o", "u", "."]
+    phone_tone_list:
+    [("w", 0), ("a", 0), ("t", 1), ("a", 1), ("sh", 1), ("i", 1), ("w", 1), ("a", 1), ("_", 0), ("s", 0), ("o", 0), ("o", 1), ("o", 1), ("m", 1), ("o", 1), ("u", 0))]
+    Return:
+    [(".", 0), (".", 0), (".", 0), ("w", 0), ("a", 0), ("t", 1), ("a", 1), ("sh", 1), ("i", 1), ("w", 1), ("a", 1), (",", 0), (",", 0), ("s", 0), ("o", 0), ("o", 1), ("o", 1), ("m", 1), ("o", 1), ("u", 0), (".", 0)]
+    """
+    result = []
+    tone_index = 0
+    for phone in phones_with_punct:
+        if tone_index >= len(phone_tone_list):
+            # 余ったpunctuationがある場合
+            result.append((phone, 0))
+        elif phone == phone_tone_list[tone_index][0]:
+            result.append((phone, phone_tone_list[tone_index][1]))
+            tone_index += 1
+        elif phone in punctuation:
+            result.append((phone, 0))
+        else:
+            logger.error(f"result: {result}")
+            logger.error(f"phones: {phones_with_punct}")
+            logger.error(f"tones: {phone_tone_list}")
+            logger.error(f"tone_index: {tone_index}")
+            logger.error(f"phone: {phone}")
+            raise ValueError(f"Unexpected phone: {phone}")
+    return result
 
 
 def rearrange_tones(tones, phones):
