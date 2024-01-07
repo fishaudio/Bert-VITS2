@@ -73,11 +73,8 @@ def text_normalize(text):
     - 数字は漢字に変換される（`1,100円` → `千百円`、`52.34` → `五十二点三四`）
     - 読点や疑問符等の位置・個数等は保持される（`??あ、、！！！` → `??あ,,!!!`）
     """
-    logger.debug(f"Before text_normalize: {text}")
     res = unicodedata.normalize("NFKC", text)  # ここでアルファベットは半角になる
-    logger.debug(f"After unicodedata.normalize: {res}")
     res = japanese_convert_numbers_to_words(res)  # 「100円」→「百円」等
-    logger.debug(f"After japanese_convert_numbers_to_words: {res}")
     # 「～」と「~」も長音記号として扱う
     res = res.replace("~", "ー")
     res = res.replace("～", "ー")
@@ -153,8 +150,6 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     # sep_text: 単語単位の単語のリスト
     # sep_kata: 単語単位の単語のカタカナ読みのリスト
     sep_text, sep_kata = text2sep_kata(norm_text)
-    logger.debug(f"sep_text: {sep_text}")
-    logger.debug(f"sep_kata: {sep_kata}")
 
     # sep_phonemes: 各単語ごとの音素のリストのリスト
     sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
@@ -166,7 +161,7 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
 
     # punctuation無しのアクセント情報を使って、punctuationを含めたアクセント情報を作る
     phone_tone_list = align_tones(phone_w_punct, phone_tone_list_wo_punct)
-    logger.debug(f"phone_tone_list:\n{phone_tone_list}")
+    # logger.debug(f"phone_tone_list:\n{phone_tone_list}")
     # word2phは厳密な解答は不可能なので（「今日」「眼鏡」等の熟字訓が存在）、
     # Bert-VITS2では、単語単位の分割を使って、単語の文字ごとにだいたい均等に音素を分配する
 
@@ -177,9 +172,7 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
             sep_tokenized.append(tokenizer.tokenize(i))  # ここでおそらく`i`が文字単位に分割される
         else:
             sep_tokenized.append([i])
-    logger.debug(f"sep_tokenized: {sep_tokenized}")
 
-    logger.debug(list(zip(sep_tokenized, sep_phonemes)))
     # 各単語について、音素の数と文字の数を比較して、均等っぽく分配する
     word2ph = []
     for token, phoneme in zip(sep_tokenized, sep_phonemes):
@@ -194,9 +187,6 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     phones = [phone for phone, _ in phone_tone_list]
     tones = [tone for _, tone in phone_tone_list]
 
-    logger.info(f"phones: {phones}")
-    logger.info(f"tones: {tones}")
-    logger.info(f"word2ph: {word2ph}")
     assert len(phones) == sum(word2ph), f"{len(phones)} != {sum(word2ph)}"
 
     return phones, tones, word2ph
@@ -268,7 +258,6 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace(
             "’", ""
         )
-        logger.debug(f"word: {word}, yomi: {yomi}")
         """
         ここで`yomi`の取りうる値は以下の通りのはず。
         - `word`が通常単語 → 通常の読み（カタカナ）
@@ -284,8 +273,14 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         if yomi == "、":
             assert len(word) == 1, f"yomi `、` comes from: {word}"
             # wordは1文字の記号。正規化されているので、`.`, `,`, `!`, `'`, `-`のいずれか
-            logger.debug(word)
-            assert word in (".", ",", "!", "'", "-"), f"word: {word}"
+            if word not in (
+                ".",
+                ",",
+                "!",
+                "'",
+                "-",
+            ):
+                raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
             # yomiは元の記号のままに変更
             yomi = word
         elif yomi == "？":
