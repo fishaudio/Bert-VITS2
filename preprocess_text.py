@@ -6,9 +6,13 @@ import os
 
 from tqdm import tqdm
 import click
-from text.cleaner import clean_text
+from text.cleaner import clean_text_auto
+from tools.filelist_utils import get_text_bert_auto, LangType
 from config import config
 from infer import latest_version
+import torch
+import torch.multiprocessing as mp
+import utils
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -42,6 +46,19 @@ def preprocess(
     clean: bool,
     yml_config: str,  # 这个不要删
 ):
+    device = config.bert_gen_config.device
+    if config.bert_gen_config.use_multi_device:
+        rank = mp.current_process()._identity
+        rank = rank[0] if len(rank) > 0 else 0
+        if torch.cuda.is_available():
+            gpu_id = rank % torch.cuda.device_count()
+            device = torch.device(f"cuda:{gpu_id}")
+        else:
+            device = torch.device("cpu")
+
+    hps = utils.get_hparams_from_file(config_path)
+    add_blank = hps.data.add_blank
+
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
@@ -51,26 +68,54 @@ def preprocess(
                 lines = trans_file.readlines()
                 # print(lines, ' ', len(lines))
                 if len(lines) != 0:
-                    for line in tqdm(lines):
-                        try:
-                            utt, spk, language, text = line.strip().split("|")
-                            norm_text, phones, tones, word2ph = clean_text(
-                                text, language
+                    for line in tqdm(lines[:200]):
+                        # try:
+                        utt, spk, text = line.strip().split("|")
+                        bert_path = utt.replace(".WAV", ".wav").replace(
+                            ".wav", ".bert.pt"
+                        )
+
+                        (
+                            norm_texts,
+                            phones,
+                            tones,
+                            word2phs,
+                            langs,
+                        ) = clean_text_auto(text)
+                        (
+                            bert,
+                            ja_bert,
+                            en_bert,
+                            agg_phones,
+                            agg_tones,
+                            lang_ids,
+                        ) = get_text_bert_auto(
+                            norm_texts,
+                            phones,
+                            tones,
+                            word2phs,
+                            langs,
+                            device,
+                            add_blank,
+                        )
+                        out_file.write(
+                            "{}|{}|{}|{}|{}|{}|{}\n".format(
+                                utt,
+                                spk,
+                                text,
+                                json.dumps(norm_texts),
+                                json.dumps(agg_phones.tolist()),
+                                json.dumps(agg_tones.tolist()),
+                                json.dumps(lang_ids.tolist()),
                             )
-                            out_file.write(
-                                "{}|{}|{}|{}|{}|{}|{}\n".format(
-                                    utt,
-                                    spk,
-                                    language,
-                                    norm_text,
-                                    " ".join(phones),
-                                    " ".join([str(i) for i in tones]),
-                                    " ".join([str(i) for i in word2ph]),
-                                )
-                            )
-                        except Exception as e:
-                            print(line)
-                            print(f"生成训练集和验证集时发生错误！, 详细信息:\n{e}")
+                        )
+                        berts = torch.stack((bert, ja_bert, en_bert))
+                        assert berts.shape[-1] == agg_phones.shape[-1]
+                        torch.save(berts, bert_path)
+
+                        # except Exception as e:
+                        #     print(line)
+                        #     print(f"生成训练集和验证集时发生错误！, 详细信息:\n{e}")
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -82,7 +127,15 @@ def preprocess(
         countSame = 0
         countNotFound = 0
         for line in f.readlines():
-            utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
+            (
+                utt,
+                spk,
+                norm_texts,
+                phones,
+                tones,
+                word2phs,
+                langs,
+            ) = line.strip().split("|")
             if utt in audioPaths:
                 # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
                 print(f"重复音频文本：{line}")
@@ -94,7 +147,8 @@ def preprocess(
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
-            spk_utt_map[language].append(line)
+            for language in json.loads(langs):
+                spk_utt_map[language].append(line)
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1

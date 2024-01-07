@@ -9,6 +9,9 @@ from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import cleaned_text_to_sequence
 from config import config
+from typing import List
+import json
+from tools.filelist_utils import get_text_bert_auto
 
 """Multi speaker version"""
 
@@ -59,17 +62,14 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         lengths = []
         skipped = 0
         logger.info("Init dataset...")
-        for _id, spk, language, text, phones, tone, word2ph in tqdm(
+        for audiopath, spk, _, __, phones, tones, langs in tqdm(
             self.audiopaths_sid_text
         ):
-            audiopath = f"{_id}"
+            phones, tones, langs = map(
+                lambda x: torch.tensor(json.loads(x)), (phones, tones, langs)
+            )
             if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
-                phones = phones.split(" ")
-                tone = [int(i) for i in tone.split(" ")]
-                word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append(
-                    [audiopath, spk, language, text, phones, tone, word2ph]
-                )
+                audiopaths_sid_text_new.append([audiopath, spk, phones, tones, langs])
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
             else:
                 skipped += 1
@@ -84,16 +84,17 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
     def get_audio_text_speaker_pair(self, audiopath_sid_text):
         # separate filename, speaker_id and text
-        audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
+        audiopath, sid, phones, tones, lang_ids = audiopath_sid_text
 
-        bert, ja_bert, en_bert, phones, tone, language = self.get_text(
-            text, word2ph, phones, tone, language, audiopath
-        )
+        bert_path = audiopath.replace(".wav", ".bert.pt")
+        berts = torch.load(bert_path)
+        assert berts.shape[-1] == phones.shape[-1]
+        bert, ja_bert, en_bert = berts
 
         spec, wav = self.get_audio(audiopath)
         sid = torch.LongTensor([int(self.spk_map[sid])])
 
-        return (phones, spec, wav, sid, tone, language, bert, ja_bert, en_bert)
+        return (phones, spec, wav, sid, tones, lang_ids, bert, ja_bert, en_bert)
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
@@ -136,40 +137,6 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             if config.train_ms_config.spec_cache:
                 torch.save(spec, spec_filename)
         return spec, audio_norm
-
-    def get_text(self, text, word2ph, phone, tone, language_str, wav_path):
-        phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
-        if self.add_blank:
-            phone = commons.intersperse(phone, 0)
-            tone = commons.intersperse(tone, 0)
-            language = commons.intersperse(language, 0)
-            for i in range(len(word2ph)):
-                word2ph[i] = word2ph[i] * 2
-            word2ph[0] += 1
-        bert_path = wav_path.replace(".wav", ".bert.pt")
-        try:
-            bert_ori = torch.load(bert_path)
-            assert bert_ori.shape[-1] == len(phone)
-        except Exception as e:
-            logger.warning("Bert load Failed")
-            logger.warning(e)
-
-        if language_str == "ZH":
-            bert = bert_ori
-            ja_bert = torch.randn(1024, len(phone))
-            en_bert = torch.randn(1024, len(phone))
-        elif language_str == "JP":
-            bert = torch.randn(1024, len(phone))
-            ja_bert = bert_ori
-            en_bert = torch.randn(1024, len(phone))
-        elif language_str == "EN":
-            bert = torch.randn(1024, len(phone))
-            ja_bert = torch.randn(1024, len(phone))
-            en_bert = bert_ori
-        phone = torch.LongTensor(phone)
-        tone = torch.LongTensor(tone)
-        language = torch.LongTensor(language)
-        return bert, ja_bert, en_bert, phone, tone, language
 
     def get_sid(self, sid):
         sid = torch.LongTensor([int(sid)])
