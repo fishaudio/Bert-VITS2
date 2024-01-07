@@ -13,11 +13,13 @@ from text import cleaned_text_to_sequence, get_bert
 
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
 from typing import Union
-from text.cleaner import clean_text
+from text.cleaner import clean_text, clean_text_auto
+from tools.filelist_utils import get_text_bert_auto, LangType
 import utils
 
 from models import SynthesizerTrn
 from text.symbols import symbols
+
 
 from oldVersion.V220.models import SynthesizerTrn as V220SynthesizerTrn
 from oldVersion.V220.text import symbols as V220symbols
@@ -347,50 +349,15 @@ def infer_multilang(
     skip_start=False,
     skip_end=False,
 ):
-    bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    # emo = get_emo_(reference_audio, emotion, sid)
-    # if isinstance(reference_audio, np.ndarray):
-    #     emo = get_clap_audio_feature(reference_audio, device)
-    # else:
-    #     emo = get_clap_text_feature(emotion, device)
-    # emo = torch.squeeze(emo, dim=1)
-    for idx, (txt, lang) in enumerate(zip(text, language)):
-        _skip_start = (idx != 0) or (skip_start and idx == 0)
-        _skip_end = (idx != len(language) - 1) or skip_end
-        (
-            temp_bert,
-            temp_ja_bert,
-            temp_en_bert,
-            temp_phones,
-            temp_tones,
-            temp_lang_ids,
-        ) = get_text(txt, lang, hps, device)
-        if _skip_start:
-            temp_bert = temp_bert[:, 3:]
-            temp_ja_bert = temp_ja_bert[:, 3:]
-            temp_en_bert = temp_en_bert[:, 3:]
-            temp_phones = temp_phones[3:]
-            temp_tones = temp_tones[3:]
-            temp_lang_ids = temp_lang_ids[3:]
-        if _skip_end:
-            temp_bert = temp_bert[:, :-2]
-            temp_ja_bert = temp_ja_bert[:, :-2]
-            temp_en_bert = temp_en_bert[:, :-2]
-            temp_phones = temp_phones[:-2]
-            temp_tones = temp_tones[:-2]
-            temp_lang_ids = temp_lang_ids[:-2]
-        bert.append(temp_bert)
-        ja_bert.append(temp_ja_bert)
-        en_bert.append(temp_en_bert)
-        phones.append(temp_phones)
-        tones.append(temp_tones)
-        lang_ids.append(temp_lang_ids)
-    bert = torch.concatenate(bert, dim=1)
-    ja_bert = torch.concatenate(ja_bert, dim=1)
-    en_bert = torch.concatenate(en_bert, dim=1)
-    phones = torch.concatenate(phones, dim=0)
-    tones = torch.concatenate(tones, dim=0)
-    lang_ids = torch.concatenate(lang_ids, dim=0)
+    (
+        bert,
+        ja_bert,
+        en_bert,
+        agg_phones,
+        agg_tones,
+        lang_ids,
+    ) = get_text_bert_auto(*clean_text_auto(text), device, hps.data.add_blank)
+    phones, tones = agg_phones, agg_tones
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)

@@ -1,11 +1,12 @@
 from text.symbols import *
 from typing import Tuple, List, Literal
+from tools.filelist_utils import LangType
 
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
 
 
 def cleaned_text_to_sequence(
-    raw_phones: List[str], tones: List[int], language: Literal["ZH", "EN", "JP"]
+    raw_phones: List[str], tones: List[int], language: LangType
 ) -> Tuple[List[int], List[int], List[int]]:
     """Converts a string of text to a sequence of IDs corresponding to the symbols in the text.
     Args:
