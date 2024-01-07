@@ -303,7 +303,7 @@ hiragana_map = {
     "−": ":",
     "-": ":",
     # その他特別な処理
-    "を": " o"
+    "を": " o",
 }
 
 
@@ -324,8 +324,8 @@ def hiragana2p(txt: str) -> str:
             continue
 
         for length in range(3, 0, -1):
-            if txt[i:i + length] in hiragana_map:
-                result.append(hiragana_map[txt[i:i + length]])
+            if txt[i : i + length] in hiragana_map:
+                result.append(hiragana_map[txt[i : i + length]])
                 skip = length - 1
                 break
 
@@ -341,7 +341,6 @@ def hiragana2p(txt: str) -> str:
     txt = re.sub(pattern, replacement, txt)
     txt = txt.replace("N", "n")  # 促音のNをnに変換
     return txt
-
 
 
 def kata2phoneme(text: str) -> str:
