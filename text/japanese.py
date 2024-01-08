@@ -303,7 +303,11 @@ hiragana_map = {
     "−": ":",
     "-": ":",
     # その他特別な処理
-    "を": " o"
+    "を": " o",
+    # ここまでに処理されていないゅ等もそのまま大文字扱い（追加）
+    "ゃ": " y a",
+    "ゅ", " y u",
+    "ょ", " y o",
 }
 
 
@@ -314,6 +318,7 @@ def hiragana2p(txt: str) -> str:
     - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
     - avoid using `N` for `ん` (for compatibility)
     - use `v` for `ゔ` related text.
+    - add bare `ゃ` `ゅ` `ょ` to `y a` `y u` `y o` (for compatibility).
     """
 
     result = []
