@@ -40,7 +40,7 @@ from text.symbols import symbols
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
-    True  # If encontered training problem,please try to disable TF32.
+    True  # If encountered training problem,please try to disable TF32.
 )
 torch.set_float32_matmul_precision("medium")
 torch.backends.cuda.sdp_kernel("flash")
