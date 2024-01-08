@@ -17,10 +17,10 @@
     "c_mel": 45,
     "c_kl": 1.0,
     "skip_optimizer": false,
-    "freeze_ZH_bert": true,
-    "freeze_JP_bert": true,
-    "freeze_EN_bert": true,
-    "freeze_style": true
+    "freeze_ZH_bert": false,
+    "freeze_JP_bert": false,
+    "freeze_EN_bert": false,
+    "freeze_style": false
   },
   "data": {
     "training_files": "Data/your_model_name/filelists/train.list",
