@@ -347,15 +347,34 @@ def run():
             epoch_str = 1
             global_step = 0
 
-    scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
-        optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
+    steps_per_epoch = len(train_loader)
+    warmup_steps = hps.train.warmup_epochs * steps_per_epoch
+
+    def lr_lambda(step):
+        """for warmup"""
+        if step < warmup_steps:
+            return step / warmup_steps
+        else:
+            return hps.train.lr_decay ** (step - warmup_steps)
+
+    scheduler_last_epoch = -1
+    if global_step > 0:
+        scheduler_last_epoch = global_step - 1
+    scheduler_g = torch.optim.lr_scheduler.LambdaLR(
+        optim_g, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
     )
-    scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
-        optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
+    scheduler_d = torch.optim.lr_scheduler.LambdaLR(
+        optim_d, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
     )
     if net_dur_disc is not None:
-        scheduler_dur_disc = torch.optim.lr_scheduler.ExponentialLR(
-            optim_dur_disc, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
+        if not optim_dur_disc.param_groups[0].get("initial_lr"):
+            if global_step == 0:
+                optim_dur_disc.param_groups[0]["initial_lr"] = hps.train.learning_rate
+            else:
+                optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
+            initial_lr = optim_dur_disc.param_groups[0].get("initial_lr")
+        scheduler_dur_disc = torch.optim.lr_scheduler.LambdaLR(
+            optim_dur_disc, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
         )
     else:
         scheduler_dur_disc = None
@@ -390,10 +409,6 @@ def run():
                 None,
                 None,
             )
-        scheduler_g.step()
-        scheduler_d.step()
-        if net_dur_disc is not None:
-            scheduler_dur_disc.step()
 
         if epoch == hps.train.epochs:
             # Save the final models
@@ -701,6 +716,10 @@ def train_and_evaluate(
                     for_infer=True,
                 )
 
+        scheduler_g.step()
+        scheduler_d.step()
+        if net_dur_disc is not None:
+            scheduler_dur_disc.step()
         global_step += 1
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
     # gc.collect()
