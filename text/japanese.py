@@ -13,7 +13,301 @@ import pyopenjtalk
 import jaconv
 
 
-def hiragana2p(text: str) -> str:
+# Mapping of hiragana to phonetic representation
+hiragana_map = {
+    "う゛ぁ": " v a",
+    "う゛ぃ": " v i",
+    "う゛ぇ": " v e",
+    "う゛ぉ": " v o",
+    "う゛ゅ": " by u",
+    "ぅ゛": " v u",
+    # ゔ等の処理を追加
+    "ゔぁ": " v a",
+    "ゔぃ": " v i",
+    "ゔぇ": " v e",
+    "ゔぉ": " v o",
+    "ゔゅ": " by u",
+    # 2文字からなる変換規則
+    "あぁ": " a a",
+    "いぃ": " i i",
+    "いぇ": " i e",
+    "いゃ": " y a",
+    "うぅ": " u:",
+    "えぇ": " e e",
+    "おぉ": " o:",
+    "かぁ": " k a:",
+    "きぃ": " k i:",
+    "くぅ": " k u:",
+    "くゃ": " ky a",
+    "くゅ": " ky u",
+    "くょ": " ky o",
+    "けぇ": " k e:",
+    "こぉ": " k o:",
+    "がぁ": " g a:",
+    "ぎぃ": " g i:",
+    "ぐぅ": " g u:",
+    "ぐゃ": " gy a",
+    "ぐゅ": " gy u",
+    "ぐょ": " gy o",
+    "げぇ": " g e:",
+    "ごぉ": " g o:",
+    "さぁ": " s a:",
+    "しぃ": " sh i",
+    "すぅ": " s u:",
+    "すゃ": " sh a",
+    "すゅ": " sh u",
+    "すょ": " sh o",
+    "せぇ": " s e:",
+    "そぉ": " s o:",
+    "ざぁ": " z a:",
+    "じぃ": " j i:",
+    "ずぅ": " z u:",
+    "ずゃ": " zy a",
+    "ずゅ": " zy u",
+    "ずょ": " zy o",
+    "ぜぇ": " z e:",
+    "ぞぉ": " z o:",
+    "たぁ": " t a:",
+    "ちぃ": " ch i",
+    "つぁ": " ts a",
+    "つぃ": " ts i",
+    "つぅ": " ts u",
+    "つゃ": " ch a",
+    "つゅ": " ch u",
+    "つょ": " ch o",
+    "つぇ": " ts e",
+    "つぉ": " ts o",
+    "てぇ": " t e:",
+    "とぉ": " t o:",
+    "だぁ": " d a:",
+    "ぢぃ": " j i:",
+    "づぅ": " d u:",
+    "づゃ": " zy a",
+    "づゅ": " zy u",
+    "づょ": " zy o",
+    "でぇ": " d e:",
+    "なぁ": " n a:",
+    "にぃ": " n i:",
+    "ぬぅ": " n u:",
+    "ぬゃ": " ny a",
+    "ぬゅ": " ny u",
+    "ぬょ": " ny o",
+    "ねぇ": " n e:",
+    "のぉ": " n o:",
+    "はぁ": " h a:",
+    "ひぃ": " h i:",
+    "ふぅ": " f u:",
+    "ふゃ": " hy a",
+    "へぇ": " h e:",
+    "ほぉ": " h o:",
+    "ばぁ": " b a:",
+    "びぃ": " b i:",
+    "ぶぅ": " b u:",
+    "ぶゅ": " by u",
+    "べぇ": " b e:",
+    "ぼぉ": " b o:",
+    "ぱぁ": " p a:",
+    "ぴぃ": " p i:",
+    "ぷぅ": " p u:",
+    "ぷゃ": " py a",
+    "ぷゅ": " py u",
+    "ぷょ": " py o",
+    "ぺぇ": " p e:",
+    "ぽぉ": " p o:",
+    "まぁ": " m a:",
+    "みぃ": " m i:",
+    "むぅ": " m u:",
+    "むゃ": " my a",
+    "むゅ": " my u",
+    "むょ": " my o",
+    "めぇ": " m e:",
+    "もぉ": " m o:",
+    "やぁ": " y a:",
+    "ゆぅ": " y u:",
+    "ゆゃ": " y a:",
+    "ゆゅ": " y u:",
+    "ゆょ": " y o:",
+    "よぉ": " y o:",
+    "らぁ": " r a:",
+    "りぃ": " r i:",
+    "るぅ": " r u:",
+    "るゃ": " ry a",
+    "るゅ": " ry u",
+    "るょ": " ry o",
+    "れぇ": " r e:",
+    "ろぉ": " r o:",
+    "わぁ": " w a:",
+    "をぉ": " o:",
+    "う゛": " b u",
+    "でぃ": " d i",
+    "でゃ": " dy a",
+    "でゅ": " dy u",
+    "でょ": " dy o",
+    "てぃ": " t i",
+    "てゃ": " ty a",
+    "てゅ": " ty u",
+    "てょ": " ty o",
+    "すぃ": " s i",
+    "ずぁ": " z u",
+    "ずぃ": " z i",
+    "ずぇ": " z e",
+    "ずぉ": " z o",
+    "きゃ": " ky a",
+    "きゅ": " ky u",
+    "きょ": " ky o",
+    "しゃ": " sh a",
+    "しゅ": " sh u",
+    "しぇ": " sh e",
+    "しょ": " sh o",
+    "ちゃ": " ch a",
+    "ちゅ": " ch u",
+    "ちぇ": " ch e",
+    "ちょ": " ch o",
+    "とぅ": " t u",
+    "とゃ": " ty a",
+    "とゅ": " ty u",
+    "とょ": " ty o",
+    "どぁ": " d o ",
+    "どぅ": " d u",
+    "どゃ": " dy a",
+    "どゅ": " dy u",
+    "どょ": " dy o",
+    "どぉ": " d o:",
+    "にゃ": " ny a",
+    "にゅ": " ny u",
+    "にょ": " ny o",
+    "ひゃ": " hy a",
+    "ひゅ": " hy u",
+    "ひょ": " hy o",
+    "みゃ": " my a",
+    "みゅ": " my u",
+    "みょ": " my o",
+    "りゃ": " ry a",
+    "りゅ": " ry u",
+    "りょ": " ry o",
+    "ぎゃ": " gy a",
+    "ぎゅ": " gy u",
+    "ぎょ": " gy o",
+    "ぢぇ": " j e",
+    "ぢゃ": " j a",
+    "ぢゅ": " j u",
+    "ぢょ": " j o",
+    "じぇ": " j e",
+    "じゃ": " j a",
+    "じゅ": " j u",
+    "じょ": " j o",
+    "びゃ": " by a",
+    "びゅ": " by u",
+    "びょ": " by o",
+    "ぴゃ": " py a",
+    "ぴゅ": " py u",
+    "ぴょ": " py o",
+    "うぁ": " u a",
+    "うぃ": " w i",
+    "うぇ": " w e",
+    "うぉ": " w o",
+    "ふぁ": " f a",
+    "ふぃ": " f i",
+    "ふゅ": " hy u",
+    "ふょ": " hy o",
+    "ふぇ": " f e",
+    "ふぉ": " f o",
+    # 1音からなる変換規則
+    "あ": " a",
+    "い": " i",
+    "う": " u",
+    "ゔ": " v u",  # ゔの処理を追加
+    "え": " e",
+    "お": " o",
+    "か": " k a",
+    "き": " k i",
+    "く": " k u",
+    "け": " k e",
+    "こ": " k o",
+    "さ": " s a",
+    "し": " sh i",
+    "す": " s u",
+    "せ": " s e",
+    "そ": " s o",
+    "た": " t a",
+    "ち": " ch i",
+    "つ": " ts u",
+    "て": " t e",
+    "と": " t o",
+    "な": " n a",
+    "に": " n i",
+    "ぬ": " n u",
+    "ね": " n e",
+    "の": " n o",
+    "は": " h a",
+    "ひ": " h i",
+    "ふ": " f u",
+    "へ": " h e",
+    "ほ": " h o",
+    "ま": " m a",
+    "み": " m i",
+    "む": " m u",
+    "め": " m e",
+    "も": " m o",
+    "ら": " r a",
+    "り": " r i",
+    "る": " r u",
+    "れ": " r e",
+    "ろ": " r o",
+    "が": " g a",
+    "ぎ": " g i",
+    "ぐ": " g u",
+    "げ": " g e",
+    "ご": " g o",
+    "ざ": " z a",
+    "じ": " j i",
+    "ず": " z u",
+    "ぜ": " z e",
+    "ぞ": " z o",
+    "だ": " d a",
+    "ぢ": " j i",
+    "づ": " z u",
+    "で": " d e",
+    "ど": " d o",
+    "ば": " b a",
+    "び": " b i",
+    "ぶ": " b u",
+    "べ": " b e",
+    "ぼ": " b o",
+    "ぱ": " p a",
+    "ぴ": " p i",
+    "ぷ": " p u",
+    "ぺ": " p e",
+    "ぽ": " p o",
+    "や": " y a",
+    "ゆ": " y u",
+    "よ": " y o",
+    "わ": " w a",
+    "ゐ": " i",
+    "ゑ": " e",
+    "ん": " N",
+    "っ": " q",
+    # ここまでに処理されてない ぁぃぅぇぉ はそのまま大文字扱い
+    "ぁ": " a",
+    "ぃ": " i",
+    "ぅ": " u",
+    "ぇ": " e",
+    "ぉ": " o",
+    "ゎ": " w a",
+    # 長音の処理
+    # for (pattern, replace_str) in JULIUS_LONG_VOWEL:
+    #     text = pattern.sub(replace_str, text)
+    # text = text.replace("o u", "o:")  # おう -> おーの音便
+    "ー": ":",
+    "〜": ":",
+    "−": ":",
+    "-": ":",
+    # その他特別な処理
+    "を": " o",
+}
+
+
+def hiragana2p(txt: str) -> str:
     """
     Modification of `jaconv.hiragana2julius`.
     - avoid using `:`, instead, `あーーー` -> `a a a a`.
@@ -21,329 +315,32 @@ def hiragana2p(text: str) -> str:
     - avoid using `N` for `ん` (for compatibility)
     - use `v` for `ゔ` related text.
     """
-    text = text.replace("う゛ぁ", " v a")
-    text = text.replace("う゛ぃ", " v i")
-    text = text.replace("う゛ぇ", " v e")
-    text = text.replace("う゛ぉ", " v o")
-    text = text.replace("う゛ゅ", " by u")
 
-    # ゔ等の処理を追加
-    text = text.replace("ゔぁ", " v a")
-    text = text.replace("ゔぃ", " v i")
-    text = text.replace("ゔぇ", " v e")
-    text = text.replace("ゔぉ", " v o")
-    text = text.replace("ゔゅ", " by u")
+    result = []
+    skip = 0
+    for i in range(len(txt)):
+        if skip:
+            skip -= 1
+            continue
 
-    # 2文字からなる変換規則
-    text = text.replace("ぅ゛", " v u")
+        for length in range(3, 0, -1):
+            if txt[i : i + length] in hiragana_map:
+                result.append(hiragana_map[txt[i : i + length]])
+                skip = length - 1
+                break
 
-    text = text.replace("あぁ", " a a")
-    text = text.replace("いぃ", " i i")
-    text = text.replace("いぇ", " i e")
-    text = text.replace("いゃ", " y a")
-    text = text.replace("うぅ", " u:")
-    text = text.replace("えぇ", " e e")
-    text = text.replace("おぉ", " o:")
-    text = text.replace("かぁ", " k a:")
-    text = text.replace("きぃ", " k i:")
-    text = text.replace("くぅ", " k u:")
-    text = text.replace("くゃ", " ky a")
-    text = text.replace("くゅ", " ky u")
-    text = text.replace("くょ", " ky o")
-    text = text.replace("けぇ", " k e:")
-    text = text.replace("こぉ", " k o:")
-    text = text.replace("がぁ", " g a:")
-    text = text.replace("ぎぃ", " g i:")
-    text = text.replace("ぐぅ", " g u:")
-    text = text.replace("ぐゃ", " gy a")
-    text = text.replace("ぐゅ", " gy u")
-    text = text.replace("ぐょ", " gy o")
-    text = text.replace("げぇ", " g e:")
-    text = text.replace("ごぉ", " g o:")
-    text = text.replace("さぁ", " s a:")
-    text = text.replace("しぃ", " sh i:")
-    text = text.replace("すぅ", " s u:")
-    text = text.replace("すゃ", " sh a")
-    text = text.replace("すゅ", " sh u")
-    text = text.replace("すょ", " sh o")
-    text = text.replace("せぇ", " s e:")
-    text = text.replace("そぉ", " s o:")
-    text = text.replace("ざぁ", " z a:")
-    text = text.replace("じぃ", " j i:")
-    text = text.replace("ずぅ", " z u:")
-    text = text.replace("ずゃ", " zy a")
-    text = text.replace("ずゅ", " zy u")
-    text = text.replace("ずょ", " zy o")
-    text = text.replace("ぜぇ", " z e:")
-    text = text.replace("ぞぉ", " z o:")
-    text = text.replace("たぁ", " t a:")
-    text = text.replace("ちぃ", " ch i:")
-    text = text.replace("つぁ", " ts a")
-    text = text.replace("つぃ", " ts i")
-    text = text.replace("つぅ", " ts u:")
-    text = text.replace("つゃ", " ch a")
-    text = text.replace("つゅ", " ch u")
-    text = text.replace("つょ", " ch o")
-    text = text.replace("つぇ", " ts e")
-    text = text.replace("つぉ", " ts o")
-    text = text.replace("てぇ", " t e:")
-    text = text.replace("とぉ", " t o:")
-    text = text.replace("だぁ", " d a:")
-    text = text.replace("ぢぃ", " j i:")
-    text = text.replace("づぅ", " d u:")
-    text = text.replace("づゃ", " zy a")
-    text = text.replace("づゅ", " zy u")
-    text = text.replace("づょ", " zy o")
-    text = text.replace("でぇ", " d e:")
-    text = text.replace("どぉ", " d o:")
-    text = text.replace("なぁ", " n a:")
-    text = text.replace("にぃ", " n i:")
-    text = text.replace("ぬぅ", " n u:")
-    text = text.replace("ぬゃ", " ny a")
-    text = text.replace("ぬゅ", " ny u")
-    text = text.replace("ぬょ", " ny o")
-    text = text.replace("ねぇ", " n e:")
-    text = text.replace("のぉ", " n o:")
-    text = text.replace("はぁ", " h a:")
-    text = text.replace("ひぃ", " h i:")
-    text = text.replace("ふぅ", " f u:")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ふゅ", " hy u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("へぇ", " h e:")
-    text = text.replace("ほぉ", " h o:")
-    text = text.replace("ばぁ", " b a:")
-    text = text.replace("びぃ", " b i:")
-    text = text.replace("ぶぅ", " b u:")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ぶゅ", " by u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("べぇ", " b e:")
-    text = text.replace("ぼぉ", " b o:")
-    text = text.replace("ぱぁ", " p a:")
-    text = text.replace("ぴぃ", " p i:")
-    text = text.replace("ぷぅ", " p u:")
-    text = text.replace("ぷゃ", " py a")
-    text = text.replace("ぷゅ", " py u")
-    text = text.replace("ぷょ", " py o")
-    text = text.replace("ぺぇ", " p e:")
-    text = text.replace("ぽぉ", " p o:")
-    text = text.replace("まぁ", " m a:")
-    text = text.replace("みぃ", " m i:")
-    text = text.replace("むぅ", " m u:")
-    text = text.replace("むゃ", " my a")
-    text = text.replace("むゅ", " my u")
-    text = text.replace("むょ", " my o")
-    text = text.replace("めぇ", " m e:")
-    text = text.replace("もぉ", " m o:")
-    text = text.replace("やぁ", " y a:")
-    text = text.replace("ゆぅ", " y u:")
-    text = text.replace("ゆゃ", " y a:")
-    text = text.replace("ゆゅ", " y u:")
-    text = text.replace("ゆょ", " y o:")
-    text = text.replace("よぉ", " y o:")
-    text = text.replace("らぁ", " r a:")
-    text = text.replace("りぃ", " r i:")
-    text = text.replace("るぅ", " r u:")
-    text = text.replace("るゃ", " ry a")
-    text = text.replace("るゅ", " ry u")
-    text = text.replace("るょ", " ry o")
-    text = text.replace("れぇ", " r e:")
-    text = text.replace("ろぉ", " r o:")
-    text = text.replace("わぁ", " w a:")
-    text = text.replace("をぉ", " o:")
-
-    text = text.replace("う゛", " b u")
-    text = text.replace("でぃ", " d i")
-    text = text.replace("でぇ", " d e:")
-    text = text.replace("でゃ", " dy a")
-    text = text.replace("でゅ", " dy u")
-    text = text.replace("でょ", " dy o")
-    text = text.replace("てぃ", " t i")
-    text = text.replace("てぇ", " t e:")
-    text = text.replace("てゃ", " ty a")
-    text = text.replace("てゅ", " ty u")
-    text = text.replace("てょ", " ty o")
-    text = text.replace("すぃ", " s i")
-    text = text.replace("ずぁ", " z u a")
-    text = text.replace("ずぃ", " z i")
-    text = text.replace("ずぅ", " z u")
-    text = text.replace("ずゃ", " zy a")
-    text = text.replace("ずゅ", " zy u")
-    text = text.replace("ずょ", " zy o")
-    text = text.replace("ずぇ", " z e")
-    text = text.replace("ずぉ", " z o")
-    text = text.replace("きゃ", " ky a")
-    text = text.replace("きゅ", " ky u")
-    text = text.replace("きょ", " ky o")
-    text = text.replace("しゃ", " sh a")
-    text = text.replace("しゅ", " sh u")
-    text = text.replace("しぇ", " sh e")
-    text = text.replace("しょ", " sh o")
-    text = text.replace("ちゃ", " ch a")
-    text = text.replace("ちゅ", " ch u")
-    text = text.replace("ちぇ", " ch e")
-    text = text.replace("ちょ", " ch o")
-    text = text.replace("とぅ", " t u")
-    text = text.replace("とゃ", " ty a")
-    text = text.replace("とゅ", " ty u")
-    text = text.replace("とょ", " ty o")
-    text = text.replace("どぁ", " d o a")
-    text = text.replace("どぅ", " d u")
-    text = text.replace("どゃ", " dy a")
-    text = text.replace("どゅ", " dy u")
-    text = text.replace("どょ", " dy o")
-    text = text.replace("どぉ", " d o:")
-    text = text.replace("にゃ", " ny a")
-    text = text.replace("にゅ", " ny u")
-    text = text.replace("にょ", " ny o")
-    text = text.replace("ひゃ", " hy a")
-    text = text.replace("ひゅ", " hy u")
-    text = text.replace("ひょ", " hy o")
-    text = text.replace("みゃ", " my a")
-    text = text.replace("みゅ", " my u")
-    text = text.replace("みょ", " my o")
-    text = text.replace("りゃ", " ry a")
-    text = text.replace("りゅ", " ry u")
-    text = text.replace("りょ", " ry o")
-    text = text.replace("ぎゃ", " gy a")
-    text = text.replace("ぎゅ", " gy u")
-    text = text.replace("ぎょ", " gy o")
-    text = text.replace("ぢぇ", " j e")
-    text = text.replace("ぢゃ", " j a")
-    text = text.replace("ぢゅ", " j u")
-    text = text.replace("ぢょ", " j o")
-    text = text.replace("じぇ", " j e")
-    text = text.replace("じゃ", " j a")
-    text = text.replace("じゅ", " j u")
-    text = text.replace("じょ", " j o")
-    text = text.replace("びゃ", " by a")
-    text = text.replace("びゅ", " by u")
-    text = text.replace("びょ", " by o")
-    text = text.replace("ぴゃ", " py a")
-    text = text.replace("ぴゅ", " py u")
-    text = text.replace("ぴょ", " py o")
-    text = text.replace("うぁ", " u a")
-    text = text.replace("うぃ", " w i")
-    text = text.replace("うぇ", " w e")
-    text = text.replace("うぉ", " w o")
-    text = text.replace("ふぁ", " f a")
-    text = text.replace("ふぃ", " f i")
-    text = text.replace("ふぅ", " f u")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ふゅ", " hy u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("ふぇ", " f e")
-    text = text.replace("ふぉ", " f o")
-
-    # 1音からなる変換規則
-    text = text.replace("あ", " a")
-    text = text.replace("い", " i")
-    text = text.replace("う", " u")
-    text = text.replace("ゔ", " v u")  # ゔの処理を追加
-    text = text.replace("え", " e")
-    text = text.replace("お", " o")
-    text = text.replace("か", " k a")
-    text = text.replace("き", " k i")
-    text = text.replace("く", " k u")
-    text = text.replace("け", " k e")
-    text = text.replace("こ", " k o")
-    text = text.replace("さ", " s a")
-    text = text.replace("し", " sh i")
-    text = text.replace("す", " s u")
-    text = text.replace("せ", " s e")
-    text = text.replace("そ", " s o")
-    text = text.replace("た", " t a")
-    text = text.replace("ち", " ch i")
-    text = text.replace("つ", " ts u")
-    text = text.replace("て", " t e")
-    text = text.replace("と", " t o")
-    text = text.replace("な", " n a")
-    text = text.replace("に", " n i")
-    text = text.replace("ぬ", " n u")
-    text = text.replace("ね", " n e")
-    text = text.replace("の", " n o")
-    text = text.replace("は", " h a")
-    text = text.replace("ひ", " h i")
-    text = text.replace("ふ", " f u")
-    text = text.replace("へ", " h e")
-    text = text.replace("ほ", " h o")
-    text = text.replace("ま", " m a")
-    text = text.replace("み", " m i")
-    text = text.replace("む", " m u")
-    text = text.replace("め", " m e")
-    text = text.replace("も", " m o")
-    text = text.replace("ら", " r a")
-    text = text.replace("り", " r i")
-    text = text.replace("る", " r u")
-    text = text.replace("れ", " r e")
-    text = text.replace("ろ", " r o")
-    text = text.replace("が", " g a")
-    text = text.replace("ぎ", " g i")
-    text = text.replace("ぐ", " g u")
-    text = text.replace("げ", " g e")
-    text = text.replace("ご", " g o")
-    text = text.replace("ざ", " z a")
-    text = text.replace("じ", " j i")
-    text = text.replace("ず", " z u")
-    text = text.replace("ぜ", " z e")
-    text = text.replace("ぞ", " z o")
-    text = text.replace("だ", " d a")
-    text = text.replace("ぢ", " j i")
-    text = text.replace("づ", " z u")
-    text = text.replace("で", " d e")
-    text = text.replace("ど", " d o")
-    text = text.replace("ば", " b a")
-    text = text.replace("び", " b i")
-    text = text.replace("ぶ", " b u")
-    text = text.replace("べ", " b e")
-    text = text.replace("ぼ", " b o")
-    text = text.replace("ぱ", " p a")
-    text = text.replace("ぴ", " p i")
-    text = text.replace("ぷ", " p u")
-    text = text.replace("ぺ", " p e")
-    text = text.replace("ぽ", " p o")
-    text = text.replace("や", " y a")
-    text = text.replace("ゆ", " y u")
-    text = text.replace("よ", " y o")
-    text = text.replace("わ", " w a")
-    text = text.replace("ゐ", " i")
-    text = text.replace("ゑ", " e")
-    text = text.replace("ん", " N")
-    text = text.replace("っ", " q")
-    # ここまでに処理されてない ぁぃぅぇぉ はそのまま大文字扱い
-    text = text.replace("ぁ", " a")
-    text = text.replace("ぃ", " i")
-    text = text.replace("ぅ", " u")
-    text = text.replace("ぇ", " e")
-    text = text.replace("ぉ", " o")
-    text = text.replace("ゎ", " w a")
-    text = text.replace("ぉ", " o")
-
-    # 長音の処理
-    # for (pattern, replace_str) in JULIUS_LONG_VOWEL:
-    #     text = pattern.sub(replace_str, text)
-    # text = text.replace("o u", "o:")  # おう -> おーの音便
-    text = text.replace("ー", ":")
-    text = text.replace("〜", ":")
-    text = text.replace("−", ":")
-    text = text.replace("-", ":")
-
-    # その他特別な処理
-    text = text.replace("を", " o")
-
-    text = text.strip()
-
-    text = text.replace(":+", ":")
+    txt = "".join(result)
+    txt = txt.strip()
+    txt = txt.replace(":+", ":")
 
     # ここまで`jaconv.hiragana2julius`と音便処理と長音処理をのぞいて同じ
     # ここから`k a:: k i:`→`k a a a k i i`のように`:`の数だけ繰り返す処理
     pattern = r"(\w)(:*)"
     replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))
 
-    text = re.sub(pattern, replacement, text)
-    text = text.replace("N", "n")  # 促音のNをnに変換
-    return text
+    txt = re.sub(pattern, replacement, txt)
+    txt = txt.replace("N", "n")  # 促音のNをnに変換
+    return txt
 
 
 def kata2phoneme(text: str) -> str:
