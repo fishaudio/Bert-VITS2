@@ -1,0 +1,3 @@
+[submodule "emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim"]
+	path = emotional/wav2vec2-large-robust-12-ft-emotion-msp-dim
+	url = https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim
