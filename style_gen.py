@@ -7,8 +7,9 @@ import torch
 from tqdm import tqdm
 
 import utils
-from config import config
+from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
+from config import config
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
@@ -19,12 +20,16 @@ device = torch.device(config.style_gen_config.device)
 inference.to(device)
 
 
+# 推論時にインポートするために短いが関数を書く
+def get_style_vector(wav_path):
+    return inference(wav_path)
+
+
 def save_style_vector(wav_path):
     try:
-        style_vec = inference(wav_path)
+        style_vec = get_style_vector(wav_path)
     except Exception as e:
-        print(f"\nError occurred with file: {wav_path}")
-        print(e)
+        logger.error(f"\nError occurred with file: {wav_path}, Details:\n{e}\n")
         raise
     np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
     return style_vec
@@ -69,4 +74,4 @@ if __name__ == "__main__":
             )
         )
 
-    print(f"Finished generating style vectors! total: {len(wavnames)} npy files.")
+    logger.info(f"Finished generating style vectors! total: {len(wavnames)} npy files.")
