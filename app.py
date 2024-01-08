@@ -46,9 +46,13 @@ def tts_fn(
     use_assist_text,
     style,
     style_weight,
+    given_tone,
 ):
     assert model_holder.current_model is not None
-
+    if given_tone == "":
+        given_tone = None
+    else:
+        given_tone = [int(i) for i in given_tone]
     start_time = datetime.datetime.now()
 
     sr, audio = model_holder.current_model.infer(
@@ -66,6 +70,7 @@ def tts_fn(
         use_assist_text=use_assist_text,
         style=style,
         style_weight=style_weight,
+        given_tone=given_tone,
     )
 
     end_time = datetime.datetime.now()
@@ -238,6 +243,7 @@ if __name__ == "__main__":
                     step=0.1,
                     label="分けた場合に挟む無音の長さ（秒）",
                 )
+                given_tone = gr.Textbox("トーン、0と1の数値列")
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(
@@ -334,6 +340,7 @@ if __name__ == "__main__":
                 use_assist_text,
                 style,
                 style_weight,
+                given_tone,
             ],
             outputs=[text_output, audio_output],
         )

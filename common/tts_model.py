@@ -95,6 +95,7 @@ class Model:
         use_assist_text: bool = False,
         style: str = DEFAULT_STYLE,
         style_weight: float = DEFAULT_STYLE_WEIGHT,
+        given_tone: Optional[list[int]] = None,
     ) -> tuple[int, np.ndarray]:
         logger.info(f"Start generating audio data from text:\n{text}")
         if reference_audio_path == "":
@@ -127,6 +128,7 @@ class Model:
                     assist_text=assist_text,
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
+                    given_tone=given_tone,
                 )
         else:
             texts = text.split("\n")

@@ -6,6 +6,7 @@ from models import SynthesizerTrn
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 from text.symbols import symbols
+from common.log import logger
 
 # latest_version = "1.0"
 
@@ -29,9 +30,21 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     return net_g
 
 
-def get_text(text, language_str, hps, device, assist_text=None, assist_text_weight=0.7):
+def get_text(
+    text,
+    language_str,
+    hps,
+    device,
+    assist_text=None,
+    assist_text_weight=0.7,
+    given_tone=None,
+):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
+    logger.info(f"Original tone: {''.join(str(num) for num in tone)}")
+    if given_tone is not None:
+        logger.debug(f"Tone given: {given_tone}")
+        tone = given_tone
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 
     if hps.data.add_blank:
@@ -88,6 +101,7 @@ def infer(
     skip_end=False,
     assist_text=None,
     assist_text_weight=0.7,
+    given_tone=None,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text,
@@ -96,6 +110,7 @@ def infer(
         device,
         assist_text=assist_text,
         assist_text_weight=assist_text_weight,
+        given_tone=given_tone,
     )
     if skip_start:
         phones = phones[3:]

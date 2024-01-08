@@ -202,6 +202,7 @@ def g2phone_tone_list(text: str) -> list[tuple[str, int]]:
     [('k', 0), ('o', 0), ('n', 1), ('n', 1), ('i', 1), ('ch', 1), ('i', 1), ('w', 1), ('a', 1), ('s', 1), ('e', 1), ('k', 0), ('a', 0), ('i', 0), ('i', 0), ('g', 1), ('e', 1), ('n', 0), ('k', 0), ('i', 0)]
     """
     prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
+    logger.debug(f"prosodies: {prosodies}")
     result: list[tuple[str, int]] = []
     current_phrase: list[tuple[str, int]] = []
     current_tone = 0

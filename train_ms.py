@@ -258,6 +258,10 @@ def run():
         logger.info("Freezing JP bert encoder !!!")
         for param in net_g.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
+    if getattr(hps.train, "freeze_style", False):
+        logger.info("Freezing style encoder !!!")
+        for param in net_g.enc_p.style_proj.parameters():
+            param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
