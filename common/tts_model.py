@@ -71,9 +71,9 @@ class Model:
     def get_style_vector_from_audio(
         self, audio_path: str, weight: float = 1.0
     ) -> np.ndarray:
-        from style_gen import extract_style_vector
+        from style_gen import get_style_vector
 
-        xvec = extract_style_vector(audio_path)
+        xvec = get_style_vector(audio_path)
         mean = self.style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
@@ -190,7 +190,7 @@ class ModelHolder:
                 if f.endswith(".pth") or f.endswith(".pt") or f.endswith(".safetensors")
             ]
             if len(model_files) == 0:
-                logger.info(
+                logger.warning(
                     f"No model files found in {self.root_dir}/{model_name}, so skip it"
                 )
                 continue

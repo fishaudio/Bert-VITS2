@@ -3,13 +3,29 @@
 import re
 import unicodedata
 
-import jaconv
 import pyopenjtalk
 from num2words import num2words
 from transformers import AutoTokenizer
 
 from common.log import logger
 from text import punctuation
+from text.japanese_mora_list import (
+    mora_kata_to_mora_phonemes,
+    mora_phonemes_to_mora_kata,
+)
+
+# 子音の集合
+COSONANTS = set(
+    [
+        cosonant
+        for cosonant, _ in mora_kata_to_mora_phonemes.values()
+        if cosonant is not None
+    ]
+)
+
+# 母音の集合
+VOWELS = {"a", "i", "u", "e", "o"}
+
 
 # 正規化で記号を変換するための辞書
 rep_map = {
@@ -145,14 +161,14 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     # アクセント割当をしなおすことによってpunctuationを含めた音素とアクセントのリストを作る。
 
     # punctuationがすべて消えた、音素とアクセントのタプルのリスト
-    phone_tone_list_wo_punct = g2phone_tone_list(norm_text)
+    phone_tone_list_wo_punct = g2phone_tone_wo_punct(norm_text)
 
     # sep_text: 単語単位の単語のリスト
     # sep_kata: 単語単位の単語のカタカナ読みのリスト
     sep_text, sep_kata = text2sep_kata(norm_text)
 
     # sep_phonemes: 各単語ごとの音素のリストのリスト
-    sep_phonemes = handle_long([kata2phoneme(i) for i in sep_kata])
+    sep_phonemes = handle_long([kata2phoneme_list(i) for i in sep_kata])
 
     # phone_w_punct: sep_phonemesを結合した、punctuationを元のまま保持した音素列
     phone_w_punct: list[str] = []
@@ -192,10 +208,71 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     return phones, tones, word2ph
 
 
-def g2phone_tone_list(text: str) -> list[tuple[str, int]]:
+def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
+    phones, tones, _ = g2p(norm_text)
+    return phone_tone2kata_tone(list(zip(phones, tones)))
+
+
+def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    """phone_toneをのphone部分をカタカナに変換する。ただし最初と最後の("_", 0)は無視"""
+    phone_tone = phone_tone[1:]  # 最初の("_", 0)を無視
+    phones = [phone for phone, _ in phone_tone]
+    tones = [tone for _, tone in phone_tone]
+    logger.debug(f"phones: {phones}")
+    logger.debug(f"tones: {tones}")
+    result: list[tuple[str, int]] = []
+    current_mora = ""
+    for phone, next_phone, tone, next_tone in zip(phones, phones[1:], tones, tones[1:]):
+        # zipの関係で最後の("_", 0)は無視されている
+        if phone in punctuation:
+            result.append((phone, tone))
+            continue
+        if phone in COSONANTS and phone != "n":  # n以外の子音の場合
+            assert current_mora == "", f"Unexpected {phone} after {current_mora}"
+            assert tone == next_tone, f"Unexpected {phone} tone {tone} != {next_tone}"
+            current_mora = phone
+        elif phone == "n":
+            logger.debug(f"current_mora: {current_mora}")
+            logger.debug(f"next_phone: {next_phone}")
+            assert current_mora == "", f"Unexpected {phone} after {current_mora}"
+            if next_phone not in VOWELS:  # 次の音素が母音でない場合
+                result.append(("ン", tone))
+            else:
+                # 子音のnの場合
+                assert (
+                    tone == next_tone
+                ), f"Unexpected {phone} tone {tone} != {next_tone}"
+                current_mora = "n"
+        else:
+            # phoneが母音
+            current_mora += phone
+            result.append((mora_phonemes_to_mora_kata[current_mora], tone))
+            current_mora = ""
+        logger.debug(f"result: {result}")
+    return result
+
+
+def kata_tone2phone_tone(kata_tone: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    """`phone_tone2kata_tone()`の逆。"""
+    result: list[tuple[str, int]] = [("_", 0)]
+    for mora, tone in kata_tone:
+        if mora in punctuation:
+            result.append((mora, tone))
+        else:
+            cosonant, vowel = mora_kata_to_mora_phonemes[mora]
+            if cosonant is None:
+                result.append((vowel, tone))
+            else:
+                result.append((cosonant, tone))
+                result.append((vowel, tone))
+    result.append(("_", 0))
+    return result
+
+
+def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     """
     テキストに対して、音素とアクセント（0か1）のペアのリストを返す。
-    ただし「!」「.」「?」等の非音素記号は全て消える（ポーズ記号も残さない）。
+    ただし「!」「.」「?」等の非音素記号(punctuation)は全て消える（ポーズ記号も残さない）。
     非音素記号を含める処理は`align_tones()`で行われる。
     また「っ」は「q」に、「ん」は「n」に変換される。
     例: "こんにちは、世界ー。。元気？！" →
@@ -272,8 +349,7 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         """
         assert yomi != "", f"Empty yomi: {word}"
         if yomi == "、":
-            assert len(word) == 1, f"yomi `、` comes from: {word}"
-            # wordは1文字の記号。正規化されているので、`.`, `,`, `!`, `'`, `-`のいずれか
+            # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`のいずれか
             if word not in (
                 ".",
                 ",",
@@ -281,6 +357,7 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
                 "'",
                 "-",
             ):
+                # ここはpyopenjtalkが読めない文字等のときに起こる
                 raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
             # yomiは元の記号のままに変更
             yomi = word
@@ -290,35 +367,6 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         sep_text.append(word)
         sep_kata.append(yomi)
     return sep_text, sep_kata
-
-
-def kata2phoneme(text: str) -> list[str]:
-    """
-    原則カタカナの`text`を受け取り、それをそのままいじらずに音素記号のリストに変換。
-    注意点：
-    - punctuationが来た場合（punctuationが1文字の場合がありうる）、処理せず1文字のリストを返す
-    - 冒頭に続く「ー」はそのまま「ー」のままにする（`handle_long()`で処理される）
-    - 文中の「ー」は前の音素記号の最後の音素記号に変換される。
-    例：
-    `ーーソーナノカーー` → ["ー", "ー", "s", "o", "o", "n", "a", "n", "o", "k", "a", "a", "a"]
-    `?` → ["?"]
-    """
-    if text in punctuation:
-        return [text]
-    # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
-    if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
-        raise ValueError(f"Non-punctuation input must be katakana only: {text}")
-    # 以降`text`はカタカナのみからなる
-    if text == "ー":
-        return ["ー"]
-    elif text.startswith("ー"):
-        return ["ー"] + kata2phoneme(text[1:])
-    res: list[str] = []
-    while text:
-        # カタカナをひらがなに変換してから`hiragana2p`をかける
-        res += hiragana2p(jaconv.kata2hira(text)).split(" ")
-        break
-    return res
 
 
 # ESPnetの実装から引用、変更点無し
@@ -492,346 +540,38 @@ def align_tones(
     return result
 
 
-# jaconvから借りて修正
-# https://github.com/ikegami-yukino/jaconv/blob/master/jaconv/jaconv.py
-def hiragana2p(text: str) -> str:
+def kata2phoneme_list(text: str) -> list[str]:
     """
-    Modification of `jaconv.hiragana2julius`.
-    - avoid using `:`, instead, `あーーー` -> `a a a a`.
-    - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
-    - avoid using `N` for `ん` (for compatibility)
-    - use `v` for `ゔ` related text.
-    - add bare `ゃ` `ゅ` `ょ` to `y a` `y u` `y o` (for compatibility).
+    原則カタカナの`text`を受け取り、それをそのままいじらずに音素記号のリストに変換。
+    注意点：
+    - punctuationが来た場合（punctuationが1文字の場合がありうる）、処理せず1文字のリストを返す
+    - 冒頭に続く「ー」はそのまま「ー」のままにする（`handle_long()`で処理される）
+    - 文中の「ー」は前の音素記号の最後の音素記号に変換される。
+    例：
+    `ーーソーナノカーー` → ["ー", "ー", "s", "o", "o", "n", "a", "n", "o", "k", "a", "a", "a"]
+    `?` → ["?"]
     """
-    # 3文字以上からなる変換規則
-    text = text.replace("う゛ぁ", " v a")
-    text = text.replace("う゛ぃ", " v i")
-    text = text.replace("う゛ぇ", " v e")
-    text = text.replace("う゛ぉ", " v o")
-    text = text.replace("う゛ゅ", " by u")
+    if text in punctuation:
+        return [text]
+    # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
+    if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
+        raise ValueError(f"Input must be katakana only: {text}")
+    sorted_keys = sorted(mora_kata_to_mora_phonemes.keys(), key=len, reverse=True)
+    pattern = "|".join(map(re.escape, sorted_keys))
 
-    # ゔ等の処理を追加
-    text = text.replace("ゔぁ", " v a")
-    text = text.replace("ゔぃ", " v i")
-    text = text.replace("ゔぇ", " v e")
-    text = text.replace("ゔぉ", " v o")
-    text = text.replace("ゔゅ", " by u")
+    def mora2phonemes(mora: str) -> str:
+        cosonant, vowel = mora_kata_to_mora_phonemes[mora]
+        if cosonant is None:
+            return f" {vowel}"
+        return f" {cosonant} {vowel}"
 
-    # 2文字からなる変換規則
-    text = text.replace("ぅ゛", " v u")
+    spaced_phonemes = re.sub(pattern, lambda m: mora2phonemes(m.group()), text)
 
-    text = text.replace("あぁ", " a a")
-    text = text.replace("いぃ", " i i")
-    text = text.replace("いぇ", " i e")
-    text = text.replace("いゃ", " y a")
-    text = text.replace("うぅ", " u:")
-    text = text.replace("えぇ", " e e")
-    text = text.replace("おぉ", " o:")
-    text = text.replace("かぁ", " k a:")
-    text = text.replace("きぃ", " k i:")
-    text = text.replace("くぅ", " k u:")
-    text = text.replace("くゃ", " ky a")
-    text = text.replace("くゅ", " ky u")
-    text = text.replace("くょ", " ky o")
-    text = text.replace("けぇ", " k e:")
-    text = text.replace("こぉ", " k o:")
-    text = text.replace("がぁ", " g a:")
-    text = text.replace("ぎぃ", " g i:")
-    text = text.replace("ぐぅ", " g u:")
-    text = text.replace("ぐゃ", " gy a")
-    text = text.replace("ぐゅ", " gy u")
-    text = text.replace("ぐょ", " gy o")
-    text = text.replace("げぇ", " g e:")
-    text = text.replace("ごぉ", " g o:")
-    text = text.replace("さぁ", " s a:")
-    text = text.replace("しぃ", " sh i:")
-    text = text.replace("すぅ", " s u:")
-    text = text.replace("すゃ", " sh a")
-    text = text.replace("すゅ", " sh u")
-    text = text.replace("すょ", " sh o")
-    text = text.replace("せぇ", " s e:")
-    text = text.replace("そぉ", " s o:")
-    text = text.replace("ざぁ", " z a:")
-    text = text.replace("じぃ", " j i:")
-    text = text.replace("ずぅ", " z u:")
-    text = text.replace("ずゃ", " zy a")
-    text = text.replace("ずゅ", " zy u")
-    text = text.replace("ずょ", " zy o")
-    text = text.replace("ぜぇ", " z e:")
-    text = text.replace("ぞぉ", " z o:")
-    text = text.replace("たぁ", " t a:")
-    text = text.replace("ちぃ", " ch i:")
-    text = text.replace("つぁ", " ts a")
-    text = text.replace("つぃ", " ts i")
-    text = text.replace("つぅ", " ts u:")
-    text = text.replace("つゃ", " ch a")
-    text = text.replace("つゅ", " ch u")
-    text = text.replace("つょ", " ch o")
-    text = text.replace("つぇ", " ts e")
-    text = text.replace("つぉ", " ts o")
-    text = text.replace("てぇ", " t e:")
-    text = text.replace("とぉ", " t o:")
-    text = text.replace("だぁ", " d a:")
-    text = text.replace("ぢぃ", " j i:")
-    text = text.replace("づぅ", " d u:")
-    text = text.replace("づゃ", " zy a")
-    text = text.replace("づゅ", " zy u")
-    text = text.replace("づょ", " zy o")
-    text = text.replace("でぇ", " d e:")
-    text = text.replace("どぉ", " d o:")
-    text = text.replace("なぁ", " n a:")
-    text = text.replace("にぃ", " n i:")
-    text = text.replace("ぬぅ", " n u:")
-    text = text.replace("ぬゃ", " ny a")
-    text = text.replace("ぬゅ", " ny u")
-    text = text.replace("ぬょ", " ny o")
-    text = text.replace("ねぇ", " n e:")
-    text = text.replace("のぉ", " n o:")
-    text = text.replace("はぁ", " h a:")
-    text = text.replace("ひぃ", " h i:")
-    text = text.replace("ふぅ", " f u:")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ふゅ", " hy u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("へぇ", " h e:")
-    text = text.replace("ほぉ", " h o:")
-    text = text.replace("ばぁ", " b a:")
-    text = text.replace("びぃ", " b i:")
-    text = text.replace("ぶぅ", " b u:")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ぶゅ", " by u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("べぇ", " b e:")
-    text = text.replace("ぼぉ", " b o:")
-    text = text.replace("ぱぁ", " p a:")
-    text = text.replace("ぴぃ", " p i:")
-    text = text.replace("ぷぅ", " p u:")
-    text = text.replace("ぷゃ", " py a")
-    text = text.replace("ぷゅ", " py u")
-    text = text.replace("ぷょ", " py o")
-    text = text.replace("ぺぇ", " p e:")
-    text = text.replace("ぽぉ", " p o:")
-    text = text.replace("まぁ", " m a:")
-    text = text.replace("みぃ", " m i:")
-    text = text.replace("むぅ", " m u:")
-    text = text.replace("むゃ", " my a")
-    text = text.replace("むゅ", " my u")
-    text = text.replace("むょ", " my o")
-    text = text.replace("めぇ", " m e:")
-    text = text.replace("もぉ", " m o:")
-    text = text.replace("やぁ", " y a:")
-    text = text.replace("ゆぅ", " y u:")
-    text = text.replace("ゆゃ", " y a:")
-    text = text.replace("ゆゅ", " y u:")
-    text = text.replace("ゆょ", " y o:")
-    text = text.replace("よぉ", " y o:")
-    text = text.replace("らぁ", " r a:")
-    text = text.replace("りぃ", " r i:")
-    text = text.replace("るぅ", " r u:")
-    text = text.replace("るゃ", " ry a")
-    text = text.replace("るゅ", " ry u")
-    text = text.replace("るょ", " ry o")
-    text = text.replace("れぇ", " r e:")
-    text = text.replace("ろぉ", " r o:")
-    text = text.replace("わぁ", " w a:")
-    text = text.replace("をぉ", " o:")
-
-    text = text.replace("う゛", " b u")
-    text = text.replace("でぃ", " d i")
-    text = text.replace("でぇ", " d e:")
-    text = text.replace("でゃ", " dy a")
-    text = text.replace("でゅ", " dy u")
-    text = text.replace("でょ", " dy o")
-    text = text.replace("てぃ", " t i")
-    text = text.replace("てぇ", " t e:")
-    text = text.replace("てゃ", " ty a")
-    text = text.replace("てゅ", " ty u")
-    text = text.replace("てょ", " ty o")
-    text = text.replace("すぃ", " s i")
-    text = text.replace("ずぁ", " z u a")
-    text = text.replace("ずぃ", " z i")
-    text = text.replace("ずぅ", " z u")
-    text = text.replace("ずゃ", " zy a")
-    text = text.replace("ずゅ", " zy u")
-    text = text.replace("ずょ", " zy o")
-    text = text.replace("ずぇ", " z e")
-    text = text.replace("ずぉ", " z o")
-    text = text.replace("きゃ", " ky a")
-    text = text.replace("きゅ", " ky u")
-    text = text.replace("きょ", " ky o")
-    text = text.replace("しゃ", " sh a")
-    text = text.replace("しゅ", " sh u")
-    text = text.replace("しぇ", " sh e")
-    text = text.replace("しょ", " sh o")
-    text = text.replace("ちゃ", " ch a")
-    text = text.replace("ちゅ", " ch u")
-    text = text.replace("ちぇ", " ch e")
-    text = text.replace("ちょ", " ch o")
-    text = text.replace("とぅ", " t u")
-    text = text.replace("とゃ", " ty a")
-    text = text.replace("とゅ", " ty u")
-    text = text.replace("とょ", " ty o")
-    text = text.replace("どぁ", " d o a")
-    text = text.replace("どぅ", " d u")
-    text = text.replace("どゃ", " dy a")
-    text = text.replace("どゅ", " dy u")
-    text = text.replace("どょ", " dy o")
-    text = text.replace("どぉ", " d o:")
-    text = text.replace("にゃ", " ny a")
-    text = text.replace("にゅ", " ny u")
-    text = text.replace("にょ", " ny o")
-    text = text.replace("ひゃ", " hy a")
-    text = text.replace("ひゅ", " hy u")
-    text = text.replace("ひょ", " hy o")
-    text = text.replace("みゃ", " my a")
-    text = text.replace("みゅ", " my u")
-    text = text.replace("みょ", " my o")
-    text = text.replace("りゃ", " ry a")
-    text = text.replace("りゅ", " ry u")
-    text = text.replace("りょ", " ry o")
-    text = text.replace("ぎゃ", " gy a")
-    text = text.replace("ぎゅ", " gy u")
-    text = text.replace("ぎょ", " gy o")
-    text = text.replace("ぢぇ", " j e")
-    text = text.replace("ぢゃ", " j a")
-    text = text.replace("ぢゅ", " j u")
-    text = text.replace("ぢょ", " j o")
-    text = text.replace("じぇ", " j e")
-    text = text.replace("じゃ", " j a")
-    text = text.replace("じゅ", " j u")
-    text = text.replace("じょ", " j o")
-    text = text.replace("びゃ", " by a")
-    text = text.replace("びゅ", " by u")
-    text = text.replace("びょ", " by o")
-    text = text.replace("ぴゃ", " py a")
-    text = text.replace("ぴゅ", " py u")
-    text = text.replace("ぴょ", " py o")
-    text = text.replace("うぁ", " u a")
-    text = text.replace("うぃ", " w i")
-    text = text.replace("うぇ", " w e")
-    text = text.replace("うぉ", " w o")
-    text = text.replace("ふぁ", " f a")
-    text = text.replace("ふぃ", " f i")
-    text = text.replace("ふぅ", " f u")
-    text = text.replace("ふゃ", " hy a")
-    text = text.replace("ふゅ", " hy u")
-    text = text.replace("ふょ", " hy o")
-    text = text.replace("ふぇ", " f e")
-    text = text.replace("ふぉ", " f o")
-
-    # 1音からなる変換規則
-    text = text.replace("あ", " a")
-    text = text.replace("い", " i")
-    text = text.replace("う", " u")
-    text = text.replace("ゔ", " v u")  # ゔの処理を追加
-    text = text.replace("え", " e")
-    text = text.replace("お", " o")
-    text = text.replace("か", " k a")
-    text = text.replace("き", " k i")
-    text = text.replace("く", " k u")
-    text = text.replace("け", " k e")
-    text = text.replace("こ", " k o")
-    text = text.replace("さ", " s a")
-    text = text.replace("し", " sh i")
-    text = text.replace("す", " s u")
-    text = text.replace("せ", " s e")
-    text = text.replace("そ", " s o")
-    text = text.replace("た", " t a")
-    text = text.replace("ち", " ch i")
-    text = text.replace("つ", " ts u")
-    text = text.replace("て", " t e")
-    text = text.replace("と", " t o")
-    text = text.replace("な", " n a")
-    text = text.replace("に", " n i")
-    text = text.replace("ぬ", " n u")
-    text = text.replace("ね", " n e")
-    text = text.replace("の", " n o")
-    text = text.replace("は", " h a")
-    text = text.replace("ひ", " h i")
-    text = text.replace("ふ", " f u")
-    text = text.replace("へ", " h e")
-    text = text.replace("ほ", " h o")
-    text = text.replace("ま", " m a")
-    text = text.replace("み", " m i")
-    text = text.replace("む", " m u")
-    text = text.replace("め", " m e")
-    text = text.replace("も", " m o")
-    text = text.replace("ら", " r a")
-    text = text.replace("り", " r i")
-    text = text.replace("る", " r u")
-    text = text.replace("れ", " r e")
-    text = text.replace("ろ", " r o")
-    text = text.replace("が", " g a")
-    text = text.replace("ぎ", " g i")
-    text = text.replace("ぐ", " g u")
-    text = text.replace("げ", " g e")
-    text = text.replace("ご", " g o")
-    text = text.replace("ざ", " z a")
-    text = text.replace("じ", " j i")
-    text = text.replace("ず", " z u")
-    text = text.replace("ぜ", " z e")
-    text = text.replace("ぞ", " z o")
-    text = text.replace("だ", " d a")
-    text = text.replace("ぢ", " j i")
-    text = text.replace("づ", " z u")
-    text = text.replace("で", " d e")
-    text = text.replace("ど", " d o")
-    text = text.replace("ば", " b a")
-    text = text.replace("び", " b i")
-    text = text.replace("ぶ", " b u")
-    text = text.replace("べ", " b e")
-    text = text.replace("ぼ", " b o")
-    text = text.replace("ぱ", " p a")
-    text = text.replace("ぴ", " p i")
-    text = text.replace("ぷ", " p u")
-    text = text.replace("ぺ", " p e")
-    text = text.replace("ぽ", " p o")
-    text = text.replace("や", " y a")
-    text = text.replace("ゆ", " y u")
-    text = text.replace("よ", " y o")
-    text = text.replace("わ", " w a")
-    text = text.replace("ゐ", " i")
-    text = text.replace("ゑ", " e")
-    text = text.replace("ん", " N")
-    text = text.replace("っ", " q")
-    # ここまでに処理されてない ぁぃぅぇぉ はそのまま大文字扱い
-    text = text.replace("ぁ", " a")
-    text = text.replace("ぃ", " i")
-    text = text.replace("ぅ", " u")
-    text = text.replace("ぇ", " e")
-    text = text.replace("ぉ", " o")
-    text = text.replace("ゎ", " w a")
-    text = text.replace("ぉ", " o")
-
-    # ここまでに処理されていないゅ等もそのまま大文字扱い（追加）
-    text = text.replace("ゃ", " y a")
-    text = text.replace("ゅ", " y u")
-    text = text.replace("ょ", " y o")
-
-    # 長音の処理
-    # for (pattern, replace_str) in JULIUS_LONG_VOWEL:
-    #     text = pattern.sub(replace_str, text)
-    # text = text.replace("o u", "o:")  # おう -> おーの音便
-    text = text.replace("ー", ":")
-    text = text.replace("〜", ":")
-    text = text.replace("−", ":")
-    text = text.replace("-", ":")
-
-    # その他特別な処理
-    text = text.replace("を", " o")
-
-    text = text.strip()
-
-    text = text.replace(":+", ":")
-
-    # ここまで`jaconv.hiragana2julius`と音便処理と長音処理をのぞいて同じ
-    # ここから`k a:: k i:`→`k a a a k i i`のように`:`の数だけ繰り返す処理
-    pattern = r"(\w)(:*)"
-    replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))
-
-    text = re.sub(pattern, replacement, text)
-    text = text.replace("N", "n")  # 「ん」のNをnに変換
-    return text
+    # 長音記号「ー」の処理
+    long_pattern = r"(\w)(ー*)"
+    long_replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))
+    spaced_phonemes = re.sub(long_pattern, long_replacement, spaced_phonemes)
+    return spaced_phonemes.strip().split(" ")
 
 
 if __name__ == "__main__":

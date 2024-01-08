@@ -11,6 +11,10 @@ from common.log import logger
 # latest_version = "1.0"
 
 
+class InvalidToneError(ValueError):
+    pass
+
+
 def get_net_g(model_path: str, version: str, device: str, hps):
     net_g = SynthesizerTrn(
         len(symbols),
@@ -41,9 +45,11 @@ def get_text(
 ):
     # 在此处实现当前版本的get_text
     norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    logger.info(f"Original tone: {''.join(str(num) for num in tone)}")
     if given_tone is not None:
-        logger.debug(f"Tone given: {given_tone}")
+        if len(given_tone) != len(phone):
+            raise InvalidToneError(
+                f"Length of given_tone ({len(given_tone)}) != length of phone ({len(phone)})"
+            )
         tone = given_tone
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 

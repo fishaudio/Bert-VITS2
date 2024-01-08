@@ -1,7 +1,9 @@
 import argparse
 import datetime
+import json
 import os
 import sys
+from typing import Optional
 
 import gradio as gr
 import torch
@@ -21,6 +23,8 @@ from common.constants import (
 )
 from common.log import logger
 from common.tts_model import ModelHolder
+from infer import InvalidToneError
+from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
 
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
@@ -46,36 +50,76 @@ def tts_fn(
     use_assist_text,
     style,
     style_weight,
-    given_tone,
+    kata_tone_json_str,
+    use_tone,
 ):
     assert model_holder.current_model is not None
-    if given_tone == "":
-        given_tone = None
-    else:
-        given_tone = [int(i) for i in given_tone]
+
+    wrong_tone_message = ""
+    kata_tone: Optional[list[tuple[str, int]]] = None
+    if use_tone and kata_tone_json_str != "":
+        if language != "JP":
+            logger.warning("Only Japanese is supported for tone generation.")
+            wrong_tone_message = "アクセント指定は現在日本語のみ対応しています。"
+        if line_split:
+            logger.warning("Tone generation is not supported for line split.")
+            wrong_tone_message = "アクセント指定は改行で分けて生成を使わない場合のみ対応しています。"
+        try:
+            kata_tone = []
+            json_data = json.loads(kata_tone_json_str)
+            # tupleを使うように変換
+            for kana, tone in json_data:
+                assert isinstance(kana, str) and isinstance(tone, int)
+                kata_tone.append((kana, tone))
+        except Exception as e:
+            logger.warning(f"Error occurred when parsing kana_tone_json: {e}")
+            wrong_tone_message = f"アクセント指定が不正です: {e}"
+            kata_tone = None
+
+    # toneは実際に音声合成に代入される際のみnot Noneになる
+    tone: Optional[list[int]] = None
+    if kata_tone is not None:
+        phone_tone = kata_tone2phone_tone(kata_tone)
+        tone = [t for _, t in phone_tone]
+
     start_time = datetime.datetime.now()
 
-    sr, audio = model_holder.current_model.infer(
-        text=text,
-        language=language,
-        reference_audio_path=reference_audio_path,
-        sdp_ratio=sdp_ratio,
-        noise=noise_scale,
-        noisew=noise_scale_w,
-        length=length_scale,
-        line_split=line_split,
-        split_interval=split_interval,
-        assist_text=assist_text,
-        assist_text_weight=assist_text_weight,
-        use_assist_text=use_assist_text,
-        style=style,
-        style_weight=style_weight,
-        given_tone=given_tone,
-    )
+    try:
+        sr, audio = model_holder.current_model.infer(
+            text=text,
+            language=language,
+            reference_audio_path=reference_audio_path,
+            sdp_ratio=sdp_ratio,
+            noise=noise_scale,
+            noisew=noise_scale_w,
+            length=length_scale,
+            line_split=line_split,
+            split_interval=split_interval,
+            assist_text=assist_text,
+            assist_text_weight=assist_text_weight,
+            use_assist_text=use_assist_text,
+            style=style,
+            style_weight=style_weight,
+            given_tone=tone,
+        )
+    except InvalidToneError as e:
+        logger.error(f"Tone error: {e}")
+        return f"Error: アクセント指定が不正です:\n{e}", None, kata_tone_json_str
 
     end_time = datetime.datetime.now()
     duration = (end_time - start_time).total_seconds()
-    return f"Success, time: {duration} seconds.", (sr, audio)
+
+    if tone is None and language == "JP" and not line_split:
+        # アクセント指定に使えるようにアクセント情報を返す
+        norm_text = text_normalize(text)
+        kata_tone = g2kata_tone(norm_text)
+        kata_tone_json_str = json.dumps(kata_tone, ensure_ascii=False, indent=2)
+    elif tone is None:
+        kata_tone_json_str = ""
+    message = f"Success, time: {duration} seconds."
+    if wrong_tone_message != "":
+        message = wrong_tone_message + "\n" + message
+    return message, (sr, audio), kata_tone_json_str
 
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
@@ -243,7 +287,10 @@ if __name__ == "__main__":
                     step=0.1,
                     label="分けた場合に挟む無音の長さ（秒）",
                 )
-                given_tone = gr.Textbox("トーン、0と1の数値列")
+                tone = gr.Textbox(label="アクセント指定")
+                use_tone = gr.Checkbox(
+                    label="アクセント指定を使う", info="改行で分けない場合のみ使えます", value=False
+                )
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(
@@ -340,9 +387,10 @@ if __name__ == "__main__":
                 use_assist_text,
                 style,
                 style_weight,
-                given_tone,
+                tone,
+                use_tone,
             ],
-            outputs=[text_output, audio_output],
+            outputs=[text_output, audio_output, tone],
         )
 
         model_name.change(

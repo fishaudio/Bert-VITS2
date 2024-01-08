@@ -20,9 +20,14 @@ device = torch.device(config.style_gen_config.device)
 inference.to(device)
 
 
+# 推論時にインポートするために短いが関数を書く
+def get_style_vector(wav_path):
+    return inference(wav_path)
+
+
 def save_style_vector(wav_path):
     try:
-        style_vec = inference(wav_path)
+        style_vec = get_style_vector(wav_path)
     except Exception as e:
         logger.error(f"\nError occurred with file: {wav_path}, Details:\n{e}\n")
         raise
