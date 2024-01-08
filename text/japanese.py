@@ -218,8 +218,6 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
     phone_tone = phone_tone[1:]  # 最初の("_", 0)を無視
     phones = [phone for phone, _ in phone_tone]
     tones = [tone for _, tone in phone_tone]
-    logger.debug(f"phones: {phones}")
-    logger.debug(f"tones: {tones}")
     result: list[tuple[str, int]] = []
     current_mora = ""
     for phone, next_phone, tone, next_tone in zip(phones, phones[1:], tones, tones[1:]):
@@ -232,8 +230,6 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
             assert tone == next_tone, f"Unexpected {phone} tone {tone} != {next_tone}"
             current_mora = phone
         elif phone == "n":
-            logger.debug(f"current_mora: {current_mora}")
-            logger.debug(f"next_phone: {next_phone}")
             assert current_mora == "", f"Unexpected {phone} after {current_mora}"
             if next_phone not in VOWELS:  # 次の音素が母音でない場合
                 result.append(("ン", tone))
@@ -248,7 +244,6 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
             current_mora += phone
             result.append((mora_phonemes_to_mora_kata[current_mora], tone))
             current_mora = ""
-        logger.debug(f"result: {result}")
     return result
 
 
@@ -279,7 +274,7 @@ def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     [('k', 0), ('o', 0), ('n', 1), ('n', 1), ('i', 1), ('ch', 1), ('i', 1), ('w', 1), ('a', 1), ('s', 1), ('e', 1), ('k', 0), ('a', 0), ('i', 0), ('i', 0), ('g', 1), ('e', 1), ('n', 0), ('k', 0), ('i', 0)]
     """
     prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
-    logger.debug(f"prosodies: {prosodies}")
+    # logger.debug(f"prosodies: {prosodies}")
     result: list[tuple[str, int]] = []
     current_phrase: list[tuple[str, int]] = []
     current_tone = 0

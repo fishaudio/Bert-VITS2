@@ -5,7 +5,7 @@ import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
 from umap import UMAP
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
 
@@ -17,12 +17,12 @@ MAX_CLUSTER_NUM = 10
 MAX_AUDIO_NUM = 10
 
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
-
-umap = UMAP(n_components=2, random_state=42, metric="cosine")
+umap = UMAP(n_components=2, random_state=42, metric="cosine", n_jobs=1, min_dist=0.0)
 
 wav_files = []
 x = np.array([])
 x_reduced = None
+y_pred = np.array([])
 mean = np.array([])
 centroids = []
 
@@ -50,7 +50,7 @@ def load(model_name, reduction_method):
 
 
 def do_clustering(n_clusters=4, method="KMeans"):
-    global centroids, x_reduced
+    global centroids, x_reduced, y_pred
     if method == "KMeans":
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
         y_pred = model.fit_predict(x)
@@ -76,7 +76,7 @@ def do_clustering(n_clusters=4, method="KMeans"):
 
 
 def do_dbscan(eps=2.5, min_samples=15):
-    global centroids, x_reduced
+    global centroids, x_reduced, y_pred
     model = DBSCAN(eps=eps, min_samples=min_samples)
     assert x_reduced is not None
     y_pred = model.fit_predict(x_reduced)
@@ -87,19 +87,22 @@ def do_dbscan(eps=2.5, min_samples=15):
     return y_pred, centroids
 
 
-def closest_wav_files(cluster_index, num_files=1, weight=1):
-    # centroidを強調した点からの距離が最も近い音声を選ぶ
-    centroid_enhanced = mean + weight * (centroids - mean)
-    # セントロイドと全ての点との距離を計算
-    distances = cdist(
-        umap.transform(centroid_enhanced[cluster_index : cluster_index + 1]),
-        x_reduced,
-        metric="euclidean",
-    )
-    # 距離が小さい順にソートし、上位のインデックスを取得
-    closest_indices = np.argsort(distances[0])[:num_files]
+def representative_wav_files(cluster_id, num_files=1):
+    # y_predの中でcluster_indexに関するメドイドを探す
+    cluster_indices = np.where(y_pred == cluster_id)[0]
+    cluster_vectors = x[cluster_indices]
+    # クラスタ内の全ベクトル間の距離を計算
+    distances = pdist(cluster_vectors)
+    distance_matrix = squareform(distances)
 
-    return closest_indices
+    # 各ベクトルと他の全ベクトルとの平均距離を計算
+    mean_distances = distance_matrix.mean(axis=1)
+
+    # 平均距離が最も小さい順にnum_files個のインデックスを取得
+    closest_indices = np.argsort(mean_distances)[:num_files]
+
+    # 最も近いメドイドの元のインデックスを取得
+    return cluster_indices[closest_indices]
 
 
 def do_dbscan_gradio(eps=2.5, min_samples=15):
@@ -149,9 +152,9 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
     ] * MAX_AUDIO_NUM
 
 
-def closest_wav_files_gradio(cluster_index, num_files=1, weight=1):
-    cluster_index = cluster_index - 1  # UIでは1から始まるので0からにする
-    closest_indices = closest_wav_files(cluster_index, num_files, weight)
+def representative_wav_files_gradio(cluster_id, num_files=1):
+    cluster_id = cluster_id - 1  # UIでは1から始まるので0からにする
+    closest_indices = representative_wav_files(cluster_id, num_files)
     return [
         gr.Audio(wav_files[i], visible=True, label=wav_files[i])
         for i in closest_indices
@@ -179,7 +182,7 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
     ] * MAX_AUDIO_NUM
 
 
-def save_style_vectors(model_name, style_names: str):
+def save_style_vectors_from_clustering(model_name, style_names: str):
     """centerとcentroidsを保存する"""
     result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
@@ -286,20 +289,23 @@ method1 = """
 
 dbscan_md = """
 DBSCANという方法でスタイル分けを行います。
-こちらの方が方法1よりも特徴がより良く出るものができるかもしれません。
-
+こちらの方が方法1よりも特徴がはっきり出るもののみを取り出せ、よいスタイルベクトルが作れるかもしれません。
 ただし事前にスタイル数は指定できません。
 
 パラメータ：
-- eps: この値より近い点同士をどんどん繋げて同じスタイル分類とする。小さいほどスタイル数が増え、大きいほどスタイル数が減る。
-- min_samples: クラスタとみなすために必要な点の数。小さいほどスタイル数が増え、大きいほどスタイル数が減る。
+- eps: この値より近い点同士をどんどん繋げて同じスタイル分類とする。小さいほどスタイル数が増え、大きいほどスタイル数が減る傾向。
+- min_samples: ある点をスタイルの核となる点とみなすために必要な近傍の点の数。小さいほどスタイル数が増え、大きいほどスタイル数が減る傾向。
+
+UMAPの場合はepsは0.3くらい、t-SNEの場合は2.5くらいがいいかもしれません。min_samplesはデータ数に依存するのでいろいろ試してみてください。
+
+詳細：
+https://ja.wikipedia.org/wiki/DBSCAN
 """
 
 with gr.Blocks(theme="NoCrypt/miku") as app:
     gr.Markdown(initial_md)
     with gr.Row():
         model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
-        # 削減方法を選択：UMAP or t-SNE
         reduction_method = gr.Radio(
             choices=["UMAP", "t-SNE"],
             label="次元削減方法",
@@ -336,8 +342,8 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             eps = gr.Slider(
                 minimum=0.1,
                 maximum=10,
-                step=0.05,
-                value=2.5,
+                step=0.01,
+                value=0.3,
                 label="eps",
                 info="小さいほどスタイル数が増える",
             )
@@ -377,9 +383,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 with gr.Row():
                     audio_list = []
                     for i in range(MAX_AUDIO_NUM):
-                        audio_list.append(
-                            gr.Audio(visible=False, scale=1, show_label=True)
-                        )
+                        audio_list.append(gr.Audio(visible=False, show_label=True))
             c_button.click(
                 do_clustering_gradio,
                 inputs=[n_clusters, c_method],
@@ -391,7 +395,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 outputs=[gr_plot, cluster_index, num_styles_result] + audio_list,
             )
             get_audios_button.click(
-                closest_wav_files_gradio,
+                representative_wav_files_gradio,
                 inputs=[cluster_index, num_files],
                 outputs=audio_list,
             )
@@ -402,11 +406,13 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
         )
         with gr.Row():
-            save_button = gr.Button("スタイルベクトルを保存", variant="primary")
+            save_button1 = gr.Button("スタイルベクトルを保存", variant="primary")
             info2 = gr.Textbox(label="保存結果")
 
-        save_button.click(
-            save_style_vectors, inputs=[model_name, style_names], outputs=[info2]
+        save_button1.click(
+            save_style_vectors_from_clustering,
+            inputs=[model_name, style_names],
+            outputs=[info2],
         )
     with gr.Tab("方法2: 手動でスタイルを選ぶ"):
         gr.Markdown("下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。")
@@ -422,21 +428,11 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 label="スタイル名", placeholder="Angry, Sad, Happy"
             )
         with gr.Row():
-            save_button3 = gr.Button("スタイルベクトルを保存", variant="primary")
-            info3 = gr.Textbox(label="保存結果")
-            save_button3.click(
+            save_button2 = gr.Button("スタイルベクトルを保存", variant="primary")
+            info2 = gr.Textbox(label="保存結果")
+            save_button2.click(
                 save_style_vectors_from_files,
                 inputs=[model_name, audio_files_text, style_names_text],
-                outputs=[info3],
+                outputs=[info2],
             )
-        gr.Markdown("結果が良さそうなら、これを保存します。")
-        style_names2 = gr.Textbox(
-            "Angry, Sad, Happy",
-            label="スタイルの名前",
-            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
-        )
-        with gr.Row():
-            save_button2 = gr.Button("スタイルベクトルを保存", variant="primary")
-            info4 = gr.Textbox(label="保存結果")
-
     app.launch(inbrowser=True)
