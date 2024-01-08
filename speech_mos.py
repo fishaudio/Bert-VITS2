@@ -16,6 +16,9 @@ from config import config
 
 warnings.filterwarnings("ignore")
 
+mos_result_dir = Path("mos_results")
+mos_result_dir.mkdir(exist_ok=True)
+
 test_texts = [
     # JVNVコーパスのテキスト
     # https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus
@@ -95,7 +98,9 @@ results = sorted(results, key=lambda x: x[2][-1], reverse=True)
 for model_file, step, scores in results:
     logger.info(f"{model_file}: {scores[-1]}")
 
-with open(f"mos_{model_name}.csv", "w", encoding="utf-8", newline="") as f:
+with open(
+    mos_result_dir / f"mos_{model_name}.csv", "w", encoding="utf-8", newline=""
+) as f:
     writer = csv.writer(f)
     writer.writerow(["model_path"] + ["step"] + test_texts + ["mean"])
     for model_file, step, scores in results:
@@ -147,7 +152,7 @@ plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
 plt.tight_layout()
 
 # グラフを画像として保存（plt.show() の前に実行する）
-plt.savefig(f"mos_{model_name}.png")
+plt.savefig(mos_result_dir / f"mos_{model_name}.png")
 
 # グラフを表示
 plt.show()

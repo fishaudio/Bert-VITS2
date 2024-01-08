@@ -2,9 +2,17 @@
 
 ## v1.3
 
+### 大きい変更
+- 日本語の発音・アクセント処理部分のバグを大幅に改良
+    - `車両`が`シャリヨオ`や`見つける`が`ミッケル`と発音・学習されており、その単語のアクセント情報が全て死んでいた
+    - `私はそれを見る`のアクセントが`ワ➚タシ➘ワ　ソ➚レ➘オ　ミ➘ル`だったのを`ワ➚タシワ　ソ➚レ　オ　ミ➘ル`に修正
+- アクセントの誤りを修正して音声合成できるように（万能制御ではない）。
+- これまでのモデルにも使える。アクセントや発音等が改善される可能性あり。学習し直すとよりよくなる可能性もある。
+
+### 改善
 - `Dataset.bat`の音声スライスと書き起こしをよりカスタマイズできるように（秒数指定や書き起こしのWhisperモデル指定や言語指定等）
-- `Style.bat`のスタイル作成で、新しい方法（DBSCAN）を追加（こちらのほうがスタイル数を指定できない代わりに特徴がよく出るかもしれません）。
-- クラウド実行等の際にパスの指定をこちらでできるように、パスの設定を`configs/paths.yml`にまとめました（colabの[ノートブック](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)もそれに伴って変えたので新しいものを使ってください）。デフォルトは`dataset_root: Data`と`assets_root: model_assets`です。クラウド等でやる方はここを変更してください。
+- `Style.bat`のスタイル作成で、新しい可視化方法（UMAP）と新しいスタイル分けの方法（DBSCAN）を追加
+- クラウド実行等の際にパスの指定をこちらでできるように、パスの設定を`configs/paths.yml`にまとめた（colabの[ノートブック](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)もそれに伴って更新）。デフォルトは`dataset_root: Data`と`assets_root: model_assets`なので、クラウド等でやる方はここを変更してください。
 - どのステップ数の出力がよいかの「一つの」指標として [SpeechMOS](https://github.com/tarepan/SpeechMOS) を使うスクリプトを追加：
 ```bash
 python speech_mos.py -m <model_name>

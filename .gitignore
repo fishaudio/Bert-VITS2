@@ -19,4 +19,4 @@ venv/
 *.zip
 *.csv
 *.bak
-mos_*.png
+/mos_results/

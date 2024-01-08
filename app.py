@@ -69,7 +69,7 @@ def tts_fn(
             json_data = json.loads(kata_tone_json_str)
             # tupleを使うように変換
             for kana, tone in json_data:
-                assert isinstance(kana, str) and isinstance(tone, int)
+                assert isinstance(kana, str) and tone in (0, 1), f"{kana}, {tone}"
                 kata_tone.append((kana, tone))
         except Exception as e:
             logger.warning(f"Error occurred when parsing kana_tone_json: {e}")
@@ -113,7 +113,7 @@ def tts_fn(
         # アクセント指定に使えるようにアクセント情報を返す
         norm_text = text_normalize(text)
         kata_tone = g2kata_tone(norm_text)
-        kata_tone_json_str = json.dumps(kata_tone, ensure_ascii=False, indent=2)
+        kata_tone_json_str = json.dumps(kata_tone, ensure_ascii=False)
     elif tone is None:
         kata_tone_json_str = ""
     message = f"Success, time: {duration} seconds."
