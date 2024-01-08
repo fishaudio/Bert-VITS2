@@ -288,10 +288,10 @@ if __name__ == "__main__":
                     label="分けた場合に挟む無音の長さ（秒）",
                 )
                 tone = gr.Textbox(
-                    label="アクセント指定",
+                    label="アクセント調整（数値は0か1のみ）",
                     info="改行で分けない場合のみ使えます",
                 )
-                use_tone = gr.Checkbox(label="アクセント指定を使う", value=False)
+                use_tone = gr.Checkbox(label="アクセント調整を使う", value=False)
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(

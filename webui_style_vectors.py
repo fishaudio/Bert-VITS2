@@ -1,13 +1,14 @@
 import json
 import os
+import shutil
 
 import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
-from umap import UMAP
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
+from umap import UMAP
 
 from common.constants import DEFAULT_STYLE
 from common.log import logger
@@ -155,10 +156,11 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
 def representative_wav_files_gradio(cluster_id, num_files=1):
     cluster_id = cluster_id - 1  # UIでは1から始まるので0からにする
     closest_indices = representative_wav_files(cluster_id, num_files)
+    actual_num_files = len(closest_indices)  # ファイル数が少ないときのため
     return [
         gr.Audio(wav_files[i], visible=True, label=wav_files[i])
         for i in closest_indices
-    ] + [gr.update(visible=False)] * (MAX_AUDIO_NUM - num_files)
+    ] + [gr.update(visible=False)] * (MAX_AUDIO_NUM - actual_num_files)
 
 
 def do_clustering_gradio(n_clusters=4, method="KMeans"):
@@ -182,24 +184,28 @@ def do_clustering_gradio(n_clusters=4, method="KMeans"):
     ] * MAX_AUDIO_NUM
 
 
-def save_style_vectors_from_clustering(model_name, style_names: str):
+def save_style_vectors_from_clustering(model_name, style_names_str: str):
     """centerとcentroidsを保存する"""
     result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
     style_vectors = np.stack([mean] + centroids)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
+    if os.path.exists(style_vector_path):
+        shutil.copy(style_vector_path, f"{style_vector_path}.bak")
     np.save(style_vector_path, style_vectors)
 
     # config.jsonの更新
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = [DEFAULT_STYLE]
-    style_name_list = style_name_list + style_names.split(",")
+    style_names = [name.strip() for name in style_names_str.split(",")]
+    style_name_list = [DEFAULT_STYLE] + style_names
     if len(style_name_list) != len(centroids) + 1:
-        return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names}"
-    style_name_list = [name.strip() for name in style_name_list]
+        return (
+            f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names_str}"
+        )
 
+    shutil.copy(config_path, f"{config_path}.bak")
     with open(config_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = len(style_name_list)
@@ -210,7 +216,9 @@ def save_style_vectors_from_clustering(model_name, style_names: str):
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
-def save_style_vectors_from_files(model_name, audio_files_text, style_names_text):
+def save_style_vectors_from_files(
+    model_name, audio_files_str: str, style_names_str: str
+):
     """音声ファイルからスタイルベクトルを作成して保存する"""
     global mean
     if len(x) == 0:
@@ -219,12 +227,13 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
 
     result_dir = os.path.join(config.assets_root, model_name)
     os.makedirs(result_dir, exist_ok=True)
-    audio_files = audio_files_text.split(",")
-    style_names = style_names_text.split(",")
+    audio_files = [name.strip() for name in audio_files_str.split(",")]
+    style_names = [name.strip() for name in style_names_str.split(",")]
     if len(audio_files) != len(style_names):
-        return f"音声ファイルとスタイル名の数が合いません。`,`で正しく{len(style_names)}個に区切られているか確認してください: {audio_files_text}と{style_names_text}"
-    audio_files = [name.strip() for name in audio_files]
-    style_names = [name.strip() for name in style_names]
+        return f"音声ファイルとスタイル名の数が合いません。`,`で正しく{len(style_names)}個に区切られているか確認してください: {audio_files_str}と{style_names_str}"
+    style_name_list = [DEFAULT_STYLE] + style_names
+    if len(set(style_names)) != len(style_names):
+        return f"スタイル名が重複しています。"
     style_vectors = [mean]
 
     wavs_dir = os.path.join("Data", model_name, "wavs")
@@ -234,16 +243,17 @@ def save_style_vectors_from_files(model_name, audio_files_text, style_names_text
             return f"{path}が存在しません。"
         style_vectors.append(np.load(f"{path}.npy"))
     style_vectors = np.stack(style_vectors)
+    assert len(style_name_list) == len(style_vectors)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
+    if os.path.exists(style_vector_path):
+        shutil.copy(style_vector_path, f"{style_vector_path}.bak")
     np.save(style_vector_path, style_vectors)
 
     # config.jsonの更新
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
-    style_name_list = [DEFAULT_STYLE]
-    style_name_list = style_name_list + style_names
-    assert len(style_name_list) == len(style_vectors)
+    shutil.copy(config_path, f"{config_path}.bak")
 
     with open(config_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
@@ -345,7 +355,6 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 step=0.01,
                 value=0.3,
                 label="eps",
-                info="小さいほどスタイル数が増える",
             )
             min_samples = gr.Slider(
                 minimum=1,
@@ -353,7 +362,6 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 step=1,
                 value=15,
                 label="min_samples",
-                info="小さいほどスタイル数が増える",
             )
             with gr.Row():
                 dbscan_button = gr.Button("スタイル分けを実行")
