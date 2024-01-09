@@ -45,11 +45,12 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+from typing import Optional
 
 # (カタカナ, 子音, 母音)の順。子音がない場合はNoneを入れる。
 # 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「n」、「ッ」は「q」に変更
 # （元々はそれぞれ「N」「cl」）
-_mora_list_minimum: list[tuple[str, str | None, str]] = [
+_mora_list_minimum: list[tuple[str, Optional[str], str]] = [
     ("ヴォ", "v", "o"),
     ("ヴェ", "v", "e"),
     ("ヴィ", "v", "i"),
@@ -196,7 +197,7 @@ _mora_list_minimum: list[tuple[str, str | None, str]] = [
     ("イ", None, "i"),
     ("ア", None, "a"),
 ]
-_mora_list_additional: list[tuple[str, str | None, str]] = [
+_mora_list_additional: list[tuple[str, Optional[str], str]] = [
     ("ヴョ", "by", "o"),
     ("ヴュ", "by", "u"),
     ("ヴャ", "by", "a"),
@@ -223,7 +224,7 @@ mora_phonemes_to_mora_kata: dict[str, str] = {
 }
 
 # 例: "ヴォ" -> ("v", "o"), "ア" -> (None, "a")
-mora_kata_to_mora_phonemes: dict[str, tuple[str | None, str]] = {
+mora_kata_to_mora_phonemes: dict[str, tuple[Optional[str], str]] = {
     kana: (consonant, vowel)
     for [kana, consonant, vowel] in _mora_list_minimum + _mora_list_additional
 }
