@@ -346,10 +346,6 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
         # When one bucket is not traversed
         except Exception as e:
             logger.info("Bucket warning ", e)
-            logger.info(
-                "Empty buckets at indices: ",
-                [i for i, bucket in enumerate(buckets) if len(bucket) == 0],
-            )
             for i in range(len(buckets) - 1, -1, -1):
                 if len(buckets[i]) == 0:
                     buckets.pop(i)

@@ -403,11 +403,11 @@ if __name__ == "__main__":
                     )
                     normalize_resample = gr.Checkbox(
                         label="音声の音量を正規化する",
-                        value=True,
+                        value=False,
                     )
                     trim_resample = gr.Checkbox(
                         label="音声の最初と最後の無音を取り除く",
-                        value=True,
+                        value=False,
                     )
                 with gr.Column():
                     resample_btn = gr.Button(value="実行", variant="primary")

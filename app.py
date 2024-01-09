@@ -288,7 +288,7 @@ if __name__ == "__main__":
                     label="分けた場合に挟む無音の長さ（秒）",
                 )
                 tone = gr.Textbox(
-                    label="アクセント調整（数値は0か1のみ）",
+                    label="アクセント調整（数値は 0=低 か1=高 のみ）",
                     info="改行で分けない場合のみ使えます",
                 )
                 use_tone = gr.Checkbox(label="アクセント調整を使う", value=False)
