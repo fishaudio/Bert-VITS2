@@ -46,8 +46,8 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# カタカナ, 子音, 母音)の順。子音がない場合はNoneを入れる。
-# 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「N」、「ッ」は「q」に変更
+# (カタカナ, 子音, 母音)の順。子音がない場合はNoneを入れる。
+# 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「n」、「ッ」は「q」に変更
 # （元々はそれぞれ「N」「cl」）
 _mora_list_minimum: list[tuple[str, str | None, str]] = [
     ("ヴォ", "v", "o"),
