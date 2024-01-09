@@ -356,19 +356,18 @@ def run():
             epoch_str = 1
             global_step = 0
 
-    steps_per_epoch = len(train_loader)
-    warmup_steps = hps.train.warmup_epochs * steps_per_epoch
-
-    def lr_lambda(step):
-        """for warmup"""
-        if step < warmup_steps:
-            return step / warmup_steps
+    def lr_lambda(epoch):
+        """
+        Learning rate scheduler for warmup and exponential decay.
+        - During the warmup period, the learning rate increases linearly.
+        - After the warmup period, the learning rate decreases exponentially.
+        """
+        if epoch < hps.train.warmup_epochs:
+            return float(epoch) / float(max(1, hps.train.warmup_epochs))
         else:
-            return hps.train.lr_decay ** (step - warmup_steps)
+            return hps.train.lr_decay ** (epoch - hps.train.warmup_epochs)
 
-    scheduler_last_epoch = -1
-    if global_step > 0:
-        scheduler_last_epoch = global_step - 1
+    scheduler_last_epoch = epoch_str - 2
     scheduler_g = torch.optim.lr_scheduler.LambdaLR(
         optim_g, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
     )
@@ -376,12 +375,6 @@ def run():
         optim_d, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
     )
     if net_dur_disc is not None:
-        if not optim_dur_disc.param_groups[0].get("initial_lr"):
-            if global_step == 0:
-                optim_dur_disc.param_groups[0]["initial_lr"] = hps.train.learning_rate
-            else:
-                optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
-            initial_lr = optim_dur_disc.param_groups[0].get("initial_lr")
         scheduler_dur_disc = torch.optim.lr_scheduler.LambdaLR(
             optim_dur_disc, lr_lambda=lr_lambda, last_epoch=scheduler_last_epoch
         )
@@ -436,6 +429,10 @@ def run():
                 pbar,
                 initial_step,
             )
+        scheduler_g.step()
+        scheduler_d.step()
+        if net_dur_disc is not None:
+            scheduler_dur_disc.step()
 
         if epoch == hps.train.epochs:
             # Save the final models
@@ -752,10 +749,6 @@ def train_and_evaluate(
                     for_infer=True,
                 )
 
-        scheduler_g.step()
-        scheduler_d.step()
-        if net_dur_disc is not None:
-            scheduler_dur_disc.step()
         global_step += 1
         if pbar is not None:
             pbar.set_description(
