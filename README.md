@@ -40,7 +40,7 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 Windowsを前提としています。
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.2/Style-Bert-VITS2.zip)をダウンロードして展開します。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/1.3/Style-Bert-VITS2.zip)をダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
@@ -113,6 +113,14 @@ API仕様は起動後に`/docs`にて確認ください。
 
 2つのモデルを、「声音」「感情表現」「テンポ」の3点で混ぜ合わせて、新しいモデルを作ることが出来ます。
 `Merge.bat`をダブルクリックか`python webui_merge.py`するとWebUIが起動します。
+
+### 自然性評価
+
+学習結果のうちどのステップ数がいいかの「一つの」指標として、[SpeechMOS](https://github.com/tarepan/SpeechMOS) を使うスクリプトを用意しています:
+```bash
+python speech_mos.py -m <model_name>
+```
+ステップごとの自然性評価が表示され、`mos_results`フォルダの`mos_{model_name}.csv`と`mos_{model_name}.png`に結果が保存される。読み上げさせたい文章を変えたかったら中のファイルを弄って各自調整してください。またあくまでアクセントや感情表現や抑揚を全く考えない基準での評価で、目安のひとつなので、実際に読み上げさせて選別するのが一番だと思います。
 
 ## Bert-VITS2 v2.1との関係
 

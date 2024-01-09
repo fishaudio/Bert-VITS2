@@ -14,19 +14,20 @@
 
 ### 改善
 - `Dataset.bat`の音声スライスと書き起こしをよりカスタマイズできるように（スライスの秒数設定や書き起こしのWhisperモデル指定や言語指定等）
-- `Style.bat`のスタイル作成で、新しい次元削減方法（UMAP）と新しいスタイル分けの方法（DBSCAN）を追加
+- `Style.bat`のスタイル作成で、スタイルごとのサンプル音声を複数再生できるように。また新しい次元削減方法（UMAP）と新しいスタイル分けの方法（DBSCAN）を追加（UMAPのほうがよくスタイルが分かれるかもしれません）
+- colabの[ノートブック](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)で、音声ファイルのみからデータセットを作成するオプション部分を追加
 - クラウド実行等の際にパスの指定をこちらでできるように、パスの設定を`configs/paths.yml`にまとめた（colabの[ノートブック](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)もそれに伴って更新）。デフォルトは`dataset_root: Data`と`assets_root: model_assets`なので、クラウド等でやる方はここを変更してください。
 - どのステップ数の出力がよいかの「一つの」指標として [SpeechMOS](https://github.com/tarepan/SpeechMOS) を使うスクリプトを追加：
 ```bash
 python speech_mos.py -m <model_name>
 ```
 ステップごとの自然性評価が表示され、`mos_results`フォルダの`mos_{model_name}.csv`と`mos_{model_name}.png`に結果が保存される。読み上げさせたい文章を変えたかったら中のファイルを弄って各自調整してください。またあくまで目安のひとつなので、実際に読み上げさせて選別するのが一番だと思います。
-- 学習時のウォームアップオプションを機能するように（ [@kale4eat](https://github.com/kale4eat) 様によるPRです、ありがとうございます！）。学習時に生成される`config.json`の`train`の`warmup_epochs`を変更することで、ウォームアップのエポック数を変更できます。デフォルトは`0`で今までと同じ学習率の挙動です。
+- 学習時のウォームアップオプションを機能するように（ [@kale4eat](https://github.com/kale4eat) 様によるPRです、ありがとうございます！）。前処理時に生成される`config.json`の`train`の`warmup_epochs`を変更することで、ウォームアップのエポック数を変更できます。デフォルトは`0`で今までと同じ学習率の挙動です。
 
 ### その他
 - `Dataset.bat`の音声スライスでノーマライズ機能を削除（学習前処理で行えるため）
 - `Train.bat`の音量ノーマライズと無音切り詰めをデフォルトでオフに変更
-- 学習時の進捗を全体エポック数で表示し、学習全体の進捗を見やすいように( @RedRayz 様によるPRです、ありがとうございます！)
+- 学習時の進捗を全体エポック数で表示し、学習全体の進捗を見やすいように( [@RedRayz](https://github.com/RedRayz) 様によるPRです、ありがとうございます！)
 - その他バグ修正等( [@tinjyuu](https://github.com/@tinjyuu) 様、 [@darai0512](https://github.com/darai0512) 様ありがとうございます！ )
 - `config.json`にスタイル埋め込み部分を学習しない`freeze_style`オプションを追加（デフォルトは`false`）
 

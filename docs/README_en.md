@@ -57,7 +57,7 @@ python initialize.py  # Download necessary models and default TTS model
 Don't forget the last step.
 
 ### Voice Synthesis
-Double-click `App.bat`` or run `python app.py`` to launch the WebUI. The default model is downloaded during installation, so you can use it even if you haven't trained it.
+Double-click `App.bat` or run `python app.py` to launch the WebUI. The default model is downloaded during installation, so you can use it even if you haven't trained it.
 
 The structure of the model files required for voice synthesis is as follows (you don't need to place them manually):
 
