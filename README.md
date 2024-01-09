@@ -1,4 +1,11 @@
 # 2024-01-09のver 1.3で日本語の処理部分の大きなバグ修正とアクセント調整機能の追加等のアップデートをしました。アップデートして使うのを強くおすすめします。（学習もし直すといいかもしれません。）
+[**Changelog**](docs/CHANGELOG.md)
+
+- 2024-01-09: ver 1.3
+- 2023-12-31: ver 1.2
+- 2023-12-29: ver 1.1
+- 2023-12-27: ver 1.0
+
 # Style-Bert-VITS2
 
 Bert-VITS2 with more controllable voice styles.
@@ -15,7 +22,6 @@ Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1, so many thanks to the original author!
 
-- [更新履歴](docs/CHANGELOG.md)
 
 **概要**
 
