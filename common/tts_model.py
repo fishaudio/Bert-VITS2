@@ -199,7 +199,7 @@ class ModelHolder:
 
     def load_model_gr(
         self, model_name: str, model_path: str
-    ) -> tuple[gr.Dropdown, gr.Button]:
+    ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
         if model_path not in self.model_files_dict[model_name]:
@@ -210,10 +210,12 @@ class ModelHolder:
             style_vec_path=os.path.join(self.root_dir, model_name, "style_vectors.npy"),
             device=self.device,
         )
+        speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
         return (
             gr.Dropdown(choices=styles, value=styles[0]),
             gr.Button(interactive=True, value="音声合成"),
+            gr.Dropdown(choices=speakers, value=speakers[0]),
         )
 
     def update_model_files_gr(self, model_name: str) -> gr.Dropdown:

@@ -52,6 +52,7 @@ def tts_fn(
     style_weight,
     kata_tone_json_str,
     use_tone,
+    speaker,
 ):
     assert model_holder.current_model is not None
 
@@ -82,6 +83,8 @@ def tts_fn(
         phone_tone = kata_tone2phone_tone(kata_tone)
         tone = [t for _, t in phone_tone]
 
+    speaker_id = model_holder.current_model.spk2id[speaker]
+
     start_time = datetime.datetime.now()
 
     try:
@@ -101,6 +104,7 @@ def tts_fn(
             style=style,
             style_weight=style_weight,
             given_tone=tone,
+            sid=speaker_id,
         )
     except InvalidToneError as e:
         logger.error(f"Tone error: {e}")
@@ -109,7 +113,7 @@ def tts_fn(
     end_time = datetime.datetime.now()
     duration = (end_time - start_time).total_seconds()
 
-    if tone is None and language == "JP" and not line_split:
+    if tone is None and language == "JP":
         # アクセント指定に使えるようにアクセント情報を返す
         norm_text = text_normalize(text)
         kata_tone = g2kata_tone(norm_text)
@@ -285,14 +289,25 @@ if __name__ == "__main__":
                     maximum=2,
                     value=DEFAULT_SPLIT_INTERVAL,
                     step=0.1,
-                    label="分けた場合に挟む無音の長さ（秒）",
+                    label="改行ごとに挟む無音の長さ（秒）",
+                )
+                line_split.change(
+                    lambda x: (gr.Slider(visible=x)),
+                    inputs=[line_split],
+                    outputs=[split_interval],
                 )
                 tone = gr.Textbox(
                     label="アクセント調整（数値は 0=低 か1=高 のみ）",
-                    info="改行で分けない場合のみ使えます",
+                    info="改行で分けない場合のみ使えます。万能ではありません。",
                 )
                 use_tone = gr.Checkbox(label="アクセント調整を使う", value=False)
+                use_tone.change(
+                    lambda x: (gr.Checkbox(value=False) if x else gr.Checkbox()),
+                    inputs=[use_tone],
+                    outputs=[line_split],
+                )
                 language = gr.Dropdown(choices=languages, value="JP", label="Language")
+                speaker = gr.Dropdown(label="話者")
                 with gr.Accordion(label="詳細設定", open=False):
                     sdp_ratio = gr.Slider(
                         minimum=0,
@@ -390,6 +405,7 @@ if __name__ == "__main__":
                 style_weight,
                 tone,
                 use_tone,
+                speaker,
             ],
             outputs=[text_output, audio_output, tone],
         )
@@ -410,7 +426,7 @@ if __name__ == "__main__":
         load_button.click(
             model_holder.load_model_gr,
             inputs=[model_name, model_path],
-            outputs=[style, tts_button],
+            outputs=[style, tts_button, speaker],
         )
 
         style_mode.change(
