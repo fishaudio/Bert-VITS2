@@ -5,6 +5,7 @@ import commons
 from text import cleaned_text_to_sequence
 from text.cleaner import clean_text
 
+
 def gen_phones(text, language_str, add_blank, style_text=None, style_weight=0.7):
     style_text = None if style_text == "" else style_text
     # 在此处实现当前版本的get_text

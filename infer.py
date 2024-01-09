@@ -219,7 +219,7 @@ def infer(
     if isinstance(reference_audio, np.ndarray):
         emo = get_clap_audio_feature(reference_audio, device)
     else:
-        emo = get_clap_text_feature(emotion, device)
+        emo = get_clap_text_feature(text, device)
     emo = torch.squeeze(emo, dim=1)
 
     bert, phones, tones, lang_ids = get_text(

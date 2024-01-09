@@ -69,7 +69,6 @@ def generate_audio(
                 style_weight=style_weight,
                 skip_start=skip_start,
                 skip_end=skip_end,
-
             )
             audio16bit = gr.processing_utils.convert_to_16_bit_wav(audio)
             audio_list.append(audio16bit)
