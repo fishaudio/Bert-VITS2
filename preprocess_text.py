@@ -8,6 +8,7 @@ from tqdm import tqdm
 import click
 from text.cleaner import clean_text_auto
 from tools.filelist_utils import get_text_bert_auto, LangType
+from tools.sentence import split_by_language
 from config import config
 from infer import latest_version
 import torch
@@ -75,6 +76,9 @@ def preprocess(
                             ".wav", ".bert.pt"
                         )
 
+                        sentences_list = split_by_language(
+                            text, target_languages=["zh", "en"]
+                        )
                         (
                             norm_texts,
                             phones,

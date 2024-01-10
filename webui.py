@@ -105,7 +105,7 @@ def generate_audio_multilang(
                 length_scale=length_scale,
                 sid=speaker,
                 language=language[idx],
-                hps=hps,
+                add_blank=hps.data.add_blank,
                 net_g=net_g,
                 device=device,
                 skip_start=skip_start,

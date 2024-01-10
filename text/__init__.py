@@ -1,6 +1,6 @@
 from text.symbols import *
 from typing import Tuple, List, Literal
-from tools.filelist_utils import LangType
+from tools.types import LangType
 
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
 

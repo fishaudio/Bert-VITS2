@@ -12,7 +12,7 @@ import commons
 from text import cleaned_text_to_sequence, get_bert
 
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
-from typing import Union
+from typing import Union, List
 from text.cleaner import clean_text, clean_text_auto
 from tools.filelist_utils import get_text_bert_auto, LangType
 import utils
@@ -334,16 +334,16 @@ def infer(
 
 
 def infer_multilang(
-    text,
+    text: List[str],
     sdp_ratio,
     noise_scale,
     noise_scale_w,
     length_scale,
     sid,
-    language,
-    hps,
-    net_g,
+    language: List[str],
     device,
+    net_g,
+    add_blank=True,
     reference_audio=None,
     emotion=None,
     skip_start=False,
@@ -356,7 +356,9 @@ def infer_multilang(
         agg_phones,
         agg_tones,
         lang_ids,
-    ) = get_text_bert_auto(*clean_text_auto(text), device, hps.data.add_blank)
+    ) = get_text_bert_auto(
+        *clean_text_auto(list(zip(text, language))), device, add_blank
+    )
     phones, tones = agg_phones, agg_tones
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
@@ -368,7 +370,7 @@ def infer_multilang(
         # emo = emo.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
         del phones
-        speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
+        speakers = torch.LongTensor([sid]).to(device)
         audio = (
             net_g.infer(
                 x_tst,
