@@ -24,6 +24,8 @@ import numpy as np
 from config import config
 from tools.translate import translate
 import librosa
+from typing import Dict
+from functools import partial
 
 net_g = None
 
@@ -117,8 +119,9 @@ def generate_audio_multilang(
 
 
 def tts_split(
+    spk2id: Dict[str, int],
     text: str,
-    speaker,
+    speaker: str,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -138,11 +141,13 @@ def tts_split(
     para_list = re_matching.cut_para(text)
     para_list = [p for p in para_list if p != ""]
     audio_list = []
+    sid = spk2id[speaker]
     for p in para_list:
         if not cut_by_sent:
             audio_list += process_text(
                 p,
-                speaker,
+                spk2id,
+                sid,
                 sdp_ratio,
                 noise_scale,
                 noise_scale_w,
@@ -162,7 +167,8 @@ def tts_split(
             for s in sent_list:
                 audio_list_sent += process_text(
                     s,
-                    speaker,
+                    spk2id,
+                    sid,
                     sdp_ratio,
                     noise_scale,
                     noise_scale_w,
@@ -229,7 +235,8 @@ def process_auto(text):
 
 def process_text(
     text: str,
-    speaker,
+    spk2id: Dict[str, int],
+    speaker: int,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -260,7 +267,7 @@ def process_text(
                     noise_scale,
                     noise_scale_w,
                     length_scale,
-                    _speaker,
+                    spk2id[_speaker],
                     _lang,
                     reference_audio,
                     emotion,
@@ -302,8 +309,9 @@ def process_text(
 
 
 def tts_fn(
+    spk2id: Dict[str, int],
     text: str,
-    speaker,
+    speaker: str,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -327,7 +335,8 @@ def tts_fn(
 
     audio_list = process_text(
         text,
-        speaker,
+        spk2id,
+        spk2id[speaker],
         sdp_ratio,
         noise_scale,
         noise_scale_w,
@@ -487,7 +496,7 @@ if __name__ == "__main__":
                 #     value=os.path.abspath("./img/参数说明.png"),
                 # )
         btn.click(
-            tts_fn,
+            partial(tts_fn, speaker_ids),
             inputs=[
                 text,
                 speaker,
@@ -511,7 +520,7 @@ if __name__ == "__main__":
             outputs=[text],
         )
         slicer.click(
-            tts_split,
+            partial(tts_split, speaker_ids),
             inputs=[
                 text,
                 speaker,
