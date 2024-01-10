@@ -244,6 +244,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--share", action="store_true", help="Share this app publicly", default=False
     )
+    parser.add_argument(
+        "--server-name",
+        type=str,
+        default=None,
+        help="Server name for Gradio app",
+    )
+    parser.add_argument(
+        "--no-autolaunch",
+        action="store_true",
+        default=False,
+        help="Do not launch app automatically",
+    )
     args = parser.parse_args()
     model_dir = args.dir
 
@@ -435,4 +447,6 @@ if __name__ == "__main__":
             outputs=[style, ref_audio_path],
         )
 
-    app.launch(inbrowser=True, share=args.share)
+    app.launch(
+        inbrowser=not args.no_autolaunch, share=args.share, server_name=args.server_name
+    )

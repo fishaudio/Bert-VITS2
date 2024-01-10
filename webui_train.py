@@ -1,6 +1,8 @@
+import argparse
 import json
 import os
 import shutil
+from datetime import datetime
 from multiprocessing import cpu_count
 
 import gradio as gr
@@ -8,8 +10,6 @@ import yaml
 
 from common.log import logger
 from common.subprocess_utils import run_script_with_log, second_elem_of
-from datetime import datetime
-
 
 logger_handler = None
 
@@ -496,4 +496,19 @@ if __name__ == "__main__":
             second_elem_of(train), inputs=[model_name], outputs=[info_train]
         )
 
-    app.launch(inbrowser=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--server-name",
+        type=str,
+        default=None,
+        help="Server name for Gradio app",
+    )
+    parser.add_argument(
+        "--no-autolaunch",
+        action="store_true",
+        default=False,
+        help="Do not launch app automatically",
+    )
+    args = parser.parse_args()
+
+    app.launch(inbrowser=args.no_autolaunch, server_name=args.server_name)
