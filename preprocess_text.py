@@ -69,7 +69,7 @@ def preprocess(
                 lines = trans_file.readlines()
                 # print(lines, ' ', len(lines))
                 if len(lines) != 0:
-                    for line in tqdm(lines[:200]):
+                    for line in tqdm(lines):
                         # try:
                         utt, spk, text = line.strip().split("|")
                         bert_path = utt.replace(".WAV", ".wav").replace(
@@ -85,7 +85,7 @@ def preprocess(
                             tones,
                             word2phs,
                             langs,
-                        ) = clean_text_auto(text)
+                        ) = clean_text_auto(sentences_list)
                         (
                             bert,
                             ja_bert,
