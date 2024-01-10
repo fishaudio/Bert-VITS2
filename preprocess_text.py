@@ -122,7 +122,7 @@ def preprocess(
                         #     print(f"生成训练集和验证集时发生错误！, 详细信息:\n{e}")
 
     transcription_path = cleaned_path
-    spk_utt_map = defaultdict(list)
+    lines = []
     spk_id_map = {}
     current_sid = 0
 
@@ -151,8 +151,7 @@ def preprocess(
                 countNotFound += 1
                 continue
             audioPaths.add(utt)
-            for language in json.loads(langs):
-                spk_utt_map[language].append(line)
+            lines.append(line)
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
@@ -161,14 +160,13 @@ def preprocess(
     train_list = []
     val_list = []
 
-    for spk, utts in spk_utt_map.items():
-        shuffle(utts)
-        val_list += utts[:val_per_lang]
-        train_list += utts[val_per_lang:]
+    shuffle(lines)
+    val_list.extend(lines[:val_per_lang])
+    train_list.extend(lines[val_per_lang:])
 
     shuffle(val_list)
     if len(val_list) > max_val_total:
-        train_list += val_list[max_val_total:]
+        train_list.extend(val_list[max_val_total:])
         val_list = val_list[:max_val_total]
 
     with open(train_path, "w", encoding="utf-8") as f:
