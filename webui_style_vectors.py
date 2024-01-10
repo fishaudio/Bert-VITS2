@@ -6,6 +6,7 @@ import shutil
 import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
@@ -14,6 +15,12 @@ from umap import UMAP
 from common.constants import DEFAULT_STYLE
 from common.log import logger
 from config import config
+
+# Get path settings
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    dataset_root = path_config["dataset_root"]
+    # assets_root = path_config["assets_root"]
 
 MAX_CLUSTER_NUM = 10
 MAX_AUDIO_NUM = 10
@@ -31,7 +38,7 @@ centroids = []
 
 def load(model_name, reduction_method):
     global wav_files, x, x_reduced, mean
-    wavs_dir = os.path.join("Data", model_name, "wavs")
+    wavs_dir = os.path.join(dataset_root, model_name, "wavs")
     style_vector_files = [
         os.path.join(wavs_dir, f) for f in os.listdir(wavs_dir) if f.endswith(".npy")
     ]
@@ -103,7 +110,6 @@ def representative_wav_files(cluster_id, num_files=1):
     # 平均距離が最も小さい順にnum_files個のインデックスを取得
     closest_indices = np.argsort(mean_distances)[:num_files]
 
-    # 最も近いメドイドの元のインデックスを取得
     return cluster_indices[closest_indices]
 
 
@@ -237,7 +243,7 @@ def save_style_vectors_from_files(
         return f"スタイル名が重複しています。"
     style_vectors = [mean]
 
-    wavs_dir = os.path.join("Data", model_name, "wavs")
+    wavs_dir = os.path.join(dataset_root, model_name, "wavs")
     for audio_file in audio_files:
         path = os.path.join(wavs_dir, audio_file)
         if not os.path.exists(path):

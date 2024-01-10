@@ -511,4 +511,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    app.launch(inbrowser=args.no_autolaunch, server_name=args.server_name)
+    app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
