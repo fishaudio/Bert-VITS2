@@ -211,6 +211,8 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
         return (
             f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names_str}"
         )
+    if len(set(style_names)) != len(style_names):
+        return f"スタイル名が重複しています。"
 
     shutil.copy(config_path, f"{config_path}.bak")
     with open(config_path, "r", encoding="utf-8") as f:
