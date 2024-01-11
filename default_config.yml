@@ -111,6 +111,10 @@ webui:
   share: false
   # 是否开启debug模式
   debug: false
+  # 是否开启fp16推理，开启后可减少~45%的显存占用
+  fp16_run: false
+  # 是否开启int8推理，开启后可减少~75%的显存占用，但效果会有显著损失。
+  int8_run: false
   # 语种识别库，可选langid, fastlid
   language_identification_library: "langid"
 
