@@ -60,13 +60,18 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
     config["train"]["eval_interval"] = save_every_steps
 
     model_path = os.path.join(dataset_path, "models")
+    if os.path.exists(model_path):
+        logger.warning(f"Step 1: {model_path} already exists, so copy it to backup.")
+        shutil.copytree(
+            src=model_path,
+            dst=os.path.join(dataset_path, "models_backup"),
+        )
+        shutil.rmtree(model_path)
     try:
         shutil.copytree(
             src="pretrained",
             dst=model_path,
         )
-    except FileExistsError:
-        logger.warning(f"Step 1: {model_path} already exists.")
     except FileNotFoundError:
         logger.error("Step 1: `pretrained` folder not found.")
         return False, "Step 1, Error: pretrainedフォルダが見つかりません。"
