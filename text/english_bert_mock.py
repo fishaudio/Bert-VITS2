@@ -31,11 +31,11 @@ def get_bert_feature(
     assert not (config.webui_config.fp16_run and config.webui_config.int8_run), "fp16_run and int8_run cannot be both True"
     if device not in models.keys():
         if config.webui_config.fp16_run:
-            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
+            models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
         elif config.webui_config.int8_run:
-            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
+            models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
         else:
-            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
+            models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
