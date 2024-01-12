@@ -31,23 +31,23 @@ def get_bert_feature(
     assert not (config.webui_config.fp16_run and config.webui_config.int8_run), "fp16_run and int8_run cannot be both True"
     if device not in models.keys():
         if config.webui_config.fp16_run:
-            model = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
+            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
         elif config.webui_config.int8_run:
-            model = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
+            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
         else:
-            model = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
+            model[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
         res = models[device](**inputs, output_hidden_states=True)
-        res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
+        res = torch.cat(res["hidden_states"][-3:-2], -1)[0].float().cpu()
         if style_text:
             style_inputs = tokenizer(style_text, return_tensors="pt")
             for i in style_inputs:
                 style_inputs[i] = style_inputs[i].to(device)
             style_res = models[device](**style_inputs, output_hidden_states=True)
-            style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].cpu()
+            style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].float().cpu()
             style_res_mean = style_res.mean(0)
     assert len(word2ph) == res.shape[0], (text, res.shape[0], len(word2ph))
     word2phone = word2ph
