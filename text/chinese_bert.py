@@ -24,11 +24,11 @@ def get_bert_feature(
         device = "mps"
     if not device:
         device = "cuda"
-    assert not (config.webui_config['fp16_run'] and config.webui_config['int8_run']), "fp16_run and int8_run cannot be both True"
+    assert not (config.webui_config.fp16_run and config.webui_config.int8_run), "fp16_run and int8_run cannot be both True"
     if device not in models.keys():
-        if config.webui_config['fp16_run']:
+        if config.webui_config.fp16_run:
             model = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
-        elif config.webui_config['int8_run']:
+        elif config.webui_config.int8_run:
             model = MegatronBertModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
         else:
             model = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
@@ -68,7 +68,7 @@ def get_bert_feature(
 
 
 if __name__ == "__main__":
-    word_level_feature = torch.rand(38, 2048)  # 12个词,每个词1024维特征
+    word_level_feature = torch.rand(38, 2048)  # 12个词,每个词2048维特征
     word2phone = [
         1,
         2,
