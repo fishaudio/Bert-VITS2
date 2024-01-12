@@ -65,6 +65,7 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
         shutil.copytree(
             src=model_path,
             dst=os.path.join(dataset_path, "models_backup"),
+            dirs_exist_ok=True,
         )
         shutil.rmtree(model_path)
     try:
