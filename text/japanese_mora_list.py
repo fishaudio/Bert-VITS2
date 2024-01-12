@@ -50,6 +50,7 @@ from typing import Optional
 # (カタカナ, 子音, 母音)の順。子音がない場合はNoneを入れる。
 # 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「n」、「ッ」は「q」に変更
 # （元々はそれぞれ「N」「cl」）
+# また「デェ = dy e」はpyopenjtalkの出力（de e）と合わないため削除
 _mora_list_minimum: list[tuple[str, Optional[str], str]] = [
     ("ヴォ", "v", "o"),
     ("ヴェ", "v", "e"),
@@ -126,7 +127,7 @@ _mora_list_minimum: list[tuple[str, Optional[str], str]] = [
     ("デョ", "dy", "o"),
     ("デュ", "dy", "u"),
     ("デャ", "dy", "a"),
-    ("デェ", "dy", "e"),
+    # ("デェ", "dy", "e"),
     ("ディ", "d", "i"),
     ("デ", "d", "e"),
     ("テョ", "ty", "o"),
