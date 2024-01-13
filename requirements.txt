@@ -31,4 +31,4 @@ sentencepiece
 pykakasi
 langid
 onnxruntime-gpu
-opencc
+opencc==1.1.6
