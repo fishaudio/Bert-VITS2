@@ -1,0 +1,16 @@
+[project]
+name = "pypinyin_G2pW_bv2"
+version = "0.1.0"
+authors = [
+    {name = "Stardust", email = "2225664821@qq.com"},
+]
+description = "pypinyin-G2pW-bv2"
+keywords = ["TTS", "Speech"]
+license = {text = "BSD-3-Clause"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
