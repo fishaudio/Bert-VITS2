@@ -80,7 +80,7 @@ class G2PWOnnxConverter:
         self.model_source = model_source if model_source else self.config.model_source
         self.enable_opencc = enable_non_tradional_chinese
 
-        self.tokenizer = BertTokenizer.from_pretrained(self.config.model_source)
+        self.tokenizer = BertTokenizer.from_pretrained(self.model_source) if model_source else BertTokenizer.from_pretrained(self.config.model_source)
         polyphonic_chars_path = os.path.join(model_dir, 'POLYPHONIC_CHARS.txt')
         monophonic_chars_path = os.path.join(model_dir, 'MONOPHONIC_CHARS.txt')
        
