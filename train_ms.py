@@ -443,6 +443,7 @@ def train_and_evaluate(
         tone,
         language,
         bert,
+        en_bert,
         emo,
     ) in enumerate(tqdm(train_loader)):
         if net_g.module.use_noise_scaled_mas:
@@ -464,6 +465,7 @@ def train_and_evaluate(
         tone = tone.cuda(local_rank, non_blocking=True)
         language = language.cuda(local_rank, non_blocking=True)
         bert = bert.cuda(local_rank, non_blocking=True)
+        en_bert = en_bert.cuda(local_rank, non_blocking=True)
         emo = emo.cuda(local_rank, non_blocking=True)
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
@@ -487,6 +489,7 @@ def train_and_evaluate(
                 tone,
                 language,
                 bert,
+                en_bert,
                 emo,
             )
             mel = spec_to_mel_torch(
@@ -753,6 +756,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             tone,
             language,
             bert,
+            en_bert,
             emo,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
@@ -760,6 +764,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
             y, y_lengths = y.cuda(), y_lengths.cuda()
             speakers = speakers.cuda()
             bert = bert.cuda()
+            en_bert = en_bert.cuda()
             tone = tone.cuda()
             language = language.cuda()
             emo = emo.cuda()
@@ -771,6 +776,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     tone,
                     language,
                     bert,
+                    en_bert,
                     emo,
                     y=spec,
                     max_len=1000,
