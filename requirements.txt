@@ -32,3 +32,4 @@ pykakasi
 langid
 onnxruntime-gpu
 opencc==1.1.6
+WeTextProcessing>=0.1.10
