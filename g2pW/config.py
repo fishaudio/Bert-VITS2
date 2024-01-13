@@ -1,7 +1,7 @@
-manual_seed = 1313
+manual_seed = 42
 model_source = 'bert-base-chinese'
 window_size = 32
-num_workers = 2
+num_workers = 64
 use_mask = True
 use_conditional = True
 param_conditional = {
