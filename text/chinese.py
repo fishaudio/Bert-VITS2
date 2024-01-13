@@ -214,7 +214,7 @@ def get_bert_feature(text, word2ph):
 if __name__ == "__main__":
     from text.chinese_bert import get_bert_feature
 
-    text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
+    text = "欸，这个「勾玉」的形状，是不是和那边门上的凹槽很像？"
     text = text_normalize(text)
     print(text)
     phones, tones, word2ph = g2p(text)
