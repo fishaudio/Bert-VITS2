@@ -90,22 +90,44 @@ def _get_initials_finals(word):
         finals.append(v)
     return initials, finals
 
-
+def _get_initials_finalsV2(word, orig_initials, orig_finals):
+    initials = []
+    finals = []
+    for c, v in zip(orig_initials, orig_finals):
+        initials.append(c)
+        finals.append(v)
+    return initials, finals
 def _g2p(segments):
     phones_list = []
     tones_list = []
     word2ph = []
     for seg in segments:
         # Replace all English words in the sentence
+        
         seg = re.sub("[a-zA-Z]+", "", seg)
+
+       
+        
         seg_cut = psg.lcut(seg)
         initials = []
         finals = []
         seg_cut = tone_modifier.pre_merge_for_modify(seg_cut)
+        allWords=""
         for word, pos in seg_cut:
+            allWords=allWords+word
+
+        orig_initials = pinyinPlus.lazy_pinyin(allWords, neutral_tone_with_five=True, style=Style.INITIALS)
+        orig_finals = pinyinPlus.lazy_pinyin(
+         allWords, neutral_tone_with_five=True, style=Style.FINALS_TONE3
+        )
+        currentIndex=0
+        for word, pos in seg_cut:
+            curr_orig_initials=orig_initials[currentIndex:currentIndex+len(word)]
+            curr_orig_finalss=orig_finals[currentIndex:currentIndex+len(word)]
+            currentIndex=currentIndex+len(word)
             if pos == "eng":
                 continue
-            sub_initials, sub_finals = _get_initials_finals(word)
+            sub_initials, sub_finals = _get_initials_finalsV2(word,curr_orig_initials,curr_orig_finalss)
             sub_finals = tone_modifier.modified_tone(word, pos, sub_finals)
             initials.append(sub_initials)
             finals.append(sub_finals)
@@ -166,7 +188,6 @@ def _g2p(segments):
             phones_list += phone
             tones_list += [int(tone)] * len(phone)
     return phones_list, tones_list, word2ph
-
 
 def text_normalize(text):
     numbers = re.findall(r"\d+(?:\.?\d+)?", text)
