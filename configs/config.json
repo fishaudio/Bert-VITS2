@@ -10,7 +10,7 @@
       0.99
     ],
     "eps": 1e-09,
-    "batch_size": 32,
+    "batch_size": 16,
     "bf16_run": false,
     "fp16_run": false,
     "lr_decay": 0.99996,
@@ -375,7 +375,7 @@
     ],
     "n_layers_q": 3,
     "use_spectral_norm": false,
-    "gin_channels": 256,
+    "gin_channels": 512,
     "slm": {
       "model": "./slm/wavlm-base-plus",
       "sr": 16000,
@@ -384,5 +384,5 @@
       "initial_channel": 64
     }
   },
-  "version": "2.3"
+  "version": "2.4"
 }
