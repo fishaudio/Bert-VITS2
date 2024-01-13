@@ -3,7 +3,7 @@ import re
 
 import cn2an
 from pypinyin import Style
-from pypinyin_G2pW_bv2 import G2PWPinyin
+from g2pW.pypinyin_G2pW_bv2 import G2PWPinyin
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
 
