@@ -53,7 +53,7 @@ rep_map = {
 tone_modifier = ToneSandhi()
 
 pinyinPlus = G2PWPinyin(model_dir='g2pW/',
-                      model_source='./bert/Erlangshen-MegatronBert-1.3B/',
+                      model_source='bert/Erlangshen-MegatronBert-1.3B-Chinese/',
                       v_to_u=False, neutral_tone_with_five=True)
 
 def replace_punctuation(text):
