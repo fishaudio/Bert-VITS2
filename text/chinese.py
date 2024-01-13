@@ -12,7 +12,7 @@ try:
 except ImportError:
     import cn2an
 
-    logger.warning("tn.chinese.normalizer not found, use cn2an normalizer")
+    print("tn.chinese.normalizer not found, use cn2an normalizer")
     normalizer = lambda x: cn2an.transform(x, "an2cn")
     
 current_file_path = os.path.dirname(__file__)
