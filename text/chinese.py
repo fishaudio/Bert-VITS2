@@ -2,8 +2,8 @@ import os
 import re
 
 import cn2an
-from pypinyin import lazy_pinyin, Style
-
+from pypinyin import Style
+from pypinyin_g2pw import G2PWPinyin
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
 
@@ -52,6 +52,9 @@ rep_map = {
 
 tone_modifier = ToneSandhi()
 
+pinyinPlus = G2PWPinyin(model_dir='g2pW/',
+                      model_source='./bert/Erlangshen-MegatronBert-1.3B/',
+                      v_to_u=False, neutral_tone_with_five=True)
 
 def replace_punctuation(text):
     text = text.replace("嗯", "恩").replace("呣", "母")
