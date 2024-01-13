@@ -50,31 +50,26 @@ def preprocess(
     if clean:
         with open(cleaned_path, "w", encoding="utf-8") as out_file:
             with open(transcription_path, "r", encoding="utf-8") as trans_file:
-                lines = trans_file.readlines()
-                # print(lines, ' ', len(lines))
-                if len(lines) != 0:
-                    for line in tqdm(lines, file=SAFE_STDOUT):
-                        try:
-                            utt, spk, language, text = line.strip().split("|")
-                            norm_text, phones, tones, word2ph = clean_text(
-                                text, language
+                for line in tqdm(trans_file, file=SAFE_STDOUT):
+                    try:
+                        utt, spk, language, text = line.strip().split("|")
+                        norm_text, phones, tones, word2ph = clean_text(text, language)
+                        out_file.write(
+                            "{}|{}|{}|{}|{}|{}|{}\n".format(
+                                utt,
+                                spk,
+                                language,
+                                norm_text,
+                                " ".join(phones),
+                                " ".join([str(i) for i in tones]),
+                                " ".join([str(i) for i in word2ph]),
                             )
-                            out_file.write(
-                                "{}|{}|{}|{}|{}|{}|{}\n".format(
-                                    utt,
-                                    spk,
-                                    language,
-                                    norm_text,
-                                    " ".join(phones),
-                                    " ".join([str(i) for i in tones]),
-                                    " ".join([str(i) for i in word2ph]),
-                                )
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
-                            )
-                            raise
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
+                        )
+                        raise
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
