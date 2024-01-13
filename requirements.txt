@@ -8,6 +8,7 @@ tensorboard
 Unidecode
 amfm_decompy
 jieba_fast
+jieba
 transformers
 pypinyin
 cn2an
