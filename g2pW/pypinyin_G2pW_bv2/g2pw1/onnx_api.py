@@ -22,6 +22,7 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 import numpy as np
+import torch
 import onnxruntime
 from opencc import OpenCC
 from transformers import BertTokenizer
