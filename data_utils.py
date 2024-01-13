@@ -253,7 +253,7 @@ class TextAudioSpeakerCollate:
             bert_padded[i, :, : bert.size(1)] = bert
 
             en_bert = row[7]
-            en_bert_padded[i, :, : bert.size(1)] = bert
+            en_bert_padded[i, :, : en_bert.size(1)] = bert
 
             emo[i, :] = row[8]
 
