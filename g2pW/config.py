@@ -1,4 +1,4 @@
-manual_seed = 1313
+manual_seed = 42
 model_source = '.bert/Erlangshen-MegatronBert-1.3B'
 window_size = 32
 num_workers = 2
