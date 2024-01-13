@@ -1,5 +1,5 @@
 [project]
-name = "pypinyin-G2pW-bv2"
+name = "pypinyin_G2pW_bv2"
 version = "0.1.0"
 authors = [
     {name = "Stardust", email = "2225664821@qq.com"},
