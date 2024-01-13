@@ -268,7 +268,7 @@ class TextAudioSpeakerCollate:
             tone_padded,
             language_padded,
             bert_padded,
-            en_bert_padded
+            en_bert_padded,
             emo,
         )
 
