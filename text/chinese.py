@@ -21,7 +21,10 @@ pinyin_to_symbol_map = {
     for line in open(os.path.join(current_file_path, "opencpop-strict.txt")).readlines()
 }
 
-import jieba.posseg as psg
+try:
+    import jieba_fast.posseg as psg
+except:
+    import jieba.posseg as psg
 
 
 rep_map = {
