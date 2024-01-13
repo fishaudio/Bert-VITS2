@@ -202,6 +202,7 @@ def _g2p(segments):
 
 def text_normalize(text):
     text = normalizer(text)
+    text = replace_punctuation(text)
     return text
 
 
