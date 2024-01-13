@@ -30,3 +30,5 @@ g2p_en
 sentencepiece
 pykakasi
 langid
+onnxruntime-gpu
+opencc
