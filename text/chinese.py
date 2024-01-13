@@ -1,12 +1,20 @@
 import os
 import re
 
-import cn2an
 from pypinyin import Style
 from g2pW.pypinyin_G2pW_bv2 import G2PWPinyin
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
+try:
+    from tn.chinese.normalizer import Normalizer
 
+    normalizer = Normalizer().normalize
+except ImportError:
+    import cn2an
+
+    logger.warning("tn.chinese.normalizer not found, use cn2an normalizer")
+    normalizer = lambda x: cn2an.transform(x, "an2cn")
+    
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
     line.split("\t")[0]: line.strip().split("\t")[1]
@@ -193,10 +201,7 @@ def _g2p(segments):
     return phones_list, tones_list, word2ph
 
 def text_normalize(text):
-    numbers = re.findall(r"\d+(?:\.?\d+)?", text)
-    for number in numbers:
-        text = text.replace(number, cn2an.an2cn(number), 1)
-    text = replace_punctuation(text)
+    text = normalizer(text)
     return text
 
 
