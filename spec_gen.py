@@ -3,7 +3,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch
-
+torch.set_num_threads(1)
 
 class AudioProcessor:
     def __init__(
@@ -69,7 +69,7 @@ processor = AudioProcessor(
     max_wav_value=32768.0,
     use_mel_spec_posterior=False,
     filter_length=2048,
-    n_mel_channels=128,
+    n_mel_channels=160,
     sampling_rate=44100,
     hop_length=512,
     win_length=2048,
@@ -81,7 +81,7 @@ with open("filelists/train.list", "r") as f:
     filepaths = [line.split("|")[0] for line in f]  # 取每一行的第一部分作为audiopath
 
 # 使用多进程处理
-with Pool(processes=32) as pool:  # 使用4个进程
+with Pool(processes=32) as pool:  # 使用32个进程
     with tqdm(total=len(filepaths)) as pbar:
         for i, _ in enumerate(pool.imap_unordered(processor.process_audio, filepaths)):
             pbar.update()
