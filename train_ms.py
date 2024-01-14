@@ -42,6 +42,7 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
     True  # If encontered training problem,please try to disable TF32.
 )
+torch.set_num_threads(1)
 torch.set_float32_matmul_precision("medium")
 torch.backends.cuda.sdp_kernel("flash")
 torch.backends.cuda.enable_flash_sdp(True)
