@@ -155,7 +155,6 @@ class Webui_config:
         share: bool = False,
         debug: bool = False,
         fp16_run: bool = False,
-        int8_run: bool = False,
     ):
         self.device: str = device
         self.model: str = model  # 端口号
@@ -164,7 +163,6 @@ class Webui_config:
         self.share: bool = share  # 模型路径
         self.debug: bool = debug  # 配置文件路径
         self.fp16_run: bool = fp16_run # 16bit加载bert和clap
-        self.int8_run: bool = int8_run # 8bit加载bert和clap
         self.language_identification_library: str = (
             language_identification_library  # 语种识别库
         )
