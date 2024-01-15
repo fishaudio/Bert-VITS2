@@ -19,12 +19,9 @@ def get_clap_audio_feature(audio_data, device=config.bert_gen_config.device):
         device = "mps"
     if not device:
         device = "cuda"
-    assert not (config.webui_config.fp16_run and config.webui_config.int8_run), "fp16_run and int8_run cannot be both True"
     if device not in models.keys():
         if config.webui_config.fp16_run:
             models[device] = ClapModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
-        elif config.webui_config.int8_run:
-            models[device] = ClapModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
         else:
             models[device] = ClapModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
@@ -44,12 +41,9 @@ def get_clap_text_feature(text, device=config.bert_gen_config.device):
         device = "mps"
     if not device:
         device = "cuda"
-    assert not (config.webui_config.fp16_run and config.webui_config.int8_run), "fp16_run and int8_run cannot be both True"
     if device not in models.keys():
         if config.webui_config.fp16_run:
             models[device] = ClapModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
-        elif config.webui_config.int8_run:
-            models[device] = ClapModel.from_pretrained(LOCAL_PATH, torch_dtype=torch.int8).to(device)
         else:
             models[device] = ClapModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
