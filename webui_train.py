@@ -238,7 +238,7 @@ def preprocess_all(
     return True, "Success: 全ての前処理が完了しました。ターミナルを確認しておかしいところがないか確認するのをおすすめします。"
 
 
-def train(model_name):
+def train(model_name, skip_style=False):
     dataset_path, _, _, _, config_path = get_path(model_name)
     # 学習再開の場合は念のためconfig.ymlの名前等を更新
     with open("config.yml", "r", encoding="utf-8") as f:
@@ -247,6 +247,9 @@ def train(model_name):
     yml_data["dataset_path"] = dataset_path
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
+    cmd = ["train_ms.py", "--config", config_path, "--model", dataset_path]
+    if skip_style:
+        cmd.append("--skip_default_style")
     success, message = run_script_with_log(
         ["train_ms.py", "--config", config_path, "--model", dataset_path]
     )
@@ -445,6 +448,11 @@ if __name__ == "__main__":
                     info_style = gr.Textbox(label="状況")
         gr.Markdown("## 学習")
         with gr.Row(variant="panel"):
+            skip_style = gr.Checkbox(
+                label="スタイルファイルの生成をスキップする",
+                info="学習再開の場合の場合はチェックしてください",
+                value=False,
+            )
             train_btn = gr.Button(value="学習を開始する", variant="primary")
             info_train = gr.Textbox(label="状況")
 
@@ -499,7 +507,7 @@ if __name__ == "__main__":
             outputs=[info_style],
         )
         train_btn.click(
-            second_elem_of(train), inputs=[model_name], outputs=[info_train]
+            second_elem_of(train), inputs=[model_name, skip_style], outputs=[info_train]
         )
 
     parser = argparse.ArgumentParser()

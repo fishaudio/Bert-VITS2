@@ -198,6 +198,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
     style_vectors = np.stack([mean] + centroids)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
     if os.path.exists(style_vector_path):
+        logger.info(f"Backup {style_vector_path} to {style_vector_path}.bak")
         shutil.copy(style_vector_path, f"{style_vector_path}.bak")
     np.save(style_vector_path, style_vectors)
 
@@ -214,6 +215,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
     if len(set(style_names)) != len(style_names):
         return f"スタイル名が重複しています。"
 
+    logger.info(f"Backup {config_path} to {config_path}.bak")
     shutil.copy(config_path, f"{config_path}.bak")
     with open(config_path, "r", encoding="utf-8") as f:
         json_dict = json.load(f)
@@ -255,6 +257,7 @@ def save_style_vectors_from_files(
     assert len(style_name_list) == len(style_vectors)
     style_vector_path = os.path.join(result_dir, "style_vectors.npy")
     if os.path.exists(style_vector_path):
+        logger.info(f"Backup {style_vector_path} to {style_vector_path}.bak")
         shutil.copy(style_vector_path, f"{style_vector_path}.bak")
     np.save(style_vector_path, style_vectors)
 
@@ -262,6 +265,7 @@ def save_style_vectors_from_files(
     config_path = os.path.join(result_dir, "config.json")
     if not os.path.exists(config_path):
         return f"{config_path}が存在しません。"
+    logger.info(f"Backup {config_path} to {config_path}.bak")
     shutil.copy(config_path, f"{config_path}.bak")
 
     with open(config_path, "r", encoding="utf-8") as f:
@@ -291,7 +295,7 @@ Style-Bert-VITS2でこまかくスタイルを指定して音声合成するに�
 - 方法3: 自分でもっと頑張ってこだわって作る（JVNVコーパスなど、もともとスタイルラベル等が利用可能な場合はこれがよいかも）
 """
 
-method1 = """
+method1 = f"""
 学習の時に取り出したスタイルベクトルを読み込んで、可視化を見ながらスタイルを分けていきます。
 
 手順:
@@ -303,7 +307,7 @@ method1 = """
 
 詳細: スタイルベクトル(256次元)たちを適当なアルゴリズムでクラスタリングして、各クラスタの中心のベクトル（と全体の平均ベクトル）を保存します。
 
-平均スタイル（{DEFAULT_EMOTION}）は自動的に保存されます。
+平均スタイル（{DEFAULT_STYLE}）は自動的に保存されます。
 """
 
 dbscan_md = """
