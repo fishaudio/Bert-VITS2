@@ -466,6 +466,9 @@ parser.add_argument(
     default=False,
     help="Do not launch app automatically",
 )
+parser.add_argument("--share", action="store_true", default=False)
 args = parser.parse_args()
 
-app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
+app.launch(
+    inbrowser=not args.no_autolaunch, server_name=args.server_name, share=args.share
+)
