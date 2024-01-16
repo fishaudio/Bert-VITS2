@@ -30,7 +30,17 @@ def get_path(model_name):
     return dataset_path, lbl_path, train_path, val_path, config_path
 
 
-def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
+def initialize(
+    model_name,
+    batch_size,
+    epochs,
+    save_every_steps,
+    bf16_run,
+    freeze_EN_bert,
+    freeze_JP_bert,
+    freeze_ZH_bert,
+    freeze_style,
+):
     global logger_handler
     dataset_path, _, train_path, val_path, config_path = get_path(model_name)
 
@@ -42,7 +52,7 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
     logger_handler = logger.add(os.path.join(dataset_path, file_name))
 
     logger.info(
-        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, bf16_run: {bf16_run}"
+        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, bf16_run: {bf16_run}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}"
     )
     if os.path.isfile(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
@@ -58,6 +68,11 @@ def initialize(model_name, batch_size, epochs, save_every_steps, bf16_run):
     config["train"]["epochs"] = epochs
     config["train"]["bf16_run"] = bf16_run
     config["train"]["eval_interval"] = save_every_steps
+
+    config["train"]["freeze_EN_bert"] = freeze_EN_bert
+    config["train"]["freeze_JP_bert"] = freeze_JP_bert
+    config["train"]["freeze_ZH_bert"] = freeze_ZH_bert
+    config["train"]["freeze_style"] = freeze_style
 
     model_path = os.path.join(dataset_path, "models")
     if os.path.exists(model_path):
@@ -214,11 +229,23 @@ def preprocess_all(
     num_processes,
     normalize,
     trim,
+    freeze_EN_bert,
+    freeze_JP_bert,
+    freeze_ZH_bert,
+    freeze_style,
 ):
     if model_name == "":
         return False, "Error: モデル名を入力してください"
     success, message = initialize(
-        model_name, batch_size, epochs, save_every_steps, bf16_run
+        model_name,
+        batch_size,
+        epochs,
+        save_every_steps,
+        bf16_run,
+        freeze_EN_bert,
+        freeze_JP_bert,
+        freeze_ZH_bert,
+        freeze_style,
     )
     if not success:
         return False, message
@@ -349,14 +376,6 @@ if __name__ == "__main__":
                     info="bfloat16を使うかどうか。新しめのグラボだと学習が早くなるかも、古いグラボだと動かないかも。",
                     value=True,
                 )
-                num_processes = gr.Slider(
-                    label="プロセス数",
-                    info="前処理時の並列処理プロセス数、大きすぎるとフリーズするかも",
-                    value=cpu_count() // 2,
-                    minimum=1,
-                    maximum=cpu_count(),
-                    step=1,
-                )
                 normalize = gr.Checkbox(
                     label="音声の音量を正規化する(音量の大小が揃っていない場合など)",
                     value=False,
@@ -365,6 +384,33 @@ if __name__ == "__main__":
                     label="音声の最初と最後の無音を取り除く",
                     value=False,
                 )
+                with gr.Accordion("詳細設定", open=False):
+                    num_processes = gr.Slider(
+                        label="プロセス数",
+                        info="前処理時の並列処理プロセス数、大きすぎるとフリーズするかも",
+                        value=cpu_count() // 2,
+                        minimum=1,
+                        maximum=cpu_count(),
+                        step=1,
+                    )
+                    gr.Markdown("学習時に特定の部分を凍結させるかどうか")
+                    freeze_EN_bert = gr.Checkbox(
+                        label="英語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_JP_bert = gr.Checkbox(
+                        label="日本語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_ZH_bert = gr.Checkbox(
+                        label="中国語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_style = gr.Checkbox(
+                        label="スタイル部分を凍結",
+                        value=False,
+                    )
+
             with gr.Column():
                 preprocess_button = gr.Button(value="自動前処理を実行", variant="primary")
                 info_all = gr.Textbox(label="状況")
@@ -396,6 +442,22 @@ if __name__ == "__main__":
                     bf16_run_manual = gr.Checkbox(
                         label="bfloat16を使う",
                         value=True,
+                    )
+                    freeze_EN_bert_manual = gr.Checkbox(
+                        label="英語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_JP_bert_manual = gr.Checkbox(
+                        label="日本語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_ZH_bert_manual = gr.Checkbox(
+                        label="中国語bert部分を凍結",
+                        value=False,
+                    )
+                    freeze_style_manual = gr.Checkbox(
+                        label="スタイル部分を凍結",
+                        value=False,
                     )
                 with gr.Column():
                     generate_config_btn = gr.Button(value="実行", variant="primary")
@@ -467,6 +529,10 @@ if __name__ == "__main__":
                 num_processes,
                 normalize,
                 trim,
+                freeze_EN_bert,
+                freeze_JP_bert,
+                freeze_ZH_bert,
+                freeze_style,
             ],
             outputs=[info_all],
         )
@@ -478,6 +544,10 @@ if __name__ == "__main__":
                 epochs_manual,
                 save_every_steps_manual,
                 bf16_run_manual,
+                freeze_EN_bert_manual,
+                freeze_JP_bert_manual,
+                freeze_ZH_bert_manual,
+                freeze_style_manual,
             ],
             outputs=[info_init],
         )
