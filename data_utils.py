@@ -155,7 +155,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             word2ph[0] += 1
         bert_path = wav_path.replace(".wav", ".bert.pt")
         bert = torch.load(bert_path)
-        assert bert_ori.shape[-1] == len(phone)
+        assert bert.shape[-1] == len(phone)
         phone = torch.LongTensor(phone)
         tone = torch.LongTensor(tone)
         language = torch.LongTensor(language)
