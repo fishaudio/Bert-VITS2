@@ -90,7 +90,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         # separate filename, speaker_id and text
         audiopath, sid, language, text, phones, tone, word2ph = audiopath_sid_text
 
-        bert, en_bert, phones, tone, language = self.get_text(
+        bert, phones, tone, language = self.get_text(
             text, word2ph, phones, tone, language, audiopath
         )
 
@@ -100,7 +100,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             torch.load(audiopath.replace(".wav", ".emo.pt"), map_location="cpu"),
             dim=1,
         )
-        return (phones, spec, wav, sid, tone, language, bert, en_bert, emo)
+        return (phones, spec, wav, sid, tone, language, bert, emo)
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
