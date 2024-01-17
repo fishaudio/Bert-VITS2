@@ -66,17 +66,19 @@ if __name__ == "__main__":
         os.rename(output_file, output_file + ".bak")
 
     if language == "ja":
-        language_id = Languages.JP
+        language_id = Languages.JP.value
     elif language == "en":
-        language_id = Languages.EN
+        language_id = Languages.EN.value
     elif language == "zh":
-        language_id = Languages.ZH
+        language_id = Languages.ZH.value
     else:
         raise ValueError(f"{language} is not supported.")
     with open(output_file, "w", encoding="utf-8") as f:
         for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
             file_name = os.path.basename(wav_file)
-            text = transcribe(wav_file, initial_prompt=initial_prompt, language=language)
+            text = transcribe(
+                wav_file, initial_prompt=initial_prompt, language=language
+            )
             f.write(f"{file_name}|{speaker_name}|{language_id}|{text}\n")
             f.flush()
     sys.exit(0)
