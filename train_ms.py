@@ -102,7 +102,7 @@ def run():
     args = parser.parse_args()
     model_dir = os.path.join(args.model, config.train_ms_config.model)
     if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+        os.makedirs(model_dir, exist_ok=True)
     hps = utils.get_hparams_from_file(args.config)
     hps.model_dir = model_dir
     # 比较路径是否相同
