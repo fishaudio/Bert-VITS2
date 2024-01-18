@@ -46,7 +46,7 @@ def process_line(x):
             assert bert.shape[-1] == len(phone)
             torch.save(bert, bert_path)
     else:
-        print(f'{bert_path} already exsists.')
+        print(f"{bert_path} already exsists.")
 
 
 preprocess_text_config = config.preprocess_text_config
