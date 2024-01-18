@@ -48,6 +48,7 @@ def process_line(x):
     else:
         print(f"{bert_path} already exsists.")
 
+
 preprocess_text_config = config.preprocess_text_config
 
 if __name__ == "__main__":
