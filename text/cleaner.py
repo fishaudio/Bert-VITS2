@@ -1,7 +1,7 @@
 from text import chinese, cleaned_text_to_sequence
 
 
-language_module_map = {"ZH": chinese
+language_module_map = {"ZH": chinese}
 
 
 def clean_text(text, language):
