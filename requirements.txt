@@ -30,4 +30,4 @@ g2p_en
 sentencepiece
 pykakasi
 langid
-WeTextProcessing>=0.1.10
+WeTextProcessing>=0.1.10; platform_system != "Windows"
