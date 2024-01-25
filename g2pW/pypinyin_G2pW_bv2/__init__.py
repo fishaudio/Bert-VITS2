@@ -2,4 +2,4 @@
 
 from .g2pw import G2PWPinyin
 
-__all__ = ['G2PWPinyin']
+__all__ = ["G2PWPinyin"]

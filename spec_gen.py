@@ -3,7 +3,9 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from mel_processing import spectrogram_torch, mel_spectrogram_torch
 from utils import load_wav_to_torch
+
 torch.set_num_threads(1)
+
 
 class AudioProcessor:
     def __init__(
