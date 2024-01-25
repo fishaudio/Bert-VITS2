@@ -5,6 +5,7 @@ from pypinyin import Style
 from g2pW.pypinyin_G2pW_bv2 import G2PWPinyin
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
+
 try:
     from tn.chinese.normalizer import Normalizer
 
@@ -14,7 +15,7 @@ except ImportError:
 
     print("tn.chinese.normalizer not found, use cn2an normalizer")
     normalizer = lambda x: cn2an.transform(x, "an2cn")
-    
+
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
     line.split("\t")[0]: line.strip().split("\t")[1]
@@ -63,9 +64,13 @@ rep_map = {
 
 tone_modifier = ToneSandhi()
 
-pinyinPlus = G2PWPinyin(model_dir='g2pW/',
-                      model_source='bert/Erlangshen-MegatronBert-1.3B-Chinese/',
-                      v_to_u=False, neutral_tone_with_five=True)
+pinyinPlus = G2PWPinyin(
+    model_dir="g2pW/",
+    model_source="bert/Erlangshen-MegatronBert-1.3B-Chinese/",
+    v_to_u=False,
+    neutral_tone_with_five=True,
+)
+
 
 def replace_punctuation(text):
     text = text.replace("嗯", "恩").replace("呣", "母")
@@ -104,6 +109,7 @@ def _get_initials_finals(word):
         finals.append(v)
     return initials, finals
 
+
 def _get_initials_finalsV2(word, orig_initials, orig_finals):
     initials = []
     finals = []
@@ -111,37 +117,41 @@ def _get_initials_finalsV2(word, orig_initials, orig_finals):
         initials.append(c)
         finals.append(v)
     return initials, finals
+
+
 def _g2p(segments):
     phones_list = []
     tones_list = []
     word2ph = []
     for seg in segments:
         # Replace all English words in the sentence
-        
+
         seg = re.sub("[a-zA-Z]+", "", seg)
 
-       
-        
         seg_cut = psg.lcut(seg)
         initials = []
         finals = []
         seg_cut = tone_modifier.pre_merge_for_modify(seg_cut)
-        allWords=""
+        allWords = ""
         for word, pos in seg_cut:
-            allWords=allWords+word
+            allWords = allWords + word
 
-        orig_initials = pinyinPlus.lazy_pinyin(allWords, neutral_tone_with_five=True, style=Style.INITIALS)
-        orig_finals = pinyinPlus.lazy_pinyin(
-         allWords, neutral_tone_with_five=True, style=Style.FINALS_TONE3
+        orig_initials = pinyinPlus.lazy_pinyin(
+            allWords, neutral_tone_with_five=True, style=Style.INITIALS
         )
-        currentIndex=0
+        orig_finals = pinyinPlus.lazy_pinyin(
+            allWords, neutral_tone_with_five=True, style=Style.FINALS_TONE3
+        )
+        currentIndex = 0
         for word, pos in seg_cut:
-            curr_orig_initials=orig_initials[currentIndex:currentIndex+len(word)]
-            curr_orig_finalss=orig_finals[currentIndex:currentIndex+len(word)]
-            currentIndex=currentIndex+len(word)
+            curr_orig_initials = orig_initials[currentIndex : currentIndex + len(word)]
+            curr_orig_finalss = orig_finals[currentIndex : currentIndex + len(word)]
+            currentIndex = currentIndex + len(word)
             if pos == "eng":
                 continue
-            sub_initials, sub_finals = _get_initials_finalsV2(word,curr_orig_initials,curr_orig_finalss)
+            sub_initials, sub_finals = _get_initials_finalsV2(
+                word, curr_orig_initials, curr_orig_finalss
+            )
             sub_finals = tone_modifier.modified_tone(word, pos, sub_finals)
             initials.append(sub_initials)
             finals.append(sub_finals)
@@ -202,6 +212,7 @@ def _g2p(segments):
             phones_list += phone
             tones_list += [int(tone)] * len(phone)
     return phones_list, tones_list, word2ph
+
 
 def text_normalize(text):
     text = normalizer(text)

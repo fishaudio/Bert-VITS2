@@ -9,19 +9,28 @@ from .g2pw1 import G2PWOnnxConverter
 
 
 class G2PWPinyin(Pinyin):
-    def __init__(self, model_dir='G2PWModel/', model_source=None,
-                 num_workers=None, batch_size=None,
-                 turnoff_tqdm=True, enable_non_tradional_chinese=True,
-                 v_to_u=False, neutral_tone_with_five=False, tone_sandhi=False, **kwargs):
+    def __init__(
+        self,
+        model_dir="G2PWModel/",
+        model_source=None,
+        num_workers=None,
+        batch_size=None,
+        turnoff_tqdm=True,
+        enable_non_tradional_chinese=True,
+        v_to_u=False,
+        neutral_tone_with_five=False,
+        tone_sandhi=False,
+        **kwargs
+    ):
         self._g2pw = G2PWOnnxConverter(
             model_dir=model_dir,
-            style='pinyin',
+            style="pinyin",
             model_source=model_source,
-    
             enable_non_tradional_chinese=enable_non_tradional_chinese,
         )
         self._converter = Converter(
-            self._g2pw, v_to_u=v_to_u,
+            self._g2pw,
+            v_to_u=v_to_u,
             neutral_tone_with_five=neutral_tone_with_five,
             tone_sandhi=tone_sandhi,
         )
@@ -31,31 +40,39 @@ class G2PWPinyin(Pinyin):
 
 
 class Converter(UltimateConverter):
-    def __init__(self, g2pw_instance, v_to_u=False,
-                 neutral_tone_with_five=False,
-                 tone_sandhi=False, **kwargs):
+    def __init__(
+        self,
+        g2pw_instance,
+        v_to_u=False,
+        neutral_tone_with_five=False,
+        tone_sandhi=False,
+        **kwargs
+    ):
         super(Converter, self).__init__(
             v_to_u=v_to_u,
             neutral_tone_with_five=neutral_tone_with_five,
-            tone_sandhi=tone_sandhi, **kwargs)
+            tone_sandhi=tone_sandhi,
+            **kwargs
+        )
 
         self._g2pw = g2pw_instance
 
     def convert(self, words, style, heteronym, errors, strict, **kwargs):
         pys = []
         if RE_HANS.match(words):
-            pys = self._to_pinyin(words, style=style, heteronym=heteronym,
-                                  errors=errors, strict=strict)
+            pys = self._to_pinyin(
+                words, style=style, heteronym=heteronym, errors=errors, strict=strict
+            )
             post_data = self.post_pinyin(words, heteronym, pys)
             if post_data is not None:
                 pys = post_data
 
-            pys = self.convert_styles(
-                pys, words, style, heteronym, errors, strict)
+            pys = self.convert_styles(pys, words, style, heteronym, errors, strict)
 
         else:
-            py = self.handle_nopinyin(words, style=style, errors=errors,
-                                      heteronym=heteronym, strict=strict)
+            py = self.handle_nopinyin(
+                words, style=style, errors=errors, heteronym=heteronym, strict=strict
+            )
             if py:
                 pys.extend(py)
 
@@ -66,14 +83,16 @@ class Converter(UltimateConverter):
 
         if not g2pw_pinyin:  # g2pw 不支持的汉字改为使用 pypinyin 原有逻辑
             return super(Converter, self).convert(
-                         han, Style.TONE, heteronym, errors, strict, **kwargs)
+                han, Style.TONE, heteronym, errors, strict, **kwargs
+            )
 
         pinyins = []
 
         for i, item in enumerate(g2pw_pinyin[0]):
             if item is None:  # g2pw 不支持的汉字改为使用 pypinyin 原有逻辑
                 py = super(Converter, self).convert(
-                           han[i], Style.TONE, heteronym, errors, strict, **kwargs)
+                    han[i], Style.TONE, heteronym, errors, strict, **kwargs
+                )
                 pinyins.extend(py)
             else:
                 pinyins.append([to_tone(item)])
@@ -98,6 +117,6 @@ def _remove_dup_and_empty(lst_list):
         if lst:
             new_lst_list.append(lst)
         else:
-            new_lst_list.append([''])
+            new_lst_list.append([""])
 
     return new_lst_list

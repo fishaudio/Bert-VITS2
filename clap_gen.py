@@ -15,6 +15,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 torch.set_num_threads(1)
 
+
 def process_line(line):
     device = config.emo_gen_config.device
     if config.emo_gen_config.use_multi_device:

@@ -162,7 +162,7 @@ class Webui_config:
         self.port: int = port  # 是否开启debug模式
         self.share: bool = share  # 模型路径
         self.debug: bool = debug  # 配置文件路径
-        self.fp16_run: bool = fp16_run # 16bit加载bert和clap
+        self.fp16_run: bool = fp16_run  # 16bit加载bert和clap
         self.language_identification_library: str = (
             language_identification_library  # 语种识别库
         )

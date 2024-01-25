@@ -363,7 +363,7 @@ class TextEncoder(nn.Module):
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.bert_pre_proj = nn.Conv1d(2048, 1024, 1)
-        #self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
+        # self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.in_feature_net = nn.Sequential(
             # input is assumed to an already normalized embedding
             nn.Linear(512, 1028, bias=False),
@@ -402,7 +402,7 @@ class TextEncoder(nn.Module):
 
     def forward(self, x, x_lengths, tone, language, bert, emo, g=None):
         bert_emb = self.bert_proj(self.bert_pre_proj(bert)).transpose(1, 2)
-        #en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
+        # en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
         emo_emb = self.in_feature_net(emo)
         emo_emb, _, loss_commit = self.emo_vq(emo_emb.unsqueeze(1))
         loss_commit = loss_commit.mean()
@@ -412,7 +412,7 @@ class TextEncoder(nn.Module):
             + self.tone_emb(tone)
             + self.language_emb(language)
             + bert_emb
-            #+ en_bert_emb
+            # + en_bert_emb
             + emo_emb
         ) * math.sqrt(
             self.hidden_channels
