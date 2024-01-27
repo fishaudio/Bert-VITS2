@@ -32,19 +32,22 @@ def get_bert_feature(
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+        if config.webui_config.fp16_run:
+            models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH, torch_dtype=torch.float16).to(device)
+        else:
+            models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)
         res = models[device](**inputs, output_hidden_states=True)
-        res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
+        res = torch.cat(res["hidden_states"][-3:-2], -1)[0].float().cpu()
         if style_text:
             style_inputs = tokenizer(style_text, return_tensors="pt")
             for i in style_inputs:
                 style_inputs[i] = style_inputs[i].to(device)
             style_res = models[device](**style_inputs, output_hidden_states=True)
-            style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].cpu()
+            style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].float().cpu()
             style_res_mean = style_res.mean(0)
 
     assert len(word2ph) == len(text) + 2
