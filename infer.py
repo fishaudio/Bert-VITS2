@@ -19,50 +19,8 @@ import numpy as np
 from models import SynthesizerTrn
 from text.symbols import symbols
 
-from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
-from oldVersion.V210.text import symbols as V210symbols
-from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
-from oldVersion.V200.text import symbols as V200symbols
-from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
-from oldVersion.V111.text import symbols as V111symbols
-from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
-from oldVersion.V110.text import symbols as V110symbols
-from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
-from oldVersion.V101.text import symbols as V101symbols
-
-from oldVersion import V111, V110, V101, V200, V210
-
 # 当前版本信息
 latest_version = "2.4"
-
-# 版本兼容
-SynthesizerTrnMap = {
-    "2.1": V210SynthesizerTrn,
-    "2.0.2-fix": V200SynthesizerTrn,
-    "2.0.1": V200SynthesizerTrn,
-    "2.0": V200SynthesizerTrn,
-    "1.1.1-fix": V111SynthesizerTrn,
-    "1.1.1": V111SynthesizerTrn,
-    "1.1": V110SynthesizerTrn,
-    "1.1.0": V110SynthesizerTrn,
-    "1.0.1": V101SynthesizerTrn,
-    "1.0": V101SynthesizerTrn,
-    "1.0.0": V101SynthesizerTrn,
-}
-
-symbolsMap = {
-    "2.1": V210symbols,
-    "2.0.2-fix": V200symbols,
-    "2.0.1": V200symbols,
-    "2.0": V200symbols,
-    "1.1.1-fix": V111symbols,
-    "1.1.1": V111symbols,
-    "1.1": V110symbols,
-    "1.1.0": V110symbols,
-    "1.0.1": V101symbols,
-    "1.0": V101symbols,
-    "1.0.0": V101symbols,
-}
 
 
 # def get_emo_(reference_audio, emotion, sid):
@@ -77,23 +35,14 @@ symbolsMap = {
 
 
 def get_net_g(model_path: str, version: str, device: str, hps):
-    if version != latest_version:
-        net_g = SynthesizerTrnMap[version](
-            len(symbolsMap[version]),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        ).to(device)
-    else:
-        # 当前版本模型 net_g
-        net_g = SynthesizerTrn(
-            len(symbols),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        ).to(device)
+    # 当前版本模型 net_g
+    net_g = SynthesizerTrn(
+        len(symbols),
+        hps.data.filter_length // 2 + 1,
+        hps.train.segment_size // hps.data.hop_length,
+        n_speakers=hps.data.n_speakers,
+        **hps.model,
+    ).to(device)
     _ = net_g.eval()
     _ = utils.load_checkpoint(model_path, net_g, None, skip_optimizer=True)
     return net_g
@@ -145,77 +94,8 @@ def infer(
 ):
     # 2.2版本参数位置变了
     # 2.1 参数新增 emotion reference_audio skip_start skip_end
-    inferMap_V3 = {
-        "2.1": V210.infer,
-    }
-    # 支持中日英三语版本
-    inferMap_V2 = {
-        "2.0.2-fix": V200.infer,
-        "2.0.1": V200.infer,
-        "2.0": V200.infer,
-        "1.1.1-fix": V111.infer_fix,
-        "1.1.1": V111.infer,
-        "1.1": V110.infer,
-        "1.1.0": V110.infer,
-    }
-    # 仅支持中文版本
-    # 在测试中，并未发现两个版本的模型不能互相通用
-    inferMap_V1 = {
-        "1.0.1": V101.infer,
-        "1.0": V101.infer,
-        "1.0.0": V101.infer,
-    }
     version = hps.version if hasattr(hps, "version") else latest_version
-    # 非当前版本，根据版本号选择合适的infer
-    if version != latest_version:
-        if version in inferMap_V3.keys():
-            emotion = 0
-            return inferMap_V3[version](
-                text,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                sid,
-                language,
-                hps,
-                net_g,
-                device,
-                reference_audio,
-                emotion,
-                skip_start,
-                skip_end,
-                style_text,
-                style_weight,
-            )
-        if version in inferMap_V2.keys():
-            return inferMap_V2[version](
-                text,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                sid,
-                language,
-                hps,
-                net_g,
-                device,
-            )
-        if version in inferMap_V1.keys():
-            return inferMap_V1[version](
-                text,
-                sdp_ratio,
-                noise_scale,
-                noise_scale_w,
-                length_scale,
-                sid,
-                hps,
-                net_g,
-                device,
-            )
-    # 在此处实现当前版本的推理
-    # emo = get_emo_(reference_audio, emotion, sid)
-    language = "ZH"
+    language = "JP"
     if isinstance(reference_audio, np.ndarray):
         emo = get_clap_audio_feature(reference_audio, device)
     else:
