@@ -80,7 +80,7 @@ class G2PWOnnxConverter:
         sess_options.intra_op_num_threads = os.cpu_count() - 1
         try:
             self.session_g2pw = onnxruntime.InferenceSession(
-                os.path.join(model_dir, "g2pw.onnx"),
+                os.path.join(model_dir, "g2pW.onnx"),
                 sess_options=sess_options,
                 providers=["CUDAExecutionProvider"],
             )
