@@ -87,7 +87,7 @@ def text_normalize(text):
     - 数字は漢字に変換される（`1,100円` → `千百円`、`52.34` → `五十二点三四`）
     - 読点や疑問符等の位置・個数等は保持される（`??あ、、！！！` → `??あ,,!!!`）
     """
-    print(f"Before normalization: {text}")
+    #print(f"Before normalization: {text}")
     # ここでアルファベットは半角になり、三点リーダは`...`になる
     res = unicodedata.normalize("NFKC", text)
 
