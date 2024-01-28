@@ -36,10 +36,10 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
 
     LangDict = {"ZH": [0, 0], "JP": [1, 6], "EN": [2, 8]}
     BertPaths = [
-            "chinese-roberta-wwm-ext-large",
-            "deberta-v2-large-japanese",
-            "bert-base-japanese-v3",
-        ]
+        "chinese-roberta-wwm-ext-large",
+        "deberta-v2-large-japanese",
+        "bert-base-japanese-v3",
+    ]
     if version == "2.4":
         LangDict = {"ZH": [0, 0]}
         BertPaths = ["chinese-roberta-wwm-ext-large"]

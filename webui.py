@@ -1,4 +1,5 @@
 # flake8: noqa: E402
+import gc
 import os
 import logging
 import re_matching
@@ -32,6 +33,14 @@ if device == "mps":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 
+def free_up_memory():
+    # Prior inference run might have large variables not cleaned up due to exception during the run.
+    # Free up as much memory as possible to allow this run to be successful.
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 def generate_audio(
     slices,
     sdp_ratio,
@@ -49,6 +58,9 @@ def generate_audio(
 ):
     audio_list = []
     # silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
+
+    free_up_memory()
+
     with torch.no_grad():
         for idx, piece in enumerate(slices):
             skip_start = idx != 0
@@ -91,6 +103,9 @@ def generate_audio_multilang(
 ):
     audio_list = []
     # silence = np.zeros(hps.data.sampling_rate // 2, dtype=np.int16)
+
+    free_up_memory()
+
     with torch.no_grad():
         for idx, piece in enumerate(slices):
             skip_start = idx != 0
