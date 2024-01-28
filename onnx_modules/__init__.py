@@ -16,6 +16,8 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
             from .V220 import SynthesizerTrn, symbols
     elif version == "2.3":
         from .V230 import SynthesizerTrn, symbols
+    elif version == "2.4":
+        from .V240 import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
@@ -32,6 +34,16 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
     for key in hps.data.spk2id.keys():
         spklist.append(key)
 
+    LangDict = {"ZH": [0, 0], "JP": [1, 6], "EN": [2, 8]}
+    BertPaths = [
+            "chinese-roberta-wwm-ext-large",
+            "deberta-v2-large-japanese",
+            "bert-base-japanese-v3",
+        ]
+    if version == "2.4":
+        LangDict = {"ZH": [0, 0]}
+        BertPaths = ["chinese-roberta-wwm-ext-large"]
+
     MoeVSConf = {
         "Folder": f"{export_path}",
         "Name": f"{export_path}",
@@ -41,13 +53,9 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
         "Rate": hps.data.sampling_rate,
         "CharaMix": True,
         "Characters": spklist,
-        "LanguageMap": {"ZH": [0, 0], "JP": [1, 6], "EN": [2, 8]},
+        "LanguageMap": LangDict,
         "Dict": "BasicDict",
-        "BertPath": [
-            "chinese-roberta-wwm-ext-large",
-            "deberta-v2-large-japanese",
-            "bert-base-japanese-v3",
-        ],
+        "BertPath": BertPaths,
         "Clap": "clap-htsat-fused",
     }
 
