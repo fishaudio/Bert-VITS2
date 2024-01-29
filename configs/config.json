@@ -4,7 +4,7 @@
     "eval_interval": 1000,
     "seed": 42,
     "epochs": 1000,
-    "learning_rate": 0.0002,
+    "learning_rate": 0.00015,
     "betas": [
       0.8,
       0.99
@@ -34,7 +34,7 @@
     "filter_length": 2048,
     "hop_length": 512,
     "win_length": 2048,
-    "n_mel_channels": 128,
+    "n_mel_channels": 160,
     "mel_fmin": 0.0,
     "mel_fmax": null,
     "add_blank": true,
@@ -326,7 +326,7 @@
     "use_spk_conditioned_encoder": true,
     "use_noise_scaled_mas": true,
     "use_mel_posterior_encoder": false,
-    "use_duration_discriminator": false,
+    "use_duration_discriminator": true,
     "use_wavlm_discriminator": true,
     "inter_channels": 192,
     "hidden_channels": 192,
@@ -375,7 +375,7 @@
     ],
     "n_layers_q": 3,
     "use_spectral_norm": false,
-    "gin_channels": 512,
+    "gin_channels": 256,
     "slm": {
       "model": "./slm/wavlm-base-plus",
       "sr": 16000,
