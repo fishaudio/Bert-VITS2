@@ -598,7 +598,7 @@ def train_and_evaluate(
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
         #if getattr(hps.train, "bf16_run", False):
-        torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
+        torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=200)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
         scaler.update()
