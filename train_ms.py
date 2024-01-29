@@ -273,9 +273,9 @@ def run():
                 utils.latest_checkpoint_path(hps.model_dir, "DUR_*.pth"),
                 net_dur_disc,
                 optim_dur_disc,
-                skip_optimizer=hps.train.skip_optimizer
-                if "skip_optimizer" in hps.train
-                else True,
+                skip_optimizer=(
+                    hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
+                ),
             )
             if not optim_dur_disc.param_groups[0].get("initial_lr"):
                 optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
@@ -287,17 +287,17 @@ def run():
             utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"),
             net_g,
             optim_g,
-            skip_optimizer=hps.train.skip_optimizer
-            if "skip_optimizer" in hps.train
-            else True,
+            skip_optimizer=(
+                hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
+            ),
         )
         _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
             utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"),
             net_d,
             optim_d,
-            skip_optimizer=hps.train.skip_optimizer
-            if "skip_optimizer" in hps.train
-            else True,
+            skip_optimizer=(
+                hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
+            ),
         )
         if not optim_g.param_groups[0].get("initial_lr"):
             optim_g.param_groups[0]["initial_lr"] = g_resume_lr
@@ -322,9 +322,9 @@ def run():
             utils.latest_checkpoint_path(hps.model_dir, "WD_*.pth"),
             net_wd,
             optim_wd,
-            skip_optimizer=hps.train.skip_optimizer
-            if "skip_optimizer" in hps.train
-            else True,
+            skip_optimizer=(
+                hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
+            ),
         )
         if not optim_wd.param_groups[0].get("initial_lr"):
             optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr

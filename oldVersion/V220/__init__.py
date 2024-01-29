@@ -1,6 +1,7 @@
 """
 @Desc: 2.2版本兼容 对应版本 v2.2 Clap-Enhanced prompt audio generation
 """
+
 import numpy as np
 import torch
 import commons
