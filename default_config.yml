@@ -91,7 +91,7 @@ train_ms:
   # 训练使用的worker，不建议超过CPU核心数
   num_workers: 16
   # 关闭此项可以节约接近50%的磁盘空间，但是可能导致实际训练速度变慢和更高的CPU使用率。
-  spec_cache: True
+  spec_cache: False
   # 保存的检查点数量，多于此数目的权重会被删除来节省空间。
   keep_ckpts: 8
 
