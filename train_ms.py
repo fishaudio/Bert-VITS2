@@ -628,6 +628,7 @@ def train_and_evaluate(
                         "loss/g/mel": loss_mel,
                         "loss/g/dur": loss_dur,
                         "loss/g/kl": loss_kl,
+                        "loss/g/commit": loss_commit
                     }
                 )
                 scalar_dict.update(
