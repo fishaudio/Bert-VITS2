@@ -19,7 +19,7 @@
     "warmup_epochs": 0,
     "c_mel": 45,
     "c_kl": 1.0,
-    "c_commit": 100,
+    "c_commit": 1.0,
     "skip_optimizer": true,
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
