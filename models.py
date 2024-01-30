@@ -378,7 +378,7 @@ class TextEncoder(nn.Module):
         self.emo_vq = VectorQuantize(
             dim=512,
             # codebook_size=128,
-            codebook_size=192,
+            codebook_size=256,
             codebook_dim=16,
             # codebook_dim=32,
             commitment_weight=0.1,
