@@ -391,7 +391,6 @@ class TextEncoder(nn.Module):
             orthogonal_reg_weight = 10,                 # in paper, they recommended a value of 10
             orthogonal_reg_max_codes = 128,             # this would randomly sample from the codebook for the orthogonal regularization loss, for limiting memory usage
             orthogonal_reg_active_codes_only = False,    # set this to True if you have a very large codebook, and would only like to enforce the loss on the activated codes per batch
-            separate_codebook_per_head = True,
             num_codebooks = 2
         )
         self.out_feature_net = nn.Linear(512, hidden_channels)
