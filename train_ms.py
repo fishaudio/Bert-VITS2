@@ -585,7 +585,7 @@ def train_and_evaluate(
 
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_commit = loss_commit * hps.train.c_commit
+                # loss_commit = loss_commit * hps.train.c_commit
 
                 loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_commit * hps.train.c_commit
                 if net_dur_disc is not None:
