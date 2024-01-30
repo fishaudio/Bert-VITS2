@@ -86,7 +86,7 @@ class G2PWOnnxConverter:
             )
         except:
             self.session_g2pw = onnxruntime.InferenceSession(
-                os.path.join(model_dir, "g2pw.onnx"), sess_options=sess_options
+                os.path.join(model_dir, "g2pW.onnx"), sess_options=sess_options
             )
         self.config = load_config(
             os.path.join(model_dir, "config.py"), use_default=True
