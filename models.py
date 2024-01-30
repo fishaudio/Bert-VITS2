@@ -377,7 +377,7 @@ class TextEncoder(nn.Module):
         )
         self.emo_vq = VectorQuantize(
             dim=512,
-            codebook_size=128,
+            codebook_size=192,
             codebook_dim=16,
             commitment_weight=0.1,
             decay=0.85,
@@ -387,10 +387,10 @@ class TextEncoder(nn.Module):
             stochastic_sample_codes=True,
             threshold_ema_dead_code=2,
             use_cosine_sim = True,
-            accept_image_fmap = True,                   # set this true to be able to pass in an image feature map
-            orthogonal_reg_weight = 10,                 # in paper, they recommended a value of 10
-            orthogonal_reg_max_codes = 128,             # this would randomly sample from the codebook for the orthogonal regularization loss, for limiting memory usage
-            orthogonal_reg_active_codes_only = False,    # set this to True if you have a very large codebook, and would only like to enforce the loss on the activated codes per batch
+            #accept_image_fmap = True,                   # set this true to be able to pass in an image feature map
+            #orthogonal_reg_weight = 10,                 # in paper, they recommended a value of 10
+            #orthogonal_reg_max_codes = 128,             # this would randomly sample from the codebook for the orthogonal regularization loss, for limiting memory usage
+            #orthogonal_reg_active_codes_only = False,    # set this to True if you have a very large codebook, and would only like to enforce the loss on the activated codes per batch
             #num_codebooks = 2
         )
         self.out_feature_net = nn.Linear(512, hidden_channels)
