@@ -1,6 +1,7 @@
 """
 @Desc: 2.1版本兼容 对应版本 v2.1 Emo and muti-lang optimize
 """
+
 import torch
 import commons
 from .text import cleaned_text_to_sequence, get_bert

@@ -2,6 +2,7 @@
 1.1.1版本兼容
 https://github.com/fishaudio/Bert-VITS2/releases/tag/1.1.1
 """
+
 import torch
 import commons
 from .text.cleaner import clean_text, clean_text_fix
