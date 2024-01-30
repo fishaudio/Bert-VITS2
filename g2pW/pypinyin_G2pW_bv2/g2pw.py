@@ -5,7 +5,7 @@ from pypinyin.core import Pinyin, Style
 from pypinyin.seg.simpleseg import simple_seg
 from pypinyin.converter import UltimateConverter
 from pypinyin.contrib.tone_convert import to_tone
-from .g2pw1 import onnx_api.G2PWOnnxConverter
+from .g2pw1 import onnx_api
 
 
 class G2PWPinyin(Pinyin):
