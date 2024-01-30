@@ -382,7 +382,7 @@ class TextEncoder(nn.Module):
             codebook_dim=16,
             # codebook_dim=32,
             commitment_weight=0.1,
-            decay=0.9,
+            decay=0.99,
             heads=32,
             kmeans_iters=20,
             separate_codebook_per_head=True,
