@@ -389,8 +389,6 @@ class TextEncoder(nn.Module):
             stochastic_sample_codes=True,
             threshold_ema_dead_code=2,
             use_cosine_sim = True,
-            orthogonal_reg_weight = 10,                 # in paper, they recommended a value of 10
-            orthogonal_reg_active_codes_only = False,
         )
         self.out_feature_net = nn.Linear(512, hidden_channels)
 
