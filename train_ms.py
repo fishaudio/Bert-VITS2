@@ -542,9 +542,9 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                # torch.nn.utils.clip_grad_norm_(
-                # parameters=net_dur_disc.parameters(), max_norm=5
-                # )
+                 torch.nn.utils.clip_grad_norm_(
+                     parameters=net_dur_disc.parameters(), max_norm=5
+                 )
                 grad_norm_dur = commons.clip_grad_value_(
                     net_dur_disc.parameters(), None
                 )
