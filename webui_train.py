@@ -320,7 +320,7 @@ def train(model_name, skip_style=False, use_jp_extra=True):
 
 
 initial_md = """
-# Style-Bert-VITS2 学習用WebUI
+# Style-Bert-VITS2 ver 2.0 学習用WebUI
 
 ## 使い方
 
@@ -334,6 +334,11 @@ initial_md = """
 
 注意: 音声合成で使うには、スタイルベクトルファイル`style_vectors.npy`を作る必要があります。これは、`Style.bat`を実行してそこで作成してください。
 動作は軽いはずなので、学習中でも実行でき、何度でも繰り返して試せます。
+
+## JP-Extra版について
+
+元とするモデル構造として [Bert-VITS2 Japanese-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を使うことができます。
+日本語のアクセントやイントネーションや自然性が上がる傾向にありますが、英語と中国語は話せなくなります。
 """
 
 prepare_md = """
@@ -371,15 +376,13 @@ if __name__ == "__main__":
         gr.Markdown(initial_md)
         with gr.Accordion(label="データの前準備", open=False):
             gr.Markdown(prepare_md)
-        model_name = gr.Textbox(
-            label="モデル名",
-        )
+        model_name = gr.Textbox(label="モデル名")
         gr.Markdown("### 自動前処理")
         with gr.Row(variant="panel"):
             with gr.Column():
                 use_jp_extra = gr.Checkbox(
-                    label="日本語特化版を使う（日本語の性能が上がるが英語と中国語は話せなくなる）",
-                    value=False,
+                    label="JP-Extra版を使う（日本語の性能が上がるが英語と中国語は話せなくなる）",
+                    value=True,
                 )
                 batch_size = gr.Slider(
                     label="バッチサイズ",
@@ -454,7 +457,7 @@ if __name__ == "__main__":
                 with gr.Column():
                     gr.Markdown(value="#### Step 1: 設定ファイルの生成")
                     use_jp_extra_manual = gr.Checkbox(
-                        label="日本語特化版を使う",
+                        label="JP-Extra版を使う",
                         value=False,
                     )
                     batch_size_manual = gr.Slider(
@@ -555,7 +558,7 @@ if __name__ == "__main__":
                 value=False,
             )
             use_jp_extra_train = gr.Checkbox(
-                label="日本語特化版を使う",
+                label="JP-Extra版を使う",
                 value=True,
             )
             train_btn = gr.Button(value="学習を開始する", variant="primary")
@@ -580,6 +583,8 @@ if __name__ == "__main__":
             ],
             outputs=[info_all],
         )
+
+        # Manual preprocess
         generate_config_btn.click(
             second_elem_of(initialize),
             inputs=[
@@ -608,7 +613,7 @@ if __name__ == "__main__":
         )
         preprocess_text_btn.click(
             second_elem_of(preprocess_text),
-            inputs=[model_name],
+            inputs=[model_name, use_jp_extra_manual],
             outputs=[info_preprocess_text],
         )
         bert_gen_btn.click(
@@ -621,6 +626,8 @@ if __name__ == "__main__":
             inputs=[model_name, num_processes_style],
             outputs=[info_style],
         )
+
+        # Train
         train_btn.click(
             second_elem_of(train),
             inputs=[model_name, skip_style, use_jp_extra_train],

@@ -191,7 +191,7 @@ examples = [
 ]
 
 initial_md = """
-# Style-Bert-VITS2 音声合成
+# Style-Bert-VITS2 ver 2.0 音声合成
 
 注意: 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
 """
@@ -215,8 +215,6 @@ model_assets
 - `style_vectors.npy`：スタイルベクトルファイル
 
 上2つは`Train.bat`による学習で自動的に正しい位置に保存されます。`style_vectors.npy`は`Style.bat`を実行して指示に従って生成してください。
-
-TODO: 現在のところはspeaker_id = 0に固定しており複数話者の合成には対応していません。
 """
 
 style_md = f"""
