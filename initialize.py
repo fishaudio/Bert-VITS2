@@ -26,7 +26,7 @@ def download_slm_model():
     local_path = Path("slm/wavlm-base-plus/")
     file = "pytorch_model.bin"
     if not Path(local_path).joinpath(file).exists():
-        logger.info(f"Downloading wavlm-base-plus model")
+        logger.info(f"Downloading wavlm-base-plus {file}")
         hf_hub_download(
             "microsoft/wavlm-base-plus",
             file,
