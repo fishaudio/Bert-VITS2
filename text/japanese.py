@@ -23,8 +23,8 @@ COSONANTS = set(
     ]
 )
 
-# 母音の集合
-VOWELS = {"a", "i", "u", "e", "o"}
+# 母音の集合、便宜上「ん」を含める
+VOWELS = {"a", "i", "u", "e", "o", "N"}
 
 
 # 正規化で記号を変換するための辞書
@@ -62,7 +62,7 @@ rep_map = {
     "—": "-",
     "−": "-",
     # "～": "-",  # これは長音記号「ー」として扱うよう変更
-    "~": "-",
+    # "~": "-",  # これも長音記号「ー」として扱うよう変更
     "「": "'",
     "」": "'",
 }
@@ -145,7 +145,9 @@ def japanese_convert_numbers_to_words(text: str) -> str:
     return res
 
 
-def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
+def g2p(
+    norm_text: str, use_jp_extra: bool = True
+) -> tuple[list[str], list[int], list[int]]:
     """
     他で使われるメインの関数。`text_normalize()`で正規化された`norm_text`を受け取り、
     - phones: 音素のリスト（ただし`!`や`,`や`.`等punctuationが含まれうる）
@@ -153,6 +155,7 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     - word2ph: 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
     のタプルを返す。
     ただし`phones`と`tones`の最初と終わりに`_`が入り、応じて`word2ph`の最初と最後に1が追加される。
+    use_jp_extra: Falseの場合、「ん」の音素を「N」ではなく「n」とする。
     """
     # pyopenjtalkのフルコンテキストラベルを使ってアクセントを取り出すと、punctuationの位置が消えてしまい情報が失われてしまう：
     # 「こんにちは、世界。」と「こんにちは！世界。」と「こんにちは！！！？？？世界……。」は全て同じになる。
@@ -160,7 +163,7 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     # それとは別にpyopenjtalk.run_frontend()で得られる音素リスト（こちらはpunctuationが保持される）を使い、
     # アクセント割当をしなおすことによってpunctuationを含めた音素とアクセントのリストを作る。
 
-    # punctuationがすべて消えた、音素とアクセントのタプルのリスト
+    # punctuationがすべて消えた、音素とアクセントのタプルのリスト（「ん」は「N」）
     phone_tone_list_wo_punct = g2phone_tone_wo_punct(norm_text)
 
     # sep_text: 単語単位の単語のリスト
@@ -185,7 +188,9 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
     sep_tokenized: list[list[str]] = []
     for i in sep_text:
         if i not in punctuation:
-            sep_tokenized.append(tokenizer.tokenize(i))  # ここでおそらく`i`が文字単位に分割される
+            sep_tokenized.append(
+                tokenizer.tokenize(i)
+            )  # ここでおそらく`i`が文字単位に分割される
         else:
             sep_tokenized.append([i])
 
@@ -205,11 +210,15 @@ def g2p(norm_text: str) -> tuple[list[str], list[int], list[int]]:
 
     assert len(phones) == sum(word2ph), f"{len(phones)} != {sum(word2ph)}"
 
+    # 最後にuse_jp_extraでない場合は「N」を「n」に変換
+    if not use_jp_extra:
+        phones = [phone if phone != "N" else "n" for phone in phones]
+
     return phones, tones, word2ph
 
 
 def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
-    phones, tones, _ = g2p(norm_text)
+    phones, tones, _ = g2p(norm_text, use_jp_extra=True)
     return phone_tone2kata_tone(list(zip(phones, tones)))
 
 
@@ -225,22 +234,12 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
         if phone in punctuation:
             result.append((phone, tone))
             continue
-        if phone in COSONANTS and phone != "n":  # n以外の子音の場合
+        if phone in COSONANTS:  # n以外の子音の場合
             assert current_mora == "", f"Unexpected {phone} after {current_mora}"
             assert tone == next_tone, f"Unexpected {phone} tone {tone} != {next_tone}"
             current_mora = phone
-        elif phone == "n":
-            assert current_mora == "", f"Unexpected {phone} after {current_mora}"
-            if next_phone not in VOWELS:  # 次の音素が母音でない場合
-                result.append(("ン", tone))
-            else:
-                # 子音のnの場合
-                assert (
-                    tone == next_tone
-                ), f"Unexpected {phone} tone {tone} != {next_tone}"
-                current_mora = "n"
         else:
-            # phoneが母音
+            # phoneが母音もしくは「N」
             current_mora += phone
             result.append((mora_phonemes_to_mora_kata[current_mora], tone))
             current_mora = ""
@@ -269,9 +268,9 @@ def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     テキストに対して、音素とアクセント（0か1）のペアのリストを返す。
     ただし「!」「.」「?」等の非音素記号(punctuation)は全て消える（ポーズ記号も残さない）。
     非音素記号を含める処理は`align_tones()`で行われる。
-    また「っ」は「q」に、「ん」は「n」に変換される。
+    また「っ」は「q」に、「ん」は「N」に変換される。
     例: "こんにちは、世界ー。。元気？！" →
-    [('k', 0), ('o', 0), ('n', 1), ('n', 1), ('i', 1), ('ch', 1), ('i', 1), ('w', 1), ('a', 1), ('s', 1), ('e', 1), ('k', 0), ('a', 0), ('i', 0), ('i', 0), ('g', 1), ('e', 1), ('n', 0), ('k', 0), ('i', 0)]
+    [('k', 0), ('o', 0), ('N', 1), ('n', 1), ('i', 1), ('ch', 1), ('i', 1), ('w', 1), ('a', 1), ('s', 1), ('e', 1), ('k', 0), ('a', 0), ('i', 0), ('i', 0), ('g', 1), ('e', 1), ('N', 0), ('k', 0), ('i', 0)]
     """
     prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
     # logger.debug(f"prosodies: {prosodies}")
@@ -306,8 +305,8 @@ def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
         else:
             if letter == "cl":  # 「っ」の処理
                 letter = "q"
-            elif letter == "N":  # 「ん」の処理
-                letter = "n"
+            # elif letter == "N":  # 「ん」の処理
+            #     letter = "n"
             current_phrase.append((letter, current_tone))
     return result
 
@@ -364,7 +363,7 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
     return sep_text, sep_kata
 
 
-# ESPnetの実装から引用、変更点無し
+# ESPnetの実装から引用、変更点無し。「ん」は「N」なことに注意。
 # https://github.com/espnet/espnet/blob/master/espnet2/text/phoneme_tokenizer.py
 def pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> list[str]:
     """Extract phoneme + prosoody symbol sequence from input full-context labels.

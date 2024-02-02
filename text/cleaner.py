@@ -4,10 +4,13 @@ from text import chinese, japanese, english, cleaned_text_to_sequence
 language_module_map = {"ZH": chinese, "JP": japanese, "EN": english}
 
 
-def clean_text(text, language):
+def clean_text(text, language, use_jp_extra=True):
     language_module = language_module_map[language]
     norm_text = language_module.text_normalize(text)
-    phones, tones, word2ph = language_module.g2p(norm_text)
+    if language == "JP":
+        phones, tones, word2ph = language_module.g2p(norm_text, use_jp_extra)
+    else:
+        phones, tones, word2ph = language_module.g2p(norm_text)
     return norm_text, phones, tones, word2ph
 
 

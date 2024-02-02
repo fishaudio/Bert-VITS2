@@ -15,6 +15,11 @@ venv/
 /pretrained/*.safetensors
 /pretrained/*.pth
 
+/pretrained_jp_extra/*.safetensors
+/pretrained_jp_extra/*.pth
+
+/slm/*/*.bin
+
 /scripts/test/
 *.zip
 *.csv

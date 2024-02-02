@@ -33,6 +33,7 @@ preprocess_text_config = config.preprocess_text_config
 @click.option("--max-val-total", default=preprocess_text_config.max_val_total)
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
+@click.option("--use_jp_extra", is_flag=True)
 def preprocess(
     transcription_path: str,
     cleaned_path: Optional[str],
@@ -43,6 +44,7 @@ def preprocess(
     max_val_total: int,
     clean: bool,
     yml_config: str,  # 这个不要删
+    use_jp_extra: bool,
 ):
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
@@ -53,7 +55,9 @@ def preprocess(
                 for line in tqdm(trans_file, file=SAFE_STDOUT):
                     try:
                         utt, spk, language, text = line.strip().split("|")
-                        norm_text, phones, tones, word2ph = clean_text(text, language)
+                        norm_text, phones, tones, word2ph = clean_text(
+                            text, language, use_jp_extra
+                        )
                         out_file.write(
                             "{}|{}|{}|{}|{}|{}|{}\n".format(
                                 utt,

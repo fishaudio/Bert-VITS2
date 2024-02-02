@@ -2,6 +2,7 @@
 VOICEVOXのソースコードからお借りして最低限に改造したコード。
 https://github.com/VOICEVOX/voicevox_engine/blob/master/voicevox_engine/tts_pipeline/mora_list.py
 """
+
 """
 以下のモーラ対応表はOpenJTalkのソースコードから取得し、
 カタカナ表記とモーラが一対一対応するように改造した。
@@ -48,8 +49,8 @@ POSSIBILITY OF SUCH DAMAGE.
 from typing import Optional
 
 # (カタカナ, 子音, 母音)の順。子音がない場合はNoneを入れる。
-# 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「n」、「ッ」は「q」に変更
-# （元々はそれぞれ「N」「cl」）
+# 但し「ン」と「ッ」は母音のみという扱いで、「ン」は「N」、「ッ」は「q」とする。
+# （元々「ッ」は「cl」）
 # また「デェ = dy e」はpyopenjtalkの出力（de e）と合わないため削除
 _mora_list_minimum: list[tuple[str, Optional[str], str]] = [
     ("ヴォ", "v", "o"),
@@ -57,7 +58,7 @@ _mora_list_minimum: list[tuple[str, Optional[str], str]] = [
     ("ヴィ", "v", "i"),
     ("ヴァ", "v", "a"),
     ("ヴ", "v", "u"),
-    ("ン", None, "n"),  # 「N」から「n」に変更
+    ("ン", None, "N"),
     ("ワ", "w", "a"),
     ("ロ", "r", "o"),
     ("レ", "r", "e"),
