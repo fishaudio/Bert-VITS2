@@ -633,6 +633,16 @@ if __name__ == "__main__":
             inputs=[model_name, skip_style, use_jp_extra_train],
             outputs=[info_train],
         )
+        use_jp_extra.change(
+            lambda x: gr.Checkbox(value=x),
+            inputs=[use_jp_extra],
+            outputs=[use_jp_extra_train],
+        )
+        use_jp_extra_manual.change(
+            lambda x: gr.Checkbox(value=x),
+            inputs=[use_jp_extra_manual],
+            outputs=[use_jp_extra_train],
+        )
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

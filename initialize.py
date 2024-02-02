@@ -22,6 +22,19 @@ def download_bert_models():
                 )
 
 
+def download_slm_model():
+    local_path = Path("slm/wavlm-base-plus/")
+    file = "pytorch_model.bin"
+    if not Path(local_path).joinpath(file).exists():
+        logger.info(f"Downloading wavlm-base-plus model")
+        hf_hub_download(
+            "microsoft/wavlm-base-plus",
+            file,
+            local_dir=local_path,
+            local_dir_use_symlinks=False,
+        )
+
+
 def download_pretrained_models():
     files = ["G_0.safetensors", "D_0.safetensors", "DUR_0.safetensors"]
     local_path = Path("pretrained")
@@ -77,6 +90,8 @@ def download_jvnv_models():
 
 
 download_bert_models()
+
+download_slm_model()
 
 download_pretrained_models()
 

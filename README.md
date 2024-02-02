@@ -1,6 +1,10 @@
-# 2024-01-09のver 1.3で日本語の処理部分の大きなバグ修正とアクセント調整機能の追加等のアップデートをしました。アップデートして使うのを強くおすすめします。（学習もし直すといいかもしれません。）
+# 2024-02-03: JP-Extra対応版 ver 2.0をリリースしました！
+
+モデルとして [Bert-VITS2 JP-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を元としたものが使えるようになりました。日本語の発音やアクセントや自然性が大幅に向上する傾向があります。
+
 [**Changelog**](docs/CHANGELOG.md)
 
+- 2024-02-03: ver 2.0
 - 2024-01-09: ver 1.3
 - 2023-12-31: ver 1.2
 - 2023-12-29: ver 1.1
@@ -50,7 +54,7 @@ Windowsを前提としています。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。
 2. 待つと自動で必要な環境がインストールされます。
-3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
+3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます（ただし今のところはJP-Extra版でないモデルです）。
 
 またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
@@ -61,7 +65,8 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# PyTorch 2.2.x系は今のところは学習エラーが出るので前のバージョンを使う
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
@@ -136,14 +141,14 @@ python speech_mos.py -m <model_name>
 ```
 ステップごとの自然性評価が表示され、`mos_results`フォルダの`mos_{model_name}.csv`と`mos_{model_name}.png`に結果が保存される。読み上げさせたい文章を変えたかったら中のファイルを弄って各自調整してください。またあくまでアクセントや感情表現や抑揚を全く考えない基準での評価で、目安のひとつなので、実際に読み上げさせて選別するのが一番だと思います。
 
-## Bert-VITS2 v2.1との関係
+## Bert-VITS2との関係
 
-基本的にはBert-VITS2 v2.1のモデル構造を少し改造しただけです。[事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base)も、実質Bert-VITS2 v2.1と同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
+基本的にはBert-VITS2のモデル構造を少し改造しただけです。[旧事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base)も[JP-Extraの事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-2.0-base-JP-Extra)も、実質Bert-VITS2 v2.1 or JP-Extraと同じものを使用しています（不要な重みを削ってsafetensorsに変換したもの）。
 
 具体的には以下の点が異なります。
 
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)のように、PythonやGitを知らない人でも簡単に使える。
-- 感情埋め込みのモデルを変更（1024次元の[wav2vec2-large-robust-12-ft-emotion-msp-dim](https://huggingface.co/audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim)から256次元の[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというよりは話者識別のための埋め込み）
+- 感情埋め込みのモデルを変更（256次元の[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというよりは話者識別のための埋め込み）
 - 埋め込みもベクトル量子化を取り払い、単なる全結合層に。
 - スタイルベクトルファイル`style_vectors.npy`を作ることで、そのスタイルを使って効果の強さも連続的に指定しつつ音声を生成することができる。
 - 各種WebUIを作成
@@ -152,6 +157,7 @@ python speech_mos.py -m <model_name>
 - その他軽微なbugfixやリファクタリング
 
 ## TODO
+- [ ] デフォルトのJVNVモデルにJP-Extra版のものを追加
 - [x] LinuxやWSL等、Windowsの通常環境以外でのサポート ← おそらく問題ないとの報告あり
 - [x] 複数話者学習での音声合成対応（学習は現在でも可能）
 - [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
@@ -161,18 +167,12 @@ python speech_mos.py -m <model_name>
 - [ ] ONNX対応
 
 
-## 実験したいこと
-- [ ] 複数話者での学習の実験（原理的にはできるはず、スタイルがどう効くかが未知）
-- [ ] むしろ複数話者で単一話者扱いで学習しても、スタイル埋め込みが話者埋め込みでそこに話者の情報が含まれているので、スタイルベクトルを作ることで複数話者の音声を生成できるのではないか？
-- [ ] もしそうなら、大量の人数の音声を学習させれば、ある意味「話者空間から適当に選んだ話者（連続的に変えられる）の音声合成」ができるのでは？リファレンス音声も使えばゼロショットでの音声合成もできるのでは？
-
-
 ## References
 In addition to the original reference (written below), I used the following repositories:
 - [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)
 
-[The pretrained model](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base) is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
+[The pretrained model](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base) and [JP-Extra version](https://huggingface.co/litagin/Style-Bert-VITS2-2.0-base-JP-Extra) is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1) and [JP-Extra pretrained model of Bert-VITS2](https://huggingface.co/Stardust-minus/Bert-VITS2-Japanese-Extra), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
 
 
 Below is the original README.md.
