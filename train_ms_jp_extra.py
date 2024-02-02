@@ -178,7 +178,7 @@ def run():
         rank=rank,
         shuffle=True,
     )
-    collate_fn = TextAudioSpeakerCollate()
+    collate_fn = TextAudioSpeakerCollate(use_jp_extra=True)
     train_loader = DataLoader(
         train_dataset,
         # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() - 1),
@@ -393,6 +393,10 @@ def run():
             if net_dur_disc is not None:
                 _ = utils.load_safetensors(
                     os.path.join(model_dir, "DUR_0.safetensors"), net_dur_disc
+                )
+            if net_wd is not None:
+                _ = utils.load_safetensors(
+                    os.path.join(model_dir, "WD_0.safetensors"), net_wd
                 )
             logger.info("Loaded the pretrained models.")
         except Exception as e:

@@ -25,6 +25,7 @@
     "freeze_style": false
   },
   "data": {
+    "use_jp_extra": true,
     "training_files": "filelists/train.list",
     "validation_files": "filelists/val.list",
     "max_wav_value": 32768.0,
