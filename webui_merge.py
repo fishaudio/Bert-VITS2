@@ -14,7 +14,8 @@ from common.constants import DEFAULT_STYLE
 from common.log import logger
 from common.tts_model import Model, ModelHolder
 
-voice_keys = ["dec", "flow"]
+voice_keys = ["dec"]
+voice_pitch_keys = ["flow"]
 speech_style_keys = ["enc_p"]
 tempo_keys = ["sdp", "dp"]
 
@@ -93,6 +94,7 @@ def merge_models(
     model_path_a,
     model_path_b,
     voice_weight,
+    voice_pitch_weight,
     speech_style_weight,
     tempo_weight,
     output_name,
@@ -114,6 +116,8 @@ def merge_models(
     for key in model_a_weight.keys():
         if any([key.startswith(prefix) for prefix in voice_keys]):
             weight = voice_weight
+        elif any([key.startswith(prefix) for prefix in voice_pitch_keys]):
+            weight = voice_pitch_weight
         elif any([key.startswith(prefix) for prefix in speech_style_keys]):
             weight = speech_style_weight
         elif any([key.startswith(prefix) for prefix in tempo_keys]):
@@ -139,6 +143,7 @@ def merge_models_gr(
     model_path_b,
     output_name,
     voice_weight,
+    voice_pitch_weight,
     speech_style_weight,
     tempo_weight,
 ):
@@ -146,6 +151,7 @@ def merge_models_gr(
         model_path_a,
         model_path_b,
         voice_weight,
+        voice_pitch_weight,
         speech_style_weight,
         tempo_weight,
         output_name,
@@ -167,7 +173,10 @@ def merge_style_gr(
         style_triple = line.split(",")
         if len(style_triple) != 3:
             logger.error(f"Invalid style triple: {line}")
-            return f"Error: スタイルを3つのカンマ区切りで入力してください:\n{line}", None
+            return (
+                f"Error: スタイルを3つのカンマ区切りで入力してください:\n{line}",
+                None,
+            )
         style_a, style_b, style_out = style_triple
         style_a = style_a.strip()
         style_b = style_b.strip()
@@ -184,13 +193,13 @@ def merge_style_gr(
     )
 
 
-def simple_tts(model_name, text, style=DEFAULT_STYLE, emotion_weight=1.0):
+def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
     model_path = os.path.join(assets_root, model_name, f"{model_name}.safetensors")
     config_path = os.path.join(assets_root, model_name, "config.json")
     style_vec_path = os.path.join(assets_root, model_name, "style_vectors.npy")
 
     model = Model(model_path, config_path, style_vec_path, device)
-    return model.infer(text, style=style, style_weight=emotion_weight)
+    return model.infer(text, style=style, style_weight=style_weight)
 
 
 def update_two_model_names_dropdown():
@@ -250,7 +259,9 @@ Happy, Surprise, HappySurprise
 
 model_names = model_holder.model_names
 if len(model_names) == 0:
-    logger.error(f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。")
+    logger.error(
+        f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
+    )
     sys.exit(1)
 initial_id = 0
 initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
@@ -293,6 +304,13 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 maximum=1,
                 step=0.1,
             )
+            voice_pitch_slider = gr.Slider(
+                label="声の高さ",
+                value=0,
+                minimum=0,
+                maximum=1,
+                step=0.1,
+            )
             speech_style_slider = gr.Slider(
                 label="話し方（抑揚・感情表現等）",
                 value=0,
@@ -325,7 +343,9 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             style_merge_button = gr.Button("スタイルのマージ", variant="primary")
             info_style_merge = gr.Textbox(label="情報")
 
-    text_input = gr.TextArea(label="テキスト", value="これはテストです。聞こえていますか？")
+    text_input = gr.TextArea(
+        label="テキスト", value="これはテストです。聞こえていますか？"
+    )
     style = gr.Dropdown(
         label="スタイル",
         choices=["スタイルをマージしてください"],
@@ -372,6 +392,7 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             model_path_b,
             new_name,
             voice_slider,
+            voice_pitch_slider,
             speech_style_slider,
             tempo_slider,
         ],
