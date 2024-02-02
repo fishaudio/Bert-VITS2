@@ -343,13 +343,14 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         """
         assert yomi != "", f"Empty yomi: {word}"
         if yomi == "、":
-            # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`のいずれか
+            # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`, `--` のいずれか
             if word not in (
                 ".",
                 ",",
                 "!",
                 "'",
                 "-",
+                "--",
             ):
                 # ここはpyopenjtalkが読めない文字等のときに起こる
                 raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
@@ -547,6 +548,8 @@ def kata2phoneme_list(text: str) -> list[str]:
     """
     if text in punctuation:
         return [text]
+    elif text == "--":
+        return ["-", "-"]
     # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
     if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
         raise ValueError(f"Input must be katakana only: {text}")
