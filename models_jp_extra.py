@@ -14,8 +14,6 @@ from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from commons import init_weights, get_padding
 from text import symbols, num_tones, num_languages
 
-from vector_quantize_pytorch import VectorQuantize
-
 
 class DurationDiscriminator(nn.Module):  # vits2
     def __init__(
