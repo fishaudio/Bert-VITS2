@@ -3,7 +3,7 @@
 ## v2.0 (2024-02-03)
 
 ### 大きい変更
-モデル構造と事前学習モデルに [Bert-VITS2の日本語特化モデル JP-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を使えるように変更 (モデル構造を見直して日本語での学習をしていただいた [@Stardust-minus](https://github.com/Stardust-minus) 様に感謝します)
+モデル構造に [Bert-VITS2の日本語特化モデル JP-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を取り込んだものを使えるように変更、[事前学習モデル](https://huggingface.co/litagin/Style-Bert-VITS2-2.0-base-JP-Extra)も[Bert-VITS2 JP-Extra](https://huggingface.co/Stardust-minus/Bert-VITS2-Japanese-Extra)のものを改造してStyle-Bert-VITS2で使えるようにしました (モデル構造を見直して日本語での学習をしていただいた @Stardust-minus 様に感謝します)
 - これにより、日本語の発音やアクセントや抑揚や自然性が向上する傾向があります
 - スタイルベクトルを使ったスタイルの操作は変わらず使えます
 - ただしJP-Extraでは英語と中国語の音声合成は（現状は）できません
