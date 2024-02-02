@@ -64,7 +64,9 @@ def tts_fn(
             wrong_tone_message = "アクセント指定は現在日本語のみ対応しています。"
         if line_split:
             logger.warning("Tone generation is not supported for line split.")
-            wrong_tone_message = "アクセント指定は改行で分けて生成を使わない場合のみ対応しています。"
+            wrong_tone_message = (
+                "アクセント指定は改行で分けて生成を使わない場合のみ対応しています。"
+            )
         try:
             kata_tone = []
             json_data = json.loads(kata_tone_json_str)
@@ -109,6 +111,9 @@ def tts_fn(
     except InvalidToneError as e:
         logger.error(f"Tone error: {e}")
         return f"Error: アクセント指定が不正です:\n{e}", None, kata_tone_json_str
+    except ValueError as e:
+        logger.error(f"Value error: {e}")
+        return f"Error: {e}", None, kata_tone_json_str
 
     end_time = datetime.datetime.now()
     duration = (end_time - start_time).total_seconds()
@@ -179,7 +184,10 @@ examples = [
         "Speech synthesis is the artificial production of human speech. A computer system used for this purpose is called a speech synthesizer, and can be implemented in software or hardware products.",
         "EN",
     ],
-    ["语音合成是人工制造人类语音。用于此目的的计算机系统称为语音合成器，可以通过软件或硬件产品实现。", "ZH"],
+    [
+        "语音合成是人工制造人类语音。用于此目的的计算机系统称为语音合成器，可以通过软件或硬件产品实现。",
+        "ZH",
+    ],
 ]
 
 initial_md = """
@@ -268,7 +276,9 @@ if __name__ == "__main__":
 
     model_names = model_holder.model_names
     if len(model_names) == 0:
-        logger.error(f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。")
+        logger.error(
+            f"モデルが見つかりませんでした。{model_dir}にモデルを置いてください。"
+        )
         sys.exit(1)
     initial_id = 0
     initial_pth_files = model_holder.model_files_dict[model_names[initial_id]]
@@ -295,7 +305,9 @@ if __name__ == "__main__":
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
 
-                line_split = gr.Checkbox(label="改行で分けて生成", value=DEFAULT_LINE_SPLIT)
+                line_split = gr.Checkbox(
+                    label="改行で分けて生成", value=DEFAULT_LINE_SPLIT
+                )
                 split_interval = gr.Slider(
                     minimum=0.0,
                     maximum=2,
@@ -349,7 +361,9 @@ if __name__ == "__main__":
                         step=0.1,
                         label="Length",
                     )
-                    use_assist_text = gr.Checkbox(label="Assist textを使う", value=False)
+                    use_assist_text = gr.Checkbox(
+                        label="Assist textを使う", value=False
+                    )
                     assist_text = gr.Textbox(
                         label="Assist text",
                         placeholder="どうして私の意見を無視するの？許せない、ムカつく！死ねばいいのに。",
@@ -389,9 +403,13 @@ if __name__ == "__main__":
                     step=0.1,
                     label="スタイルの強さ",
                 )
-                ref_audio_path = gr.Audio(label="参照音声", type="filepath", visible=False)
+                ref_audio_path = gr.Audio(
+                    label="参照音声", type="filepath", visible=False
+                )
                 tts_button = gr.Button(
-                    "音声合成（モデルをロードしてください）", variant="primary", interactive=False
+                    "音声合成（モデルをロードしてください）",
+                    variant="primary",
+                    interactive=False,
                 )
                 text_output = gr.Textbox(label="情報")
                 audio_output = gr.Audio(label="結果")

@@ -3,6 +3,7 @@ import torch
 import commons
 import utils
 from models import SynthesizerTrn
+from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 from text.symbols import symbols
@@ -16,13 +17,22 @@ class InvalidToneError(ValueError):
 
 
 def get_net_g(model_path: str, version: str, device: str, hps):
-    net_g = SynthesizerTrn(
-        len(symbols),
-        hps.data.filter_length // 2 + 1,
-        hps.train.segment_size // hps.data.hop_length,
-        n_speakers=hps.data.n_speakers,
-        **hps.model,
-    ).to(device)
+    if version.endswith("JP-Extra"):
+        net_g = SynthesizerTrnJPExtra(
+            len(symbols),
+            hps.data.filter_length // 2 + 1,
+            hps.train.segment_size // hps.data.hop_length,
+            n_speakers=hps.data.n_speakers,
+            **hps.model,
+        ).to(device)
+    else:
+        net_g = SynthesizerTrn(
+            len(symbols),
+            hps.data.filter_length // 2 + 1,
+            hps.train.segment_size // hps.data.hop_length,
+            n_speakers=hps.data.n_speakers,
+            **hps.model,
+        ).to(device)
     net_g.state_dict()
     _ = net_g.eval()
     if model_path.endswith(".pth") or model_path.endswith(".pt"):
@@ -109,6 +119,7 @@ def infer(
     assist_text_weight=0.7,
     given_tone=None,
 ):
+    is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text,
         language,
@@ -143,8 +154,22 @@ def infer(
         style_vec = torch.from_numpy(style_vec).to(device).unsqueeze(0)
         del phones
         sid_tensor = torch.LongTensor([sid]).to(device)
-        audio = (
-            net_g.infer(
+        if is_jp_extra:
+            output = net_g.infer(
+                x_tst,
+                x_tst_lengths,
+                sid_tensor,
+                tones,
+                lang_ids,
+                ja_bert,
+                style_vec=style_vec,
+                sdp_ratio=sdp_ratio,
+                noise_scale=noise_scale,
+                noise_scale_w=noise_scale_w,
+                length_scale=length_scale,
+            )
+        else:
+            output = net_g.infer(
                 x_tst,
                 x_tst_lengths,
                 sid_tensor,
@@ -158,11 +183,8 @@ def infer(
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
                 length_scale=length_scale,
-            )[0][0, 0]
-            .data.cpu()
-            .float()
-            .numpy()
-        )
+            )
+        audio = output[0][0, 0].data.cpu().float().numpy()
         del (
             x_tst,
             tones,

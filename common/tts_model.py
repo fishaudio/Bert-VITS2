@@ -4,11 +4,12 @@ import torch
 import os
 import warnings
 from gradio.processing_utils import convert_to_16_bit_wav
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import utils
 from infer import get_net_g, infer
 from models import SynthesizerTrn
+from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 
 from .log import logger
 from .constants import (
@@ -52,7 +53,7 @@ class Model:
                 f"The number of styles ({self.num_styles}) does not match the number of style vectors ({self.style_vectors.shape[0]})"
             )
 
-        self.net_g: Optional[SynthesizerTrn] = None
+        self.net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
     def load_net_g(self):
         self.net_g = get_net_g(
@@ -98,6 +99,10 @@ class Model:
         given_tone: Optional[list[int]] = None,
     ) -> tuple[int, np.ndarray]:
         logger.info(f"Start generating audio data from text:\n{text}")
+        if language != "JP" and self.hps.version.endswith("JP-Extra"):
+            raise ValueError(
+                "The model is trained with JP-Extra, but the language is not JP"
+            )
         if reference_audio_path == "":
             reference_audio_path = None
         if assist_text == "" or not use_assist_text:
