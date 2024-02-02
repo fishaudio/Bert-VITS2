@@ -54,7 +54,7 @@ def download_jp_extra_pretrained_models():
     local_path = Path("pretrained_jp_extra")
     for file in files:
         if not Path(local_path).joinpath(file).exists():
-            logger.info(f"Downloading pretrained {file}")
+            logger.info(f"Downloading JP-Extra pretrained {file}")
             hf_hub_download(
                 "litagin/Style-Bert-VITS2-2.0-base-JP-Extra",
                 file,
