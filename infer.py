@@ -9,8 +9,6 @@ from text.cleaner import clean_text
 from text.symbols import symbols
 from common.log import logger
 
-# latest_version = "1.0"
-
 
 class InvalidToneError(ValueError):
     pass
@@ -18,6 +16,7 @@ class InvalidToneError(ValueError):
 
 def get_net_g(model_path: str, version: str, device: str, hps):
     if version.endswith("JP-Extra"):
+        logger.info("Using JP-Extra model")
         net_g = SynthesizerTrnJPExtra(
             len(symbols),
             hps.data.filter_length // 2 + 1,
@@ -26,6 +25,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
             **hps.model,
         ).to(device)
     else:
+        logger.info("Using normal model")
         net_g = SynthesizerTrn(
             len(symbols),
             hps.data.filter_length // 2 + 1,
@@ -53,8 +53,8 @@ def get_text(
     assist_text_weight=0.7,
     given_tone=None,
 ):
-    # 在此处实现当前版本的get_text
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
+    use_jp_extra = hps.version.endswith("JP-Extra")
+    norm_text, phone, tone, word2ph = clean_text(text, language_str, use_jp_extra)
     if given_tone is not None:
         if len(given_tone) != len(phone):
             raise InvalidToneError(

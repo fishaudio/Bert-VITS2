@@ -210,7 +210,7 @@ def g2p(
 
     assert len(phones) == sum(word2ph), f"{len(phones)} != {sum(word2ph)}"
 
-    # 最後にuse_jp_extraでない場合は「N」を「n」に変換
+    # use_jp_extraでない場合は「N」を「n」に変換
     if not use_jp_extra:
         phones = [phone if phone != "N" else "n" for phone in phones]
 
