@@ -36,6 +36,20 @@ def download_pretrained_models():
             )
 
 
+def download_jp_extra_pretrained_models():
+    files = ["G_0.safetensors", "D_0.safetensors", "WD_0.safetensors"]
+    local_path = Path("pretrained_jp_extra")
+    for file in files:
+        if not Path(local_path).joinpath(file).exists():
+            logger.info(f"Downloading pretrained {file}")
+            hf_hub_download(
+                "litagin/Style-Bert-VITS2-2.0-base-JP-Extra",
+                file,
+                local_dir=local_path,
+                local_dir_use_symlinks=False,
+            )
+
+
 def download_jvnv_models():
     files = [
         "jvnv-F1/config.json",
@@ -65,5 +79,7 @@ def download_jvnv_models():
 download_bert_models()
 
 download_pretrained_models()
+
+download_jp_extra_pretrained_models()
 
 download_jvnv_models()
