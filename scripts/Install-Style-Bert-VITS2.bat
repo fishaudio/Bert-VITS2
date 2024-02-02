@@ -33,7 +33,7 @@ xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
 rmdir /s /q Style-Bert-VITS2-master
 
 echo ----------------------------------------
-echo Python環境の構築を開始します。
+echo Setup Python and Virtual Environment
 echo ----------------------------------------
 
 @REM Pythonと仮想環境のセットアップを呼び出す（仮想環境が有効化されて戻ってくる）
@@ -41,14 +41,14 @@ call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
 if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
 
 @REM 依存関係インストール
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pip install -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 echo ----------------------------------------
-echo 環境構築が完了しました。モデルのダウンロードを開始します。
+echo Environment setup is complete. Start downloading the model.
 echo ----------------------------------------
 
 @REM Style-Bert-VITS2フォルダに移動
@@ -58,8 +58,7 @@ pushd Style-Bert-VITS2
 python initialize.py
 
 echo ----------------------------------------
-echo モデルのダウンロードが完了し、インストールが完了しました！
-echo 音声合成のWebUIを起動します。
+echo Model download is complete. Start the WebUI of the voice synthesis.
 echo ----------------------------------------
 
 @REM 音声合成WebUIの起動
