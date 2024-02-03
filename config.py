@@ -126,7 +126,7 @@ class Train_ms_config:
         spec_cache: bool,
         keep_ckpts: int,
         permanent_ckpt_start: int,
-        permanent_ckpt_interval: int
+        permanent_ckpt_interval: int,
     ):
         self.env = env  # 需要加载的环境变量
         self.base = base  # 底模配置
