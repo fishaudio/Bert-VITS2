@@ -320,7 +320,7 @@ def clean_checkpoints(
         return step <= permanent_ckpt_start and \
             (step - permanent_ckpt_start) % permanent_ckpt_interval != 0
     
-    to_del = [f for f in to_del if checker(f) and enable_permanent_ckpt]
+    to_del = [f for f in to_del if checker(f) or not enable_permanent_ckpt]
 
     def del_info(fn):
         return logger.info(f".. Free up space by deleting ckpt {fn}")
