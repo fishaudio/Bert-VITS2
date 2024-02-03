@@ -55,19 +55,13 @@ def initialize(
     logger.info(
         f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, bf16_run: {bf16_run}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, use_jp_extra: {use_jp_extra}"
     )
-    if os.path.isfile(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
-    else:
-        # Use default config
-        default_config_path = (
-            "configs/config.json"
-            if not use_jp_extra
-            else "configs/configs_jp_extra.json"
-        )
 
-        with open(default_config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
+    default_config_path = (
+        "configs/config.json" if not use_jp_extra else "configs/configs_jp_extra.json"
+    )
+
+    with open(default_config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
     config["model_name"] = model_name
     config["data"]["training_files"] = train_path
     config["data"]["validation_files"] = val_path
