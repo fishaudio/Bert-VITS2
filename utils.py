@@ -269,13 +269,13 @@ def get_hparams(init=True):
 
 
 def clean_checkpoints(
-        path_to_models="logs/44k/",
-        n_ckpts_to_keep=2,
-        sort_by_time=True,
-        permanent_ckpt_start=0,
-        permanent_ckpt_interval=0,
-        enable_permanent_ckpt=False
-        ):
+    path_to_models="logs/44k/",
+    n_ckpts_to_keep=2,
+    sort_by_time=True,
+    permanent_ckpt_start=0,
+    permanent_ckpt_interval=0,
+    enable_permanent_ckpt=False,
+):
     """Freeing up space by deleting saved ckpts
 
     Arguments:

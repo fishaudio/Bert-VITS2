@@ -37,11 +37,11 @@ latest_version = "2.4"
 
 def get_net_g(model_path: str, version: str, device: str, hps):
     net_g = SynthesizerTrn(
-            len(symbols),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
+        len(symbols),
+        hps.data.filter_length // 2 + 1,
+        hps.train.segment_size // hps.data.hop_length,
+        n_speakers=hps.data.n_speakers,
+        **hps.model,
     ).to(device)
     _ = net_g.eval()
     _ = utils.load_checkpoint(model_path, net_g, None, skip_optimizer=True)
