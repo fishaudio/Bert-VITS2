@@ -94,6 +94,10 @@ train_ms:
   spec_cache: True
   # 保存的检查点数量，多于此数目的权重会被删除来节省空间。
   keep_ckpts: 8
+  #永久ckpt 保存起始step
+  permanent_ckpt_start: 10000
+  #永久检查点的间隔（训练步数）。永久检查点即使不是最新的，也不会被移除。该数值表示每4000步保存一份永久ckpt模型
+  permanent_ckpt_interval: 4000
 
 
 # webui webui配置

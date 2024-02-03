@@ -268,7 +268,14 @@ def get_hparams(init=True):
     return hparams
 
 
-def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_time=True):
+def clean_checkpoints(
+        path_to_models="logs/44k/",
+        n_ckpts_to_keep=2,
+        sort_by_time=True,
+        permanent_ckpt_start=0,
+        permanent_ckpt_interval=0,
+        enable_permanent_ckpt=False
+        ):
     """Freeing up space by deleting saved ckpts
 
     Arguments:
@@ -307,6 +314,13 @@ def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_tim
             + x_sorted("WD")[:-n_ckpts_to_keep]
         )
     ]
+
+    def checker(f):
+        step = int(re.search(r'\d+', f).group(0))
+        return step >= permanent_ckpt_start and \
+            (step - permanent_ckpt_start) % permanent_ckpt_interval != 0
+    
+    to_del = [f for f in to_del if checker(f) and enable_permanent_ckpt]
 
     def del_info(fn):
         return logger.info(f".. Free up space by deleting ckpt {fn}")
