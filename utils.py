@@ -317,7 +317,7 @@ def clean_checkpoints(
 
     def checker(f):
         step = int(re.search(r'\d+', f).group(0))
-        return step >= permanent_ckpt_start and \
+        return step <= permanent_ckpt_start and \
             (step - permanent_ckpt_start) % permanent_ckpt_interval != 0
     
     to_del = [f for f in to_del if checker(f) and enable_permanent_ckpt]
