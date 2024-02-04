@@ -189,10 +189,11 @@ def summarize(
 
 
 def is_resuming(dir_path):
+    # JP-ExtraバージョンではDURがなくWDがあったり変わるため、Gのみで判断する
     g_list = glob.glob(os.path.join(dir_path, "G_*.pth"))
-    d_list = glob.glob(os.path.join(dir_path, "D_*.pth"))
-    dur_list = glob.glob(os.path.join(dir_path, "DUR_*.pth"))
-    return len(g_list) > 0 and len(d_list) > 0 and len(dur_list) > 0
+    # d_list = glob.glob(os.path.join(dir_path, "D_*.pth"))
+    # dur_list = glob.glob(os.path.join(dir_path, "DUR_*.pth"))
+    return len(g_list) > 0
 
 
 def latest_checkpoint_path(dir_path, regex="G_*.pth"):
