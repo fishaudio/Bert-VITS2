@@ -542,7 +542,9 @@ def train_and_evaluate(
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
                 scaler.unscale_(optim_dur_disc)
-                torch.nn.utils.clip_grad_norm_(parameters=net_dur_disc.parameters(), max_norm=5)
+                torch.nn.utils.clip_grad_norm_(
+                    parameters=net_dur_disc.parameters(), max_norm=5
+                )
                 grad_norm_dur = commons.clip_grad_value_(
                     net_dur_disc.parameters(), None
                 )
@@ -584,18 +586,28 @@ def train_and_evaluate(
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
 
-                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_commit * hps.train.c_commit
+                loss_gen_all = (
+                    loss_gen
+                    + loss_fm
+                    + loss_mel
+                    + loss_dur
+                    + loss_kl
+                    + loss_commit * hps.train.c_commit
+                )
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
                     loss_gen_all += (
-                        loss_dur_gen + loss_lm + loss_lm_gen + loss_commit * hps.train.c_commit
+                        loss_dur_gen
+                        + loss_lm
+                        + loss_lm_gen
+                        + loss_commit * hps.train.c_commit
                         if net_wd is not None
                         else loss_dur_gen
                     )
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
-        #if getattr(hps.train, "bf16_run", False):
+        # if getattr(hps.train, "bf16_run", False):
         torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=200)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
