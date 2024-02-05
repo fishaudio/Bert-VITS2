@@ -35,10 +35,12 @@ def save_style_vector(wav_path):
     try:
         style_vec = get_style_vector(wav_path)
     except Exception as e:
+        print("\n")
         logger.error(f"Error occurred with file: {wav_path}, Details:\n{e}\n")
         raise
     # 値にNaNが含まれていると悪影響なのでチェックする
     if np.isnan(style_vec).any():
+        print("\n")
         logger.warning(f"NaN value found in style vector: {wav_path}")
         raise NaNValueError(f"NaN value found in style vector: {wav_path}")
     np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`

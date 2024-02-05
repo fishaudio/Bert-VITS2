@@ -3,10 +3,10 @@
 ## v2.0.1 (2024-02-05)
 
 軽微なバグ修正や改善
-- スタイルベクトルに`nan`が含まれていた場合（主に音声ファイルが極端に短い場合に発生）、それを学習リストから除外するように修正
+- スタイルベクトルに`NaN`が含まれていた場合（主に音声ファイルが極端に短い場合に発生）、それを学習リストから除外するように修正
 - colabにマージの追加
 - 学習時のプログレスバーの表示がおかしかったのを修正
-- デフォルトのjvnvモデルをJP-Extra版にアップデート。
+- デフォルトのjvnvモデルをJP-Extra版にアップデート。新しいモデルを使いたい方は手動で[こちら](https://huggingface.co/litagin/style_bert_vits2_jvnv/tree/main)からダウンロードするか、`python initialize.py`をするか、[このbatファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.0.1/Update-to-JP-Extra.bat)を`Style-Bert-VITS2`フォルダがある場所（インストールbatファイルとかがあったところ）においてダブルクリックしてください。
 
 ## v2.0 (2024-02-03)
 
