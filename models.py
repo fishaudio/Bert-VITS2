@@ -386,6 +386,7 @@ class TextEncoder(nn.Module):
             separate_codebook_per_head=True,
             stochastic_sample_codes=True,
             threshold_ema_dead_code=2,
+            use_cosine_sim = True
         )
         self.out_feature_net = nn.Linear(512, hidden_channels)
 
