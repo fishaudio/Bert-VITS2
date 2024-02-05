@@ -367,7 +367,7 @@ class TextEncoder(nn.Module):
         self.in_feature_net = nn.Sequential(
             # input is assumed to an already normalized embedding
             nn.Linear(512, 1028, bias=False),
-            nn.GELU(),
+            nn.SiLU(),
             nn.LayerNorm(1028),
             *[Block(1028, 512) for _ in range(1)],
             nn.Linear(1028, 512, bias=False),
