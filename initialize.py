@@ -66,7 +66,7 @@ def download_jp_extra_pretrained_models():
 
 def download_jvnv_models():
     files = [
-        "jvnv--jp/config.json",
+        "jvnv-F1-jp/config.json",
         "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors",
         "jvnv-F1-jp/style_vectors.npy",
         "jvnv-F2-jp/config.json",
