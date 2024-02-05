@@ -1,11 +1,12 @@
 # 2024-02-03: JP-Extra対応版 ver 2.0をリリースしました！
 
-[**ver 2.0 リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)
+[**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)
 
 モデルとして [Bert-VITS2 JP-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を元としたものが使えるようになりました。日本語の発音やアクセントや自然性が大幅に向上する傾向があります。
 
 [**Changelog**](docs/CHANGELOG.md)
 
+- 2024-02-05: ver 2.0.1
 - 2024-02-03: ver 2.0
 - 2024-01-09: ver 1.3
 - 2023-12-31: ver 1.2

@@ -1,3 +1,5 @@
+# This English README is for 1.x versions. WIP for 2.x versions.
+
 # Style-Bert-VITS2
 
 Bert-VITS2 with more controllable voice styles.

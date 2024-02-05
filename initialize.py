@@ -66,18 +66,18 @@ def download_jp_extra_pretrained_models():
 
 def download_jvnv_models():
     files = [
-        "jvnv-F1/config.json",
-        "jvnv-F1/jvnv-F1.safetensors",
-        "jvnv-F1/style_vectors.npy",
-        "jvnv-F2/config.json",
-        "jvnv-F2/jvnv-F2.safetensors",
-        "jvnv-F2/style_vectors.npy",
-        "jvnv-M1/config.json",
-        "jvnv-M1/jvnv-M1.safetensors",
-        "jvnv-M1/style_vectors.npy",
-        "jvnv-M2/config.json",
-        "jvnv-M2/jvnv-M2.safetensors",
-        "jvnv-M2/style_vectors.npy",
+        "jvnv--jp/config.json",
+        "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors",
+        "jvnv-F1-jp/style_vectors.npy",
+        "jvnv-F2-jp/config.json",
+        "jvnv-F2-jp/jvnv-F2_e166_s20000.safetensors",
+        "jvnv-F2-jp/style_vectors.npy",
+        "jvnv-M1-jp/config.json",
+        "jvnv-M1-jp/jvnv-M1-jp_e158_s14000.safetensors",
+        "jvnv-M1-jp/style_vectors.npy",
+        "jvnv-M2-jp/config.json",
+        "jvnv-M2-jp/jvnv-M2-jp_e159_s17000.safetensors",
+        "jvnv-M2-jp/style_vectors.npy",
     ]
     for file in files:
         if not Path(f"model_assets/{file}").exists():
