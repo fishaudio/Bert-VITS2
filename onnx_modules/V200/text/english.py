@@ -171,7 +171,6 @@ def refine_syllables(syllables):
     return phonemes, tones
 
 
-import re
 import inflect
 
 _inflect = inflect.engine()
