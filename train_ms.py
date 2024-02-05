@@ -757,7 +757,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     audio_dict = {}
     scores = []
     predictor = torch.hub.load(
-    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
+    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True).cuda()
     print("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (
