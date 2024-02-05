@@ -125,6 +125,8 @@ def run():
         utils.check_git_hash(hps.model_dir)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
+        predictor = torch.hub.load(
+    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
     train_sampler = DistributedBucketSampler(
         train_dataset,
@@ -637,6 +639,7 @@ def train_and_evaluate(
                         "loss/g/mel": loss_mel,
                         "loss/g/dur": loss_dur,
                         "loss/g/kl": loss_kl,
+                        "loss/commit": loss_commit,
                     }
                 )
                 scalar_dict.update(
@@ -811,6 +814,9 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     hps.data.mel_fmin,
                     hps.data.mel_fmax,
                 )
+                audio = y_hat[0, :, : y_hat_lengths[0]].astype("float32")
+                mos_score = predictor(torch.from_numpy(audio).unsqueeze(0), sr=44100).item()
+                scalar_dict.update({"val/mos": mos_score})
                 image_dict.update(
                     {
                         f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
