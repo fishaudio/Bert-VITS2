@@ -736,11 +736,19 @@ def train_and_evaluate(
                         os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
                     )
                 keep_ckpts = config.train_ms_config.keep_ckpts
+                permanent_ckpt_start = config.train_ms_config.permanent_ckpt_start
+                permanent_ckpt_interval = config.train_ms_config.permanent_ckpt_interval
+                enable_permanent_ckpt = (
+                    permanent_ckpt_start > 0 and permanent_ckpt_interval > 9
+                )
                 if keep_ckpts > 0:
                     utils.clean_checkpoints(
                         path_to_models=hps.model_dir,
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
+                        permanent_ckpt_start=permanent_ckpt_start,
+                        permanent_ckpt_interval=permanent_ckpt_interval,
+                        enable_permanent_ckpt=enable_permanent_ckpt,
                     )
 
         global_step += 1
