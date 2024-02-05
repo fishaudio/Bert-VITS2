@@ -814,7 +814,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     hps.data.mel_fmin,
                     hps.data.mel_fmax,
                 )
-                audio = y_hat[0, :, : y_hat_lengths[0]].astype("float32")
+                audio = y_hat[0, :, : y_hat_lengths[0]]
                 mos_score = predictor(torch.from_numpy(audio).unsqueeze(0), sr=44100).item()
                 scalar_dict.update({"val/mos": mos_score})
                 image_dict.update(
