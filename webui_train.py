@@ -302,7 +302,7 @@ def train(model_name, skip_style=False, use_jp_extra=True):
     cmd = [train_py, "--config", config_path, "--model", dataset_path]
     if skip_style:
         cmd.append("--skip_default_style")
-    success, message = run_script_with_log(cmd)
+    success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         logger.error(f"Train failed.")
         return False, f"Error: 学習に失敗しました:\n{message}"

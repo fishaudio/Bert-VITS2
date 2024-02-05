@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import gc
 import os
 import platform
 
@@ -589,7 +590,7 @@ def train_and_evaluate(
         language,
         bert,
         style_vec,
-    ) in enumerate(tqdm(train_loader)):
+    ) in enumerate(train_loader):
         if net_g.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
                 net_g.module.mas_noise_scale_initial
@@ -899,8 +900,9 @@ def train_and_evaluate(
             )
             pbar.update()
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
-    # gc.collect()
-    # torch.cuda.empty_cache()
+    # と思ったけどメモリ使用量が減るかもしれないのでつけてみる
+    gc.collect()
+    torch.cuda.empty_cache()
     if pbar is None and rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 
