@@ -51,9 +51,6 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 )  # Not available if torch version is lower than 2.0
 global_step = 0
 
-predictor = torch.hub.load(
-    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
-
 def run():
     # 环境变量解析
     envs = config.train_ms_config.env
@@ -758,6 +755,9 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
     image_dict = {}
     audio_dict = {}
+    scores = []
+    predictor = torch.hub.load(
+    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
     print("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (
@@ -815,8 +815,8 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     hps.data.mel_fmax,
                 )
                 audio = y_hat[0, :, : y_hat_lengths[0]]
-                mos_score = predictor(torch.from_numpy(audio).unsqueeze(0), sr=44100).item()
-                scalar_dict.update({"val/mos": mos_score})
+                mos_score = predictor(audio, sr=44100)
+                scores.append(mos_score)
                 image_dict.update(
                     {
                         f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
@@ -839,7 +839,8 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     }
                 )
                 audio_dict.update({f"gt/audio_{batch_idx}": y[0, :, : y_lengths[0]]})
-
+    average_score = scores.mean().item()
+    scalar_dict.update({"val/mos": average_score})
     utils.summarize(
         writer=writer_eval,
         global_step=global_step,
