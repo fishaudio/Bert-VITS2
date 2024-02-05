@@ -1,0 +1,34 @@
+# TEXT ENCODER CONFIG
+text_model: 'gpt2'
+transformer_embed_dim: 768
+freeze_text_encoder_weights: True
+
+# AUDIO ENCODER CONFIG
+audioenc_name: 'HTSAT'
+out_emb: 768
+sampling_rate: 44100
+duration: 7
+fmin: 50
+fmax: 8000
+n_fft: 1024
+hop_size: 320
+mel_bins: 64
+window_size: 1024
+
+# PROJECTION SPACE CONFIG
+d_proj: 1024
+temperature: 0.003
+
+# TRAINING AND EVALUATION CONFIG
+batch_size: 128
+num_classes: 527
+
+# CLAPCAP CONFIG
+clapcap_model: 'ClapCaption'
+text_decoder: 'gpt2'
+prefix_length: 40
+prefix_length_clip: 40
+mapping_type: 'transformer'
+num_layers: 8
+normalize_prefix: True
+freeze_gpt_weights: True
