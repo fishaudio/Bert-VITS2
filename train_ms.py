@@ -51,6 +51,8 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 )  # Not available if torch version is lower than 2.0
 global_step = 0
 
+predictor = torch.hub.load(
+    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
 
 def run():
     # 环境变量解析
@@ -125,8 +127,6 @@ def run():
         utils.check_git_hash(hps.model_dir)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
-        predictor = torch.hub.load(
-    "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True)
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
     train_sampler = DistributedBucketSampler(
         train_dataset,
