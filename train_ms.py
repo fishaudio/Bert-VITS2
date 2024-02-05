@@ -839,7 +839,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     }
                 )
                 audio_dict.update({f"gt/audio_{batch_idx}": y[0, :, : y_lengths[0]]})
-    average_score = scores.mean().item()
+    average_score = sum(scores) / len(scores)
     scalar_dict.update({"val/mos": average_score})
     utils.summarize(
         writer=writer_eval,
