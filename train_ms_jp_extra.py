@@ -192,13 +192,13 @@ def run():
         train_dataset,
         # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() - 1),
         # Slow and often freezes, so use only half of the cores.
-        num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+        # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
         persistent_workers=True,
-        prefetch_factor=6,
+        # prefetch_factor=6,
     )  # DataLoader config could be adjusted.
     eval_dataset = None
     eval_loader = None
@@ -307,16 +307,28 @@ def run():
         )
     else:
         optim_wd = None
-    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
-    net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
+    net_g = DDP(
+        net_g,
+        device_ids=[local_rank],
+        # bucket_cap_mb=512
+    )
+    net_d = DDP(
+        net_d,
+        device_ids=[local_rank],
+        # bucket_cap_mb=512
+    )
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
             device_ids=[local_rank],
-            bucket_cap_mb=512,
+            # bucket_cap_mb=512,
         )
     if net_wd is not None:
-        net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
+        net_wd = DDP(
+            net_wd,
+            device_ids=[local_rank],
+            #  bucket_cap_mb=512
+        )
 
     if utils.is_resuming(model_dir):
         if net_dur_disc is not None:
