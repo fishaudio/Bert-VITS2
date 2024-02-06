@@ -82,6 +82,11 @@ def run():
         action="store_true",
         help="Do not show the progress bar while training.",
     )
+    parser.add_argument(
+        "--speedup",
+        action="store_true",
+        help="Speed up training by disabling logging and evaluation.",
+    )
     args = parser.parse_args()
 
     # Set log file
@@ -118,8 +123,9 @@ def run():
     n_gpus = dist.get_world_size()
 
     hps = utils.get_hparams_from_file(args.config)
-    # This is needed because we have to pass `model_dir` to `train_and_evaluate()`
+    # This is needed because we have to pass values to `train_and_evaluate()
     hps.model_dir = model_dir
+    hps.speedup = args.speedup
 
     # 比较路径是否相同
     if os.path.realpath(args.config) != os.path.realpath(
@@ -164,7 +170,9 @@ def run():
     torch.cuda.set_device(local_rank)
 
     global global_step
-    if rank == 0:
+    writer = None
+    writer_eval = None
+    if rank == 0 and not args.speedup:
         # logger = utils.get_logger(hps.model_dir)
         # logger.info(hps)
         utils.check_git_hash(model_dir)
@@ -192,7 +200,9 @@ def run():
         persistent_workers=True,
         prefetch_factor=6,
     )  # DataLoader config could be adjusted.
-    if rank == 0:
+    eval_dataset = None
+    eval_loader = None
+    if rank == 0 and not args.speedup:
         eval_dataset = TextAudioSpeakerLoader(hps.data.validation_files, hps.data)
         eval_loader = DataLoader(
             eval_dataset,
@@ -748,7 +758,7 @@ def train_and_evaluate(
         scaler.update()
 
         if rank == 0:
-            if global_step % hps.train.log_interval == 0:
+            if global_step % hps.train.log_interval == 0 and not hps.speedup:
                 lr = optim_g.param_groups[0]["lr"]
                 losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl]
                 # logger.info(
@@ -842,7 +852,8 @@ def train_and_evaluate(
                 and global_step != 0
                 and initial_step != global_step
             ):
-                evaluate(hps, net_g, eval_loader, writer_eval)
+                if not hps.speedup:
+                    evaluate(hps, net_g, eval_loader, writer_eval)
                 utils.save_checkpoint(
                     net_g,
                     optim_g,
