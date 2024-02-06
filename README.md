@@ -1,6 +1,6 @@
 # 2024-02-03: JP-Extra対応版 ver 2.0をリリースしました！
 
-[🤗 オンラインデモ](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV)
+[🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV)
 
 [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)
 
