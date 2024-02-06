@@ -52,7 +52,7 @@ def do_transcribe(
         return "Error: モデル名を入力してください。"
     if initial_prompt == "":
         initial_prompt = "こんにちは。元気、ですかー？私は……ふふっ、ちゃんと元気だよ！"
-    logger.debug(f"initial_prompt: {initial_prompt}")
+    # logger.debug(f"initial_prompt: {initial_prompt}")
     if input_dir == "":
         input_dir = os.path.join(dataset_root, model_name, "raw")
     output_file = os.path.join(dataset_root, model_name, "esd.list")
@@ -117,7 +117,9 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 
 with gr.Blocks(theme="NoCrypt/miku") as app:
     gr.Markdown(initial_md)
-    model_name = gr.Textbox(label="モデル名を入力してください（話者名としても使われます）。")
+    model_name = gr.Textbox(
+        label="モデル名を入力してください（話者名としても使われます）。"
+    )
     with gr.Accordion("音声のスライス"):
         with gr.Row():
             with gr.Column():
@@ -127,10 +129,18 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                     info="下記フォルダにwavファイルを入れておいてください",
                 )
                 min_sec = gr.Slider(
-                    minimum=0, maximum=10, value=2, step=0.5, label="この秒数未満は切り捨てる"
+                    minimum=0,
+                    maximum=10,
+                    value=2,
+                    step=0.5,
+                    label="この秒数未満は切り捨てる",
                 )
                 max_sec = gr.Slider(
-                    minimum=0, maximum=15, value=12, step=0.5, label="この秒数以上は切り捨てる"
+                    minimum=0,
+                    maximum=15,
+                    value=12,
+                    step=0.5,
+                    label="この秒数以上は切り捨てる",
                 )
                 min_silence_dur_ms = gr.Slider(
                     minimum=0,
