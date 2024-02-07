@@ -194,8 +194,8 @@ def run():
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
-        # これもメモリ消費量を減らそうとしてコメントアウト（事前ロード量？）
-        # persistent_workers=True,
+        persistent_workers=True,
+        # これもメモリ消費量を減らそうとしてコメントアウト
         # prefetch_factor=4,
     )  # DataLoader config could be adjusted.
     eval_dataset = None

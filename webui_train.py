@@ -8,6 +8,7 @@ from multiprocessing import cpu_count
 import gradio as gr
 import yaml
 
+from common.constants import LATEST_VERSION
 from common.log import logger
 from common.subprocess_utils import run_script_with_log, second_elem_of
 
@@ -315,8 +316,8 @@ def train(model_name, skip_style=False, use_jp_extra=True, speedup=False):
     return True, "Success: 学習が完了しました"
 
 
-initial_md = """
-# Style-Bert-VITS2 ver 2.0 学習用WebUI
+initial_md = f"""
+# Style-Bert-VITS2 ver {LATEST_VERSION} 学習用WebUI
 
 ## 使い方
 
