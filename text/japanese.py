@@ -485,9 +485,26 @@ def distribute_phone(n_phone: int, n_word: int) -> list[int]:
 
 
 def handle_long(sep_phonemes: list[list[str]]) -> list[list[str]]:
+    """
+    フレーズごとに分かれた音素（長音記号がそのまま）のリストのリスト`sep_phonemes`を受け取り、
+    その長音記号を処理して、音素のリストのリストを返す。
+    基本的には直前の音素を伸ばすが、直前の音素が母音でない場合もしくは冒頭の場合は、
+    おそらく長音記号とダッシュを勘違いしていると思われるので、ダッシュに対応する音素`-`に変換する。
+    """
     for i in range(len(sep_phonemes)):
         if sep_phonemes[i][0] == "ー":
-            sep_phonemes[i][0] = sep_phonemes[i - 1][-1]
+            if i != 0:
+                prev_phoneme = sep_phonemes[i - 1][-1]
+                if prev_phoneme in VOWELS:
+                    # 母音と「ん」のあとの伸ばし棒なので、その母音に変換
+                    sep_phonemes[i][0] = sep_phonemes[i - 1][-1]
+                else:
+                    # 「。ーー」等おそらく予期しない長音記号
+                    # ダッシュの勘違いだと思われる
+                    sep_phonemes[i][0] = "-"
+            else:
+                # 冒頭に長音記号が来ていおり、これはダッシュの勘違いと思われる
+                sep_phonemes[i][0] = "-"
         if "ー" in sep_phonemes[i]:
             for j in range(len(sep_phonemes[i])):
                 if sep_phonemes[i][j] == "ー":
