@@ -304,7 +304,8 @@ if __name__ == "__main__":
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
 
                 line_split = gr.Checkbox(
-                    label="改行で分けて生成", value=DEFAULT_LINE_SPLIT
+                    label="改行で分けて生成（分けたほうが感情が乗ります）",
+                    value=DEFAULT_LINE_SPLIT,
                 )
                 split_interval = gr.Slider(
                     minimum=0.0,
