@@ -42,7 +42,7 @@ pushd Style-Bert-VITS2
 @REM 初期化（必要なモデルのダウンロード）
 python initialize.py
 
-echo Style-Bert-VITS2の2.0.1へのアップデートが完了しました。
+echo Style-Bert-VITS2の2.xへのアップデートが完了しました。
 
 pause
 
