@@ -288,7 +288,7 @@ def preprocess_all(
     )
 
 
-def train(model_name, skip_style=False, use_jp_extra=True):
+def train(model_name, skip_style=False, use_jp_extra=True, speedup=False):
     dataset_path, _, _, _, config_path = get_path(model_name)
     # 学習再開の場合は念のためconfig.ymlの名前等を更新
     with open("config.yml", "r", encoding="utf-8") as f:
@@ -302,6 +302,8 @@ def train(model_name, skip_style=False, use_jp_extra=True):
     cmd = [train_py, "--config", config_path, "--model", dataset_path]
     if skip_style:
         cmd.append("--skip_default_style")
+    if speedup:
+        cmd.append("--speedup")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         logger.error(f"Train failed.")
@@ -401,11 +403,6 @@ if __name__ == "__main__":
                     maximum=10000,
                     step=100,
                 )
-                bf16_run = gr.Checkbox(
-                    label="bfloat16を使う",
-                    info="bfloat16を使うかどうか。新しめのグラボだと学習が早くなるかも、古いグラボだと動かないかも。",
-                    value=True,
-                )
                 normalize = gr.Checkbox(
                     label="音声の音量を正規化する(音量の大小が揃っていない場合など)",
                     value=False,
@@ -415,9 +412,14 @@ if __name__ == "__main__":
                     value=False,
                 )
                 with gr.Accordion("詳細設定", open=False):
+                    bf16_run = gr.Checkbox(
+                        label="bfloat16を使う",
+                        info="bfloat16を使うかどうか。オンにすると学習が発散する可能性がありますが、メモリ使用量が減る可能性があります。",
+                        value=False,
+                    )
                     num_processes = gr.Slider(
                         label="プロセス数",
-                        info="前処理時の並列処理プロセス数、大きすぎるとフリーズするかも",
+                        info="前処理時の並列処理プロセス数、前処理でフリーズしたら下げてください",
                         value=cpu_count() // 2,
                         minimum=1,
                         maximum=cpu_count(),
@@ -477,7 +479,7 @@ if __name__ == "__main__":
                     )
                     bf16_run_manual = gr.Checkbox(
                         label="bfloat16を使う",
-                        value=True,
+                        value=False,
                     )
                     freeze_EN_bert_manual = gr.Checkbox(
                         label="英語bert部分を凍結",
@@ -555,6 +557,11 @@ if __name__ == "__main__":
                 label="JP-Extra版を使う",
                 value=True,
             )
+            speedup = gr.Checkbox(
+                label="ログ等をスキップして学習を高速化する",
+                value=False,
+                visible=False,  # Experimental
+            )
             train_btn = gr.Button(value="学習を開始する", variant="primary")
             info_train = gr.Textbox(label="状況")
 
@@ -624,7 +631,7 @@ if __name__ == "__main__":
         # Train
         train_btn.click(
             second_elem_of(train),
-            inputs=[model_name, skip_style, use_jp_extra_train],
+            inputs=[model_name, skip_style, use_jp_extra_train, speedup],
             outputs=[info_train],
         )
         use_jp_extra.change(
