@@ -87,8 +87,8 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     ) as f:
         json.dump(new_config, f, indent=2, ensure_ascii=False)
 
-    # info.jsonを読み込んで、style_triple_listを追記
-    info_path = os.path.join(assets_root, output_name, "info.json")
+    # recipe.jsonを読み込んで、style_triple_listを追記
+    info_path = os.path.join(assets_root, output_name, "recipe.json")
     if os.path.exists(info_path):
         with open(info_path, encoding="utf-8") as f:
             info = json.load(f)
@@ -259,7 +259,7 @@ initial_md = """
 
 以上でマージは完了で、`model_assets/マージ後のモデル名`にマージ後のモデルが保存され、音声合成のときに使えます。
 
-また`model_asses/マージ後のモデル名/info.json`には、マージ前のモデル名やマージの重みが記録されます（推論にはいらないので配合メモ用です）。
+また`model_asses/マージ後のモデル名/recipe.json`には、マージの配合レシピが記録されます（推論にはいらないので配合メモ用です）。
 
 一番下にマージしたモデルによる簡易的な音声合成機能もつけています。
 
