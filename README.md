@@ -1,36 +1,23 @@
-# 2024-02-03: JP-Extra対応版 ver 2.0をリリースしました！
-
-[🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV)
-
-[**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)
-
-モデルとして [Bert-VITS2 JP-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を元としたものが使えるようになりました。日本語の発音やアクセントや自然性が大幅に向上する傾向があります。
-
-[**Changelog**](docs/CHANGELOG.md)
-
-- 2024-02-05: ver 2.0.1
-- 2024-02-03: ver 2.0
-- 2024-01-09: ver 1.3
-- 2023-12-31: ver 1.2
-- 2023-12-29: ver 1.1
-- 2023-12-27: ver 1.0
-
 # Style-Bert-VITS2
 
 Bert-VITS2 with more controllable voice styles.
 
-[English README](docs/README_en.md)
+https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-4202-a1dd-56ded3c562a0
 
-https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
+- [English README](docs/README_en.md)
+- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
+- [🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV)
 
-**注意**: 上記動画のライセンス表記は誤っていました、正しくはCC BY-SA 4.0で商用利用に制限はありません。近日訂正版動画に差し替えます。
+- [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)、[更新履歴](docs/CHANGELOG.md)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
-
-Online demo: https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV
+  - 2024-02-05: ver 2.0.1
+  - 2024-02-03: ver 2.0
+  - 2024-01-09: ver 1.3
+  - 2023-12-31: ver 1.2
+  - 2023-12-29: ver 1.1
+  - 2023-12-27: ver 1.0
 
 This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2) v2.1 and Japanese-Extra, so many thanks to the original author!
-
 
 **概要**
 
