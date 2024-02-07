@@ -34,7 +34,7 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 ### 動作環境
 
-各UIとAPI Serverにおいて、Windows コマンドプロンプト・WSL2・Linux(Ubuntu Desktop)での動作を確認しています(WSLでのパス指定は相対パスなど工夫ください)。
+各UIとAPI Serverにおいて、Windows コマンドプロンプト・WSL2・Linux(Ubuntu Desktop)での動作を確認しています(WSLでのパス指定は相対パスなど工夫ください)。NVidiaのGPUが無い場合は学習はできませんが音声合成とマージは可能です。
 
 ### インストール
 
@@ -44,7 +44,7 @@ Windowsを前提としています。
 
 1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.1/Style-Bert-VITS2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
-  - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。
+  - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。CPU版では学習はできませんが、音声合成とマージは可能です。
 2. 待つと自動で必要な環境がインストールされます。
 3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
