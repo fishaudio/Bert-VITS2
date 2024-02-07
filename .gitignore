@@ -25,3 +25,5 @@ venv/
 *.csv
 *.bak
 /mos_results/
+
+safetensors.ipynb
