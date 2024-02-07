@@ -8,9 +8,9 @@ https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-420
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
 - [🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-JVNV)
 
-- [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/tag/2.0)、[更新履歴](docs/CHANGELOG.md)
+- [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](docs/CHANGELOG.md)
 
-  - 2024-02-05: ver 2.0.1
+  - 2024-02-07: ver 2.1
   - 2024-02-03: ver 2.0
   - 2024-01-09: ver 1.3
   - 2023-12-31: ver 1.2
@@ -25,7 +25,7 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 - GitやPythonがない人でも（Windowsユーザーなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。またGoogle Colabでの学習もサポートしています: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
 - 音声合成のみに使う場合は、グラボがなくてもCPUで動作します。
 - 他との連携に使えるAPIサーバーも同梱しています ([@darai0512](https://github.com/darai0512) 様によるPRです、ありがとうございます)。
-- 元々が「楽しそうな文章は楽しそうに、悲しそうな文章は悲しそうに」読むのがBert-VITS2の強みですので、このフォークで付加されたスタイル指定を無理に使わずとも感情豊かな音声を生成することができます。
+- 元々「楽しそうな文章は楽しそうに、悲しそうな文章は悲しそうに」読むのがBert-VITS2の強みですので、スタイル指定がデフォルトでも感情豊かな音声を生成することができます。
 
 
 ## 使い方
@@ -141,7 +141,7 @@ python speech_mos.py -m <model_name>
 
 - [EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2)のように、PythonやGitを知らない人でも簡単に使える。
 - 感情埋め込みのモデルを変更（256次元の[wespeaker-voxceleb-resnet34-LM](https://huggingface.co/pyannote/wespeaker-voxceleb-resnet34-LM)へ、感情埋め込みというよりは話者識別のための埋め込み）
-- 埋め込みもベクトル量子化を取り払い、単なる全結合層に。
+- 感情埋め込みもベクトル量子化を取り払い、単なる全結合層に。
 - スタイルベクトルファイル`style_vectors.npy`を作ることで、そのスタイルを使って効果の強さも連続的に指定しつつ音声を生成することができる。
 - 各種WebUIを作成
 - bf16での学習のサポート
@@ -149,15 +149,12 @@ python speech_mos.py -m <model_name>
 - その他軽微なbugfixやリファクタリング
 
 ## TODO
-- [ ] デフォルトのJVNVモデルにJP-Extra版のものを追加
+- [x] デフォルトのJVNVモデルにJP-Extra版のものを追加
 - [x] LinuxやWSL等、Windowsの通常環境以外でのサポート ← おそらく問題ないとの報告あり
 - [x] 複数話者学習での音声合成対応（学習は現在でも可能）
-- [ ] 本家のver 2.1, 2.2, 2.3モデルの推論対応？（ver 2.1以外は明らかにめんどいのでたぶんやらない）
 - [x] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
 - [x] モデルのマージで声音と感情表現を混ぜる機能の実装
 - [ ] 英語等多言語対応？
-- [ ] ONNX対応
-
 
 ## References
 In addition to the original reference (written below), I used the following repositories:

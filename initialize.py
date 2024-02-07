@@ -90,17 +90,18 @@ def download_jvnv_models():
             )
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--skip_jvnv", action="store_true")
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skip_jvnv", action="store_true")
+    args = parser.parse_args()
 
-download_bert_models()
+    download_bert_models()
 
-download_slm_model()
+    download_slm_model()
 
-download_pretrained_models()
+    download_pretrained_models()
 
-download_jp_extra_pretrained_models()
+    download_jp_extra_pretrained_models()
 
-if not args.skip_jvnv:
-    download_jvnv_models()
+    if not args.skip_jvnv:
+        download_jvnv_models()

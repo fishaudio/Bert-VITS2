@@ -19,6 +19,7 @@ from common.constants import (
     DEFAULT_SPLIT_INTERVAL,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
+    LATEST_VERSION,
     Languages,
 )
 from common.log import logger
@@ -36,6 +37,8 @@ languages = [l.value for l in Languages]
 
 
 def tts_fn(
+    model_name,
+    model_path,
     text,
     language,
     reference_audio_path,
@@ -54,7 +57,7 @@ def tts_fn(
     use_tone,
     speaker,
 ):
-    assert model_holder.current_model is not None
+    model_holder.load_model_gr(model_name, model_path)
 
     wrong_tone_message = ""
     kata_tone: Optional[list[tuple[str, int]]] = None
@@ -190,8 +193,8 @@ examples = [
     ],
 ]
 
-initial_md = """
-# Style-Bert-VITS2 ver 2.0 音声合成
+initial_md = f"""
+# Style-Bert-VITS2 ver {LATEST_VERSION} 音声合成
 
 注意: 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
 """
@@ -418,6 +421,8 @@ if __name__ == "__main__":
         tts_button.click(
             tts_fn,
             inputs=[
+                model_name,
+                model_path,
                 text_input,
                 language,
                 ref_audio_path,
