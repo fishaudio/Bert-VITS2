@@ -36,6 +36,8 @@ languages = [l.value for l in Languages]
 
 
 def tts_fn(
+    model_name,
+    model_path,
     text,
     language,
     reference_audio_path,
@@ -54,7 +56,7 @@ def tts_fn(
     use_tone,
     speaker,
 ):
-    assert model_holder.current_model is not None
+    model_holder.load_model_gr(model_name, model_path)
 
     wrong_tone_message = ""
     kata_tone: Optional[list[tuple[str, int]]] = None
@@ -418,6 +420,8 @@ if __name__ == "__main__":
         tts_button.click(
             tts_fn,
             inputs=[
+                model_name,
+                model_path,
                 text_input,
                 language,
                 ref_audio_path,

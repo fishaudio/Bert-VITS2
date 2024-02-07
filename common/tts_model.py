@@ -209,6 +209,18 @@ class ModelHolder:
             raise ValueError(f"Model `{model_name}` is not found")
         if model_path not in self.model_files_dict[model_name]:
             raise ValueError(f"Model file `{model_path}` is not found")
+        if (
+            self.current_model is not None
+            and self.current_model.model_path == model_path
+        ):
+            # Already loaded
+            speakers = list(self.current_model.spk2id.keys())
+            styles = list(self.current_model.style2id.keys())
+            return (
+                gr.Dropdown(choices=styles, value=styles[0]),
+                gr.Button(interactive=True, value="音声合成"),
+                gr.Dropdown(choices=speakers, value=speakers[0]),
+            )
         self.current_model = Model(
             model_path=model_path,
             config_path=os.path.join(self.root_dir, model_name, "config.json"),
