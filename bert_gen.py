@@ -1,5 +1,5 @@
 import argparse
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 
 import torch
 import torch.multiprocessing as mp
@@ -73,13 +73,13 @@ if __name__ == "__main__":
 
     if len(lines) != 0:
         num_processes = args.num_processes
-        with Pool(processes=num_processes) as pool:
-            for _ in tqdm(
-                pool.imap_unordered(process_line, zip(lines, add_blank)),
-                total=len(lines),
-                file=SAFE_STDOUT,
-            ):
-                # 这里是缩进的代码块，表示循环体
-                pass  # 使用pass语句作为占位符
+        with ThreadPoolExecutor(max_workers=num_processes) as executor:
+            _ = list(
+                tqdm(
+                    executor.map(process_line, zip(lines, add_blank)),
+                    total=len(lines),
+                    file=SAFE_STDOUT,
+                )
+            )
 
     logger.info(f"bert.pt is generated! total: {len(lines)} bert.pt files.")

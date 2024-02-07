@@ -1,6 +1,6 @@
 import argparse
 import os
-from multiprocessing import Pool, cpu_count
+from concurrent.futures import ThreadPoolExecutor
 
 import librosa
 import pyloudnorm as pyln
@@ -110,13 +110,22 @@ if __name__ == "__main__":
         logger.error(f"No wav files found in {args.in_dir}")
         raise ValueError(f"No wav files found in {args.in_dir}")
 
-    pool = Pool(processes=processes)
-    for _ in tqdm(
-        pool.imap_unordered(process, tasks), file=SAFE_STDOUT, total=len(tasks)
-    ):
-        pass
+    # pool = Pool(processes=processes)
+    # for _ in tqdm(
+    #     pool.imap_unordered(process, tasks), file=SAFE_STDOUT, total=len(tasks)
+    # ):
+    #     pass
 
-    pool.close()
-    pool.join()
+    # pool.close()
+    # pool.join()
+
+    with ThreadPoolExecutor(max_workers=processes) as executor:
+        _ = list(
+            tqdm(
+                executor.map(process, tasks),
+                total=len(tasks),
+                file=SAFE_STDOUT,
+            )
+        )
 
     logger.info("Resampling Done!")
