@@ -187,8 +187,9 @@ def run():
     collate_fn = TextAudioSpeakerCollate()
     train_loader = DataLoader(
         train_dataset,
-        # メモリ消費量を減らそうとnum_workersを0にしてみる
+        # メモリ消費量を減らそうとnum_workersを1にしてみる
         # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+        num_workers=1,
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
