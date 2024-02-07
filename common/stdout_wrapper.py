@@ -1,3 +1,7 @@
+"""
+`sys.stdout` wrapper for both Google Colab and local environment.
+"""
+
 import sys
 import tempfile
 
