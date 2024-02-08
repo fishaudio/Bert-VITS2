@@ -350,7 +350,8 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
             （カタカナからなり、長音記号も含みうる、`アー` 等）
         - `word`が`ー` から始まる → `ーラー` や `ーーー` など
         - `word`が句読点や空白等 → `、`
-        - `word`が`?` → `？`（全角になる）
+        - `word`がpunctuationの繰り返し → 全角にしたもの
+        基本的にpunctuationは1文字ずつ分かれるが、何故かある程度連続すると1つにまとまる。
         他にも`word`が読めないキリル文字アラビア文字等が来ると`、`になるが、正規化でこの場合は起きないはず。
         また元のコードでは`yomi`が空白の場合の処理があったが、これは起きないはず。
         処理すべきは`yomi`が`、`の場合のみのはず。
@@ -358,14 +359,7 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
         assert yomi != "", f"Empty yomi: {word}"
         if yomi == "、":
             # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`, `--` のいずれか
-            if word not in (
-                ".",
-                ",",
-                "!",
-                "'",
-                "-",
-                "--",
-            ):
+            if not set(word).issubset(set(punctuation)):  # 記号繰り返しか判定
                 # ここはpyopenjtalkが読めない文字等のときに起こる
                 raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
             # yomiは元の記号のままに変更
@@ -570,17 +564,16 @@ def kata2phoneme_list(text: str) -> list[str]:
     """
     原則カタカナの`text`を受け取り、それをそのままいじらずに音素記号のリストに変換。
     注意点：
-    - punctuationが来た場合（punctuationが1文字の場合がありうる）、処理せず1文字のリストを返す
+    - punctuationかその繰り返しが来た場合、punctuationたちをそのままリストにして返す。
     - 冒頭に続く「ー」はそのまま「ー」のままにする（`handle_long()`で処理される）
     - 文中の「ー」は前の音素記号の最後の音素記号に変換される。
     例：
     `ーーソーナノカーー` → ["ー", "ー", "s", "o", "o", "n", "a", "n", "o", "k", "a", "a", "a"]
     `?` → ["?"]
+    `!?!?!?!?!` → ["!", "?", "!", "?", "!", "?", "!", "?", "!"]
     """
-    if text in punctuation:
-        return [text]
-    elif text == "--":
-        return ["-", "-"]
+    if set(text).issubset(set(punctuation)):
+        return list(text)
     # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
     if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
         raise ValueError(f"Input must be katakana only: {text}")
