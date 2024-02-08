@@ -43,7 +43,6 @@ def initialize(
     batch_size,
     epochs,
     save_every_steps,
-    bf16_run,
     freeze_EN_bert,
     freeze_JP_bert,
     freeze_ZH_bert,
@@ -61,7 +60,7 @@ def initialize(
     logger_handler = logger.add(os.path.join(dataset_path, file_name))
 
     logger.info(
-        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, bf16_run: {bf16_run}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, use_jp_extra: {use_jp_extra}"
+        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, use_jp_extra: {use_jp_extra}"
     )
 
     default_config_path = (
@@ -75,7 +74,6 @@ def initialize(
     config["data"]["validation_files"] = val_path
     config["train"]["batch_size"] = batch_size
     config["train"]["epochs"] = epochs
-    config["train"]["bf16_run"] = bf16_run
     config["train"]["eval_interval"] = save_every_steps
 
     config["train"]["freeze_EN_bert"] = freeze_EN_bert
@@ -251,7 +249,6 @@ def preprocess_all(
     batch_size,
     epochs,
     save_every_steps,
-    bf16_run,
     num_processes,
     normalize,
     trim,
@@ -268,7 +265,6 @@ def preprocess_all(
         batch_size,
         epochs,
         save_every_steps,
-        bf16_run,
         freeze_EN_bert,
         freeze_JP_bert,
         freeze_ZH_bert,
@@ -460,11 +456,6 @@ if __name__ == "__main__":
                     value=False,
                 )
                 with gr.Accordion("詳細設定", open=False):
-                    bf16_run = gr.Checkbox(
-                        label="bfloat16を使う",
-                        info="bfloat16を使うかどうか。オンにすると学習が発散する可能性がありますが、メモリ使用量が減る可能性があります。",
-                        value=False,
-                    )
                     num_processes = gr.Slider(
                         label="プロセス数",
                         info="前処理時の並列処理プロセス数、前処理でフリーズしたら下げてください",
@@ -524,10 +515,6 @@ if __name__ == "__main__":
                         minimum=100,
                         maximum=10000,
                         step=100,
-                    )
-                    bf16_run_manual = gr.Checkbox(
-                        label="bfloat16を使う",
-                        value=False,
                     )
                     freeze_EN_bert_manual = gr.Checkbox(
                         label="英語bert部分を凍結",
@@ -621,7 +608,6 @@ if __name__ == "__main__":
                 batch_size,
                 epochs,
                 save_every_steps,
-                bf16_run,
                 num_processes,
                 normalize,
                 trim,
@@ -642,7 +628,6 @@ if __name__ == "__main__":
                 batch_size_manual,
                 epochs_manual,
                 save_every_steps_manual,
-                bf16_run_manual,
                 freeze_EN_bert_manual,
                 freeze_JP_bert_manual,
                 freeze_ZH_bert_manual,
