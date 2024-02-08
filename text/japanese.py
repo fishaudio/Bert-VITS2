@@ -59,8 +59,22 @@ rep_map = {
     "】": "'",
     "[": "'",
     "]": "'",
-    "—": "-",
-    "−": "-",
+    # NFKC正規化後のハイフン・ダッシュの変種を全て通常半角ハイフン - \u002d に変換
+    "\u02d7": "\u002d",  # ˗, Modifier Letter Minus Sign
+    "\u2010": "\u002d",  # ‐, Hyphen,
+    # "\u2011": "\u002d",  # ‑, Non-Breaking Hyphen, NFKCにより\u2010に変換される
+    "\u2012": "\u002d",  # ‒, Figure Dash
+    "\u2013": "\u002d",  # –, En Dash
+    "\u2014": "\u002d",  # —, Em Dash
+    "\u2015": "\u002d",  # ―, Horizontal Bar
+    "\u2043": "\u002d",  # ⁃, Hyphen Bullet
+    "\u2212": "\u002d",  # −, Minus Sign
+    "\u23af": "\u002d",  # ⎯, Horizontal Line Extension
+    "\u23e4": "\u002d",  # ⏤, Straightness
+    "\u2500": "\u002d",  # ─, Box Drawings Light Horizontal
+    "\u2501": "\u002d",  # ━, Box Drawings Heavy Horizontal
+    "\u2e3a": "\u002d",  # ⸺, Two-Em Dash
+    "\u2e3b": "\u002d",  # ⸻, Three-Em Dash
     # "～": "-",  # これは長音記号「ー」として扱うよう変更
     # "~": "-",  # これも長音記号「ー」として扱うよう変更
     "「": "'",
@@ -589,12 +603,16 @@ def kata2phoneme_list(text: str) -> list[str]:
 
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("./bert/deberta-v2-large-japanese")
-    text = "hello,こんにちは、世界ー！……"
+    tokenizer = AutoTokenizer.from_pretrained(
+        "./bert/deberta-v2-large-japanese-char-wwm"
+    )
+    text = "こんにちは、世界。"
+    print("Original:")
+    print("NFKC:")
+    text = unicodedata.normalize("NFKC", text)
     from text.japanese_bert import get_bert_feature
 
     text = text_normalize(text)
-    print(text)
 
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)
