@@ -640,7 +640,7 @@ if __name__ == "__main__":
             train_btn = gr.Button(value="学習を開始する", variant="primary")
             tensorboard_btn = gr.Button(value="Tensorboardを開く")
         gr.Markdown(
-            "進捗はターミナルで確認してください。随時結果は指定したステップごとに保存されており、また学習を途中から再開もできます。学習を終了するには単にターミナルを終了してください。"
+            "進捗はターミナルで確認してください。結果は指定したステップごとに随時保存されており、また学習を途中から再開することもできます。学習を終了するには単にターミナルを終了してください。"
         )
         info_train = gr.Textbox(label="状況")
 
