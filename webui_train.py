@@ -176,7 +176,7 @@ def preprocess_text(model_name, use_jp_extra, val_per_lang):
         "--val-path",
         val_path,
         "--val-per-lang",
-        val_per_lang,
+        str(val_per_lang),
     ]
     if use_jp_extra:
         cmd.append("--use_jp_extra")
