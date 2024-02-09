@@ -600,9 +600,6 @@ if __name__ == "__main__":
         "./bert/deberta-v2-large-japanese-char-wwm"
     )
     text = "こんにちは、世界。"
-    print("Original:")
-    print("NFKC:")
-    text = unicodedata.normalize("NFKC", text)
     from text.japanese_bert import get_bert_feature
 
     text = text_normalize(text)

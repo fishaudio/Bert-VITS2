@@ -16,7 +16,7 @@ preprocess_text:
   train_path: "train.list"
   val_path: "val.list"
   config_path: "config.json"
-  val_per_lang: 4
+  val_per_lang: 0
   max_val_total: 12
   clean: true
 

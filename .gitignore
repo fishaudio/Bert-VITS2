@@ -27,3 +27,4 @@ venv/
 /mos_results/
 
 safetensors.ipynb
+*.wav

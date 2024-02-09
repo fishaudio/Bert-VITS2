@@ -48,6 +48,7 @@ def initialize(
     freeze_ZH_bert,
     freeze_style,
     use_jp_extra,
+    log_interval,
 ):
     global logger_handler
     dataset_path, _, train_path, val_path, config_path = get_path(model_name)
@@ -75,11 +76,14 @@ def initialize(
     config["train"]["batch_size"] = batch_size
     config["train"]["epochs"] = epochs
     config["train"]["eval_interval"] = save_every_steps
+    config["train"]["log_interval"] = log_interval
 
     config["train"]["freeze_EN_bert"] = freeze_EN_bert
     config["train"]["freeze_JP_bert"] = freeze_JP_bert
     config["train"]["freeze_ZH_bert"] = freeze_ZH_bert
     config["train"]["freeze_style"] = freeze_style
+
+    config["train"]["bf16_run"] = False  # デフォルトでFalseのはずだが念のため
 
     model_path = os.path.join(dataset_path, "models")
     if os.path.exists(model_path):
@@ -146,7 +150,7 @@ def resample(model_name, normalize, trim, num_processes):
     return True, "Step 2, Success: 音声ファイルの前処理が完了しました"
 
 
-def preprocess_text(model_name, use_jp_extra):
+def preprocess_text(model_name, use_jp_extra, val_per_lang):
     logger.info("Step 3: start preprocessing text...")
     dataset_path, lbl_path, train_path, val_path, config_path = get_path(model_name)
     try:
@@ -171,6 +175,8 @@ def preprocess_text(model_name, use_jp_extra):
         train_path,
         "--val-path",
         val_path,
+        "--val-per-lang",
+        val_per_lang,
     ]
     if use_jp_extra:
         cmd.append("--use_jp_extra")
@@ -257,6 +263,8 @@ def preprocess_all(
     freeze_ZH_bert,
     freeze_style,
     use_jp_extra,
+    val_per_lang,
+    log_interval,
 ):
     if model_name == "":
         return False, "Error: モデル名を入力してください"
@@ -270,13 +278,14 @@ def preprocess_all(
         freeze_ZH_bert,
         freeze_style,
         use_jp_extra,
+        log_interval,
     )
     if not success:
         return False, message
     success, message = resample(model_name, normalize, trim, num_processes)
     if not success:
         return False, message
-    success, message = preprocess_text(model_name, use_jp_extra)
+    success, message = preprocess_text(model_name, use_jp_extra, val_per_lang)
     if not success:
         return False, message
     success, message = bert_gen(model_name)  # bert_genは重いのでプロセス数いじらない
@@ -372,7 +381,7 @@ initial_md = f"""
 
 - 途中から学習を再開する場合は、モデル名を入力してから「学習を開始する」を押せばよいです。
 
-注意: 音声合成で使うには、スタイルベクトルファイル`style_vectors.npy`を作る必要があります。これは、`Style.bat`を実行してそこで作成してください。
+注意: 標準スタイル以外のスタイルを音声合成で使うには、スタイルベクトルファイル`style_vectors.npy`を作る必要があります。これは、`Style.bat`を実行してそこで作成してください。
 動作は軽いはずなので、学習中でも実行でき、何度でも繰り返して試せます。
 
 ## JP-Extra版について
@@ -464,6 +473,19 @@ if __name__ == "__main__":
                         maximum=cpu_count(),
                         step=1,
                     )
+                    val_per_lang = gr.Textbox(
+                        label="検証データ数",
+                        info="学習には使われず、tensorboard等で確認するためのもの",
+                        value="0",
+                    )
+                    log_interval = gr.Slider(
+                        label="Tensorboardのログ出力間隔",
+                        info="Tensorboardで詳しく見たい人は小さめにしてください",
+                        value=200,
+                        minimum=10,
+                        maximum=1000,
+                        step=10,
+                    )
                     gr.Markdown("学習時に特定の部分を凍結させるかどうか")
                     freeze_EN_bert = gr.Checkbox(
                         label="英語bert部分を凍結",
@@ -516,6 +538,13 @@ if __name__ == "__main__":
                         maximum=10000,
                         step=100,
                     )
+                    log_interval_manual = gr.Slider(
+                        label="Tensorboardのログ出力間隔",
+                        value=200,
+                        minimum=10,
+                        maximum=1000,
+                        step=10,
+                    )
                     freeze_EN_bert_manual = gr.Checkbox(
                         label="英語bert部分を凍結",
                         value=False,
@@ -559,6 +588,10 @@ if __name__ == "__main__":
             with gr.Row(variant="panel"):
                 with gr.Column():
                     gr.Markdown(value="#### Step 3: 書き起こしファイルの前処理")
+                    val_per_lang_manual = gr.Textbox(
+                        label="検証データ数",
+                        value="0",
+                    )
                 with gr.Column():
                     preprocess_text_btn = gr.Button(value="実行", variant="primary")
                     info_preprocess_text = gr.Textbox(label="状況")
@@ -599,6 +632,9 @@ if __name__ == "__main__":
             )
             train_btn = gr.Button(value="学習を開始する", variant="primary")
             tensorboard_btn = gr.Button(value="Tensorboardを開く")
+        gr.Markdown(
+            "進捗はターミナルで確認してください。随時結果は指定したステップごとに保存されており、また学習を途中から再開もできます。学習を終了するには単にターミナルを終了してください。"
+        )
         info_train = gr.Textbox(label="状況")
 
         preprocess_button.click(
@@ -616,6 +652,8 @@ if __name__ == "__main__":
                 freeze_ZH_bert,
                 freeze_style,
                 use_jp_extra,
+                val_per_lang,
+                log_interval,
             ],
             outputs=[info_all],
         )
@@ -633,6 +671,7 @@ if __name__ == "__main__":
                 freeze_ZH_bert_manual,
                 freeze_style_manual,
                 use_jp_extra_manual,
+                log_interval_manual,
             ],
             outputs=[info_init],
         )
@@ -648,7 +687,7 @@ if __name__ == "__main__":
         )
         preprocess_text_btn.click(
             second_elem_of(preprocess_text),
-            inputs=[model_name, use_jp_extra_manual],
+            inputs=[model_name, use_jp_extra_manual, val_per_lang_manual],
             outputs=[info_preprocess_text],
         )
         bert_gen_btn.click(

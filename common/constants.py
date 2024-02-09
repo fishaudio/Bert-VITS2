@@ -1,6 +1,6 @@
 import enum
 
-LATEST_VERSION: str = "2.1"
+LATEST_VERSION: str = "2.1.1"
 DEFAULT_STYLE: str = "Neutral"
 DEFAULT_STYLE_WEIGHT: float = 5.0
 
