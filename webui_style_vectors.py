@@ -12,7 +12,7 @@ from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
 from umap import UMAP
 
-from common.constants import DEFAULT_STYLE
+from common.constants import DEFAULT_STYLE, GRADIO_THEME
 from common.log import logger
 from config import config
 
@@ -209,9 +209,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
     style_names = [name.strip() for name in style_names_str.split(",")]
     style_name_list = [DEFAULT_STYLE] + style_names
     if len(style_name_list) != len(centroids) + 1:
-        return (
-            f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names_str}"
-        )
+        return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names_str}"
     if len(set(style_names)) != len(style_names):
         return f"スタイル名が重複しています。"
 
@@ -325,7 +323,7 @@ UMAPの場合はepsは0.3くらい、t-SNEの場合は2.5くらいがいいか�
 https://ja.wikipedia.org/wiki/DBSCAN
 """
 
-with gr.Blocks(theme="NoCrypt/miku") as app:
+with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(initial_md)
     with gr.Row():
         model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
@@ -380,7 +378,9 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
                 dbscan_button = gr.Button("スタイル分けを実行")
                 num_styles_result = gr.Textbox(label="スタイル数")
         gr.Markdown("スタイル分けの結果")
-        gr.Markdown("注意: もともと256次元なものをを2次元に落としているので、正確なベクトルの位置関係ではありません。")
+        gr.Markdown(
+            "注意: もともと256次元なものをを2次元に落としているので、正確なベクトルの位置関係ではありません。"
+        )
         with gr.Row():
             gr_plot = gr.Plot()
             with gr.Column():
@@ -436,7 +436,9 @@ with gr.Blocks(theme="NoCrypt/miku") as app:
             outputs=[info2],
         )
     with gr.Tab("方法2: 手動でスタイルを選ぶ"):
-        gr.Markdown("下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。")
+        gr.Markdown(
+            "下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。"
+        )
         gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
         gr.Markdown(
             f"注意: {DEFAULT_STYLE}スタイルは自動的に保存されます、手動では{DEFAULT_STYLE}という名前のスタイルは指定しないでください。"

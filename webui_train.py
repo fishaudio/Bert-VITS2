@@ -2,8 +2,8 @@ import argparse
 import json
 import os
 import shutil
-import subprocess
 import socket
+import subprocess
 import sys
 import time
 import webbrowser
@@ -13,7 +13,7 @@ from multiprocessing import cpu_count
 import gradio as gr
 import yaml
 
-from common.constants import LATEST_VERSION
+from common.constants import GRADIO_THEME, LATEST_VERSION
 from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
 from common.subprocess_utils import run_script_with_log, second_elem_of
@@ -421,7 +421,7 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 """
 
 if __name__ == "__main__":
-    with gr.Blocks(theme="NoCrypt/miku").queue() as app:
+    with gr.Blocks(theme=GRADIO_THEME).queue() as app:
         gr.Markdown(initial_md)
         with gr.Accordion(label="データの前準備", open=False):
             gr.Markdown(prepare_md)
@@ -435,7 +435,7 @@ if __name__ == "__main__":
                 )
                 batch_size = gr.Slider(
                     label="バッチサイズ",
-                    info="速度が異様に遅い場合は小さく、VRAMに余裕があれば大きくしてください。使用量目安: 1: 6GB, 2: 8GB, 3: 10GB, 4: 12GB",
+                    info="学習速度が遅い場合は小さくして試し、VRAMに余裕があれば大きくしてください。JP-Extra版でのVRAM使用量目安: 1: 6GB, 2: 8GB, 3: 10GB, 4: 12GB",
                     value=2,
                     minimum=1,
                     maximum=64,
@@ -516,7 +516,7 @@ if __name__ == "__main__":
                     gr.Markdown(value="#### Step 1: 設定ファイルの生成")
                     use_jp_extra_manual = gr.Checkbox(
                         label="JP-Extra版を使う",
-                        value=False,
+                        value=True,
                     )
                     batch_size_manual = gr.Slider(
                         label="バッチサイズ",

@@ -4,6 +4,7 @@ import os
 import gradio as gr
 import yaml
 
+from common.constants import GRADIO_THEME
 from common.log import logger
 from common.subprocess_utils import run_script_with_log
 
@@ -115,7 +116,7 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 - 手動で書き起こしをいろいろ修正したり結果を細かく確認したい場合は、[Aivis Dataset](https://github.com/litagin02/Aivis-Dataset)もおすすめします。書き起こし部分もかなり工夫されています。ですがファイル数が多い場合などは、このツールで簡易的に切り出してデータセットを作るだけでも十分という気もしています。
 """
 
-with gr.Blocks(theme="NoCrypt/miku") as app:
+with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(initial_md)
     model_name = gr.Textbox(
         label="モデル名を入力してください（話者名としても使われます）。"

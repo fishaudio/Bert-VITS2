@@ -10,7 +10,7 @@ import yaml
 from safetensors import safe_open
 from safetensors.torch import save_file
 
-from common.constants import DEFAULT_STYLE
+from common.constants import DEFAULT_STYLE, GRADIO_THEME
 from common.log import logger
 from common.tts_model import Model, ModelHolder
 
@@ -171,6 +171,8 @@ def merge_models_gr(
     speech_style_weight,
     tempo_weight,
 ):
+    if output_name == "":
+        return "Error: 新しいモデル名を入力してください。"
     merged_model_path = merge_models(
         model_path_a,
         model_path_b,
@@ -190,6 +192,8 @@ def merge_style_gr(
     output_name,
     style_triple_list_str: str,
 ):
+    if output_name == "":
+        return "Error: 新しいモデル名を入力してください。", None
     style_triple_list = []
     for line in style_triple_list_str.split("\n"):
         if not line:
@@ -295,7 +299,7 @@ if len(model_names) == 0:
 initial_id = 0
 initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
 
-with gr.Blocks(theme="NoCrypt/miku") as app:
+with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(initial_md)
     with gr.Accordion(label="使い方", open=False):
         gr.Markdown(initial_md)

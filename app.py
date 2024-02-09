@@ -19,6 +19,7 @@ from common.constants import (
     DEFAULT_SPLIT_INTERVAL,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
+    GRADIO_THEME,
     LATEST_VERSION,
     Languages,
 )
@@ -284,7 +285,7 @@ if __name__ == "__main__":
     initial_id = 0
     initial_pth_files = model_holder.model_files_dict[model_names[initial_id]]
 
-    with gr.Blocks(theme="NoCrypt/miku") as app:
+    with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(how_to_md)
