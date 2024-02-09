@@ -11,6 +11,7 @@ https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-420
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](docs/CHANGELOG.md)
 
+  - 2024-02-09: ver 2.2
   - 2024-02-07: ver 2.1
   - 2024-02-03: ver 2.0
   - 2024-01-09: ver 1.3
@@ -43,13 +44,13 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 
 Windowsを前提としています。
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.1/Style-Bert-VITS2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.2/Style-Bert-VITS2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。CPU版では学習はできませんが、音声合成とマージは可能です。
 2. 待つと自動で必要な環境がインストールされます。
 3. その後、自動的に音声合成するためのWebUIが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
-またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。ただし**1.x**から**2.x**へアップデートする場合は、[このbatファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.1/Update-to-JP-Extra.bat)を`Style-Bert-VITS2`フォルダがあるフォルダ（`Update-Style-Bert-VITS2.bat`等があるフォルダ）へ保存してからダブルクリックしてください。
+またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。ただし**1.x**から**2.x**へアップデートする場合は、[このbatファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.2/Update-to-JP-Extra.bat)を`Style-Bert-VITS2`フォルダがあるフォルダ（`Update-Style-Bert-VITS2.bat`等があるフォルダ）へ保存してからダブルクリックしてください。
 
 #### GitやPython使える人
 
