@@ -17,7 +17,7 @@
     "c_mel": 45,
     "c_kl": 1.0,
     "c_commit": 100,
-    "skip_optimizer": true,
+    "skip_optimizer": false,
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
     "freeze_EN_bert": false,
