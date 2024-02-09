@@ -717,9 +717,11 @@ def train_and_evaluate(
                 )
                 scaler.step(optim_dur_disc)
             if net_wd is not None:
+                # logger.debug(f"y.shape: {y.shape}, y_hat.shape: {y_hat.shape}")
+                # shape: (batch, 1, time)
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     loss_slm = wl.discriminator(
-                        y.detach().squeeze(), y_hat.detach().squeeze()
+                        y.detach().squeeze(1), y_hat.detach().squeeze(1)
                     ).mean()
 
                 optim_wd.zero_grad()
@@ -743,8 +745,8 @@ def train_and_evaluate(
             if net_dur_disc is not None:
                 _, y_dur_hat_g = net_dur_disc(hidden_x, x_mask, logw_, logw, g)
             if net_wd is not None:
-                loss_lm = wl(y.detach().squeeze(), y_hat.squeeze()).mean()
-                loss_lm_gen = wl.generator(y_hat.squeeze())
+                loss_lm = wl(y.detach().squeeze(1), y_hat.squeeze(1)).mean()
+                loss_lm_gen = wl.generator(y_hat.squeeze(1))
             with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
