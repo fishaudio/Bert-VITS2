@@ -435,7 +435,8 @@ if __name__ == "__main__":
                 )
                 batch_size = gr.Slider(
                     label="バッチサイズ",
-                    value=4,
+                    info="速度が異様に遅い場合は小さく、VRAMに余裕があれば大きくしてください",
+                    value=2,
                     minimum=1,
                     maximum=64,
                     step=1,
@@ -519,7 +520,7 @@ if __name__ == "__main__":
                     )
                     batch_size_manual = gr.Slider(
                         label="バッチサイズ",
-                        value=4,
+                        value=2,
                         minimum=1,
                         maximum=64,
                         step=1,

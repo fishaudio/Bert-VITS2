@@ -7,7 +7,7 @@
     "learning_rate": 0.0001,
     "betas": [0.8, 0.99],
     "eps": 1e-9,
-    "batch_size": 24,
+    "batch_size": 2,
     "bf16_run": false,
     "fp16_run": false,
     "lr_decay": 0.99996,
@@ -74,5 +74,5 @@
       "initial_channel": 64
     }
   },
-  "version": "2.1.1-JP-Extra"
+  "version": "2.2-JP-Extra"
 }

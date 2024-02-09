@@ -8,7 +8,7 @@
     "learning_rate": 0.0002,
     "betas": [0.8, 0.99],
     "eps": 1e-9,
-    "batch_size": 4,
+    "batch_size": 2,
     "bf16_run": false,
     "lr_decay": 0.99995,
     "segment_size": 16384,
@@ -67,5 +67,5 @@
     "use_spectral_norm": false,
     "gin_channels": 256
   },
-  "version": "2.1.1"
+  "version": "2.2"
 }
