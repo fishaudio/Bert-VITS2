@@ -474,10 +474,13 @@ if __name__ == "__main__":
                         maximum=cpu_count(),
                         step=1,
                     )
-                    val_per_lang = gr.Textbox(
+                    val_per_lang = gr.Slider(
                         label="検証データ数",
-                        info="学習には使われず、tensorboard等で確認するためのもの",
-                        value="0",
+                        info="学習には使われず、tensorboardで元音声と合成音声を比較するためのもの",
+                        value=0,
+                        minimum=0,
+                        maximum=100,
+                        step=1,
                     )
                     log_interval = gr.Slider(
                         label="Tensorboardのログ出力間隔",
@@ -589,9 +592,12 @@ if __name__ == "__main__":
             with gr.Row(variant="panel"):
                 with gr.Column():
                     gr.Markdown(value="#### Step 3: 書き起こしファイルの前処理")
-                    val_per_lang_manual = gr.Textbox(
+                    val_per_lang_manual = gr.Slider(
                         label="検証データ数",
-                        value="0",
+                        value=0,
+                        minimum=0,
+                        maximum=100,
+                        step=1,
                     )
                 with gr.Column():
                     preprocess_text_btn = gr.Button(value="実行", variant="primary")
