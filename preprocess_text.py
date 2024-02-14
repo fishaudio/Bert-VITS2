@@ -15,6 +15,12 @@ from common.log import logger
 preprocess_text_config = config.preprocess_text_config
 
 
+# Count lines for tqdm
+def count_lines(file_path):
+    with file_path.open("r", encoding="utf-8") as file:
+        return sum(1 for _ in file)
+
+
 @click.command()
 @click.option(
     "--transcription-path",
@@ -34,6 +40,7 @@ preprocess_text_config = config.preprocess_text_config
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
 @click.option("--use_jp_extra", is_flag=True)
+@click.option("--skip_invalid", is_flag=True)
 def preprocess(
     transcription_path: str,
     cleaned_path: Optional[str],
@@ -45,14 +52,16 @@ def preprocess(
     clean: bool,
     yml_config: str,  # 这个不要删
     use_jp_extra: bool,
+    skip_invalid: bool = False,
 ):
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
     if clean:
+        total_lines = count_lines(transcription_path)
         with open(cleaned_path, "w", encoding="utf-8") as out_file:
             with open(transcription_path, "r", encoding="utf-8") as trans_file:
-                for line in tqdm(trans_file, file=SAFE_STDOUT):
+                for line in tqdm(trans_file, file=SAFE_STDOUT, total=total_lines):
                     try:
                         utt, spk, language, text = line.strip().split("|")
                         norm_text, phones, tones, word2ph = clean_text(
@@ -70,10 +79,18 @@ def preprocess(
                             )
                         )
                     except Exception as e:
-                        logger.error(
-                            f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
-                        )
-                        raise
+                        if skip_invalid:
+                            logger.warning(
+                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
+                            )
+                            logger.warning(
+                                "This line will be skipped from the training set and validation set."
+                            )
+                        else:
+                            logger.error(
+                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
+                            )
+                            raise
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
