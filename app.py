@@ -57,6 +57,8 @@ def tts_fn(
     kata_tone_json_str,
     use_tone,
     speaker,
+    pitch_scale,
+    intonation_scale,
 ):
     model_holder.load_model_gr(model_name, model_path)
 
@@ -111,6 +113,8 @@ def tts_fn(
             style_weight=style_weight,
             given_tone=tone,
             sid=speaker_id,
+            pitch_scale=pitch_scale,
+            intonation_scale=intonation_scale,
         )
     except InvalidToneError as e:
         logger.error(f"Tone error: {e}")
@@ -306,6 +310,20 @@ if __name__ == "__main__":
                     refresh_button = gr.Button("更新", scale=1, visible=True)
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
+                pitch_scale = gr.Slider(
+                    minimum=0,
+                    maximum=2,
+                    value=1,
+                    step=0.1,
+                    label="音程",
+                )
+                intonation_scale = gr.Slider(
+                    minimum=0,
+                    maximum=2,
+                    value=1,
+                    step=0.1,
+                    label="抑揚",
+                )
 
                 line_split = gr.Checkbox(
                     label="改行で分けて生成（分けたほうが感情が乗ります）",
@@ -441,6 +459,8 @@ if __name__ == "__main__":
                 tone,
                 use_tone,
                 speaker,
+                pitch_scale,
+                intonation_scale,
             ],
             outputs=[text_output, audio_output, tone],
         )
