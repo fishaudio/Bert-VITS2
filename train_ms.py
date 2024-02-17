@@ -6,6 +6,7 @@ import platform
 
 import torch
 import torch.distributed as dist
+from huggingface_hub import HfApi
 from torch.cuda.amp import GradScaler, autocast
 from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -44,6 +45,8 @@ torch.backends.cuda.enable_math_sdp(True)
 
 
 global_step = 0
+
+api = HfApi()
 
 
 def run():
@@ -483,6 +486,18 @@ def run():
                 ),
                 for_infer=True,
             )
+            if hps.repo_id is not None:
+                api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=model_dir,
+                    path_in_repo=f"Data/{config.model_name}/models",
+                    delete_patterns="*.pth",
+                )
+                api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=config.out_dir,
+                    path_in_repo=f"model_assets/{config.model_name}",
+                )
 
     if pbar is not None:
         pbar.close()
@@ -765,6 +780,18 @@ def train_and_evaluate(
                     ),
                     for_infer=True,
                 )
+                if hps.repo_id is not None:
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=hps.model_dir,
+                        path_in_repo=f"Data/{config.model_name}/models",
+                        delete_patterns="*.pth",
+                    )
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=config.out_dir,
+                        path_in_repo=f"model_assets/{config.model_name}",
+                    )
 
         global_step += 1
         if pbar is not None:

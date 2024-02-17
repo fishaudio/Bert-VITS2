@@ -574,15 +574,18 @@ def run():
                 ),
                 for_infer=True,
             )
-    if hps.repo_id is not None:
-        api.upload_folder(
-            repo_id=hps.repo_id,
-            folder_path=model_dir,
-        )
-        api.upload_folder(
-            repo_id=hps.repo_id,
-            folder_path=config.out_dir,
-        )
+            if hps.repo_id is not None:
+                api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=model_dir,
+                    path_in_repo=f"Data/{config.model_name}/models",
+                    delete_patterns="*.pth",
+                )
+                api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=config.out_dir,
+                    path_in_repo=f"model_assets/{config.model_name}",
+                )
 
     if pbar is not None:
         pbar.close()
@@ -937,11 +940,14 @@ def train_and_evaluate(
                 if hps.repo_id is not None:
                     api.upload_folder(
                         repo_id=hps.repo_id,
-                        folder_path=model_dir,
+                        folder_path=hps.model_dir,
+                        path_in_repo=f"Data/{config.model_name}/models",
+                        delete_patterns="*.pth",
                     )
                     api.upload_folder(
                         repo_id=hps.repo_id,
                         folder_path=config.out_dir,
+                        path_in_repo=f"model_assets/{config.model_name}",
                     )
 
         global_step += 1
