@@ -19,6 +19,7 @@ pyannote.audio>=3.1.0
 pyloudnorm
 pyopenjtalk-prebuilt
 pypinyin
+pyworld
 PyYAML
 requests
 safetensors

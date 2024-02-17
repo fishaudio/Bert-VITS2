@@ -1,17 +1,18 @@
-import numpy as np
-import gradio as gr
-import torch
 import os
 import warnings
-from gradio.processing_utils import convert_to_16_bit_wav
 from typing import Dict, List, Optional, Union
+
+import gradio as gr
+import numpy as np
+import pyworld
+import torch
+from gradio.processing_utils import convert_to_16_bit_wav
 
 import utils
 from infer import get_net_g, infer
 from models import SynthesizerTrn
 from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 
-from .log import logger
 from .constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -23,6 +24,36 @@ from .constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
 )
+from .log import logger
+from torchfcpe import spawn_bundled_infer_model
+import librosa
+
+
+def adjust_voice(fs, wave, pitch_scale, intonation_scale):
+    if pitch_scale == 1.0 and intonation_scale == 1.0:
+        return fs, wave
+    # pyworldでf0を加工して合成
+    # pyworldよりもよいのがあるかもしれないが……
+
+    wave = wave.astype(np.double)
+    logger.debug(f"wave: shape={wave.shape}, max={max(wave)}, min={min(wave)}")
+    f0, t = pyworld.harvest(wave, fs)
+    # 質が高そうだしとりあえずharvestにしておく
+
+    sp = pyworld.cheaptrick(wave, f0, t, fs)
+    ap = pyworld.d4c(wave, f0, t, fs)
+
+    non_zero_f0 = [f for f in f0 if f != 0]
+    f0_mean = sum(non_zero_f0) / len(non_zero_f0)
+    logger.debug(f"f0: shape={f0.shape}, mean={f0_mean}, max={max(f0)}")
+
+    for i, f in enumerate(f0):
+        if f == 0:
+            continue
+        f0[i] = pitch_scale * f0_mean + intonation_scale * (f - f0_mean)
+
+    wave = pyworld.synthesize(f0, sp, ap, fs)
+    return fs, wave
 
 
 class Model:
@@ -97,6 +128,8 @@ class Model:
         style: str = DEFAULT_STYLE,
         style_weight: float = DEFAULT_STYLE_WEIGHT,
         given_tone: Optional[list[int]] = None,
+        pitch_scale: float = 1.0,
+        intonation_scale: float = 1.0,
     ) -> tuple[int, np.ndarray]:
         logger.info(f"Start generating audio data from text:\n{text}")
         if language != "JP" and self.hps.version.endswith("JP-Extra"):
@@ -165,7 +198,13 @@ class Model:
                 warnings.simplefilter("ignore")
                 audio = convert_to_16_bit_wav(audio)
         logger.info("Audio data generated successfully")
-        return (self.hps.data.sampling_rate, audio)
+        fs, audio = adjust_voice(
+            fs=self.hps.data.sampling_rate,
+            wave=audio,
+            pitch_scale=pitch_scale,
+            intonation_scale=intonation_scale,
+        )
+        return (fs, audio)
 
 
 class ModelHolder:
