@@ -25,8 +25,6 @@ from .constants import (
     DEFAULT_STYLE_WEIGHT,
 )
 from .log import logger
-from torchfcpe import spawn_bundled_infer_model
-import librosa
 
 
 def adjust_voice(fs, wave, pitch_scale, intonation_scale):
