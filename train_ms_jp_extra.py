@@ -12,6 +12,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from huggingface_hub import HfApi
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
@@ -47,6 +48,8 @@ torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
 global_step = 0
+
+api = HfApi()
 
 
 def run():
@@ -87,6 +90,11 @@ def run():
         action="store_true",
         help="Speed up training by disabling logging and evaluation.",
     )
+    parser.add_argument(
+        "--repo_id",
+        help="Huggingface model repo id to backup the model.",
+        default=None,
+    )
     args = parser.parse_args()
 
     # Set log file
@@ -126,6 +134,7 @@ def run():
     # This is needed because we have to pass values to `train_and_evaluate()
     hps.model_dir = model_dir
     hps.speedup = args.speedup
+    hps.repo_id = args.repo_id
 
     # 比较路径是否相同
     if os.path.realpath(args.config) != os.path.realpath(
@@ -565,6 +574,15 @@ def run():
                 ),
                 for_infer=True,
             )
+    if hps.repo_id is not None:
+        api.upload_folder(
+            repo_id=hps.repo_id,
+            folder_path=model_dir,
+        )
+        api.upload_folder(
+            repo_id=hps.repo_id,
+            folder_path=config.out_dir,
+        )
 
     if pbar is not None:
         pbar.close()
@@ -916,6 +934,15 @@ def train_and_evaluate(
                     ),
                     for_infer=True,
                 )
+                if hps.repo_id is not None:
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=model_dir,
+                    )
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=config.out_dir,
+                    )
 
         global_step += 1
         if pbar is not None:
@@ -926,9 +953,8 @@ def train_and_evaluate(
             )
             pbar.update()
     # 本家ではこれをスピードアップのために消すと書かれていたので、一応消してみる
-    # と思ったけどメモリ使用量が減るかもしれないのでつけてみる
-    gc.collect()
-    torch.cuda.empty_cache()
+    # gc.collect()
+    # torch.cuda.empty_cache()
     if pbar is None and rank == 0:
         logger.info(f"====> Epoch: {epoch}, step: {global_step}")
 

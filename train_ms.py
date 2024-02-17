@@ -84,6 +84,11 @@ def run():
         action="store_true",
         help="Speed up training by disabling logging and evaluation.",
     )
+    parser.add_argument(
+        "--repo_id",
+        help="Huggingface model repo id to backup the model.",
+        default=None,
+    )
     args = parser.parse_args()
 
     # Set log file
