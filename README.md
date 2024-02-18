@@ -11,17 +11,17 @@ For quick guide, please refer to `webui_preprocess.py`.
 简易教程请参见 `webui_preprocess.py`。  
 
 ## 【数据征集】
-FishAudio下的全新自回归TTS Fish-Speech目前已经开始着手进行LLM大规模预训练工作。我们目前需要**相对**高质量的语音文件以进行最后的SFT（监督微调），因此在这里进行公开征集。
-贡献的语音数据需要满足以下要求：
-1.总时长>10h
-2.需要是中文或者英文素材
-3.不得存在伴奏，可以使用UVR素材
-4.带文本优先，不带亦可
-5.咬字清楚，无明显口音
-如果您有符合上述条件的素材且愿意贡献于训练，请直接联系QQ 2225664821。
-我们会对最终模型进行技术手段的处理，使之无法合成您素材对应的speaker音频。
-您的贡献届时将会记录在贡献清单上，随release发布。
-FishAudio Team
+FishAudio下的全新自回归TTS Fish-Speech目前已经开始着手进行LLM大规模预训练工作。我们目前需要**相对**高质量的语音文件以进行最后的SFT（监督微调），因此在这里进行公开征集。  
+贡献的语音数据需要满足以下要求：  
+1.总时长>10h  
+2.需要是中文或者英文素材  
+3.不得存在伴奏，可以使用UVR素材  
+4.带文本优先，不带亦可  
+5.咬字清楚，无明显口音  
+如果您有符合上述条件的素材且愿意贡献于训练，请直接联系QQ 2225664821。  
+我们会对最终模型进行技术手段的处理，使之无法合成您素材对应的speaker音频。  
+您的贡献届时将会记录在贡献清单上，随release发布。  
+FishAudio Team  
 
 ## 请注意，本项目核心思路来源于[anyvoiceai/MassTTS](https://github.com/anyvoiceai/MassTTS) 一个非常好的tts项目
 ## MassTTS的演示demo为[ai版峰哥锐评峰哥本人,并找回了在金三角失落的腰子](https://www.bilibili.com/video/BV1w24y1c7z9)
