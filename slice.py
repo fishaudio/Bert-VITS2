@@ -112,7 +112,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--model_name",
-        "-m",
         type=str,
         required=True,
         help="The result will be in Data/{model_name}/raw/ (if Data is dataset_root in configs/paths.yml)",
