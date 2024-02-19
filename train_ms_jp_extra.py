@@ -175,6 +175,16 @@ def run():
             os.path.join(config.out_dir, "style_vectors.npy"),
         )
 
+    if args.repo_id is not None:
+        # Upload Dataset
+        api.upload_folder(
+            repo_id=hps.repo_id,
+            folder_path=config.dataset_path,
+            path_in_repo=f"Data/{config.model_name}",
+            delete_patterns="*.pth",
+            run_as_future=True,
+        )
+
     torch.manual_seed(hps.train.seed)
     torch.cuda.set_device(local_rank)
 
@@ -577,8 +587,8 @@ def run():
             if hps.repo_id is not None:
                 future1 = api.upload_folder(
                     repo_id=hps.repo_id,
-                    folder_path=model_dir,
-                    path_in_repo=f"Data/{config.model_name}/models",
+                    folder_path=config.dataset_path,
+                    path_in_repo=f"Data/{config.model_name}",
                     delete_patterns="*.pth",
                     run_as_future=True,
                 )
@@ -947,8 +957,8 @@ def train_and_evaluate(
                 if hps.repo_id is not None:
                     api.upload_folder(
                         repo_id=hps.repo_id,
-                        folder_path=hps.model_dir,
-                        path_in_repo=f"Data/{config.model_name}/models",
+                        folder_path=config.dataset_path,
+                        path_in_repo=f"Data/{config.model_name}",
                         delete_patterns="*.pth",
                         run_as_future=True,
                     )

@@ -87,5 +87,4 @@ if __name__ == "__main__":
         use_jp_extra=args.use_jp_extra,
         val_per_lang=args.val_per_lang,
         log_interval=args.log_interval,
-        skip_invalid=args.skip_invalid,
     )
