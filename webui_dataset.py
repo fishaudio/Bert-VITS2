@@ -25,11 +25,10 @@ def do_slice(
     if model_name == "":
         return "Error: モデル名を入力してください。"
     logger.info("Start slicing...")
-    output_dir = os.path.join(dataset_root, model_name, "raw")
     cmd = [
         "slice.py",
-        "--output_dir",
-        output_dir,
+        "--model_name",
+        model_name,
         "--min_sec",
         str(min_sec),
         "--max_sec",
