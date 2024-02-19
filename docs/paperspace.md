@@ -36,7 +36,7 @@ python initialize.py --skip_jvnv --dataset_root /notebooks/Data --assets_root /n
 ### 2. データセットの準備
 以下では`username/voices`というデータセットリポジトリにある`Foo.zip`というデータセットを使うことを想定しています。
 ```bash
-cd /nodtebooks
+cd /notebooks
 huggingface-cli login  # 事前にトークンが必要
 huggingface-cli download username/voices Foo.zip --repo-type dataset --local-dir .
 ```
