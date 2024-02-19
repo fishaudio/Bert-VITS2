@@ -46,24 +46,17 @@ def do_slice(
 
 
 def do_transcribe(
-    model_name, whisper_model, compute_type, language, initial_prompt, input_dir, device
+    model_name, whisper_model, compute_type, language, initial_prompt, device
 ):
     if model_name == "":
         return "Error: モデル名を入力してください。"
     if initial_prompt == "":
         initial_prompt = "こんにちは。元気、ですかー？私は……ふふっ、ちゃんと元気だよ！"
-    # logger.debug(f"initial_prompt: {initial_prompt}")
-    if input_dir == "":
-        input_dir = os.path.join(dataset_root, model_name, "raw")
-    output_file = os.path.join(dataset_root, model_name, "esd.list")
+
     success, message = run_script_with_log(
         [
             "transcribe.py",
-            "--input_dir",
-            input_dir,
-            "--output_file",
-            output_file,
-            "--speaker_name",
+            "--model_name",
             model_name,
             "--model",
             whisper_model,
@@ -153,9 +146,6 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             result1 = gr.Textbox(label="結果")
     with gr.Row():
         with gr.Column():
-            raw_dir = gr.Textbox(
-                label="書き起こしたい音声ファイルが入っているフォルダ（スライスした場合など、`Data/{モデル名}/raw`の場合は省略可",
-            )
             whisper_model = gr.Dropdown(
                 ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"],
                 label="Whisperモデル",
@@ -197,7 +187,6 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             compute_type,
             language,
             initial_prompt,
-            raw_dir,
             device,
         ],
         outputs=[result2],
