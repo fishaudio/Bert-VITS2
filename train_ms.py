@@ -487,20 +487,24 @@ def run():
                 for_infer=True,
             )
             if hps.repo_id is not None:
+                future1 = api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=model_dir,
+                    path_in_repo=f"Data/{config.model_name}/models",
+                    delete_patterns="*.pth",
+                    run_as_future=True,
+                )
+                future2 = api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=config.out_dir,
+                    path_in_repo=f"model_assets/{config.model_name}",
+                    run_as_future=True,
+                )
                 try:
-                    api.upload_folder(
-                        repo_id=hps.repo_id,
-                        folder_path=model_dir,
-                        path_in_repo=f"Data/{config.model_name}/models",
-                        delete_patterns="*.pth",
-                    )
-                    api.upload_folder(
-                        repo_id=hps.repo_id,
-                        folder_path=config.out_dir,
-                        path_in_repo=f"model_assets/{config.model_name}",
-                    )
+                    future1.result()
+                    future2.result()
                 except Exception as e:
-                    logger.warning(e)
+                    logger.error(e)
 
     if pbar is not None:
         pbar.close()
@@ -784,20 +788,19 @@ def train_and_evaluate(
                     for_infer=True,
                 )
                 if hps.repo_id is not None:
-                    try:
-                        api.upload_folder(
-                            repo_id=hps.repo_id,
-                            folder_path=hps.model_dir,
-                            path_in_repo=f"Data/{config.model_name}/models",
-                            delete_patterns="*.pth",
-                        )
-                        api.upload_folder(
-                            repo_id=hps.repo_id,
-                            folder_path=config.out_dir,
-                            path_in_repo=f"model_assets/{config.model_name}",
-                        )
-                    except Exception as e:
-                        logger.warning(e)
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=hps.model_dir,
+                        path_in_repo=f"Data/{config.model_name}/models",
+                        delete_patterns="*.pth",
+                        run_as_future=True,
+                    )
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=config.out_dir,
+                        path_in_repo=f"model_assets/{config.model_name}",
+                        run_as_future=True,
+                    )
 
         global_step += 1
         if pbar is not None:
