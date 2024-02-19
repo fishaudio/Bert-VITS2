@@ -311,18 +311,18 @@ if __name__ == "__main__":
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
                 pitch_scale = gr.Slider(
-                    minimum=0,
-                    maximum=2,
+                    minimum=0.8,
+                    maximum=1.5,
                     value=1,
-                    step=0.1,
-                    label="音程",
+                    step=0.05,
+                    label="音程(1以外では音質劣化)",
                 )
                 intonation_scale = gr.Slider(
                     minimum=0,
                     maximum=2,
                     value=1,
                     step=0.1,
-                    label="抑揚",
+                    label="抑揚(1以外では音質劣化)",
                 )
 
                 line_split = gr.Checkbox(

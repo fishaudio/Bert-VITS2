@@ -3,6 +3,16 @@
 # Style-Bert-VITS2 are NOT included in this image, only for environment setup
 
 # ==================================================================
+# Details
+# ------------------------------------------------------------------
+# Ubuntu 22.04, Python 3.10
+# CUDA Toolkit 12.1, CUDNN 8.9.7
+# PyTorch 2.1.2 (cuda 12.1)
+# Jupyter Lab
+# Huggingface CLI
+# Other Python packages in requirements.txt
+
+# ==================================================================
 # Initial setup
 # ------------------------------------------------------------------
 
