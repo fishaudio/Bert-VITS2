@@ -150,7 +150,7 @@ def resample(model_name, normalize, trim, num_processes):
     return True, "Step 2, Success: 音声ファイルの前処理が完了しました"
 
 
-def preprocess_text(model_name, use_jp_extra, val_per_lang, skip_invalid=False):
+def preprocess_text(model_name, use_jp_extra, val_per_lang):
     logger.info("Step 3: start preprocessing text...")
     dataset_path, lbl_path, train_path, val_path, config_path = get_path(model_name)
     try:
@@ -180,8 +180,6 @@ def preprocess_text(model_name, use_jp_extra, val_per_lang, skip_invalid=False):
     ]
     if use_jp_extra:
         cmd.append("--use_jp_extra")
-    if skip_invalid:
-        cmd.append("--skip_invalid")
     success, message = run_script_with_log(cmd)
     if not success:
         logger.error(f"Step 3: preprocessing text failed.")
@@ -267,7 +265,6 @@ def preprocess_all(
     use_jp_extra,
     val_per_lang,
     log_interval,
-    skip_invalid=False,
 ):
     if model_name == "":
         return False, "Error: モデル名を入力してください"
@@ -288,9 +285,7 @@ def preprocess_all(
     success, message = resample(model_name, normalize, trim, num_processes)
     if not success:
         return False, message
-    success, message = preprocess_text(
-        model_name, use_jp_extra, val_per_lang, skip_invalid
-    )
+    success, message = preprocess_text(model_name, use_jp_extra, val_per_lang)
     if not success:
         return False, message
     success, message = bert_gen(model_name)  # bert_genは重いのでプロセス数いじらない
@@ -495,10 +490,6 @@ if __name__ == "__main__":
                         maximum=1000,
                         step=10,
                     )
-                    skip_invalid = gr.Checkbox(
-                        label="日本語処理でエラーが出たファイルは学習に使わない",
-                        value=False,
-                    )
                     gr.Markdown("学習時に特定の部分を凍結させるかどうか")
                     freeze_EN_bert = gr.Checkbox(
                         label="英語bert部分を凍結",
@@ -608,10 +599,6 @@ if __name__ == "__main__":
                         maximum=100,
                         step=1,
                     )
-                    skip_invalid_manual = gr.Checkbox(
-                        label="日本語処理でエラーが出たファイルは学習に使わない",
-                        value=False,
-                    )
                 with gr.Column():
                     preprocess_text_btn = gr.Button(value="実行", variant="primary")
                     info_preprocess_text = gr.Textbox(label="状況")
@@ -674,7 +661,6 @@ if __name__ == "__main__":
                 use_jp_extra,
                 val_per_lang,
                 log_interval,
-                skip_invalid,
             ],
             outputs=[info_all],
         )
@@ -712,7 +698,6 @@ if __name__ == "__main__":
                 model_name,
                 use_jp_extra_manual,
                 val_per_lang_manual,
-                skip_invalid_manual,
             ],
             outputs=[info_preprocess_text],
         )
