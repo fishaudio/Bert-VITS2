@@ -69,11 +69,6 @@ if __name__ == "__main__":
         help="Log interval",
         default=200,
     )
-    parser.add_argument(
-        "--skip_invalid",
-        action="store_true",
-        help="Skip invalid",
-    )
 
     args = parser.parse_args()
 

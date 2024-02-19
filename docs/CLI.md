@@ -1,35 +1,49 @@
 # CLI
 
-**WIP**
-
-## Dataset
-
-`Dataset.bat` webui (`python webui_dataset.py`) consists of **slice audio** and **transcribe wavs**.
-
-### Slice audio
+## 0. Install and global paths settings
 
 ```bash
-python slice.py -i <input_dir> -o <output_dir> -m <min_sec> -M <max_sec>
+git clone https://github.com/litagin02/Style-Bert-VITS2.git
+cd Style-Bert-VITS2
+python -m venv venv
+venv\Scripts\activate
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+pip install -r requirements.txt
 ```
 
-Required:
-- `input_dir`: Path to the directory containing the audio files to slice.
-- `output_dir`: Path to the directory where the sliced audio files will be saved.
+Then download the necessary models and the default TTS model, and set the global paths.
+```bash
+python initialize.py [--skip_jvnv] [--dataset_root <path>] [--assets_root <path>]
+```
 
 Optional:
-- `min_sec`: Minimum duration of the sliced audio files in seconds (default 2).
-- `max_sec`: Maximum duration of the sliced audio files in seconds (default 12).
+- `--skip_jvnv`: Skip downloading the default JVNV voice models (use this if you only have to train your own models).
+- `--dataset_root`: Default: `Data`. Root directory of the training dataset. The training dataset of `{model_name}` should be placed in `{dataset_root}/{model_name}`.
+- `--assets_root`: Default: `model_assets`. Root directory of the model assets (for inference). In training, the model assets will be saved to `{assets_root}/{model_name}`, and in inference, we load all the models from `{assets_root}`.
 
-### Transcribe wavs
 
+## 1. Dataset preparation
+
+### 1.1. Slice wavs
 ```bash
-python transcribe.py -i <input_dir> -o <output_file> --speaker_name <speaker_name>
+python slice.py --model_name <model_name> [-i <input_dir>] [-m <min_sec>] [-M <max_sec>]
 ```
 
 Required:
-- `input_dir`: Path to the directory containing the audio files to transcribe.
-- `output_file`: Path to the file where the transcriptions will be saved.
-- `speaker_name`: Name of the speaker.
+- `model_name`: Name of the speaker (to be used as the name of the trained model).
+
+Optional:
+- `input_dir`: Path to the directory containing the audio files to slice (default: `inputs`)
+- `min_sec`: Minimum duration of the sliced audio files in seconds (default: 2).
+- `max_sec`: Maximum duration of the sliced audio files in seconds (default: 12).
+
+### 1.2. Transcribe wavs
+
+```bash
+python transcribe.py --model_name <model_name>
+```
+Required:
+- `model_name`: Name of the speaker (to be used as the name of the trained model).
 
 Optional
 - `--initial_prompt`: Initial prompt to use for the transcription (default value is specific to Japanese).
@@ -38,19 +52,43 @@ Optional
 - `--model`: Whisper model, default: `large-v3`
 - `--compute_type`: default: `bfloat16`
 
-## Train
+## 2. Preprocess
 
-`Train.bat` webui (`python webui_train.py`) consists of the following.
-
-### Preprocess audio
 ```bash
-python resample.py -i <input_dir> -o <output_dir> [--normalize] [--trim]
+python preprocess_all.py -m <model_name> [--use_jp_extra] [-b <batch_size>] [-e <epochs>] [-s <save_every_steps>] [--num_processes <num_processes>] [--normalize] [--trim] [--val_per_lang <val_per_lang>] [--log_interval <log_interval>] [--freeze_EN_bert] [--freeze_JP_bert] [--freeze_ZH_bert] [--freeze_style] 
 ```
 
 Required:
-- `input_dir`: Path to the directory containing the audio files to preprocess.
-- `output_dir`: Path to the directory where the preprocessed audio files will be saved.
+- `model_name`: Name of the speaker (to be used as the name of the trained model).
 
-TO BE WRITTEN (WIP)
+Optional:
+- `--batch_size`, `-b`: Batch size (default: 2).
+- `--epochs`, `-e`: Number of epochs (default: 100).
+- `--save_every_steps`, `-s`: Save every steps (default: 1000).
+- `--num_processes`: Number of processes (default: half of the number of CPU cores).
+- `--normalize`: Loudness normalize audio.
+- `--trim`: Trim silence.
+- `--freeze_EN_bert`: Freeze English BERT.
+- `--freeze_JP_bert`: Freeze Japanese BERT.
+- `--freeze_ZH_bert`: Freeze Chinese BERT.
+- `--freeze_style`: Freeze style vector.
+- `--use_jp_extra`: Use JP-Extra model.
+- `--val_per_lang`: Validation data per language (default: 0).
+- `--log_interval`: Log interval (default: 200).
 
-これいる？
+## 3. Train
+
+Training settings are automatically loaded from the above process.
+
+If NOT using JP-Extra model:
+```bash
+python train_ms.py [--repo_id <username>/<repo_name>]
+```
+
+If using JP-Extra model:
+```bash
+python train_ms_jp_extra.py [--repo_id <username>/<repo_name>]
+```
+
+Optional:
+- `--repo_id`: Hugging Face repository ID to upload the trained model to. You should have logged in using `huggingface-cli login` before running this command.
