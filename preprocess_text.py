@@ -16,8 +16,8 @@ preprocess_text_config = config.preprocess_text_config
 
 
 # Count lines for tqdm
-def count_lines(file_path):
-    with file_path.open("r", encoding="utf-8") as file:
+def count_lines(file_path: str):
+    with open(file_path, "r", encoding="utf-8") as file:
         return sum(1 for _ in file)
 
 
