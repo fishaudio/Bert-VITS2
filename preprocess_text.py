@@ -40,7 +40,6 @@ def count_lines(file_path: str):
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
 @click.option("--use_jp_extra", is_flag=True)
-@click.option("--skip_invalid", is_flag=True)
 def preprocess(
     transcription_path: str,
     cleaned_path: Optional[str],
@@ -52,10 +51,12 @@ def preprocess(
     clean: bool,
     yml_config: str,  # 这个不要删
     use_jp_extra: bool,
-    skip_invalid: bool = False,
 ):
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
+
+    error_log_path = os.path.join(os.path.dirname(cleaned_path), "error.log")
+    error_count = 0
 
     if clean:
         total_lines = count_lines(transcription_path)
@@ -79,18 +80,10 @@ def preprocess(
                             )
                         )
                     except Exception as e:
-                        if skip_invalid:
-                            logger.warning(
-                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
-                            )
-                            logger.warning(
-                                "This line will be skipped from the training set and validation set."
-                            )
-                        else:
-                            logger.error(
-                                f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
-                            )
-                            raise
+                        logger.error(f"An error occurred at line:\n{line.strip()}\n{e}")
+                        with open(error_log_path, "a", encoding="utf-8") as error_log:
+                            error_log.write(f"{line.strip()}\n{e}\n\n")
+                        error_count += 1
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -118,9 +111,10 @@ def preprocess(
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
-        logger.info(
-            f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
-        )
+        if countSame > 0 or countNotFound > 0:
+            logger.warning(
+                f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
+            )
 
     train_list = []
     val_list = []
@@ -156,7 +150,14 @@ def preprocess(
     )
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
-    logger.info("Training set and validation set generation from texts is complete!")
+    if error_count > 0:
+        logger.warning(
+            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
+        )
+    else:
+        logger.info(
+            "Training set and validation set generation from texts is complete!"
+        )
 
 
 if __name__ == "__main__":

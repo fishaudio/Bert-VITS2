@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--use_jp_extra",
         action="store_true",
-        help="Use JP-Extra pretrained model",
+        help="Use JP-Extra model",
     )
     parser.add_argument(
         "--val_per_lang",
