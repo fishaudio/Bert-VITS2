@@ -55,7 +55,7 @@ def preprocess(
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
-    error_log_path = os.path.join(os.path.dirname(cleaned_path), "error.log")
+    error_log_path = os.path.join(os.path.dirname(cleaned_path), "text_error.log")
     error_count = 0
 
     if clean:
