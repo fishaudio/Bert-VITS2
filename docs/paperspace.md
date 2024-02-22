@@ -25,8 +25,8 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 ```
 環境構築（デフォルトはPyTorch 1.x系、Python 3.9の模様）
 ```bash
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
-pip install -r requirements.txt
+cd /storage/sbv2/Style-Bert-VITS2
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118 && pip install -r requirements.txt
 ```
 事前学習済みモデル等のダウンロード、またパスを`/notebooks/`以下のものに設定
 ```bash
@@ -70,3 +70,15 @@ Hugging faceの`username/sbv2-private`というモデルリポジトリに学習
 python train_ms_jp_extra.py --repo_id username/sbv2-private
 ```
 (JP-Extraでない場合は`train_ms.py`を使う)
+
+### 4. 学習再開
+
+Notebooksの時間制限が切れてから別Notebooksで同じモデルを学習を再開する場合（環境構築は必要）。
+```bash
+huggingface-cli login
+cd /notebooks
+huggingface-cli download username/sbv2-private --include "Data/Foo/*" --local-dir .
+cd /storage/sbv2/Style-Bert-VITS2
+python train_ms_jp_extra.py --repo_id username/sbv2-private --skip_default_style
+```
+前回の設定が残っているので特に前処理等は不要。

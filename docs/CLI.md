@@ -87,8 +87,9 @@ python train_ms.py [--repo_id <username>/<repo_name>]
 
 If using JP-Extra model:
 ```bash
-python train_ms_jp_extra.py [--repo_id <username>/<repo_name>]
+python train_ms_jp_extra.py [--repo_id <username>/<repo_name>] [--skip_default_style]
 ```
 
 Optional:
 - `--repo_id`: Hugging Face repository ID to upload the trained model to. You should have logged in using `huggingface-cli login` before running this command.
+- `--skip_default_style`: Skip making the default style vector. Use this if you want to resume training (since the default style vector is already made).
