@@ -87,7 +87,7 @@ def initialize(
 
     model_path = os.path.join(dataset_path, "models")
     if os.path.exists(model_path):
-        logger.warning(f"Step 1: {model_path} already exists, so copy it to backup.")
+        logger.warning(f"Step 1: {model_path} already exists, so copy it to backup to {model_path}_backup")
         shutil.copytree(
             src=model_path,
             dst=os.path.join(dataset_path, "models_backup"),
