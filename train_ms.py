@@ -159,6 +159,30 @@ def run():
     config.out_dir: The directory for model assets of this model (for inference).
         default: `model_assets/{model_name}`.
     """
+
+    if args.repo_id is not None:
+        # First try to upload config.json to check if the repo exists
+        try:
+            api.upload_file(
+                path_or_fileobj=args.config,
+                path_in_repo=f"Data/{config.model_name}/config.json",
+                repo_id=hps.repo_id,
+            )
+        except Exception as e:
+            logger.error(e)
+            logger.error(
+                f"Failed to upload files to the repo {hps.repo_id}. Please check if the repo exists and you have logged in using `huggingface-cli login`."
+            )
+            raise e
+        # Upload Data dir for resuming training
+        api.upload_folder(
+            repo_id=hps.repo_id,
+            folder_path=config.dataset_path,
+            path_in_repo=f"Data/{config.model_name}",
+            delete_patterns="*.pth",  # Only keep the latest checkpoint
+            run_as_future=True,
+        )
+
     os.makedirs(config.out_dir, exist_ok=True)
 
     if not args.skip_default_style:
@@ -169,16 +193,6 @@ def run():
         default_style.save_mean_vector(
             os.path.join(args.model, "wavs"),
             os.path.join(config.out_dir, "style_vectors.npy"),
-        )
-
-    if args.repo_id is not None:
-        # Upload Dataset
-        api.upload_folder(
-            repo_id=hps.repo_id,
-            folder_path=config.dataset_path,
-            path_in_repo=f"Data/{config.model_name}",
-            delete_patterns="*.pth",
-            run_as_future=True,
         )
 
     torch.manual_seed(hps.train.seed)
@@ -501,7 +515,7 @@ def run():
                     repo_id=hps.repo_id,
                     folder_path=config.dataset_path,
                     path_in_repo=f"Data/{config.model_name}",
-                    delete_patterns="*.pth",
+                    delete_patterns="*.pth",  # Only keep the latest checkpoint
                     run_as_future=True,
                 )
                 future2 = api.upload_folder(
@@ -802,7 +816,7 @@ def train_and_evaluate(
                         repo_id=hps.repo_id,
                         folder_path=config.dataset_path,
                         path_in_repo=f"Data/{config.model_name}",
-                        delete_patterns="*.pth",
+                        delete_patterns="*.pth",  # Only keep the latest checkpoint
                         run_as_future=True,
                     )
                     api.upload_folder(
