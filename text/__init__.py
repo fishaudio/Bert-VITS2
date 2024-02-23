@@ -27,17 +27,24 @@ def get_bert(
     assist_text_weight=0.7,
     ignore_unknown=False,
 ):
-    from .chinese_bert import get_bert_feature as zh_bert
-    from .english_bert_mock import get_bert_feature as en_bert
-    from .japanese_bert import get_bert_feature as jp_bert
+    # from .chinese_bert import get_bert_feature as zh_bert
+    # from .english_bert_mock import get_bert_feature as en_bert
+    # from .japanese_bert import get_bert_feature as jp_bert
 
-    lang_bert_func_map = {"ZH": zh_bert, "EN": en_bert, "JP": jp_bert}
-    if language == "JP":
-        bert = lang_bert_func_map[language](
+    # Change logic to import inside if condition to avoid unnecessary import
+    if language == "ZH":
+        from .chinese_bert import get_bert_feature as zh_bert
+
+        return zh_bert(text, word2ph, device, assist_text, assist_text_weight)
+    elif language == "EN":
+        from .english_bert_mock import get_bert_feature as en_bert
+
+        return en_bert(text, word2ph, device, assist_text, assist_text_weight)
+    elif language == "JP":
+        from .japanese_bert import get_bert_feature as jp_bert
+
+        return jp_bert(
             text, word2ph, device, assist_text, assist_text_weight, ignore_unknown
         )
     else:
-        bert = lang_bert_func_map[language](
-            text, word2ph, device, assist_text, assist_text_weight
-        )
-    return bert
+        raise ValueError(f"Language {language} not supported")
