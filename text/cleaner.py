@@ -1,32 +1,25 @@
-from text import chinese, japanese, english, cleaned_text_to_sequence
-
-
-language_module_map = {"ZH": chinese, "JP": japanese, "EN": english}
-
-
 def clean_text(text, language, use_jp_extra=True, ignore_unknown=False):
-    language_module = language_module_map[language]
-    norm_text = language_module.text_normalize(text)
-    if language == "JP":
+    # Changed to import inside if condition to avoid unnecessary import
+    if language == "ZH":
+        from . import chinese as language_module
+
+        norm_text = language_module.text_normalize(text)
+        phones, tones, word2ph = language_module.g2p(norm_text)
+    elif language == "EN":
+        from . import english as language_module
+
+        norm_text = language_module.text_normalize(text)
+        phones, tones, word2ph = language_module.g2p(norm_text)
+    elif language == "JP":
+        from . import japanese as language_module
+
+        norm_text = language_module.text_normalize(text)
         phones, tones, word2ph = language_module.g2p(
             norm_text, use_jp_extra, ignore_unknown=ignore_unknown
         )
     else:
-        phones, tones, word2ph = language_module.g2p(norm_text)
+        raise ValueError(f"Language {language} not supported")
     return norm_text, phones, tones, word2ph
-
-
-def clean_text_bert(text, language):
-    language_module = language_module_map[language]
-    norm_text = language_module.text_normalize(text)
-    phones, tones, word2ph = language_module.g2p(norm_text)
-    bert = language_module.get_bert_feature(norm_text, word2ph)
-    return phones, tones, bert
-
-
-def text_to_sequence(text, language):
-    norm_text, phones, tones, word2ph = clean_text(text, language)
-    return cleaned_text_to_sequence(phones, tones, language)
 
 
 if __name__ == "__main__":

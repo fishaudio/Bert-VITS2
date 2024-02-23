@@ -27,11 +27,6 @@ def get_bert(
     assist_text_weight=0.7,
     ignore_unknown=False,
 ):
-    # from .chinese_bert import get_bert_feature as zh_bert
-    # from .english_bert_mock import get_bert_feature as en_bert
-    # from .japanese_bert import get_bert_feature as jp_bert
-
-    # Change logic to import inside if condition to avoid unnecessary import
     if language == "ZH":
         from .chinese_bert import get_bert_feature as zh_bert
 
