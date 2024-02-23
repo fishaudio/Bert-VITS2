@@ -20,7 +20,8 @@
     "freeze_ZH_bert": false,
     "freeze_JP_bert": false,
     "freeze_EN_bert": false,
-    "freeze_style": false
+    "freeze_style": false,
+    "freeze_encoder": false
   },
   "data": {
     "training_files": "Data/your_model_name/filelists/train.list",

@@ -47,6 +47,7 @@ def initialize(
     freeze_JP_bert,
     freeze_ZH_bert,
     freeze_style,
+    freeze_decoder,
     use_jp_extra,
     log_interval,
 ):
@@ -61,7 +62,7 @@ def initialize(
     logger_handler = logger.add(os.path.join(dataset_path, file_name))
 
     logger.info(
-        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, use_jp_extra: {use_jp_extra}"
+        f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, freeze_decoder: {freeze_decoder}, use_jp_extra: {use_jp_extra}"
     )
 
     default_config_path = (
@@ -82,12 +83,15 @@ def initialize(
     config["train"]["freeze_JP_bert"] = freeze_JP_bert
     config["train"]["freeze_ZH_bert"] = freeze_ZH_bert
     config["train"]["freeze_style"] = freeze_style
+    config["train"]["freeze_decoder"] = freeze_decoder
 
     config["train"]["bf16_run"] = False  # デフォルトでFalseのはずだが念のため
 
     model_path = os.path.join(dataset_path, "models")
     if os.path.exists(model_path):
-        logger.warning(f"Step 1: {model_path} already exists, so copy it to backup to {model_path}_backup")
+        logger.warning(
+            f"Step 1: {model_path} already exists, so copy it to backup to {model_path}_backup"
+        )
         shutil.copytree(
             src=model_path,
             dst=os.path.join(dataset_path, "models_backup"),
@@ -262,6 +266,7 @@ def preprocess_all(
     freeze_JP_bert,
     freeze_ZH_bert,
     freeze_style,
+    freeze_decoder,
     use_jp_extra,
     val_per_lang,
     log_interval,
@@ -269,29 +274,39 @@ def preprocess_all(
     if model_name == "":
         return False, "Error: モデル名を入力してください"
     success, message = initialize(
-        model_name,
-        batch_size,
-        epochs,
-        save_every_steps,
-        freeze_EN_bert,
-        freeze_JP_bert,
-        freeze_ZH_bert,
-        freeze_style,
-        use_jp_extra,
-        log_interval,
+        model_name=model_name,
+        batch_size=batch_size,
+        epochs=epochs,
+        save_every_steps=save_every_steps,
+        freeze_EN_bert=freeze_EN_bert,
+        freeze_JP_bert=freeze_JP_bert,
+        freeze_ZH_bert=freeze_ZH_bert,
+        freeze_style=freeze_style,
+        freeze_decoder=freeze_decoder,
+        use_jp_extra=use_jp_extra,
+        log_interval=log_interval,
     )
     if not success:
         return False, message
-    success, message = resample(model_name, normalize, trim, num_processes)
+    success, message = resample(
+        model_name=model_name,
+        normalize=normalize,
+        trim=trim,
+        num_processes=num_processes,
+    )
     if not success:
         return False, message
-    success, message = preprocess_text(model_name, use_jp_extra, val_per_lang)
+    success, message = preprocess_text(
+        model_name=model_name, use_jp_extra=use_jp_extra, val_per_lang=val_per_lang
+    )
     if not success:
         return False, message
-    success, message = bert_gen(model_name)  # bert_genは重いのでプロセス数いじらない
+    success, message = bert_gen(
+        model_name=model_name
+    )  # bert_genは重いのでプロセス数いじらない
     if not success:
         return False, message
-    success, message = style_gen(model_name, num_processes)
+    success, message = style_gen(model_name=model_name, num_processes=num_processes)
     if not success:
         return False, message
     logger.success("Success: All preprocess finished!")
@@ -507,6 +522,10 @@ if __name__ == "__main__":
                         label="スタイル部分を凍結",
                         value=False,
                     )
+                    freeze_decoder = gr.Checkbox(
+                        label="デコーダ部分を凍結",
+                        value=False,
+                    )
 
             with gr.Column():
                 preprocess_button = gr.Button(
@@ -563,6 +582,10 @@ if __name__ == "__main__":
                     )
                     freeze_style_manual = gr.Checkbox(
                         label="スタイル部分を凍結",
+                        value=False,
+                    )
+                    freeze_decoder_manual = gr.Checkbox(
+                        label="デコーダ部分を凍結",
                         value=False,
                     )
                 with gr.Column():
@@ -658,6 +681,7 @@ if __name__ == "__main__":
                 freeze_JP_bert,
                 freeze_ZH_bert,
                 freeze_style,
+                freeze_decoder,
                 use_jp_extra,
                 val_per_lang,
                 log_interval,
@@ -677,6 +701,7 @@ if __name__ == "__main__":
                 freeze_JP_bert_manual,
                 freeze_ZH_bert_manual,
                 freeze_style_manual,
+                freeze_decoder_manual,
                 use_jp_extra_manual,
                 log_interval_manual,
             ],

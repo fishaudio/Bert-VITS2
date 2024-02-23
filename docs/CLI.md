@@ -55,7 +55,7 @@ Optional
 ## 2. Preprocess
 
 ```bash
-python preprocess_all.py -m <model_name> [--use_jp_extra] [-b <batch_size>] [-e <epochs>] [-s <save_every_steps>] [--num_processes <num_processes>] [--normalize] [--trim] [--val_per_lang <val_per_lang>] [--log_interval <log_interval>] [--freeze_EN_bert] [--freeze_JP_bert] [--freeze_ZH_bert] [--freeze_style] 
+python preprocess_all.py -m <model_name> [--use_jp_extra] [-b <batch_size>] [-e <epochs>] [-s <save_every_steps>] [--num_processes <num_processes>] [--normalize] [--trim] [--val_per_lang <val_per_lang>] [--log_interval <log_interval>] [--freeze_EN_bert] [--freeze_JP_bert] [--freeze_ZH_bert] [--freeze_style] [--freeze_decoder]
 ```
 
 Required:
@@ -72,6 +72,7 @@ Optional:
 - `--freeze_JP_bert`: Freeze Japanese BERT.
 - `--freeze_ZH_bert`: Freeze Chinese BERT.
 - `--freeze_style`: Freeze style vector.
+- `--freeze_decoder`: Freeze decoder.
 - `--use_jp_extra`: Use JP-Extra model.
 - `--val_per_lang`: Validation data per language (default: 0).
 - `--log_interval`: Log interval (default: 200).

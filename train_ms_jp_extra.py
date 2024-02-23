@@ -310,6 +310,11 @@ def run():
         for param in net_g.enc_p.style_proj.parameters():
             param.requires_grad = False
 
+    if getattr(hps.train, "freeze_decoder", False):
+        logger.info("Freezing decoder !!!")
+        for param in net_g.dec.parameters():
+            param.requires_grad = False
+
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),

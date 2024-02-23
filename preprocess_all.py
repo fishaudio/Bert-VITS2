@@ -53,6 +53,11 @@ if __name__ == "__main__":
         help="Freeze style vector",
     )
     parser.add_argument(
+        "--freeze_decoder",
+        action="store_true",
+        help="Freeze decoder",
+    )
+    parser.add_argument(
         "--use_jp_extra",
         action="store_true",
         help="Use JP-Extra model",
@@ -84,6 +89,7 @@ if __name__ == "__main__":
         freeze_JP_bert=args.freeze_JP_bert,
         freeze_ZH_bert=args.freeze_ZH_bert,
         freeze_style=args.freeze_style,
+        freeze_decoder=args.freeze_decoder,
         use_jp_extra=args.use_jp_extra,
         val_per_lang=args.val_per_lang,
         log_interval=args.log_interval,
