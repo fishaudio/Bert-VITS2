@@ -28,7 +28,7 @@ venv/
 
 safetensors.ipynb
 *.wav
-/Web/
+/static/
 
 # pyopenjtalk's dictionary
 *.dic
