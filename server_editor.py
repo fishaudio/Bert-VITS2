@@ -151,6 +151,8 @@ parser.add_argument("--model_dir", type=str, default="model_assets/")
 parser.add_argument("--device", type=str, default="cuda")
 parser.add_argument("--port", type=int, default=8000)
 parser.add_argument("--inbrowser", action="store_true")
+parser.add_argument("--line_length", type=int, default=None)
+parser.add_argument("--line_count", type=int, default=None)
 
 args = parser.parse_args()
 device = args.device
@@ -230,6 +232,11 @@ class SynthesisRequest(BaseModel):
 
 @router.post("/synthesis", response_class=AudioResponse)
 def synthesis(request: SynthesisRequest):
+    if args.line_length is not None and len(request.text) > args.line_length:
+        raise HTTPException(
+            status_code=400,
+            detail=f"1行の文字数は{args.line_length}文字以下にしてください。",
+        )
     try:
         model = model_holder.load_model(
             model_name=request.model, model_path_str=request.modelFile
@@ -277,6 +284,11 @@ class MultiSynthesisRequest(BaseModel):
 @router.post("/multi_synthesis", response_class=AudioResponse)
 def multi_synthesis(request: MultiSynthesisRequest):
     lines = request.lines
+    if args.line_count is not None and len(lines) > args.line_count:
+        raise HTTPException(
+            status_code=400,
+            detail=f"行数は{args.line_count}行以下にしてください。",
+        )
     audios = []
     for i, req in enumerate(lines):
         # Loade model
