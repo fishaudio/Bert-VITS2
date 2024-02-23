@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Optional
 
 import gradio as gr
@@ -271,7 +272,7 @@ if __name__ == "__main__":
         help="Do not launch app automatically",
     )
     args = parser.parse_args()
-    model_dir = args.dir
+    model_dir = Path(args.dir)
 
     if args.cpu:
         device = "cpu"

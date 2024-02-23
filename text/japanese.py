@@ -2,17 +2,24 @@
 # compatible with Julius https://github.com/julius-speech/segmentation-kit
 import re
 import unicodedata
+from pathlib import Path
 
 import pyopenjtalk
 from num2words import num2words
 from transformers import AutoTokenizer
 
+from common.constants import USER_DICT_PATH, USER_DICT_CSV_PATH
 from common.log import logger
 from text import punctuation
 from text.japanese_mora_list import (
     mora_kata_to_mora_phonemes,
     mora_phonemes_to_mora_kata,
 )
+
+if Path(USER_DICT_CSV_PATH).exists():
+    pyopenjtalk.mecab_dict_index(USER_DICT_CSV_PATH, USER_DICT_PATH)
+if Path(USER_DICT_PATH).exists():
+    pyopenjtalk.update_global_jtalk_with_user_dict(USER_DICT_PATH)
 
 # 子音の集合
 COSONANTS = set(
@@ -160,7 +167,7 @@ def japanese_convert_numbers_to_words(text: str) -> str:
 
 
 def g2p(
-    norm_text: str, use_jp_extra: bool = True
+    norm_text: str, use_jp_extra: bool = True, ignore_unknown: bool = False
 ) -> tuple[list[str], list[int], list[int]]:
     """
     他で使われるメインの関数。`text_normalize()`で正規化された`norm_text`を受け取り、
@@ -182,7 +189,7 @@ def g2p(
 
     # sep_text: 単語単位の単語のリスト
     # sep_kata: 単語単位の単語のカタカナ読みのリスト
-    sep_text, sep_kata = text2sep_kata(norm_text)
+    sep_text, sep_kata = text2sep_kata(norm_text, ignore_unknown=ignore_unknown)
 
     # sep_phonemes: 各単語ごとの音素のリストのリスト
     sep_phonemes = handle_long([kata2phoneme_list(i) for i in sep_kata])
@@ -231,8 +238,8 @@ def g2p(
     return phones, tones, word2ph
 
 
-def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
-    phones, tones, _ = g2p(norm_text, use_jp_extra=True)
+def g2kata_tone(norm_text: str, ignore_unknown: bool = False) -> list[tuple[str, int]]:
+    phones, tones, _ = g2p(norm_text, use_jp_extra=True, ignore_unknown=ignore_unknown)
     return phone_tone2kata_tone(list(zip(phones, tones)))
 
 
@@ -325,7 +332,9 @@ def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     return result
 
 
-def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
+def text2sep_kata(
+    norm_text: str, ignore_unknown: bool = False
+) -> tuple[list[str], list[str]]:
     """
     `text_normalize`で正規化済みの`norm_text`を受け取り、それを単語分割し、
     分割された単語リストとその読み（カタカナor記号1文字）のリストのタプルを返す。
@@ -361,6 +370,9 @@ def text2sep_kata(norm_text: str) -> tuple[list[str], list[str]]:
             # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`, `--` のいずれか
             if not set(word).issubset(set(punctuation)):  # 記号繰り返しか判定
                 # ここはpyopenjtalkが読めない文字等のときに起こる
+                if ignore_unknown:
+                    logger.error(f"Ignoring unknown: {word} in:\n{norm_text}")
+                    continue
                 raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
             # yomiは元の記号のままに変更
             yomi = word
@@ -500,6 +512,9 @@ def handle_long(sep_phonemes: list[list[str]]) -> list[list[str]]:
     おそらく長音記号とダッシュを勘違いしていると思われるので、ダッシュに対応する音素`-`に変換する。
     """
     for i in range(len(sep_phonemes)):
+        if len(sep_phonemes[i]) == 0:
+            # 空白文字等でリストが空の場合
+            continue
         if sep_phonemes[i][0] == "ー":
             if i != 0:
                 prev_phoneme = sep_phonemes[i - 1][-1]
