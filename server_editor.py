@@ -1,11 +1,25 @@
-import csv
-import os
+"""
+Style-Bert-VITS2-Editor用のサーバー。
+次のリポジトリ
+https://github.com/litagin02/Style-Bert-VITS2-Editor
+をビルドしてできあがったファイルをWebフォルダに入れて実行する。
+
+TODO: リファクタリングやドキュメンテーションやAPI整理、辞書周りの改善などが必要。
+"""
+
+import argparse
+import io
+import shutil
 import sys
+import webbrowser
+import zipfile
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pyopenjtalk
+import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,20 +30,94 @@ from scipy.io import wavfile
 
 from common.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
-    DEFAULT_LENGTH,
     DEFAULT_NOISE,
     DEFAULT_NOISEW,
     DEFAULT_SDP_RATIO,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
+    LATEST_VERSION,
     USER_DICT_CSV_PATH,
     USER_DICT_PATH,
     Languages,
-    LATEST_VERSION,
 )
 from common.log import logger
 from common.tts_model import ModelHolder
 from text.japanese import g2kata_tone, kata_tone2phone_tone
+
+STATIC_DIR = Path("Web")  # ビルドした静的ファイルを配置するディレクトリ
+LAST_DOWNLOAD_FILE = STATIC_DIR / "last_download.txt"
+
+
+def download_static_files(user, repo, asset_name):
+    """Style-Bert-VITS2エディターの最新のビルドzipをダウンロードして展開する。"""
+
+    logger.info("Checking for new release...")
+    latest_release = get_latest_release(user, repo)
+    if latest_release is None:
+        logger.warning(
+            "Failed to fetch the latest release. Proceeding without static files."
+        )
+        return
+
+    if not new_release_available(latest_release):
+        logger.info("No new release available. Proceeding with existing static files.")
+        return
+
+    # asset_name = "out.zip"
+    asset_url = get_asset_url(latest_release, asset_name)
+    if asset_url:
+        if STATIC_DIR.exists():
+            shutil.rmtree(STATIC_DIR)
+        STATIC_DIR.mkdir(parents=True, exist_ok=True)
+        download_and_extract(asset_url, STATIC_DIR)
+        save_last_download(latest_release)
+    else:
+        logger.warning("Asset not found. Proceeding without static files.")
+
+
+def get_latest_release(user, repo):
+    url = f"https://api.github.com/repos/{user}/{repo}/releases/latest"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException:
+        return None
+
+
+def get_asset_url(release, asset_name):
+    for asset in release["assets"]:
+        if asset["name"] == asset_name:
+            return asset["browser_download_url"]
+    return None
+
+
+def download_and_extract(url, extract_to):
+    response = requests.get(url)
+    response.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+        zip_ref.extractall(extract_to)
+
+
+def new_release_available(latest_release):
+    if LAST_DOWNLOAD_FILE.exists():
+        with open(LAST_DOWNLOAD_FILE, "r") as file:
+            last_download_str = file.read().strip()
+            # 'Z'を除去して日時オブジェクトに変換
+            last_download_str = last_download_str.replace("Z", "+00:00")
+            last_download = datetime.fromisoformat(last_download_str)
+        return (
+            datetime.fromisoformat(
+                latest_release["published_at"].replace("Z", "+00:00")
+            )
+            > last_download
+        )
+    return True
+
+
+def save_last_download(latest_release):
+    with open(LAST_DOWNLOAD_FILE, "w") as file:
+        file.write(latest_release["published_at"])
 
 
 class AudioResponse(Response):
@@ -43,8 +131,14 @@ origins = [
     "http://127.0.0.1:8000",
 ]
 
-device = "cuda"
-model_dir = Path("model_assets/server_test")
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_dir", type=str, default="model_assets/")
+parser.add_argument("--device", type=str, default="cuda")
+
+args = parser.parse_args()
+device = args.device
+model_dir = Path(args.model_dir)
+
 model_holder = ModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
@@ -158,7 +252,7 @@ class MultiSynthesisRequest(BaseModel):
     lines: list[SynthesisRequest]
 
 
-@app.post("/multi-synthesis", response_class=AudioResponse)
+@app.post("/multi_synthesis", response_class=AudioResponse)
 def multi_synthesis(request: MultiSynthesisRequest):
     lines = request.lines
     audios = []
@@ -203,7 +297,6 @@ def multi_synthesis(request: MultiSynthesisRequest):
             silence = int(sr * req.silenceAfter)
             audios.append(np.zeros(silence, dtype=np.int16))
     audio = np.concatenate(audios)
-    logger.debug(audio.dtype)
 
     with BytesIO() as wavContent:
         wavfile.write(wavContent, sr, audio)
@@ -279,7 +372,8 @@ def add_user_dict_word(request: AddUserDictWordRequest):
         )
 
 
-app.mount("/", StaticFiles(directory="Web"), name="static")
-
 if __name__ == "__main__":
+    download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="Web")
+    webbrowser.open("http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)
