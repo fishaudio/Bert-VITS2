@@ -1,10 +1,13 @@
 """
 API server for TTS
+TODO: server_editor.pyと統合する?
 """
+
 import argparse
 import os
 import sys
 from io import BytesIO
+from pathlib import Path
 from typing import Dict, Optional, Union
 from urllib.parse import unquote
 
@@ -53,10 +56,8 @@ def load_models(model_holder: ModelHolder):
     for model_name, model_paths in model_holder.model_files_dict.items():
         model = Model(
             model_path=model_paths[0],
-            config_path=os.path.join(model_holder.root_dir, model_name, "config.json"),
-            style_vec_path=os.path.join(
-                model_holder.root_dir, model_name, "style_vectors.npy"
-            ),
+            config_path=model_holder.root_dir / model_name / "config.json",
+            style_vec_path=model_holder.root_dir / model_name / "style_vectors.npy",
             device=model_holder.device,
         )
         model.load_net_g()
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     else:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model_dir = args.dir
+    model_dir = Path(args.dir)
     model_holder = ModelHolder(model_dir, device)
     if len(model_holder.model_names) == 0:
         logger.error(f"Models not found in {model_dir}.")
@@ -105,9 +106,12 @@ if __name__ == "__main__":
         request: Request,
         text: str = Query(..., min_length=1, max_length=limit, description=f"セリフ"),
         encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
-        model_id: int = Query(0, description="モデルID。`GET /models/info`のkeyの値を指定ください"),
+        model_id: int = Query(
+            0, description="モデルID。`GET /models/info`のkeyの値を指定ください"
+        ),
         speaker_name: str = Query(
-            None, description="話者名(speaker_idより優先)。esd.listの2列目の文字列を指定"
+            None,
+            description="話者名(speaker_idより優先)。esd.listの2列目の文字列を指定",
         ),
         speaker_id: int = Query(
             0, description="話者ID。model_assets>[model]>config.json内のspk2idを確認"
@@ -116,12 +120,17 @@ if __name__ == "__main__":
             DEFAULT_SDP_RATIO,
             description="SDP(Stochastic Duration Predictor)/DP混合比。比率が高くなるほどトーンのばらつきが大きくなる",
         ),
-        noise: float = Query(DEFAULT_NOISE, description="サンプルノイズの割合。大きくするほどランダム性が高まる"),
+        noise: float = Query(
+            DEFAULT_NOISE,
+            description="サンプルノイズの割合。大きくするほどランダム性が高まる",
+        ),
         noisew: float = Query(
-            DEFAULT_NOISEW, description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる"
+            DEFAULT_NOISEW,
+            description="SDPノイズ。大きくするほど発音の間隔にばらつきが出やすくなる",
         ),
         length: float = Query(
-            DEFAULT_LENGTH, description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる"
+            DEFAULT_LENGTH,
+            description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる",
         ),
         language: Languages = Query(ln, description=f"textの言語"),
         auto_split: bool = Query(DEFAULT_LINE_SPLIT, description="改行で分けて生成"),
@@ -129,20 +138,25 @@ if __name__ == "__main__":
             DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"
         ),
         assist_text: Optional[str] = Query(
-            None, description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある"
+            None,
+            description="このテキストの読み上げと似た声音・感情になりやすくなる。ただし抑揚やテンポ等が犠牲になる傾向がある",
         ),
         assist_text_weight: float = Query(
             DEFAULT_ASSIST_TEXT_WEIGHT, description="assist_textの強さ"
         ),
         style: Optional[Union[int, str]] = Query(DEFAULT_STYLE, description="スタイル"),
         style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="スタイルの強さ"),
-        reference_audio_path: Optional[str] = Query(None, description="スタイルを音声ファイルで行う"),
+        reference_audio_path: Optional[str] = Query(
+            None, description="スタイルを音声ファイルで行う"
+        ),
     ):
         """Infer text to speech(テキストから感情付き音声を生成する)"""
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
-        if model_id >= len(model_holder.models):  # /models/refresh があるためQuery(le)で表現不可
+        if model_id >= len(
+            model_holder.models
+        ):  # /models/refresh があるためQuery(le)で表現不可
             raise_validation_error(f"model_id={model_id} not found", "model_id")
 
         model = model_holder.models[model_id]
