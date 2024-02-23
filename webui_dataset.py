@@ -169,8 +169,8 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             language = gr.Dropdown(["ja", "en", "zh"], value="ja", label="言語")
             initial_prompt = gr.Textbox(
                 label="初期プロンプト",
-                placeholder="こんにちは。元気、ですかー？ふふっ、私は……ちゃんと元気だよ！",
-                info="このように書き起こしてほしいという例文、日本語なら省略可、英語等なら書いてください",
+                value="こんにちは。元気、ですかー？ふふっ、私は……ちゃんと元気だよ！",
+                info="このように書き起こしてほしいという例文（句読点の入れ方・笑い方・固有名詞等）",
             )
         transcribe_button = gr.Button("音声の文字起こし")
         result2 = gr.Textbox(label="結果")
