@@ -20,8 +20,9 @@ from pathlib import Path
 import numpy as np
 import pyopenjtalk
 import requests
+import torch
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -44,7 +45,10 @@ from common.log import logger
 from common.tts_model import ModelHolder
 from text.japanese import g2kata_tone, kata_tone2phone_tone
 
-STATIC_DIR = Path("Web")  # ビルドした静的ファイルを配置するディレクトリ
+
+# エディターのビルドファイルを配置するディレクトリ
+STATIC_DIR = Path("static")
+# エディターの最新のビルドファイルのダウンロード日時を記録するファイル
 LAST_DOWNLOAD_FILE = STATIC_DIR / "last_download.txt"
 
 
@@ -63,7 +67,7 @@ def download_static_files(user, repo, asset_name):
         logger.info("No new release available. Proceeding with existing static files.")
         return
 
-    # asset_name = "out.zip"
+    logger.info("New release available. Downloading static files...")
     asset_url = get_asset_url(latest_release, asset_name)
     if asset_url:
         if STATIC_DIR.exists():
@@ -92,11 +96,22 @@ def get_asset_url(release, asset_name):
     return None
 
 
-def download_and_extract(url, extract_to):
+def download_and_extract(url, extract_to: Path):
     response = requests.get(url)
     response.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
         zip_ref.extractall(extract_to)
+
+    # 展開先が1つのディレクトリだけの場合、その中身を直下に移動する
+    extracted_dirs = list(extract_to.iterdir())
+    if len(extracted_dirs) == 1 and extracted_dirs[0].is_dir():
+        for file in extracted_dirs[0].iterdir():
+            file.rename(extract_to / file.name)
+        extracted_dirs[0].rmdir()
+
+    # index.htmlが存在するかチェック
+    if not (extract_to / "index.html").exists():
+        logger.warning("index.html not found in the extracted files.")
 
 
 def new_release_available(latest_release):
@@ -134,10 +149,15 @@ origins = [
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_dir", type=str, default="model_assets/")
 parser.add_argument("--device", type=str, default="cuda")
+parser.add_argument("--port", type=int, default=8000)
+parser.add_argument("--inbrowser", action="store_true")
 
 args = parser.parse_args()
 device = args.device
+if device == "cuda" and not torch.cuda.is_available():
+    device = "cpu"
 model_dir = Path(args.model_dir)
+port = int(args.port)
 
 model_holder = ModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
@@ -155,8 +175,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+router = APIRouter()
 
-@app.get("/version")
+
+@router.get("/version")
 def version() -> str:
     return LATEST_VERSION
 
@@ -170,7 +192,7 @@ class G2PRequest(BaseModel):
     text: str
 
 
-@app.post("/g2p")
+@router.post("/g2p")
 async def read_item(item: G2PRequest):
     try:
         kata_tone_list = g2kata_tone(item.text, ignore_unknown=True)
@@ -182,7 +204,7 @@ async def read_item(item: G2PRequest):
     return [MoraTone(mora=kata, tone=tone) for kata, tone in kata_tone_list]
 
 
-@app.get("/models_info")
+@router.get("/models_info")
 def models_info():
     return model_holder.models_info()
 
@@ -206,7 +228,7 @@ class SynthesisRequest(BaseModel):
     intonationScale: float = 1.0
 
 
-@app.post("/synthesis", response_class=AudioResponse)
+@router.post("/synthesis", response_class=AudioResponse)
 def synthesis(request: SynthesisRequest):
     try:
         model = model_holder.load_model(
@@ -252,7 +274,7 @@ class MultiSynthesisRequest(BaseModel):
     lines: list[SynthesisRequest]
 
 
-@app.post("/multi_synthesis", response_class=AudioResponse)
+@router.post("/multi_synthesis", response_class=AudioResponse)
 def multi_synthesis(request: MultiSynthesisRequest):
     lines = request.lines
     audios = []
@@ -315,7 +337,7 @@ class AddUserDictWordRequest(BaseModel):
 COST_CANDIDATES = [-988, 3488, 4768, 6048, 7328, 8609, 8734, 8859, 8984, 9110, 14176]
 
 
-@app.post("/user_dict_word")
+@router.post("/user_dict_word")
 def add_user_dict_word(request: AddUserDictWordRequest):
     if request.surface == "" or request.pronunciation == "":
         return JSONResponse(
@@ -372,8 +394,11 @@ def add_user_dict_word(request: AddUserDictWordRequest):
         )
 
 
+app.include_router(router, prefix="/api")
+
 if __name__ == "__main__":
     download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
-    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="Web")
-    webbrowser.open("http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+    if args.inbrowser:
+        webbrowser.open(f"http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
