@@ -234,6 +234,12 @@ class ModelHolder:
             if len(model_files) == 0:
                 logger.warning(f"No model files found in {model_dir}, so skip it")
                 continue
+            config_path = model_dir / "config.json"
+            if not config_path.exists():
+                logger.warning(
+                    f"Config file {config_path} not found, so skip {model_dir}"
+                )
+                continue
             self.model_files_dict[model_dir.name] = model_files
             self.model_names.append(model_dir.name)
 
