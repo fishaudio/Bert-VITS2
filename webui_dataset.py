@@ -50,8 +50,6 @@ def do_transcribe(
 ):
     if model_name == "":
         return "Error: モデル名を入力してください。"
-    if initial_prompt == "":
-        initial_prompt = "こんにちは。元気、ですかー？私は……ふふっ、ちゃんと元気だよ！"
 
     success, message = run_script_with_log(
         [
