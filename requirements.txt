@@ -1,6 +1,6 @@
 cmudict
 cn2an
-faster-whisper>=0.10.0
+faster-whisper>=0.10.0,<1.0.0
 g2p_en
 GPUtil
 gradio
