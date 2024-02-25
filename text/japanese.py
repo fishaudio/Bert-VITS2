@@ -8,7 +8,6 @@ import pyopenjtalk
 from num2words import num2words
 from transformers import AutoTokenizer
 
-from common.constants import USER_DICT_PATH, USER_DICT_CSV_PATH
 from common.log import logger
 from text import punctuation
 from text.japanese_mora_list import (
@@ -16,10 +15,10 @@ from text.japanese_mora_list import (
     mora_phonemes_to_mora_kata,
 )
 
-if Path(USER_DICT_CSV_PATH).exists():
-    pyopenjtalk.mecab_dict_index(USER_DICT_CSV_PATH, USER_DICT_PATH)
-if Path(USER_DICT_PATH).exists():
-    pyopenjtalk.update_global_jtalk_with_user_dict(USER_DICT_PATH)
+from text.user_dict import update_dict
+
+# 最初にpyopenjtalkの辞書を更新
+update_dict()
 
 # 子音の集合
 COSONANTS = set(

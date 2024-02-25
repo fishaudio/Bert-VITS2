@@ -37,14 +37,15 @@ from common.constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
     LATEST_VERSION,
-    USER_DICT_CSV_PATH,
-    USER_DICT_PATH,
     Languages,
 )
 from common.log import logger
 from common.tts_model import ModelHolder
 from text.japanese import g2kata_tone, kata_tone2phone_tone
+from text.user_dict import apply_word, update_dict, read_dict, rewrite_word, delete_word
 
+
+# ---フロントエンド部分に関する処理---
 
 # エディターのビルドファイルを配置するディレクトリ
 STATIC_DIR = Path("static")
@@ -133,6 +134,10 @@ def new_release_available(latest_release):
 def save_last_download(latest_release):
     with open(LAST_DOWNLOAD_FILE, "w") as file:
         file.write(latest_release["published_at"])
+
+
+# ---フロントエンド部分に関する処理ここまで---
+# 以降はAPIの設定
 
 
 class AudioResponse(Response):
@@ -337,73 +342,52 @@ def multi_synthesis(request: MultiSynthesisRequest):
         return Response(content=wavContent.getvalue(), media_type="audio/wav")
 
 
-class AddUserDictWordRequest(BaseModel):
+class UserDictWordRequest(BaseModel):
     surface: str
     pronunciation: str
-    accentType: str  # アクセント核位置/モーラ数、例：1/3, アクセント核位置は1から始まる
+    accent_type: int  # アクセント核位置（存在しない場合は0、1文字目は1）
     priority: int = 5
 
 
-# コストの値は以下の値を参考にしている
-# https://github.com/VOICEVOX/voicevox_engine/blob/master/voicevox_engine/user_dict/part_of_speech_data.py
-COST_CANDIDATES = [-988, 3488, 4768, 6048, 7328, 8609, 8734, 8859, 8984, 9110, 14176]
+@router.get("/user_dict")
+def get_user_dict():
+    return read_dict()
 
 
 @router.post("/user_dict_word")
-def add_user_dict_word(request: AddUserDictWordRequest):
-    if request.surface == "" or request.pronunciation == "":
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": "単語か読みが空です。"},
-        )
-    user_dict_file = Path(USER_DICT_CSV_PATH)
-    user_dict_file.parent.mkdir(parents=True, exist_ok=True)
+def add_user_dict_word(request: UserDictWordRequest):
+    uuid = apply_word(
+        surface=request.surface,
+        pronunciation=request.pronunciation,
+        accent_type=request.accent_type,
+        priority=request.priority,
+    )
+    update_dict()
 
-    # 新規追加または更新する単語のCSV行
-    new_csv_row = f"{request.surface},,,{COST_CANDIDATES[request.priority]},名詞,固有名詞,一般,*,*,*,{request.surface},{request.pronunciation},{request.pronunciation},{request.accentType},*\n"
-    found = False
-    updated = False
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={"uuid": uuid},
+    )
 
-    # ユーザー辞書ファイルが存在する場合、既存の単語をチェックし、必要に応じて更新する
-    if user_dict_file.exists():
-        with user_dict_file.open(encoding="utf-8") as f:
-            lines = f.readlines()
 
-        with user_dict_file.open("w", encoding="utf-8") as f:
-            for line in lines:
-                if line.split(",")[0] == request.surface:
-                    found = True
-                    if line.strip() != new_csv_row.strip():
-                        f.write(new_csv_row)
-                        updated = True
-                    else:
-                        f.write(line)
-                else:
-                    f.write(line)
-    # 単語が新しい場合、新規に追加
-    if not found:
-        with user_dict_file.open("a", encoding="utf-8") as f:
-            f.write(new_csv_row)
+@router.put("/user_dict_word/{uuid}")
+def update_user_dict_word(uuid: str, request: UserDictWordRequest):
+    rewrite_word(
+        word_uuid=uuid,
+        surface=request.surface,
+        pronunciation=request.pronunciation,
+        accent_type=request.accent_type,
+        priority=request.priority,
+    )
+    update_dict()
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"uuid": uuid})
 
-    pyopenjtalk.unset_user_dict()
-    pyopenjtalk.mecab_dict_index(USER_DICT_CSV_PATH, USER_DICT_PATH)
-    pyopenjtalk.update_global_jtalk_with_user_dict(USER_DICT_PATH)
 
-    if updated:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={"message": "単語が既に存在し、更新されました。"},
-        )
-    elif found:
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={"message": "既に登録されている単語です。更新はありません。"},
-        )
-    else:
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={"message": "単語が新規追加されました。"},
-        )
+@router.delete("/user_dict_word/{uuid}")
+def delete_user_dict_word(uuid: str):
+    delete_word(uuid)
+    update_dict()
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"uuid": uuid})
 
 
 app.include_router(router, prefix="/api")
