@@ -42,7 +42,7 @@ from common.constants import (
 )
 from common.log import logger
 from common.tts_model import ModelHolder
-from text.japanese import g2kata_tone, kata_tone2phone_tone
+from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
 from text.user_dict import apply_word, update_dict, read_dict, rewrite_word, delete_word
 
 
@@ -205,12 +205,12 @@ class MoraTone(BaseModel):
     tone: int
 
 
-class G2PRequest(BaseModel):
+class TextRequest(BaseModel):
     text: str
 
 
 @router.post("/g2p")
-async def read_item(item: G2PRequest):
+async def read_item(item: TextRequest):
     try:
         kata_tone_list = g2kata_tone(item.text, ignore_unknown=True)
     except Exception as e:
@@ -219,6 +219,11 @@ async def read_item(item: G2PRequest):
             detail=f"Failed to convert {item.text} to katakana and tone, {e}",
         )
     return [MoraTone(mora=kata, tone=tone) for kata, tone in kata_tone_list]
+
+
+@router.post("/normalize")
+async def normalize_text(item: TextRequest):
+    return text_normalize(item.text)
 
 
 @router.get("/models_info")
