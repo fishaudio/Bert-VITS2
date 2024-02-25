@@ -13,4 +13,4 @@
 - Pydanticのモデルで必要な箇所のみを抽出。
 
 **ライセンス**:
-元のVOICEVOX engineのリポジトリのコードは、LGPL v3 と、ソースコードの公開が不要な別ライセンスのデュアルライセンスの下で使用されています。当プロジェクトにおけるこのモジュールもLGPLライセンスの下にあります。詳細については、プロジェクトのルートディレクトリにある[LGPL_LICENSE](LGPL_LICENSE)ファイルをご参照ください。また、元のVOICEVOX engineプロジェクトのライセンスについては、[こちら](https://github.com/VOICEVOX/voicevox_engine/blob/master/LICENSE)をご覧ください。
+元のVOICEVOX engineのリポジトリのコードは、LGPL v3 と、ソースコードの公開が不要な別ライセンスのデュアルライセンスの下で使用されています。当プロジェクトにおけるこのモジュールもLGPLライセンスの下にあります。詳細については、プロジェクトのルートディレクトリにある[LGPL_LICENSE](/LGPL_LICENSE)ファイルをご参照ください。また、元のVOICEVOX engineプロジェクトのライセンスについては、[こちら](https://github.com/VOICEVOX/voicevox_engine/blob/master/LICENSE)をご覧ください。

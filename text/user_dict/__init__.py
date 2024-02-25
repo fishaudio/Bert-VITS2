@@ -1,3 +1,8 @@
+# このファイルは、VOICEVOXプロジェクトのVOICEVOX engineからお借りしています。
+# 引用元:
+# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/user_dict.py
+# ライセンス: LGPL-3.0
+# 詳しくは、このファイルと同じフォルダにあるREADME.mdを参照してください。
 import json
 import sys
 import threading

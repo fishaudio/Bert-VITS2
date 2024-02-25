@@ -1,8 +1,8 @@
 # このファイルは、VOICEVOXプロジェクトのVOICEVOX engineからお借りしています。
 # 引用元:
-# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/model.py#L207
+# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/part_of_speech_data.py
 # ライセンス: LGPL-3.0
-# 詳しくは、このファイルの場所にあるREADME.mdを参照してください
+# 詳しくは、このファイルと同じフォルダにあるREADME.mdを参照してください。
 
 from typing import Dict
 
