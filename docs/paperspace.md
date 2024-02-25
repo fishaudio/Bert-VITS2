@@ -58,9 +58,9 @@ python slice.py --model_name Foo -i /notebooks/inputs
 python transcribe.py --model_name Foo
 ```
 
-それが終わったら、以下のコマンドで一括前処理を行う（パラメータは各自お好み、バッチサイズ6でVRAM 16GBギリくらい）。
+それが終わったら、以下のコマンドで一括前処理を行う（パラメータは各自お好み、バッチサイズ5か6でVRAM 16GBギリくらい）。
 ```bash
-python preprocess_all.py --model_name Foo -b 6 -e 300 --use_jp_extra
+python preprocess_all.py --model_name Foo -b 5 -e 300 --use_jp_extra
 ```
 
 ### 3. 学習

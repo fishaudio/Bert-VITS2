@@ -12,7 +12,7 @@ if not exist %CURL_CMD% (
 
 @REM Style-Bert-VITS2.zip をGitHubのmasterの最新のものをダウンロード
 %CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
+	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/dev.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-masterになる）
@@ -24,8 +24,8 @@ del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
-rmdir /s /q Style-Bert-VITS2-master
+xcopy /QSY .\Style-Bert-VITS2-dev\ .\Style-Bert-VITS2\
+rmdir /s /q Style-Bert-VITS2-dev
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM 仮想環境のpip requirements.txtを更新
@@ -34,17 +34,19 @@ echo call .\Style-Bert-VITS2\scripts\activate.bat
 call .\Style-Bert-VITS2\venv\Scripts\activate.bat
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+pause
+
 @REM pyopenjtalk-prebuiltやpyopenjtalkが入っていたら削除
-echo pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
-pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+echo python -m pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+python -m pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM pyopenjtalk-dictをインストール
-echo pip install -U pyopenjtalk-dict
-pip install -U pyopenjtalk-dict
+echo python -m pip install -U pyopenjtalk-dict
+python -m pip install -U pyopenjtalk-dict
 
 @REM その他のrequirements.txtも一応更新
-pip install -U -r Style-Bert-VITS2\requirements.txt
+python -m pip install -U -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pushd Style-Bert-VITS2
@@ -52,7 +54,7 @@ pushd Style-Bert-VITS2
 echo Update completed. Running Style-Bert-VITS2 Editor...
 
 @REM Style-Bert-VITS2 Editorを起動
-python server_editor.py
+python server_editor.py --inbrowser
 
 pause
 

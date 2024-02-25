@@ -6,8 +6,7 @@ GRADIO_THEME: str = "NoCrypt/miku"
 
 LATEST_VERSION: str = "2.3"
 
-USER_DICT_CSV_PATH: str = "dict/user_dict.csv"
-USER_DICT_PATH: str = "dict/user.dic"
+USER_DICT_DIR = "dict_data"
 
 DEFAULT_STYLE: str = "Neutral"
 DEFAULT_STYLE_WEIGHT: float = 5.0

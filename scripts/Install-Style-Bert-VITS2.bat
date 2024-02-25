@@ -58,11 +58,11 @@ pushd Style-Bert-VITS2
 python initialize.py
 
 echo ----------------------------------------
-echo Model download is complete. Start the WebUI of the voice synthesis.
+echo Model download is complete. Start Style-Bert-VITS2 Editor.
 echo ----------------------------------------
 
-@REM 音声合成WebUIの起動
-python app.py
+@REM エディターの起動
+python server_editor.py --inbrowser
 
 pause
 

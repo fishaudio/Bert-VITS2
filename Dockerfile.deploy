@@ -19,4 +19,5 @@ COPY --chown=user . $HOME/app
 
 RUN pip install --no-cache-dir -r $HOME/app/requirements.txt
 
-CMD ["python", "server_editor.py"]
+# 必要に応じて制限を変更してください
+CMD ["python", "server_editor.py", "--line_length", "50", "--line_count", "3"]

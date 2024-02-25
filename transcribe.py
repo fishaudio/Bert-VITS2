@@ -78,12 +78,9 @@ if __name__ == "__main__":
         language_id = Languages.ZH.value
     else:
         raise ValueError(f"{language} is not supported.")
-    with open(output_file, "w", encoding="utf-8") as f:
-        for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
-            file_name = os.path.basename(wav_file)
-            text = transcribe(
-                wav_file, initial_prompt=initial_prompt, language=language
-            )
+    for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
+        file_name = os.path.basename(wav_file)
+        text = transcribe(wav_file, initial_prompt=initial_prompt, language=language)
+        with open(output_file, "a", encoding="utf-8") as f:
             f.write(f"{file_name}|{model_name}|{language_id}|{text}\n")
-            f.flush()
     sys.exit(0)

@@ -34,6 +34,15 @@ echo call .\Style-Bert-VITS2\scripts\activate.bat
 call .\Style-Bert-VITS2\venv\Scripts\activate.bat
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+echo pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+echo pip install -U pyopenjtalk-dict
+pip install -U pyopenjtalk-dict
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+echo pip install -U -r Style-Bert-VITS2\requirements.txt
 pip install -U -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
