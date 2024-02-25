@@ -151,7 +151,10 @@ def preprocess(
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
     if error_count > 0:
-        logger.warning(
+        logger.error(
+            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
+        )
+        raise Exception(
             f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
         )
     else:
