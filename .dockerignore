@@ -30,7 +30,8 @@ LICENSE
 /bert/deberta-v3-large/
 
 Data/
-dict/
+dict_data/user_dic.json
+dict_data/user_dic.dic
 docs/
 inputs/
 mos_results/
