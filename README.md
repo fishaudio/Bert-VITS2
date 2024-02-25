@@ -170,6 +170,18 @@ In addition to the original reference (written below), I used the following repo
 [The pretrained model](https://huggingface.co/litagin/Style-Bert-VITS2-1.0-base) and [JP-Extra version](https://huggingface.co/litagin/Style-Bert-VITS2-2.0-base-JP-Extra) is essentially taken from [the original base model of Bert-VITS2 v2.1](https://huggingface.co/Garydesu/bert-vits2_base_model-2.1) and [JP-Extra pretrained model of Bert-VITS2](https://huggingface.co/Stardust-minus/Bert-VITS2-Japanese-Extra), so all the credits go to the original author ([Fish Audio](https://github.com/fishaudio)):
 
 
+In addition, [text/user_dict/] module is based on the following repositories:
+- [[voicevox_engine](https://github.com/VOICEVOX/voicevox_engine)]
+and the license of this module is LGPL v3.
+
+## LICENSE
+
+This repository is licensed under the GNU Affero General Public License v3.0, the same as the original Bert-VITS2 repository. For more details, see [LICENSE](LICENSE).
+
+In addition, [text/user_dict/] module is licensed under the GNU Lesser General Public License v3.0, inherited from the original VOICEVOX engine repository. For more details, see [LGPL_LICENSE](text/user_dict/LGPL_LICENSE).
+
+
+
 Below is the original README.md.
 ---
 
