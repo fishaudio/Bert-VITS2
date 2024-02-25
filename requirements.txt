@@ -1,16 +1,14 @@
 cmudict
 cn2an
-faster-whisper>=0.10.0,<1.0.0
+faster-whisper==0.10.1
 g2p_en
 GPUtil
 gradio
-jaconv
 jieba
 langid
 librosa==0.9.2
 loguru
 matplotlib
-mecab-python3
 num2words
 numba
 numpy
@@ -20,12 +18,12 @@ pyloudnorm
 # pyopenjtalk-prebuilt  # Should be manually uninstalled
 pyopenjtalk-dict
 pypinyin
-pyworld
+# pyworld  # Not supported on Windows without Cython...
 PyYAML
 requests
 safetensors
 scipy
 tensorboard
-torch>=2.1,<2.2 # For users without GPU or colab
+torch>=2.1,<2.2
 transformers
 umap-learn

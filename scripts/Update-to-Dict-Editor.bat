@@ -28,13 +28,11 @@ xcopy /QSY .\Style-Bert-VITS2-dev\ .\Style-Bert-VITS2\
 rmdir /s /q Style-Bert-VITS2-dev
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM 仮想環境のpip requirements.txtを更新
+@REM 仮想環境を有効化
 
 echo call .\Style-Bert-VITS2\scripts\activate.bat
 call .\Style-Bert-VITS2\venv\Scripts\activate.bat
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
-
-pause
 
 @REM pyopenjtalk-prebuiltやpyopenjtalkが入っていたら削除
 echo python -m pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk

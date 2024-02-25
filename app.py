@@ -202,7 +202,9 @@ examples = [
 initial_md = f"""
 # Style-Bert-VITS2 ver {LATEST_VERSION} 音声合成
 
-注意: 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
+- Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py`で起動できます。
+
+- 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
 """
 
 how_to_md = """
@@ -317,6 +319,7 @@ if __name__ == "__main__":
                     value=1,
                     step=0.05,
                     label="音程(1以外では音質劣化)",
+                    visible=False,  # pyworldが必要
                 )
                 intonation_scale = gr.Slider(
                     minimum=0,
@@ -324,6 +327,7 @@ if __name__ == "__main__":
                     value=1,
                     step=0.1,
                     label="抑揚(1以外では音質劣化)",
+                    visible=False,  # pyworldが必要
                 )
 
                 line_split = gr.Checkbox(

@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 import gradio as gr
 import numpy as np
-import pyworld
+
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
 
@@ -32,6 +32,13 @@ def adjust_voice(fs, wave, pitch_scale, intonation_scale):
     if pitch_scale == 1.0 and intonation_scale == 1.0:
         # 初期値の場合は、音質劣化を避けるためにそのまま返す
         return fs, wave
+
+    try:
+        import pyworld
+    except ImportError:
+        raise ImportError(
+            "pyworld is not installed. Please install it by `pip install pyworld`"
+        )
 
     # pyworldでf0を加工して合成
     # pyworldよりもよいのがあるかもしれないが……
@@ -197,16 +204,17 @@ class Model:
                         audios.append(np.zeros(int(44100 * split_interval)))
                 audio = np.concatenate(audios)
         logger.info("Audio data generated successfully")
-        fs, audio = adjust_voice(
-            fs=self.hps.data.sampling_rate,
-            wave=audio,
-            pitch_scale=pitch_scale,
-            intonation_scale=intonation_scale,
-        )
+        if not (pitch_scale == 1.0 and intonation_scale == 1.0):
+            _, audio = adjust_voice(
+                fs=self.hps.data.sampling_rate,
+                wave=audio,
+                pitch_scale=pitch_scale,
+                intonation_scale=intonation_scale,
+            )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             audio = convert_to_16_bit_wav(audio)
-        return (fs, audio)
+        return (self.hps.data.sampling_rate, audio)
 
 
 class ModelHolder:
