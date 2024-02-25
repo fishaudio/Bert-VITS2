@@ -9,6 +9,7 @@ import time
 import webbrowser
 from datetime import datetime
 from multiprocessing import cpu_count
+from pathlib import Path
 
 import gradio as gr
 import yaml
@@ -162,13 +163,20 @@ def preprocess_text(model_name, use_jp_extra, val_per_lang):
     except FileNotFoundError:
         logger.error(f"Step 3: {lbl_path} not found.")
         return False, f"Step 3, Error: 書き起こしファイル {lbl_path} が見つかりません。"
-    with open(lbl_path, "w", encoding="utf-8") as f:
-        for line in lines:
-            path, spk, language, text = line.strip().split("|")
-            path = os.path.join(dataset_path, "wavs", os.path.basename(path)).replace(
-                "\\", "/"
+    new_lines = []
+    for line in lines:
+        if len(line.strip().split("|")) != 4:
+            logger.error(f"Step 3: {lbl_path} has invalid format at line:\n{line}")
+            return (
+                False,
+                f"Step 3, Error: 書き起こしファイル次の行の形式が不正です:\n{line}",
             )
-            f.writelines(f"{path}|{spk}|{language}|{text}\n")
+        path, spk, language, text = line.strip().split("|")
+        # pathをファイル名だけ取り出して正しいパスに変更
+        path = Path(dataset_path) / "wavs" / Path(path).name
+        new_lines.append(f"{path}|{spk}|{language}|{text}\n")
+    with open(lbl_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
     cmd = [
         "preprocess_text.py",
         "--config-path",

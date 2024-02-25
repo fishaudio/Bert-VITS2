@@ -12,10 +12,12 @@
 以下では次のような方針でやっています。
 
 - `/storage/`は永続ストレージなので、事前学習モデルとかを含めてリポジトリをクローンするとよい。
-- `/notebooks/`は一時ストレージなので、データセットやその結果を保存する。
+- `/notebooks/`はノートブックごとに変わるストレージなので（同一ノートブック違うランタイムだと共有されるらしい）、データセットやその結果を保存する。ただ容量が多い場合はあふれる可能性があるので`/tmp/`に保存するとよいかもしれない。
 - hugging faceアカウントを作り、（プライベートな）リポジトリを作って、学習元データを置いたり、学習結果を随時アップロードする。
 
 ### 1. 環境を作る
+
+以下はデフォルトの`Start from Scratch`で作成した環境の場合。[Dockerfile.train](../Dockerfile.train)を使ったカスタムイメージをするとPythonの環境構築の手間がちょっと省けるので、それを使いたい人は`Advanced Options / Container / Name`に[`litagin/mygradient:latest`](https://hub.docker.com/r/litagin/mygradient/tags)を指定すると使えます（pipの箇所が不要になる等）。
 
 まずは永続ストレージにgit clone
 ```bash
