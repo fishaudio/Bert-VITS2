@@ -1,6 +1,7 @@
 """
 logger封装
 """
+
 from loguru import logger
 
 from .stdout_wrapper import SAFE_STDOUT

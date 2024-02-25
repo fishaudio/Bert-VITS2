@@ -1,6 +1,7 @@
 """
 翻译api
 """
+
 from config import config
 
 import random
