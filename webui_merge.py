@@ -268,7 +268,12 @@ def load_styles_gr(model_name_a, model_name_b):
     with open(config_path_b, encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
-    return gr.Textbox(value=", ".join(styles_a)), gr.Textbox(value=", ".join(styles_b))
+
+    return gr.Textbox(value=", ".join(styles_a)), gr.Textbox(value=", ".join(styles_b)), gr.TextArea(
+        label="スタイルのマージリスト",
+        placeholder=f"{DEFAULT_STYLE}, {DEFAULT_STYLE},{DEFAULT_STYLE}\nAngry, Angry, Angry",
+        value='\n'.join(f"{sty_a}, {sty_b}, {sty_a if sty_a != sty_b else ''}{sty_b}" for sty_a in styles_a for sty_b in styles_b),
+    )
 
 
 initial_md = """
@@ -440,7 +445,7 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
     load_style_button.click(
         load_styles_gr,
         inputs=[model_name_a, model_name_b],
-        outputs=[styles_a, styles_b],
+        outputs=[styles_a, styles_b, style_triple_list],
     )
 
     model_merge_button.click(
