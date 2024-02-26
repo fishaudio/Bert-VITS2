@@ -4,7 +4,7 @@ import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
-from text.japanese import text2sep_kata
+from text.japanese import text2sep_kata, text_normalize
 
 LOCAL_PATH = "./bert/deberta-v2-large-japanese-char-wwm"
 
@@ -19,8 +19,10 @@ def get_bert_feature(
     device=config.bert_gen_config.device,
     assist_text=None,
     assist_text_weight=0.7,
+    ignore_unknown=False,
 ):
-    text = "".join(text2sep_kata(text)[0])
+    text = "".join(text2sep_kata(text, ignore_unknown=ignore_unknown)[0])
+    # text = text_normalize(text)
     if assist_text:
         assist_text = "".join(text2sep_kata(assist_text)[0])
     if (

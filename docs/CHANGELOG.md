@@ -1,5 +1,71 @@
 # Changelog
 
+## v2.3 (2024-02-25)
+
+### 大きな変更
+
+大きい変更をいくつかしたため、**アップデートはまた専用の手順**が必要です。下記の指示にしたがってください。
+
+#### ユーザー辞書機能
+あらかじめ辞書に固有名詞を追加することができ、それが**学習時**・**音声合成時**の読み取得部分に適応されます。辞書の追加・編集は次のエディタ経由で行ってください。または、手持ちのOpenJTalkのcsv形式の辞書がある場合は、`dict_data/default.csv`ファイルを直接上書きや追加しても可能です。
+
+使えそうな辞書（ライセンス等は各自ご確認ください）（他に良いのがあったら教えて下さい）：
+
+- [WariHima/Kanayomi-dict](https://github.com/WariHima/KanaYomi-dict)
+- [takana-v/tsumu_dic](https://github.com/takana-v/tsumu_dic)
+
+
+辞書機能部分の[実装](/text/user_dict/) は、中のREADMEにある通り、[VOICEVOX Editor](https://github.com/VOICEVOX/voicevox) のものを使っており、この部分のコードライセンスはLGPL-3.0です。
+
+#### 音声合成専用エディタ
+
+音声合成専用エディタを追加。今までのWebUIでできた機能のほか、次のような機能が使えます（つまり既存の日本語音声合成ソフトウェアのエディタを真似ました）：
+- セリフ単位でキャラや設定を変更しながら原稿を作り、それを一括で生成したり、原稿を保存等したり読み込んだり
+- GUIよる分かりやすいアクセント調整
+- ユーザー辞書への単語追加や編集
+
+`Editor.bat`をダブルクリックか`python server_editor.py --inbrowser`で起動します。エディター部分は[こちらの別リポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)になります。フロントエンド初心者なのでプルリクや改善案等をお待ちしています。
+
+### バグ修正
+
+- 特定の状況で読みが正しく取得できず `list index out of range` となるバグの修正
+- 前処理時に、書き起こしファイルのある行の形式が不正だと、書き起こしファイルのそれ以降の内容が消えてしまうバグの修正
+- faster-whisperが1.0.0にメジャーバージョンアップされ（今のところ）大幅に劣化したので、バージョンを0.10.1へ固定
+
+### 改善
+
+- テキスト前処理時に、読みの取得の失敗等があった場合に、処理を中断せず、エラーがおきた箇所を`text_error.log`ファイルへ保存するように変更。
+- 音声合成時に、読めない文字があったときはエラーを起こさず、その部分を無視して読み上げるように変更（学習段階ではエラーを出します）
+- コマンドラインで前処理や学習が簡単にできるよう、前処理を行う`preprocess_all.py`を追加（詳しくは[CLI.md](/docs/CLI.md)を参照）
+- 学習の際に、自動的に自分のhugging faceリポジトリへ結果をアップロードするオプションを追加。コマンドライン引数で`--repo_id username/my_model`のように指定してください（詳しくは[CLI.md](/docs/CLI.md)を参照）。🤗の無制限ストレージが使えるのでクラウドでの学習に便利です。
+- 学習時にデコーダー部分を凍結するオプションの追加。品質がもしかしたら上がるかもしれません。
+- `initialize.py`に引数`--dataset_root`と`--assets_root`を追加し、`configs/paths.yml`をその時点で変更できるようにした
+
+### その他
+
+- [paperspaceでの学習の手引きを追加](/docs/paperspace.md)、paperspaceでのimageに使える[Dockerfile](/Dockerfile.train)を追加
+- [CLIでの各種処理の実行の仕方を追加](/docs/CLI.md)
+- [Hugging Face spacesで遊べる音声合成エディタ](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-Editor-Demo)をデプロイするための[Dockerfile](Dockerfile.deploy)を追加
+
+### アップデート手順
+
+- [Update-to-Dict-Editor.bat](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.3/Update-to-Dict-Editor.bat)をダウンロードし、`Style-Bert-VITS2`フォルダがある場所（インストールbatファイルとかがあったところ）においてダブルクリックしてください。
+
+- 手動での場合は、以下の手順で実行してください：
+```bash
+git pull
+venv\Scripts\activate
+pip uninstall pyopenjtalk-prebuilt
+pip install -r requirements.txt
+# python initialize.py  # これを1.x系からのアップデートの場合は実行してください
+python server_editor.py --inbrowser
+```
+
+### 新規インストール手順
+[このzip](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.3/Style-Bert-VITS2.zip)をダウンロードし、解凍してください。
+を展開し、`Install-Style-Bert-VITS2.bat`をダブルクリックしてください。
+
+
 ## v2.2 (2024-02-09)
 
 ### 変更・機能追加

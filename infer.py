@@ -52,9 +52,12 @@ def get_text(
     assist_text=None,
     assist_text_weight=0.7,
     given_tone=None,
+    ignore_unknown=False,
 ):
     use_jp_extra = hps.version.endswith("JP-Extra")
-    norm_text, phone, tone, word2ph = clean_text(text, language_str, use_jp_extra)
+    norm_text, phone, tone, word2ph = clean_text(
+        text, language_str, use_jp_extra, ignore_unknown=ignore_unknown
+    )
     if given_tone is not None:
         if len(given_tone) != len(phone):
             raise InvalidToneError(
@@ -71,7 +74,13 @@ def get_text(
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
     bert_ori = get_bert(
-        norm_text, word2ph, language_str, device, assist_text, assist_text_weight
+        norm_text,
+        word2ph,
+        language_str,
+        device,
+        assist_text,
+        assist_text_weight,
+        ignore_unknown,
     )
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
@@ -118,6 +127,7 @@ def infer(
     assist_text=None,
     assist_text_weight=0.7,
     given_tone=None,
+    ignore_unknown=False,
 ):
     is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
@@ -128,6 +138,7 @@ def infer(
         assist_text=assist_text,
         assist_text_weight=assist_text_weight,
         given_tone=given_tone,
+        ignore_unknown=ignore_unknown,
     )
     if skip_start:
         phones = phones[3:]

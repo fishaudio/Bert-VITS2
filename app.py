@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Optional
 
 import gradio as gr
@@ -57,6 +58,8 @@ def tts_fn(
     kata_tone_json_str,
     use_tone,
     speaker,
+    pitch_scale,
+    intonation_scale,
 ):
     model_holder.load_model_gr(model_name, model_path)
 
@@ -111,6 +114,8 @@ def tts_fn(
             style_weight=style_weight,
             given_tone=tone,
             sid=speaker_id,
+            pitch_scale=pitch_scale,
+            intonation_scale=intonation_scale,
         )
     except InvalidToneError as e:
         logger.error(f"Tone error: {e}")
@@ -197,7 +202,9 @@ examples = [
 initial_md = f"""
 # Style-Bert-VITS2 ver {LATEST_VERSION} 音声合成
 
-注意: 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
+- Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py`で起動できます。
+
+- 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
 """
 
 how_to_md = """
@@ -267,7 +274,7 @@ if __name__ == "__main__":
         help="Do not launch app automatically",
     )
     args = parser.parse_args()
-    model_dir = args.dir
+    model_dir = Path(args.dir)
 
     if args.cpu:
         device = "cpu"
@@ -306,6 +313,22 @@ if __name__ == "__main__":
                     refresh_button = gr.Button("更新", scale=1, visible=True)
                     load_button = gr.Button("ロード", scale=1, variant="primary")
                 text_input = gr.TextArea(label="テキスト", value=initial_text)
+                pitch_scale = gr.Slider(
+                    minimum=0.8,
+                    maximum=1.5,
+                    value=1,
+                    step=0.05,
+                    label="音程(1以外では音質劣化)",
+                    visible=False,  # pyworldが必要
+                )
+                intonation_scale = gr.Slider(
+                    minimum=0,
+                    maximum=2,
+                    value=1,
+                    step=0.1,
+                    label="抑揚(1以外では音質劣化)",
+                    visible=False,  # pyworldが必要
+                )
 
                 line_split = gr.Checkbox(
                     label="改行で分けて生成（分けたほうが感情が乗ります）",
@@ -441,6 +464,8 @@ if __name__ == "__main__":
                 tone,
                 use_tone,
                 speaker,
+                pitch_scale,
+                intonation_scale,
             ],
             outputs=[text_output, audio_output, tone],
         )

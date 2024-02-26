@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
+import yaml
 from huggingface_hub import hf_hub_download
 
 from common.log import logger
@@ -90,9 +91,21 @@ def download_jvnv_models():
             )
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip_jvnv", action="store_true")
+    parser.add_argument(
+        "--dataset_root",
+        type=str,
+        help="Dataset root path (default: Data)",
+        default=None,
+    )
+    parser.add_argument(
+        "--assets_root",
+        type=str,
+        help="Assets root path (default: model_assets)",
+        default=None,
+    )
     args = parser.parse_args()
 
     download_bert_models()
@@ -105,3 +118,21 @@ if __name__ == "__main__":
 
     if not args.skip_jvnv:
         download_jvnv_models()
+
+    if args.dataset_root is None and args.assets_root is None:
+        return
+
+    # Change default paths if necessary
+    paths_yml = Path("configs/paths.yml")
+    with open(paths_yml, "r", encoding="utf-8") as f:
+        yml_data = yaml.safe_load(f)
+    if args.assets_root is not None:
+        yml_data["assets_root"] = args.assets_root
+    if args.dataset_root is not None:
+        yml_data["dataset_root"] = args.dataset_root
+    with open(paths_yml, "w", encoding="utf-8") as f:
+        yaml.dump(yml_data, f, allow_unicode=True)
+
+
+if __name__ == "__main__":
+    main()

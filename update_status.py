@@ -38,7 +38,9 @@ def update_c_files():
                 c_files.append(os.path.join(root, file))
                 cnt += 1
     print(c_files)
-    return f"更新模型列表完成, 共找到{cnt}个配置文件", gr.Dropdown.update(choices=c_files)
+    return f"更新模型列表完成, 共找到{cnt}个配置文件", gr.Dropdown.update(
+        choices=c_files
+    )
 
 
 def update_model_folders():
@@ -50,7 +52,9 @@ def update_model_folders():
                 subdirs.append(os.path.join(root, dir_name))
                 cnt += 1
     print(subdirs)
-    return f"更新模型文件夹列表完成, 共找到{cnt}个文件夹", gr.Dropdown.update(choices=subdirs)
+    return f"更新模型文件夹列表完成, 共找到{cnt}个文件夹", gr.Dropdown.update(
+        choices=subdirs
+    )
 
 
 def update_wav_lab_pairs():

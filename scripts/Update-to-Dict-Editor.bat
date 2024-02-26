@@ -28,21 +28,39 @@ xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
 rmdir /s /q Style-Bert-VITS2-master
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM 仮想環境のpip requirements.txtを更新
+@REM 仮想環境を有効化
 
 echo call .\Style-Bert-VITS2\scripts\activate.bat
 call .\Style-Bert-VITS2\venv\Scripts\activate.bat
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-pip install -U -r Style-Bert-VITS2\requirements.txt
+@REM pyopenjtalk-prebuiltやpyopenjtalkが入っていたら削除
+echo python -m pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+python -m pip uninstall -y pyopenjtalk-prebuilt pyopenjtalk
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+@REM pyopenjtalk-dictをインストール
+echo python -m pip install -U pyopenjtalk-dict
+python -m pip install -U pyopenjtalk-dict
+
+@REM その他のrequirements.txtも一応更新
+python -m pip install -U -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pushd Style-Bert-VITS2
 
-@REM 初期化（必要なモデルのダウンロード）
-python initialize.py
+@REM JP-Extra版以前からの場合のために一応initialize.pyを実行
 
-echo Style-Bert-VITS2の2.xへのアップデートが完了しました。
+echo python initialize.py
+python initialize.py
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+echo ----------------------------------------
+echo Update completed. Running Style-Bert-VITS2 Editor...
+echo ----------------------------------------
+
+@REM Style-Bert-VITS2 Editorを起動
+python server_editor.py --inbrowser
 
 pause
 
