@@ -212,7 +212,9 @@ class TextRequest(BaseModel):
 @router.post("/g2p")
 async def read_item(item: TextRequest):
     try:
-        kata_tone_list = g2kata_tone(item.text, ignore_unknown=True)
+        # 最初に正規化しないと整合性がとれない
+        text = text_normalize(item.text)
+        kata_tone_list = g2kata_tone(text, ignore_unknown=True)
     except Exception as e:
         raise HTTPException(
             status_code=400,

@@ -12,7 +12,7 @@ if not exist %CURL_CMD% (
 
 @REM Style-Bert-VITS2.zip をGitHubのmasterの最新のものをダウンロード
 %CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/dev.zip
+	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-masterになる）
@@ -24,8 +24,8 @@ del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-dev\ .\Style-Bert-VITS2\
-rmdir /s /q Style-Bert-VITS2-dev
+xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
+rmdir /s /q Style-Bert-VITS2-master
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM 仮想環境を有効化
@@ -49,15 +49,18 @@ if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pushd Style-Bert-VITS2
 
+@REM JP-Extra版以前からの場合のために一応initialize.pyを実行
+
+echo python initialize.py
+python initialize.py
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+echo ----------------------------------------
 echo Update completed. Running Style-Bert-VITS2 Editor...
+echo ----------------------------------------
 
 @REM Style-Bert-VITS2 Editorを起動
 python server_editor.py --inbrowser
-
-pause
-
-popd
-
 
 pause
 

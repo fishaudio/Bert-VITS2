@@ -4,8 +4,10 @@
 
 ### 大きな変更
 
+大きい変更をいくつかしたため、**アップデートはまた専用の手順**が必要です。下記の指示にしたがってください。
+
 #### ユーザー辞書機能
-あらかじめ辞書に固有名詞を追加することができ、それが学習時・音声合成時の読み取得部分に適応されます。辞書の追加・編集は次のエディタ経由で行ってください。または、手持ちのOpenJTalkのcsv形式の辞書がある場合は、`dict_data/default.csv`ファイルを直接上書きや追加しても可能です。
+あらかじめ辞書に固有名詞を追加することができ、それが**学習時**・**音声合成時**の読み取得部分に適応されます。辞書の追加・編集は次のエディタ経由で行ってください。または、手持ちのOpenJTalkのcsv形式の辞書がある場合は、`dict_data/default.csv`ファイルを直接上書きや追加しても可能です。
 
 使えそうな辞書（ライセンス等は各自ご確認ください）（他に良いのがあったら教えて下さい）：
 
@@ -26,7 +28,7 @@
 
 ### バグ修正
 
-- 「うっうあ」等の特定の状況で読みが正しく取得できないバグの修正
+- 特定の状況で読みが正しく取得できず `list index out of range` となるバグの修正
 - 前処理時に、書き起こしファイルのある行の形式が不正だと、書き起こしファイルのそれ以降の内容が消えてしまうバグの修正
 - faster-whisperが1.0.0にメジャーバージョンアップされ（今のところ）大幅に劣化したので、バージョンを0.10.1へ固定
 
@@ -37,13 +39,31 @@
 - コマンドラインで前処理や学習が簡単にできるよう、前処理を行う`preprocess_all.py`を追加（詳しくは[CLI.md](/docs/CLI.md)を参照）
 - 学習の際に、自動的に自分のhugging faceリポジトリへ結果をアップロードするオプションを追加。コマンドライン引数で`--repo_id username/my_model`のように指定してください（詳しくは[CLI.md](/docs/CLI.md)を参照）。🤗の無制限ストレージが使えるのでクラウドでの学習に便利です。
 - 学習時にデコーダー部分を凍結するオプションの追加。品質がもしかしたら上がるかもしれません。
-- `initialize.py`に引数`--dataset_root`と`--assets_root`を追加し、`configs/paths.yml`を変更できるようにした
+- `initialize.py`に引数`--dataset_root`と`--assets_root`を追加し、`configs/paths.yml`をその時点で変更できるようにした
 
 ### その他
 
 - [paperspaceでの学習の手引きを追加](/docs/paperspace.md)、paperspaceでのimageに使える[Dockerfile](/Dockerfile.train)を追加
-- [CLIでの学習の仕方を追加](/docs/CLI.md)
+- [CLIでの各種処理の実行の仕方を追加](/docs/CLI.md)
 - [Hugging Face spacesで遊べる音声合成エディタ](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-Editor-Demo)をデプロイするための[Dockerfile](Dockerfile.deploy)を追加
+
+### アップデート手順
+
+- [Update-to-Dict-Editor.bat](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.3/Update-to-Dict-Editor.bat)をダウンロードし、`Style-Bert-VITS2`フォルダがある場所（インストールbatファイルとかがあったところ）においてダブルクリックしてください。
+
+- 手動での場合は、以下の手順で実行してください：
+```bash
+git pull
+venv\Scripts\activate
+pip uninstall pyopenjtalk-prebuilt
+pip install -r requirements.txt
+# python initialize.py  # これを1.x系からのアップデートの場合は実行してください
+python server_editor.py --inbrowser
+```
+
+### 新規インストール手順
+[このzip](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.3/Style-Bert-VITS2.zip)をダウンロードし、解凍してください。
+を展開し、`Install-Style-Bert-VITS2.bat`をダブルクリックしてください。
 
 
 ## v2.2 (2024-02-09)
