@@ -58,7 +58,7 @@
 git pull
 venv\Scripts\activate
 pip uninstall pyopenjtalk-prebuilt
-pip install -r requirements.txt
+pip install -U -r requirements.txt
 # python initialize.py  # これを1.x系からのアップデートの場合は実行してください
 python server_editor.py --inbrowser
 ```
