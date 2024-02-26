@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.3 (2024-02-25)
+## v2.3 (2024-02-26)
 
 ### 大きな変更
 
@@ -18,6 +18,8 @@
 辞書機能部分の[実装](/text/user_dict/) は、中のREADMEにある通り、[VOICEVOX Editor](https://github.com/VOICEVOX/voicevox) のものを使っており、この部分のコードライセンスはLGPL-3.0です。
 
 #### 音声合成専用エディタ
+
+[🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-Editor-Demo)
 
 音声合成専用エディタを追加。今までのWebUIでできた機能のほか、次のような機能が使えます（つまり既存の日本語音声合成ソフトウェアのエディタを真似ました）：
 - セリフ単位でキャラや設定を変更しながら原稿を作り、それを一括で生成したり、原稿を保存等したり読み込んだり
