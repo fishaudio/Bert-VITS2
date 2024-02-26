@@ -22,7 +22,8 @@
     "freeze_JP_bert": false,
     "freeze_EN_bert": false,
     "freeze_emo": false,
-    "freeze_style": false
+    "freeze_style": false,
+    "freeze_decoder": false
   },
   "data": {
     "use_jp_extra": true,
@@ -74,5 +75,5 @@
       "initial_channel": 64
     }
   },
-  "version": "2.2-JP-Extra"
+  "version": "2.3-JP-Extra"
 }

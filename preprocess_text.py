@@ -15,6 +15,12 @@ from common.log import logger
 preprocess_text_config = config.preprocess_text_config
 
 
+# Count lines for tqdm
+def count_lines(file_path: str):
+    with open(file_path, "r", encoding="utf-8") as file:
+        return sum(1 for _ in file)
+
+
 @click.command()
 @click.option(
     "--transcription-path",
@@ -49,10 +55,14 @@ def preprocess(
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
+    error_log_path = os.path.join(os.path.dirname(cleaned_path), "text_error.log")
+    error_count = 0
+
     if clean:
+        total_lines = count_lines(transcription_path)
         with open(cleaned_path, "w", encoding="utf-8") as out_file:
             with open(transcription_path, "r", encoding="utf-8") as trans_file:
-                for line in tqdm(trans_file, file=SAFE_STDOUT):
+                for line in tqdm(trans_file, file=SAFE_STDOUT, total=total_lines):
                     try:
                         utt, spk, language, text = line.strip().split("|")
                         norm_text, phones, tones, word2ph = clean_text(
@@ -70,10 +80,10 @@ def preprocess(
                             )
                         )
                     except Exception as e:
-                        logger.error(
-                            f"An error occurred while generating the training set and validation set, at line:\n{line}\nDetails:\n{e}"
-                        )
-                        raise
+                        logger.error(f"An error occurred at line:\n{line.strip()}\n{e}")
+                        with open(error_log_path, "a", encoding="utf-8") as error_log:
+                            error_log.write(f"{line.strip()}\n{e}\n\n")
+                        error_count += 1
 
     transcription_path = cleaned_path
     spk_utt_map = defaultdict(list)
@@ -101,9 +111,10 @@ def preprocess(
             if spk not in spk_id_map.keys():
                 spk_id_map[spk] = current_sid
                 current_sid += 1
-        logger.info(
-            f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
-        )
+        if countSame > 0 or countNotFound > 0:
+            logger.warning(
+                f"Total repeated audios: {countSame}, Total number of audio not found: {countNotFound}"
+            )
 
     train_list = []
     val_list = []
@@ -139,7 +150,17 @@ def preprocess(
     )
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
-    logger.info("Training set and validation set generation from texts is complete!")
+    if error_count > 0:
+        logger.error(
+            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
+        )
+        raise Exception(
+            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
+        )
+    else:
+        logger.info(
+            "Training set and validation set generation from texts is complete!"
+        )
 
 
 if __name__ == "__main__":

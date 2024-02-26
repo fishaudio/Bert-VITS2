@@ -99,7 +99,7 @@ for model_file, step, scores in results:
     logger.info(f"{model_file}: {scores[-1]}")
 
 with open(
-    mos_result_dir / f"mos_{model_name}.csv", "w", encoding="utf-8", newline=""
+    mos_result_dir / f"mos_{model_name}.csv", "w", encoding="utf_8_sig", newline=""
 ) as f:
     writer = csv.writer(f)
     writer.writerow(["model_path"] + ["step"] + test_texts + ["mean"])

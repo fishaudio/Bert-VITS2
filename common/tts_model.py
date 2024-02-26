@@ -1,17 +1,19 @@
-import numpy as np
-import gradio as gr
-import torch
 import os
 import warnings
+from pathlib import Path
+from typing import Optional, Union
+
+import gradio as gr
+import numpy as np
+
+import torch
 from gradio.processing_utils import convert_to_16_bit_wav
-from typing import Dict, List, Optional, Union
 
 import utils
 from infer import get_net_g, infer
 from models import SynthesizerTrn
 from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 
-from .log import logger
 from .constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -23,25 +25,60 @@ from .constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
 )
+from .log import logger
+
+
+def adjust_voice(fs, wave, pitch_scale, intonation_scale):
+    if pitch_scale == 1.0 and intonation_scale == 1.0:
+        # 初期値の場合は、音質劣化を避けるためにそのまま返す
+        return fs, wave
+
+    try:
+        import pyworld
+    except ImportError:
+        raise ImportError(
+            "pyworld is not installed. Please install it by `pip install pyworld`"
+        )
+
+    # pyworldでf0を加工して合成
+    # pyworldよりもよいのがあるかもしれないが……
+
+    wave = wave.astype(np.double)
+    f0, t = pyworld.harvest(wave, fs)
+    # 質が高そうだしとりあえずharvestにしておく
+
+    sp = pyworld.cheaptrick(wave, f0, t, fs)
+    ap = pyworld.d4c(wave, f0, t, fs)
+
+    non_zero_f0 = [f for f in f0 if f != 0]
+    f0_mean = sum(non_zero_f0) / len(non_zero_f0)
+
+    for i, f in enumerate(f0):
+        if f == 0:
+            continue
+        f0[i] = pitch_scale * f0_mean + intonation_scale * (f - f0_mean)
+
+    wave = pyworld.synthesize(f0, sp, ap, fs)
+    return fs, wave
 
 
 class Model:
     def __init__(
-        self, model_path: str, config_path: str, style_vec_path: str, device: str
+        self, model_path: Path, config_path: Path, style_vec_path: Path, device: str
     ):
-        self.model_path: str = model_path
-        self.config_path: str = config_path
+        self.model_path: Path = model_path
+        self.config_path: Path = config_path
+        self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.style_vec_path: str = style_vec_path
         self.hps: utils.HParams = utils.get_hparams_from_file(self.config_path)
-        self.spk2id: Dict[str, int] = self.hps.data.spk2id
-        self.id2spk: Dict[int, str] = {v: k for k, v in self.spk2id.items()}
+        self.spk2id: dict[str, int] = self.hps.data.spk2id
+        self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
         self.num_styles: int = self.hps.data.num_styles
         if hasattr(self.hps.data, "style2id"):
-            self.style2id: Dict[str, int] = self.hps.data.style2id
+            self.style2id: dict[str, int] = self.hps.data.style2id
         else:
-            self.style2id: Dict[str, int] = {str(i): i for i in range(self.num_styles)}
+            self.style2id: dict[str, int] = {str(i): i for i in range(self.num_styles)}
         if len(self.style2id) != self.num_styles:
             raise ValueError(
                 f"Number of styles ({self.num_styles}) does not match the number of style2id ({len(self.style2id)})"
@@ -57,7 +94,7 @@ class Model:
 
     def load_net_g(self):
         self.net_g = get_net_g(
-            model_path=self.model_path,
+            model_path=str(self.model_path),
             version=self.hps.version,
             device=self.device,
             hps=self.hps,
@@ -97,6 +134,9 @@ class Model:
         style: str = DEFAULT_STYLE,
         style_weight: float = DEFAULT_STYLE_WEIGHT,
         given_tone: Optional[list[int]] = None,
+        pitch_scale: float = 1.0,
+        intonation_scale: float = 1.0,
+        ignore_unknown: bool = False,
     ) -> tuple[int, np.ndarray]:
         logger.info(f"Start generating audio data from text:\n{text}")
         if language != "JP" and self.hps.version.endswith("JP-Extra"):
@@ -134,6 +174,7 @@ class Model:
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
                     given_tone=given_tone,
+                    ignore_unknown=ignore_unknown,
                 )
         else:
             texts = text.split("\n")
@@ -156,55 +197,99 @@ class Model:
                             assist_text=assist_text,
                             assist_text_weight=assist_text_weight,
                             style_vec=style_vector,
+                            ignore_unknown=ignore_unknown,
                         )
                     )
                     if i != len(texts) - 1:
                         audios.append(np.zeros(int(44100 * split_interval)))
                 audio = np.concatenate(audios)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                audio = convert_to_16_bit_wav(audio)
         logger.info("Audio data generated successfully")
+        if not (pitch_scale == 1.0 and intonation_scale == 1.0):
+            _, audio = adjust_voice(
+                fs=self.hps.data.sampling_rate,
+                wave=audio,
+                pitch_scale=pitch_scale,
+                intonation_scale=intonation_scale,
+            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            audio = convert_to_16_bit_wav(audio)
         return (self.hps.data.sampling_rate, audio)
 
 
 class ModelHolder:
-    def __init__(self, root_dir: str, device: str):
-        self.root_dir: str = root_dir
+    def __init__(self, root_dir: Path, device: str):
+        self.root_dir: Path = root_dir
         self.device: str = device
-        self.model_files_dict: Dict[str, List[str]] = {}
+        self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[Model] = None
-        self.model_names: List[str] = []
-        self.models: List[Model] = []
+        self.model_names: list[str] = []
+        self.models: list[Model] = []
         self.refresh()
 
     def refresh(self):
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
-        model_dirs = [
-            d
-            for d in os.listdir(self.root_dir)
-            if os.path.isdir(os.path.join(self.root_dir, d))
-        ]
-        for model_name in model_dirs:
-            model_dir = os.path.join(self.root_dir, model_name)
+
+        model_dirs = [d for d in self.root_dir.iterdir() if d.is_dir()]
+        for model_dir in model_dirs:
             model_files = [
-                os.path.join(model_dir, f)
-                for f in os.listdir(model_dir)
-                if f.endswith(".pth") or f.endswith(".pt") or f.endswith(".safetensors")
+                f
+                for f in model_dir.iterdir()
+                if f.suffix in [".pth", ".pt", ".safetensors"]
             ]
             if len(model_files) == 0:
+                logger.warning(f"No model files found in {model_dir}, so skip it")
+                continue
+            config_path = model_dir / "config.json"
+            if not config_path.exists():
                 logger.warning(
-                    f"No model files found in {self.root_dir}/{model_name}, so skip it"
+                    f"Config file {config_path} not found, so skip {model_dir}"
                 )
                 continue
-            self.model_files_dict[model_name] = model_files
-            self.model_names.append(model_name)
+            self.model_files_dict[model_dir.name] = model_files
+            self.model_names.append(model_dir.name)
+
+    def models_info(self):
+        if hasattr(self, "_models_info"):
+            return self._models_info
+        result = []
+        for name, files in self.model_files_dict.items():
+            # Get styles
+            config_path = self.root_dir / name / "config.json"
+            hps = utils.get_hparams_from_file(config_path)
+            style2id: dict[str, int] = hps.data.style2id
+            styles = list(style2id.keys())
+            result.append(
+                {
+                    "name": name,
+                    "files": [str(f) for f in files],
+                    "styles": styles,
+                }
+            )
+        self._models_info = result
+        return result
+
+    def load_model(self, model_name: str, model_path_str: str):
+        model_path = Path(model_path_str)
+        if model_name not in self.model_files_dict:
+            raise ValueError(f"Model `{model_name}` is not found")
+        if model_path not in self.model_files_dict[model_name]:
+            raise ValueError(f"Model file `{model_path}` is not found")
+        if self.current_model is None or self.current_model.model_path != model_path:
+            self.current_model = Model(
+                model_path=model_path,
+                config_path=self.root_dir / model_name / "config.json",
+                style_vec_path=self.root_dir / model_name / "style_vectors.npy",
+                device=self.device,
+            )
+        return self.current_model
 
     def load_model_gr(
-        self, model_name: str, model_path: str
+        self, model_name: str, model_path_str: str
     ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
+        model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
         if model_path not in self.model_files_dict[model_name]:
@@ -223,8 +308,8 @@ class ModelHolder:
             )
         self.current_model = Model(
             model_path=model_path,
-            config_path=os.path.join(self.root_dir, model_name, "config.json"),
-            style_vec_path=os.path.join(self.root_dir, model_name, "style_vectors.npy"),
+            config_path=self.root_dir / model_name / "config.json",
+            style_vec_path=self.root_dir / model_name / "style_vectors.npy",
             device=self.device,
         )
         speakers = list(self.current_model.spk2id.keys())

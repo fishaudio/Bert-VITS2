@@ -6,6 +6,7 @@ import platform
 
 import torch
 import torch.distributed as dist
+from huggingface_hub import HfApi
 from torch.cuda.amp import GradScaler, autocast
 from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -45,6 +46,8 @@ torch.backends.cuda.enable_math_sdp(True)
 
 global_step = 0
 
+api = HfApi()
+
 
 def run():
     # Command line configuration is not recommended unless necessary, use config.yml
@@ -83,6 +86,11 @@ def run():
         "--speedup",
         action="store_true",
         help="Speed up training by disabling logging and evaluation.",
+    )
+    parser.add_argument(
+        "--repo_id",
+        help="Huggingface model repo id to backup the model.",
+        default=None,
     )
     args = parser.parse_args()
 
@@ -151,6 +159,30 @@ def run():
     config.out_dir: The directory for model assets of this model (for inference).
         default: `model_assets/{model_name}`.
     """
+
+    if args.repo_id is not None:
+        # First try to upload config.json to check if the repo exists
+        try:
+            api.upload_file(
+                path_or_fileobj=args.config,
+                path_in_repo=f"Data/{config.model_name}/config.json",
+                repo_id=hps.repo_id,
+            )
+        except Exception as e:
+            logger.error(e)
+            logger.error(
+                f"Failed to upload files to the repo {hps.repo_id}. Please check if the repo exists and you have logged in using `huggingface-cli login`."
+            )
+            raise e
+        # Upload Data dir for resuming training
+        api.upload_folder(
+            repo_id=hps.repo_id,
+            folder_path=config.dataset_path,
+            path_in_repo=f"Data/{config.model_name}",
+            delete_patterns="*.pth",  # Only keep the latest checkpoint
+            run_as_future=True,
+        )
+
     os.makedirs(config.out_dir, exist_ok=True)
 
     if not args.skip_default_style:
@@ -272,6 +304,11 @@ def run():
     if getattr(hps.train, "freeze_style", False):
         logger.info("Freezing style encoder !!!")
         for param in net_g.enc_p.style_proj.parameters():
+            param.requires_grad = False
+
+    if getattr(hps.train, "freeze_decoder", False):
+        logger.info("Freezing decoder !!!")
+        for param in net_g.dec.parameters():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
@@ -478,6 +515,25 @@ def run():
                 ),
                 for_infer=True,
             )
+            if hps.repo_id is not None:
+                future1 = api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=config.dataset_path,
+                    path_in_repo=f"Data/{config.model_name}",
+                    delete_patterns="*.pth",  # Only keep the latest checkpoint
+                    run_as_future=True,
+                )
+                future2 = api.upload_folder(
+                    repo_id=hps.repo_id,
+                    folder_path=config.out_dir,
+                    path_in_repo=f"model_assets/{config.model_name}",
+                    run_as_future=True,
+                )
+                try:
+                    future1.result()
+                    future2.result()
+                except Exception as e:
+                    logger.error(e)
 
     if pbar is not None:
         pbar.close()
@@ -760,6 +816,20 @@ def train_and_evaluate(
                     ),
                     for_infer=True,
                 )
+                if hps.repo_id is not None:
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=config.dataset_path,
+                        path_in_repo=f"Data/{config.model_name}",
+                        delete_patterns="*.pth",  # Only keep the latest checkpoint
+                        run_as_future=True,
+                    )
+                    api.upload_folder(
+                        repo_id=hps.repo_id,
+                        folder_path=config.out_dir,
+                        path_in_repo=f"model_assets/{config.model_name}",
+                        run_as_future=True,
+                    )
 
         global_step += 1
         if pbar is not None:
