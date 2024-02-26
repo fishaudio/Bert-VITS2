@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 import gradio as gr
 import numpy as np
@@ -27,7 +28,7 @@ with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     # dataset_root = path_config["dataset_root"]
     assets_root = path_config["assets_root"]
 
-model_holder = ModelHolder(assets_root, device)
+model_holder = ModelHolder(Path(assets_root), device)
 
 
 def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_list):
@@ -226,7 +227,7 @@ def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
     config_path = os.path.join(assets_root, model_name, "config.json")
     style_vec_path = os.path.join(assets_root, model_name, "style_vectors.npy")
 
-    model = Model(model_path, config_path, style_vec_path, device)
+    model = Model(Path(model_path), Path(config_path), Path(style_vec_path), device)
     return model.infer(text, style=style, style_weight=style_weight)
 
 
