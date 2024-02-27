@@ -5,11 +5,13 @@ import json
 def export_onnx(export_path, model_path, config_path, novq, dev):
     hps = get_hparams_from_file(config_path)
     version = hps.version[0:3]
+    enable_emo = False
     if version == "2.0" or (version == "2.1" and novq):
         from .V200 import SynthesizerTrn, symbols
     elif version == "2.1" and (not novq):
         from .V210 import SynthesizerTrn, symbols
     elif version == "2.2":
+        enable_emo = True
         if novq and dev:
             from .V220_novq_dev import SynthesizerTrn, symbols
         else:
@@ -17,6 +19,7 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
     elif version == "2.3":
         from .V230 import SynthesizerTrn, symbols
     elif version == "2.4":
+        enable_emo = True
         from .V240 import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
@@ -36,10 +39,10 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
 
     LangDict = {"ZH": [0, 0], "JP": [1, 6], "EN": [2, 8]}
     BertPaths = [
-        "chinese-roberta-wwm-ext-large",
-        "deberta-v2-large-japanese",
-        "bert-base-japanese-v3",
-    ]
+            "chinese-roberta-wwm-ext-large",
+            "deberta-v2-large-japanese",
+            "bert-base-japanese-v3",
+        ]
     if version == "2.4":
         LangDict = {"ZH": [0, 0]}
         BertPaths = ["chinese-roberta-wwm-ext-large"]
@@ -56,7 +59,7 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
         "LanguageMap": LangDict,
         "Dict": "BasicDict",
         "BertPath": BertPaths,
-        "Clap": "clap-htsat-fused",
+        "Clap": ("clap-htsat-fused" if enable_emo else False),
     }
 
     with open(f"onnx/{export_path}.json", "w") as MoeVsConfFile:
