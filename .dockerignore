@@ -1,43 +1,25 @@
-# Dockerfile.deploy用
+# Dockerfile.deploy用の.dockerignore
+# 日本語のJP-Extraのエディター稼働のみに必要なファイルを指定する
 
-*.pyc
-*.pyo
-*.pyd
-__pycache__
-*.pyc
+*
 
-venv/
-.vscode/
+!/bert/deberta-v2-large-japanese-char-wwm/
+!/common/
+!/configs/
+!/dict_data/default.csv
+!/model_assets/
+!/monotonic_align/
+!/text/
 
-.ipynb_checkpoints/
-*.ipynb
-
-.git/
-.gitignore
-
-Dockerfile*
-.dockerignore
-*.md
-*.bat
-LICENSE
-
-*.wav
-*.zip
-*.csv
-
-# 中国語と英語が必要な場合はコメントアウト
-/bert/chinese-roberta-wwm-ext-large/
-/bert/deberta-v3-large/
-
-Data/
-dict_data/user_dic.json
-dict_data/user_dic.dic
-docs/
-inputs/
-mos_results/
-pretrained/
-pretrained_jp_extra/
-scripts/
-slm/
-static/
-tools/
+!/attentions.py
+!/commons.py
+!/config.py
+!/default_config.yml
+!/infer.py
+!/models.py
+!/models_jp_extra.py
+!/modules.py
+!/requirements.txt
+!/server_editor.py
+!/transforms.py
+!/utils.py
