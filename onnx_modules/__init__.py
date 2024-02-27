@@ -2,7 +2,7 @@
 import json
 
 
-def export_onnx(export_path, model_path, config_path, novq, dev):
+def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
     hps = get_hparams_from_file(config_path)
     version = hps.version[0:3]
     enable_emo = False
@@ -20,7 +20,10 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
         from .V230 import SynthesizerTrn, symbols
     elif version == "2.4":
         enable_emo = True
-        from .V240 import SynthesizerTrn, symbols
+        if Extra == "chinese":
+            from .V240_ZH import SynthesizerTrn, symbols
+        if Extra == "japanese":
+            from .V240_JP import SynthesizerTrn, symbols
     net_g = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
@@ -44,8 +47,8 @@ def export_onnx(export_path, model_path, config_path, novq, dev):
             "bert-base-japanese-v3",
         ]
     if version == "2.4":
-        LangDict = {"ZH": [0, 0]}
-        BertPaths = ["chinese-roberta-wwm-ext-large"]
+        LangDict = ({"ZH": [0, 0]} if Extra == "chinese" else {"JP": [1, 6]}) 
+        BertPaths = (["chinese-roberta-wwm-ext-large"] if Extra == "chinese" else ["deberta-v2-large-japanese"])
 
     MoeVSConf = {
         "Folder": f"{export_path}",
