@@ -155,7 +155,7 @@ def resample(model_name, normalize, trim, num_processes):
     return True, "Step 2, Success: 音声ファイルの前処理が完了しました"
 
 
-def preprocess_text(model_name, use_jp_extra, val_per_lang):
+def preprocess_text(model_name, use_jp_extra, val_per_lang, yomi_error):
     logger.info("Step 3: start preprocessing text...")
     dataset_path, lbl_path, train_path, val_path, config_path = get_path(model_name)
     try:
@@ -189,6 +189,8 @@ def preprocess_text(model_name, use_jp_extra, val_per_lang):
         val_path,
         "--val-per-lang",
         str(val_per_lang),
+        "--yomi_error",
+        yomi_error,
     ]
     if use_jp_extra:
         cmd.append("--use_jp_extra")
@@ -278,6 +280,7 @@ def preprocess_all(
     use_jp_extra,
     val_per_lang,
     log_interval,
+    yomi_error,
 ):
     if model_name == "":
         return False, "Error: モデル名を入力してください"
@@ -304,8 +307,12 @@ def preprocess_all(
     )
     if not success:
         return False, message
+
     success, message = preprocess_text(
-        model_name=model_name, use_jp_extra=use_jp_extra, val_per_lang=val_per_lang
+        model_name=model_name,
+        use_jp_extra=use_jp_extra,
+        val_per_lang=val_per_lang,
+        yomi_error=yomi_error,
     )
     if not success:
         return False, message
@@ -488,6 +495,15 @@ if __name__ == "__main__":
                     label="音声の最初と最後の無音を取り除く",
                     value=False,
                 )
+                yomi_error = gr.Radio(
+                    label="読みエラーの扱い",
+                    choices=[
+                        ("エラー出たらテキスト前処理が終わった時点で中断", "raise"),
+                        ("エラーファイルは使わず続行", "skip"),
+                        ("読みを強引に埋めて使い続行", "use"),
+                    ],
+                    value="raise",
+                )
                 with gr.Accordion("詳細設定", open=False):
                     num_processes = gr.Slider(
                         label="プロセス数",
@@ -630,6 +646,15 @@ if __name__ == "__main__":
                         maximum=100,
                         step=1,
                     )
+                    yomi_error_manual = gr.Radio(
+                        label="読みエラーの扱い",
+                        choices=[
+                            ("エラー出たらテキスト前処理が終わった時点で中断", "raise"),
+                            ("エラーファイルは使わず続行", "skip"),
+                            ("読みを強引に埋めて使い続行", "use"),
+                        ],
+                        value="raise",
+                    )
                 with gr.Column():
                     preprocess_text_btn = gr.Button(value="実行", variant="primary")
                     info_preprocess_text = gr.Textbox(label="状況")
@@ -693,6 +718,7 @@ if __name__ == "__main__":
                 use_jp_extra,
                 val_per_lang,
                 log_interval,
+                yomi_error,
             ],
             outputs=[info_all],
         )
@@ -731,6 +757,7 @@ if __name__ == "__main__":
                 model_name,
                 use_jp_extra_manual,
                 val_per_lang_manual,
+                yomi_error_manual,
             ],
             outputs=[info_preprocess_text],
         )

@@ -19,12 +19,13 @@ def get_bert_feature(
     device=config.bert_gen_config.device,
     assist_text=None,
     assist_text_weight=0.7,
-    ignore_unknown=False,
 ):
-    text = "".join(text2sep_kata(text, ignore_unknown=ignore_unknown)[0])
-    # text = text_normalize(text)
+    # 各単語が何文字かを作る`word2ph`を使う必要があるので、読めない文字は必ず無視する
+    # でないと`word2ph`の結果とテキストの文字数結果が整合性が取れない
+    text = "".join(text2sep_kata(text, raise_yomi_error=False)[0])
+
     if assist_text:
-        assist_text = "".join(text2sep_kata(assist_text)[0])
+        assist_text = "".join(text2sep_kata(assist_text, raise_yomi_error=False)[0])
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()

@@ -1,4 +1,4 @@
-def clean_text(text, language, use_jp_extra=True, ignore_unknown=False):
+def clean_text(text, language, use_jp_extra=True, raise_yomi_error=False):
     # Changed to import inside if condition to avoid unnecessary import
     if language == "ZH":
         from . import chinese as language_module
@@ -15,7 +15,7 @@ def clean_text(text, language, use_jp_extra=True, ignore_unknown=False):
 
         norm_text = language_module.text_normalize(text)
         phones, tones, word2ph = language_module.g2p(
-            norm_text, use_jp_extra, ignore_unknown=ignore_unknown
+            norm_text, use_jp_extra, raise_yomi_error=raise_yomi_error
         )
     else:
         raise ValueError(f"Language {language} not supported")

@@ -214,7 +214,7 @@ async def read_item(item: TextRequest):
     try:
         # 最初に正規化しないと整合性がとれない
         text = text_normalize(item.text)
-        kata_tone_list = g2kata_tone(text, ignore_unknown=True)
+        kata_tone_list = g2kata_tone(text)
     except Exception as e:
         raise HTTPException(
             status_code=400,
@@ -289,7 +289,6 @@ def synthesis(request: SynthesisRequest):
         assist_text_weight=request.assistTextWeight,
         use_assist_text=bool(request.assistText),
         line_split=False,
-        ignore_unknown=True,
         pitch_scale=request.pitchScale,
         intonation_scale=request.intonationScale,
     )
@@ -348,7 +347,6 @@ def multi_synthesis(request: MultiSynthesisRequest):
             assist_text_weight=req.assistTextWeight,
             use_assist_text=bool(req.assistText),
             line_split=False,
-            ignore_unknown=True,
             pitch_scale=req.pitchScale,
             intonation_scale=req.intonationScale,
         )

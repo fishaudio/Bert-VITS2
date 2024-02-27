@@ -40,6 +40,7 @@ def count_lines(file_path: str):
 @click.option("--clean/--no-clean", default=preprocess_text_config.clean)
 @click.option("-y", "--yml_config")
 @click.option("--use_jp_extra", is_flag=True)
+@click.option("--yomi_error", default="raise")
 def preprocess(
     transcription_path: str,
     cleaned_path: Optional[str],
@@ -51,11 +52,15 @@ def preprocess(
     clean: bool,
     yml_config: str,  # 这个不要删
     use_jp_extra: bool,
+    yomi_error: str,
 ):
+    assert yomi_error in ["raise", "skip", "use"]
     if cleaned_path == "" or cleaned_path is None:
         cleaned_path = transcription_path + ".cleaned"
 
     error_log_path = os.path.join(os.path.dirname(cleaned_path), "text_error.log")
+    if os.path.exists(error_log_path):
+        os.remove(error_log_path)
     error_count = 0
 
     if clean:
@@ -66,8 +71,12 @@ def preprocess(
                     try:
                         utt, spk, language, text = line.strip().split("|")
                         norm_text, phones, tones, word2ph = clean_text(
-                            text, language, use_jp_extra
+                            text=text,
+                            language=language,
+                            use_jp_extra=use_jp_extra,
+                            raise_yomi_error=(yomi_error != "use"),
                         )
+
                         out_file.write(
                             "{}|{}|{}|{}|{}|{}|{}\n".format(
                                 utt,
@@ -151,12 +160,20 @@ def preprocess(
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_config, f, indent=2, ensure_ascii=False)
     if error_count > 0:
-        logger.error(
-            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
-        )
-        raise Exception(
-            f"An error occurred in {error_count} lines. Please check {error_log_path} for details. You can proceed with lines that do not have errors."
-        )
+        if yomi_error == "skip":
+            logger.warning(
+                f"An error occurred in {error_count} lines. Proceed with lines without errors. Please check {error_log_path} for details."
+            )
+        else:
+            # yom_error == "raise"と"use"の場合。
+            # "use"の場合は、そもそもyomi_error = Falseで処理しているので、
+            # ここが実行されるのは他の例外のときなので、エラーをraiseする。
+            logger.error(
+                f"An error occurred in {error_count} lines. Please check {error_log_path} for details."
+            )
+            raise Exception(
+                f"An error occurred in {error_count} lines. Please check {error_log_path} for details."
+            )
     else:
         logger.info(
             "Training set and validation set generation from texts is complete!"
