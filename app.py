@@ -96,6 +96,8 @@ def tts_fn(
 
     start_time = datetime.datetime.now()
 
+    assert model_holder.current_model is not None
+
     try:
         sr, audio = model_holder.current_model.infer(
             text=text,

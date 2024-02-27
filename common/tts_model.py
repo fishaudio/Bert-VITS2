@@ -136,7 +136,6 @@ class Model:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
-        ignore_unknown: bool = False,
     ) -> tuple[int, np.ndarray]:
         logger.info(f"Start generating audio data from text:\n{text}")
         if language != "JP" and self.hps.version.endswith("JP-Extra"):
@@ -174,7 +173,6 @@ class Model:
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
                     given_tone=given_tone,
-                    ignore_unknown=ignore_unknown,
                 )
         else:
             texts = text.split("\n")
@@ -197,7 +195,6 @@ class Model:
                             assist_text=assist_text,
                             assist_text_weight=assist_text_weight,
                             style_vec=style_vector,
-                            ignore_unknown=ignore_unknown,
                         )
                     )
                     if i != len(texts) - 1:

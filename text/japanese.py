@@ -33,6 +33,16 @@ COSONANTS = set(
 VOWELS = {"a", "i", "u", "e", "o", "N"}
 
 
+class YomiError(Exception):
+    """
+    OpenJTalkで、読みが正しく取得できない箇所があるときに発生する例外。
+    基本的に「学習の前処理のテキスト処理時」には発生させ、そうでない場合は、
+    ignore_yomi_error=Trueにしておいて、この例外を発生させないようにする。
+    """
+
+    pass
+
+
 # 正規化で記号を変換するための辞書
 rep_map = {
     "：": ",",
@@ -166,7 +176,7 @@ def japanese_convert_numbers_to_words(text: str) -> str:
 
 
 def g2p(
-    norm_text: str, use_jp_extra: bool = True, ignore_unknown: bool = False
+    norm_text: str, use_jp_extra: bool = True, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[int], list[int]]:
     """
     他で使われるメインの関数。`text_normalize()`で正規化された`norm_text`を受け取り、
@@ -175,7 +185,10 @@ def g2p(
     - word2ph: 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
     のタプルを返す。
     ただし`phones`と`tones`の最初と終わりに`_`が入り、応じて`word2ph`の最初と最後に1が追加される。
+
     use_jp_extra: Falseの場合、「ん」の音素を「N」ではなく「n」とする。
+    raise_yomi_error: Trueの場合、読めない文字があるときに例外を発生させる。
+    Falseの場合は読めない文字が消えたような扱いとして処理される。
     """
     # pyopenjtalkのフルコンテキストラベルを使ってアクセントを取り出すと、punctuationの位置が消えてしまい情報が失われてしまう：
     # 「こんにちは、世界。」と「こんにちは！世界。」と「こんにちは！！！？？？世界……。」は全て同じになる。
@@ -186,9 +199,9 @@ def g2p(
     # punctuationがすべて消えた、音素とアクセントのタプルのリスト（「ん」は「N」）
     phone_tone_list_wo_punct = g2phone_tone_wo_punct(norm_text)
 
-    # sep_text: 単語単位の単語のリスト
+    # sep_text: 単語単位の単語のリスト、読めない文字があったらraise_yomi_errorなら例外、そうでないなら読めない文字が消えて返ってくる
     # sep_kata: 単語単位の単語のカタカナ読みのリスト
-    sep_text, sep_kata = text2sep_kata(norm_text, ignore_unknown=ignore_unknown)
+    sep_text, sep_kata = text2sep_kata(norm_text, raise_yomi_error=raise_yomi_error)
 
     # sep_phonemes: 各単語ごとの音素のリストのリスト
     sep_phonemes = handle_long([kata2phoneme_list(i) for i in sep_kata])
@@ -237,8 +250,12 @@ def g2p(
     return phones, tones, word2ph
 
 
-def g2kata_tone(norm_text: str, ignore_unknown: bool = False) -> list[tuple[str, int]]:
-    phones, tones, _ = g2p(norm_text, use_jp_extra=True, ignore_unknown=ignore_unknown)
+def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
+    """
+    テキストからカタカナとアクセントのペアのリストを返す。
+    推論時のみに使われるので、常に`raise_yomi_error=False`でg2pを呼ぶ。
+    """
+    phones, tones, _ = g2p(norm_text, use_jp_extra=True, raise_yomi_error=False)
     return phone_tone2kata_tone(list(zip(phones, tones)))
 
 
@@ -332,7 +349,7 @@ def g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
 
 
 def text2sep_kata(
-    norm_text: str, ignore_unknown: bool = False
+    norm_text: str, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[str]]:
     """
     `text_normalize`で正規化済みの`norm_text`を受け取り、それを単語分割し、
@@ -341,6 +358,9 @@ def text2sep_kata(
     例:
     `私はそう思う!って感じ?` →
     ["私", "は", "そう", "思う", "!", "って", "感じ", "?"], ["ワタシ", "ワ", "ソー", "オモウ", "!", "ッテ", "カンジ", "?"]
+
+    raise_yomi_error: Trueの場合、読めない文字があるときに例外を発生させる。
+    Falseの場合は読めない文字が消えたような扱いとして処理される。
     """
     # parsed: OpenJTalkの解析結果
     parsed = pyopenjtalk.run_frontend(norm_text)
@@ -369,10 +389,10 @@ def text2sep_kata(
             # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`, `--` のいずれか
             if not set(word).issubset(set(punctuation)):  # 記号繰り返しか判定
                 # ここはpyopenjtalkが読めない文字等のときに起こる
-                if ignore_unknown:
-                    logger.error(f"Ignoring unknown: {word} in:\n{norm_text}")
-                    continue
-                raise ValueError(f"Cannot read: {word} in:\n{norm_text}")
+                if raise_yomi_error:
+                    raise YomiError(f"Cannot read: {word} in:\n{norm_text}")
+                logger.warning(f"Ignoring unknown: {word} in:\n{norm_text}")
+                continue
             # yomiは元の記号のままに変更
             yomi = word
         elif yomi == "？":

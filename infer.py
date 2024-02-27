@@ -52,11 +52,11 @@ def get_text(
     assist_text=None,
     assist_text_weight=0.7,
     given_tone=None,
-    ignore_unknown=False,
 ):
     use_jp_extra = hps.version.endswith("JP-Extra")
+    # 推論のときにのみ呼び出されるので、raise_yomi_errorはFalseに設定
     norm_text, phone, tone, word2ph = clean_text(
-        text, language_str, use_jp_extra, ignore_unknown=ignore_unknown
+        text, language_str, use_jp_extra, raise_yomi_error=False
     )
     if given_tone is not None:
         if len(given_tone) != len(phone):
@@ -80,7 +80,6 @@ def get_text(
         device,
         assist_text,
         assist_text_weight,
-        ignore_unknown,
     )
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
@@ -127,7 +126,6 @@ def infer(
     assist_text=None,
     assist_text_weight=0.7,
     given_tone=None,
-    ignore_unknown=False,
 ):
     is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
@@ -138,7 +136,6 @@ def infer(
         assist_text=assist_text,
         assist_text_weight=assist_text_weight,
         given_tone=given_tone,
-        ignore_unknown=ignore_unknown,
     )
     if skip_start:
         phones = phones[3:]

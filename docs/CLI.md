@@ -55,7 +55,7 @@ Optional
 ## 2. Preprocess
 
 ```bash
-python preprocess_all.py -m <model_name> [--use_jp_extra] [-b <batch_size>] [-e <epochs>] [-s <save_every_steps>] [--num_processes <num_processes>] [--normalize] [--trim] [--val_per_lang <val_per_lang>] [--log_interval <log_interval>] [--freeze_EN_bert] [--freeze_JP_bert] [--freeze_ZH_bert] [--freeze_style] [--freeze_decoder]
+python preprocess_all.py -m <model_name> [--use_jp_extra] [-b <batch_size>] [-e <epochs>] [-s <save_every_steps>] [--num_processes <num_processes>] [--normalize] [--trim] [--val_per_lang <val_per_lang>] [--log_interval <log_interval>] [--freeze_EN_bert] [--freeze_JP_bert] [--freeze_ZH_bert] [--freeze_style] [--freeze_decoder] [--yomi_error <yomi_error>]
 ```
 
 Required:
@@ -76,6 +76,7 @@ Optional:
 - `--use_jp_extra`: Use JP-Extra model.
 - `--val_per_lang`: Validation data per language (default: 0).
 - `--log_interval`: Log interval (default: 200).
+- `--yomi_error`: How to handle yomi errors (default: `raise`: raise an error after preprocessing all texts, `skip`: skip the texts with errors, `use`: use the texts with errors by ignoring unknown characters).
 
 ## 3. Train
 
