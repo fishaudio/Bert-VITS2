@@ -105,7 +105,8 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
 def lerp_tensors(t, v0, v1):
     return v0 * (1 - t) + v1 * t
 
-def slerp_tensors(t, v0, v1, dot_thres = 0.998):
+
+def slerp_tensors(t, v0, v1, dot_thres=0.998):
     device = v0.device
     v0c = v0.cpu().numpy()
     v1c = v1.cpu().numpy()
@@ -114,12 +115,15 @@ def slerp_tensors(t, v0, v1, dot_thres = 0.998):
 
     if abs(dot) > dot_thres:
         return lerp_tensors(t, v0, v1)
-    
+
     th0 = np.arccos(dot)
     sin_th0 = np.sin(th0)
     th_t = th0 * t
 
-    return torch.from_numpy(v0c * np.sin(th0 - th_t) / sin_th0 + v1c * np.sin(th_t) / sin_th0).to(device)
+    return torch.from_numpy(
+        v0c * np.sin(th0 - th_t) / sin_th0 + v1c * np.sin(th_t) / sin_th0
+    ).to(device)
+
 
 def merge_models(
     model_path_a,
@@ -269,10 +273,18 @@ def load_styles_gr(model_name_a, model_name_b):
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
 
-    return gr.Textbox(value=", ".join(styles_a)), gr.Textbox(value=", ".join(styles_b)), gr.TextArea(
-        label="スタイルのマージリスト",
-        placeholder=f"{DEFAULT_STYLE}, {DEFAULT_STYLE},{DEFAULT_STYLE}\nAngry, Angry, Angry",
-        value='\n'.join(f"{sty_a}, {sty_b}, {sty_a if sty_a != sty_b else ''}{sty_b}" for sty_a in styles_a for sty_b in styles_b),
+    return (
+        gr.Textbox(value=", ".join(styles_a)),
+        gr.Textbox(value=", ".join(styles_b)),
+        gr.TextArea(
+            label="スタイルのマージリスト",
+            placeholder=f"{DEFAULT_STYLE}, {DEFAULT_STYLE},{DEFAULT_STYLE}\nAngry, Angry, Angry",
+            value="\n".join(
+                f"{sty_a}, {sty_b}, {sty_a if sty_a != sty_b else ''}{sty_b}"
+                for sty_a in styles_a
+                for sty_b in styles_b
+            ),
+        ),
     )
 
 
@@ -387,7 +399,7 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
                 step=0.1,
             )
             use_slerp_instead_of_lerp = gr.Checkbox(
-                label="lerpのかわりにslerpを使う",
+                label="線形補完のかわりに球面線形補完を使う",
                 value=False,
             )
         with gr.Column(variant="panel"):

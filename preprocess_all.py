@@ -74,6 +74,9 @@ if __name__ == "__main__":
         help="Log interval",
         default=200,
     )
+    parser.add_argument(
+        "--yomi_error", type=str, help="Yomi error. raise, skip, use", default="raise"
+    )
 
     args = parser.parse_args()
 
@@ -93,4 +96,5 @@ if __name__ == "__main__":
         use_jp_extra=args.use_jp_extra,
         val_per_lang=args.val_per_lang,
         log_interval=args.log_interval,
+        yomi_error=args.yomi_error,
     )
