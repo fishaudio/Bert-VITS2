@@ -47,7 +47,6 @@ def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
             "bert-base-japanese-v3",
         ]
     if version == "2.4":
-        LangDict = ({"ZH": [0, 0]} if Extra == "chinese" else {"JP": [1, 6]}) 
         BertPaths = (["chinese-roberta-wwm-ext-large"] if Extra == "chinese" else ["deberta-v2-large-japanese"])
 
     MoeVSConf = {
