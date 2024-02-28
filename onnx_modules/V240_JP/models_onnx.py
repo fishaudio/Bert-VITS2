@@ -351,7 +351,7 @@ class TextEncoder(nn.Module):
             hidden_channels,
             filter_channels,
             n_heads,
-            n_layers,
+            n_layers, 
             kernel_size,
             p_dropout,
             gin_channels=self.gin_channels,
@@ -361,7 +361,7 @@ class TextEncoder(nn.Module):
     def forward(self, x, x_lengths, tone, language, bert, emo, g=None):
         x_mask = torch.ones_like(x).unsqueeze(0)
         bert_emb = self.bert_proj(bert.transpose(0, 1).unsqueeze(0)).transpose(1, 2)
-        emo_emb = self.in_feature_net(emo)
+        emo_emb = self.in_feature_net(emo.transpose(0, 1))
         emo_emb, _, _ = self.emo_vq(emo_emb.unsqueeze(1))
         emo_emb = self.out_feature_net(emo_emb)
         x = (
