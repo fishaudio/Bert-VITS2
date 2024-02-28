@@ -965,7 +965,7 @@ class SynthesizerTrn(nn.Module):
         language = torch.zeros_like(x).cpu()
         x_lengths = torch.LongTensor([x.shape[1]]).cpu()
         sid = torch.LongTensor([0]).cpu()
-        bert = torch.randn(size=(x.shape[1], 1024)).cpu()
+        bert = torch.randn(size=(x.shape[1], 2048)).cpu()
         emo = torch.randn(512, 1)
 
         if self.n_speakers > 0:
