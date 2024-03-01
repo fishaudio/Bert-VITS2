@@ -8,7 +8,9 @@ import tempfile
 
 class StdoutWrapper:
     def __init__(self):
-        self.temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False)
+        self.temp_file = tempfile.NamedTemporaryFile(
+            mode="w+", delete=False, encoding="utf-8"
+        )
         self.original_stdout = sys.stdout
 
     def write(self, message: str):
