@@ -7,10 +7,10 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
+from common.log import logger
+from common.stdout_wrapper import SAFE_STDOUT
 from config import config
 from text.cleaner import clean_text
-from common.stdout_wrapper import SAFE_STDOUT
-from common.log import logger
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -89,7 +89,10 @@ def preprocess(
                             )
                         )
                     except Exception as e:
-                        logger.error(f"An error occurred at line:\n{line.strip()}\n{e}")
+                        logger.error(
+                            f"An error occurred at line:\n{line.strip()}\n{e}",
+                            encoding="utf-8",
+                        )
                         with open(error_log_path, "a", encoding="utf-8") as error_log:
                             error_log.write(f"{line.strip()}\n{e}\n\n")
                         error_count += 1
@@ -172,8 +175,9 @@ def preprocess(
                 f"An error occurred in {error_count} lines. Please check {error_log_path} for details."
             )
             raise Exception(
-                f"An error occurred in {error_count} lines. Please check {error_log_path} for details."
+                f"An error occurred in {error_count} lines. Please check `Data/you_model_name/text_error.log` file for details."
             )
+            # 何故か{error_log_path}をraiseすると文字コードエラーが起きるので上のように書いている
     else:
         logger.info(
             "Training set and validation set generation from texts is complete!"
