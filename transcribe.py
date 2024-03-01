@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 import yaml
 from faster_whisper import WhisperModel
@@ -11,9 +12,9 @@ from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
 
 
-def transcribe(wav_path, initial_prompt=None, language="ja"):
+def transcribe(wav_path: Path, initial_prompt=None, language="ja"):
     segments, _ = model.transcribe(
-        wav_path, beam_size=5, language=language, initial_prompt=initial_prompt
+        str(wav_path), beam_size=5, language=language, initial_prompt=initial_prompt
     )
     texts = [segment.text for segment in segments]
     return "".join(texts)
@@ -38,18 +39,18 @@ if __name__ == "__main__":
 
     with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
         path_config: dict[str, str] = yaml.safe_load(f.read())
-        dataset_root = path_config["dataset_root"]
+        dataset_root = Path(path_config["dataset_root"])
 
-    model_name = args.model_name
+    model_name = str(args.model_name)
 
-    input_dir = os.path.join(dataset_root, model_name, "raw")
-    output_file = os.path.join(dataset_root, model_name, "esd.list")
+    input_dir = dataset_root / model_name / "raw"
+    output_file = dataset_root / model_name / "esd.list"
     initial_prompt = args.initial_prompt
     language = args.language
     device = args.device
     compute_type = args.compute_type
 
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     logger.info(
         f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
@@ -60,15 +61,18 @@ if __name__ == "__main__":
         logger.warning(f"Failed to load model, so use `auto` compute_type: {e}")
         model = WhisperModel(args.model, device=device)
 
-    wav_files = [
-        os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".wav")
-    ]
-    if os.path.exists(output_file):
+    # wav_files = [
+    #     os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".wav")
+    # ]
+    wav_files = [f for f in input_dir.rglob("*.wav") if f.is_file()]
+    if output_file.exists():
         logger.warning(f"{output_file} exists, backing up to {output_file}.bak")
-        if os.path.exists(output_file + ".bak"):
+        # if os.path.exists(output_file + ".bak"):
+        backup_path = output_file.with_name(output_file.name + ".bak")
+        if backup_path.exists():
             logger.warning(f"{output_file}.bak exists, deleting...")
-            os.remove(output_file + ".bak")
-        os.rename(output_file, output_file + ".bak")
+            backup_path.unlink()
+        output_file.rename(backup_path)
 
     if language == "ja":
         language_id = Languages.JP.value
@@ -78,9 +82,11 @@ if __name__ == "__main__":
         language_id = Languages.ZH.value
     else:
         raise ValueError(f"{language} is not supported.")
+
+    wav_files = sorted(wav_files, key=lambda x: x.name)
+
     for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
-        file_name = os.path.basename(wav_file)
         text = transcribe(wav_file, initial_prompt=initial_prompt, language=language)
         with open(output_file, "a", encoding="utf-8") as f:
-            f.write(f"{file_name}|{model_name}|{language_id}|{text}\n")
+            f.write(f"{wav_file.name}|{model_name}|{language_id}|{text}\n")
     sys.exit(0)
