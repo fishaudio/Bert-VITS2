@@ -131,6 +131,7 @@ def run():
     # This is needed because we have to pass values to `train_and_evaluate()`
     hps.model_dir = model_dir
     hps.speedup = args.speedup
+    hps.repo_id = args.repo_id
 
     # 比较路径是否相同
     if os.path.realpath(args.config) != os.path.realpath(
