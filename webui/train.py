@@ -450,7 +450,8 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 日本語話者の単一話者データセットでも構いません。
 """
 
-if __name__ == "__main__":
+
+def create_train_app():
     with gr.Blocks(theme=GRADIO_THEME).queue() as app:
         gr.Markdown(initial_md)
         with gr.Accordion(label="データの前準備", open=False):
@@ -808,4 +809,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
+    # app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
+    return app
