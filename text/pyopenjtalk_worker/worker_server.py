@@ -2,7 +2,6 @@ import pyopenjtalk
 import socket
 import select
 
-
 from .worker_common import (
     ConnectionClosedException,
     RequestType,
@@ -88,12 +87,13 @@ class WorkerServer:
                             logger.info("close connection")
                             continue
 
-                        logger.debug(f"receive request: {request}")
+                        logger.trace(f"server received request: {request}")
 
                         response = self.handle_request(request)
-                        logger.debug(f"send response: {response}")
+                        logger.trace(f"server sends response: {response}")
                         try:
                             send_data(sock, response)
+                            logger.trace("server sent response successfully")
                         except Exception:
                             logger.warning(
                                 "an exception occurred during sending responce"

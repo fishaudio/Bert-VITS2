@@ -3,6 +3,8 @@ import socket
 
 from .worker_common import RequestType, receive_data, send_data
 
+from common.log import logger
+
 
 class WorkerClient:
     def __init__(self, port: int) -> None:
@@ -28,8 +30,12 @@ class WorkerClient:
             "args": args,
             "kwargs": kwargs,
         }
+        logger.trace(f"client sends request: {data}")
         send_data(self.sock, data)
-        return receive_data(self.sock).get("return")
+        logger.trace("client sent request successfully")
+        response = receive_data(self.sock)
+        logger.trace(f"client received response: {response}")
+        return response.get("return")
 
     def status(self):
         send_data(self.sock, {"request-type": RequestType.STATUS})

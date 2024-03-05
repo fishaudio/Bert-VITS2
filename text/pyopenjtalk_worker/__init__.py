@@ -64,7 +64,7 @@ def initialize(port: int = WOKER_PORT):
     try:
         client = WorkerClient(port)
     except (socket.timeout, socket.error):
-        logger.debug("try starting worker server")
+        logger.debug("try starting pyopenjtalk worker server")
         import os
         import subprocess
 
