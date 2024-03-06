@@ -12,7 +12,7 @@ from style_bert_vits2.models import commons
 import modules
 import monotonic_align
 from style_bert_vits2.models.commons import get_padding, init_weights
-from text import num_languages, num_tones, symbols
+from style_bert_vits2.text_processing.symbols import NUM_LANGUAGES, NUM_TONES, SYMBOLS
 
 
 class DurationDiscriminator(nn.Module):  # vits2
@@ -334,11 +334,11 @@ class TextEncoder(nn.Module):
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
         self.gin_channels = gin_channels
-        self.emb = nn.Embedding(len(symbols), hidden_channels)
+        self.emb = nn.Embedding(len(SYMBOLS), hidden_channels)
         nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
-        self.tone_emb = nn.Embedding(num_tones, hidden_channels)
+        self.tone_emb = nn.Embedding(NUM_TONES, hidden_channels)
         nn.init.normal_(self.tone_emb.weight, 0.0, hidden_channels**-0.5)
-        self.language_emb = nn.Embedding(num_languages, hidden_channels)
+        self.language_emb = nn.Embedding(NUM_LANGUAGES, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.ja_bert_proj = nn.Conv1d(1024, hidden_channels, 1)

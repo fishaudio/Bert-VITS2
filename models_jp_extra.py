@@ -12,7 +12,7 @@ from torch.nn import Conv1d, ConvTranspose1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 
 from style_bert_vits2.models.commons import init_weights, get_padding
-from text import symbols, num_tones, num_languages
+from style_bert_vits2.text_processing.symbols import SYMBOLS, NUM_TONES, NUM_LANGUAGES
 
 
 class DurationDiscriminator(nn.Module):  # vits2
@@ -353,11 +353,11 @@ class TextEncoder(nn.Module):
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
         self.gin_channels = gin_channels
-        self.emb = nn.Embedding(len(symbols), hidden_channels)
+        self.emb = nn.Embedding(len(SYMBOLS), hidden_channels)
         nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
-        self.tone_emb = nn.Embedding(num_tones, hidden_channels)
+        self.tone_emb = nn.Embedding(NUM_TONES, hidden_channels)
         nn.init.normal_(self.tone_emb.weight, 0.0, hidden_channels**-0.5)
-        self.language_emb = nn.Embedding(num_languages, hidden_channels)
+        self.language_emb = nn.Embedding(NUM_LANGUAGES, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
 

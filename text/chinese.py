@@ -4,7 +4,7 @@ import re
 import cn2an
 from pypinyin import lazy_pinyin, Style
 
-from text.symbols import punctuation
+from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
 from text.tone_sandhi import ToneSandhi
 
 current_file_path = os.path.dirname(__file__)
@@ -60,14 +60,14 @@ def replace_punctuation(text):
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
     replaced_text = re.sub(
-        r"[^\u4e00-\u9fa5" + "".join(punctuation) + r"]+", "", replaced_text
+        r"[^\u4e00-\u9fa5" + "".join(PUNCTUATIONS) + r"]+", "", replaced_text
     )
 
     return replaced_text
 
 
 def g2p(text):
-    pattern = r"(?<=[{0}])\s*".format("".join(punctuation))
+    pattern = r"(?<=[{0}])\s*".format("".join(PUNCTUATIONS))
     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
     phones, tones, word2ph = _g2p(sentences)
     assert sum(word2ph) == len(phones)
@@ -119,7 +119,7 @@ def _g2p(segments):
             # NOTE: post process for pypinyin outputs
             # we discriminate i, ii and iii
             if c == v:
-                assert c in punctuation
+                assert c in PUNCTUATIONS
                 phone = [c]
                 tone = "0"
                 word2ph.append(1)

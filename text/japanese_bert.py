@@ -4,7 +4,7 @@ import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
-from text.japanese import text2sep_kata, text_normalize
+from style_bert_vits2.text_processing.japanese.g2p import text_to_sep_kata
 
 LOCAL_PATH = "./bert/deberta-v2-large-japanese-char-wwm"
 
@@ -22,10 +22,10 @@ def get_bert_feature(
 ):
     # 各単語が何文字かを作る`word2ph`を使う必要があるので、読めない文字は必ず無視する
     # でないと`word2ph`の結果とテキストの文字数結果が整合性が取れない
-    text = "".join(text2sep_kata(text, raise_yomi_error=False)[0])
+    text = "".join(text_to_sep_kata(text, raise_yomi_error=False)[0])
 
     if assist_text:
-        assist_text = "".join(text2sep_kata(assist_text, raise_yomi_error=False)[0])
+        assist_text = "".join(text_to_sep_kata(assist_text, raise_yomi_error=False)[0])
     if (
         sys.platform == "darwin"
         and torch.backends.mps.is_available()

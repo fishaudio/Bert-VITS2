@@ -27,7 +27,8 @@ from style_bert_vits2.constants import (
 from style_bert_vits2.logging import logger
 from common.tts_model import ModelHolder
 from infer import InvalidToneError
-from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
+from style_bert_vits2.text_processing.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
+from style_bert_vits2.text_processing.japanese.normalizer import normalize_text
 
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
@@ -131,7 +132,7 @@ def tts_fn(
 
     if tone is None and language == "JP":
         # アクセント指定に使えるようにアクセント情報を返す
-        norm_text = text_normalize(text)
+        norm_text = normalize_text(text)
         kata_tone = g2kata_tone(norm_text)
         kata_tone_json_str = json.dumps(kata_tone, ensure_ascii=False)
     elif tone is None:

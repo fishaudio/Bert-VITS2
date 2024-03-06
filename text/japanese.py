@@ -2,20 +2,18 @@
 # compatible with Julius https://github.com/julius-speech/segmentation-kit
 import re
 import unicodedata
-from pathlib import Path
 
 import pyopenjtalk
 from num2words import num2words
 from transformers import AutoTokenizer
 
 from style_bert_vits2.logging import logger
-from text import punctuation
-from text.japanese_mora_list import (
-    mora_kata_to_mora_phonemes,
-    mora_phonemes_to_mora_kata,
+from style_bert_vits2.text_processing.japanese.mora_list import (
+    MORA_KATA_TO_MORA_PHONEMES,
+    MORA_PHONEMES_TO_MORA_KATA,
 )
-
 from style_bert_vits2.text_processing.japanese.user_dict import update_dict
+from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
 
 # 最初にpyopenjtalkの辞書を更新
 update_dict()
@@ -24,7 +22,7 @@ update_dict()
 COSONANTS = set(
     [
         cosonant
-        for cosonant, _ in mora_kata_to_mora_phonemes.values()
+        for cosonant, _ in MORA_KATA_TO_MORA_PHONEMES.values()
         if cosonant is not None
     ]
 )
@@ -153,7 +151,7 @@ def replace_punctuation(text: str) -> str:
         # ↓ ギリシャ文字
         + r"\u0370-\u03FF\u1F00-\u1FFF"
         # ↓ "!", "?", "…", ",", ".", "'", "-", 但し`…`はすでに`...`に変換されている
-        + "".join(punctuation) + r"]+",
+        + "".join(PUNCTUATIONS) + r"]+",
         # 上述以外の文字を削除
         "",
         replaced_text,
@@ -220,7 +218,7 @@ def g2p(
     # sep_textから、各単語を1文字1文字分割して、文字のリスト（のリスト）を作る
     sep_tokenized: list[list[str]] = []
     for i in sep_text:
-        if i not in punctuation:
+        if i not in PUNCTUATIONS:
             sep_tokenized.append(
                 tokenizer.tokenize(i)
             )  # ここでおそらく`i`が文字単位に分割される
@@ -268,7 +266,7 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
     current_mora = ""
     for phone, next_phone, tone, next_tone in zip(phones, phones[1:], tones, tones[1:]):
         # zipの関係で最後の("_", 0)は無視されている
-        if phone in punctuation:
+        if phone in PUNCTUATIONS:
             result.append((phone, tone))
             continue
         if phone in COSONANTS:  # n以外の子音の場合
@@ -278,7 +276,7 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
         else:
             # phoneが母音もしくは「N」
             current_mora += phone
-            result.append((mora_phonemes_to_mora_kata[current_mora], tone))
+            result.append((MORA_PHONEMES_TO_MORA_KATA[current_mora], tone))
             current_mora = ""
     return result
 
@@ -287,10 +285,10 @@ def kata_tone2phone_tone(kata_tone: list[tuple[str, int]]) -> list[tuple[str, in
     """`phone_tone2kata_tone()`の逆。"""
     result: list[tuple[str, int]] = [("_", 0)]
     for mora, tone in kata_tone:
-        if mora in punctuation:
+        if mora in PUNCTUATIONS:
             result.append((mora, tone))
         else:
-            cosonant, vowel = mora_kata_to_mora_phonemes[mora]
+            cosonant, vowel = MORA_KATA_TO_MORA_PHONEMES[mora]
             if cosonant is None:
                 result.append((vowel, tone))
             else:
@@ -387,7 +385,7 @@ def text2sep_kata(
         assert yomi != "", f"Empty yomi: {word}"
         if yomi == "、":
             # wordは正規化されているので、`.`, `,`, `!`, `'`, `-`, `--` のいずれか
-            if not set(word).issubset(set(punctuation)):  # 記号繰り返しか判定
+            if not set(word).issubset(set(PUNCTUATIONS)):  # 記号繰り返しか判定
                 # ここはpyopenjtalkが読めない文字等のときに起こる
                 if raise_yomi_error:
                     raise YomiError(f"Cannot read: {word} in:\n{norm_text}")
@@ -581,7 +579,7 @@ def align_tones(
             result.append((phone, phone_tone_list[tone_index][1]))
             # 探すindexを1つ進める
             tone_index += 1
-        elif phone in punctuation:
+        elif phone in PUNCTUATIONS:
             # phoneがpunctuationの場合 → (phone, 0)を追加
             result.append((phone, 0))
         else:
@@ -606,16 +604,16 @@ def kata2phoneme_list(text: str) -> list[str]:
     `?` → ["?"]
     `!?!?!?!?!` → ["!", "?", "!", "?", "!", "?", "!", "?", "!"]
     """
-    if set(text).issubset(set(punctuation)):
+    if set(text).issubset(set(PUNCTUATIONS)):
         return list(text)
     # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
     if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
         raise ValueError(f"Input must be katakana only: {text}")
-    sorted_keys = sorted(mora_kata_to_mora_phonemes.keys(), key=len, reverse=True)
+    sorted_keys = sorted(MORA_KATA_TO_MORA_PHONEMES.keys(), key=len, reverse=True)
     pattern = "|".join(map(re.escape, sorted_keys))
 
     def mora2phonemes(mora: str) -> str:
-        cosonant, vowel = mora_kata_to_mora_phonemes[mora]
+        cosonant, vowel = MORA_KATA_TO_MORA_PHONEMES[mora]
         if cosonant is None:
             return f" {vowel}"
         return f" {cosonant} {vowel}"

@@ -6,7 +6,7 @@ from models import SynthesizerTrn
 from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
-from text.symbols import symbols
+from style_bert_vits2.text_processing.symbols import SYMBOLS
 from style_bert_vits2.logging import logger
 
 
@@ -18,7 +18,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     if version.endswith("JP-Extra"):
         logger.info("Using JP-Extra model")
         net_g = SynthesizerTrnJPExtra(
-            len(symbols),
+            len(SYMBOLS),
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
             n_speakers=hps.data.n_speakers,
@@ -27,7 +27,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
     else:
         logger.info("Using normal model")
         net_g = SynthesizerTrn(
-            len(symbols),
+            len(SYMBOLS),
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
             n_speakers=hps.data.n_speakers,

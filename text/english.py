@@ -4,8 +4,7 @@ import re
 from g2p_en import G2p
 from transformers import DebertaV2Tokenizer
 
-from text import symbols
-from text.symbols import punctuation
+from style_bert_vits2.text_processing.symbols import PUNCTUATIONS, SYMBOLS
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
@@ -107,9 +106,9 @@ def post_replace_ph(ph):
     }
     if ph in rep_map.keys():
         ph = rep_map[ph]
-    if ph in symbols:
+    if ph in SYMBOLS:
         return ph
-    if ph not in symbols:
+    if ph not in SYMBOLS:
         ph = "UNK"
     return ph
 
@@ -399,13 +398,13 @@ def text_to_words(text):
         if t.startswith("▁"):
             words.append([t[1:]])
         else:
-            if t in punctuation:
+            if t in PUNCTUATIONS:
                 if idx == len(tokens) - 1:
                     words.append([f"{t}"])
                 else:
                     if (
                         not tokens[idx + 1].startswith("▁")
-                        and tokens[idx + 1] not in punctuation
+                        and tokens[idx + 1] not in PUNCTUATIONS
                     ):
                         if idx == 0:
                             words.append([])
@@ -433,7 +432,7 @@ def g2p(text):
             if "'" in word:
                 word = ["".join(word)]
         for w in word:
-            if w in punctuation:
+            if w in PUNCTUATIONS:
                 temp_phones.append(w)
                 temp_tones.append(0)
                 continue

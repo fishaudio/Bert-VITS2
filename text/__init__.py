@@ -1,6 +1,6 @@
-from text.symbols import *
+from style_bert_vits2.text_processing.symbols import *
 
-_symbol_to_id = {s: i for i, s in enumerate(symbols)}
+_symbol_to_id = {s: i for i, s in enumerate(SYMBOLS)}
 
 
 def cleaned_text_to_sequence(cleaned_text, tones, language):
@@ -11,9 +11,9 @@ def cleaned_text_to_sequence(cleaned_text, tones, language):
       List of integers corresponding to the symbols in the text
     """
     phones = [_symbol_to_id[symbol] for symbol in cleaned_text]
-    tone_start = language_tone_start_map[language]
+    tone_start = LANGUAGE_TONE_START_MAP[language]
     tones = [i + tone_start for i in tones]
-    lang_id = language_id_map[language]
+    lang_id = LANGUAGE_ID_MAP[language]
     lang_ids = [lang_id for i in phones]
     return phones, tones, lang_ids
 

@@ -29,7 +29,7 @@ from data_utils import (
 from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
-from text.symbols import symbols
+from style_bert_vits2.text_processing.symbols import SYMBOLS
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -279,7 +279,7 @@ def run():
         logger.info("Using normal encoder for VITS1")
 
     net_g = SynthesizerTrn(
-        len(symbols),
+        len(SYMBOLS),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
         n_speakers=hps.data.n_speakers,

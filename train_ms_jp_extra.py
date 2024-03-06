@@ -34,7 +34,7 @@ from models_jp_extra import (
     SynthesizerTrn,
     WavLMDiscriminator,
 )
-from text.symbols import symbols
+from style_bert_vits2.text_processing.symbols import SYMBOLS
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -293,7 +293,7 @@ def run():
         logger.info("Using normal encoder for VITS1")
 
     net_g = SynthesizerTrn(
-        len(symbols),
+        len(SYMBOLS),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
         n_speakers=hps.data.n_speakers,
