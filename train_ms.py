@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import gc
 import os
 import platform
 
@@ -15,11 +14,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
-from style_bert_vits2.models import commons
 import default_style
 import utils
-from style_bert_vits2.logging import logger
-from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
 from data_utils import (
     DistributedBucketSampler,
@@ -28,8 +24,15 @@ from data_utils import (
 )
 from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from models import DurationDiscriminator, MultiPeriodDiscriminator, SynthesizerTrn
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.models.models import (
+    DurationDiscriminator,
+    MultiPeriodDiscriminator,
+    SynthesizerTrn,
+)
 from style_bert_vits2.text_processing.symbols import SYMBOLS
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (

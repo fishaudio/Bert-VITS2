@@ -1,17 +1,15 @@
 import math
+
 import torch
 from torch import nn
+from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
-from style_bert_vits2.models import commons
-import modules
-import attentions
 import monotonic_align
-
-from torch.nn import Conv1d, ConvTranspose1d, Conv2d
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
-
-from style_bert_vits2.models.commons import init_weights, get_padding
+from style_bert_vits2.models import attentions
+from style_bert_vits2.models import commons
+from style_bert_vits2.models import modules
 from style_bert_vits2.text_processing.symbols import SYMBOLS, NUM_TONES, NUM_LANGUAGES
 
 
@@ -529,7 +527,7 @@ class Generator(torch.nn.Module):
                 self.resblocks.append(resblock(ch, k, d))
 
         self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
-        self.ups.apply(init_weights)
+        self.ups.apply(commons.init_weights)
 
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
@@ -577,7 +575,7 @@ class DiscriminatorP(torch.nn.Module):
                         32,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -586,7 +584,7 @@ class DiscriminatorP(torch.nn.Module):
                         128,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -595,7 +593,7 @@ class DiscriminatorP(torch.nn.Module):
                         512,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -604,7 +602,7 @@ class DiscriminatorP(torch.nn.Module):
                         1024,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -613,7 +611,7 @@ class DiscriminatorP(torch.nn.Module):
                         1024,
                         (kernel_size, 1),
                         1,
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
             ]

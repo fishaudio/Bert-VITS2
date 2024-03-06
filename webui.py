@@ -19,15 +19,16 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-import torch
-import utils
-from infer import infer, latest_version, get_net_g, infer_multilang
 import gradio as gr
-import webbrowser
-import numpy as np
-from config import config
-from tools.translate import translate
 import librosa
+import numpy as np
+import torch
+import webbrowser
+
+import utils
+from config import config
+from style_bert_vits2.models.infer import infer, latest_version, get_net_g, infer_multilang
+from tools.translate import translate
 
 net_g = None
 

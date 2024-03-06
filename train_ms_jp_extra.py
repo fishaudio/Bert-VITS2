@@ -6,20 +6,17 @@ import platform
 
 import torch
 import torch.distributed as dist
+from huggingface_hub import HfApi
 from torch.cuda.amp import GradScaler, autocast
 from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from huggingface_hub import HfApi
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
-from style_bert_vits2.models import commons
 import default_style
 import utils
-from style_bert_vits2.logging import logger
-from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
 from data_utils import (
     DistributedBucketSampler,
@@ -28,13 +25,16 @@ from data_utils import (
 )
 from losses import WavLMLoss, discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from models_jp_extra import (
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.models.models_jp_extra import (
     DurationDiscriminator,
     MultiPeriodDiscriminator,
     SynthesizerTrn,
     WavLMDiscriminator,
 )
 from style_bert_vits2.text_processing.symbols import SYMBOLS
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
