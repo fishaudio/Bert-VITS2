@@ -103,9 +103,6 @@ def initialize(port: int = WOKER_PORT):
 
     # when the process is killed
     def signal_handler(signum, frame):
-        with open("signal_handler.txt", mode="w") as f:
-
-            pass
         terminate()
 
     signal.signal(signal.SIGTERM, signal_handler)
