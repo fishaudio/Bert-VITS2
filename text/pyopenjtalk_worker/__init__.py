@@ -55,8 +55,8 @@ def initialize(port: int = WOKER_PORT):
     import sys
     import atexit
 
-    global WORKER_CLIENT
     logger.debug("initialize")
+    global WORKER_CLIENT
     if WORKER_CLIENT:
         return
 
@@ -71,7 +71,16 @@ def initialize(port: int = WOKER_PORT):
         worker_pkg_path = os.path.relpath(
             os.path.dirname(__file__), os.getcwd()
         ).replace(os.sep, ".")
-        subprocess.Popen([sys.executable, "-m", worker_pkg_path, "--port", str(port)])
+        args = [sys.executable, "-m", worker_pkg_path, "--port", str(port)]
+        # new session, new process group
+        if sys.platform.startswith("win"):
+            cf = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+            subprocess.Popen(args, creationflags=cf)
+        else:
+            # align with Windows behavior
+            # start_new_session is same as specifying setsid in preexec_fn
+            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)  # type: ignore
+
         # wait until server listening
         count = 0
         while True:
@@ -86,15 +95,22 @@ def initialize(port: int = WOKER_PORT):
                     raise TimeoutError("サーバーに接続できませんでした")
 
     WORKER_CLIENT = client
+    atexit.register(terminate)
 
-    def terminate():
-        global WORKER_CLIENT
-        if not WORKER_CLIENT:
-            return
 
+# top-level declaration
+def terminate():
+    logger.debug("terminate")
+    global WORKER_CLIENT
+    if not WORKER_CLIENT:
+        return
+
+    # repare for unexpected errors
+    try:
         if WORKER_CLIENT.status().get("client-count") == 1:
             WORKER_CLIENT.quit_server()
-        WORKER_CLIENT.close()
-        WORKER_CLIENT = None
+    except Exception as e:
+        logger.error(e)
 
-    atexit.register(terminate)
+    WORKER_CLIENT.close()
+    WORKER_CLIENT = None
