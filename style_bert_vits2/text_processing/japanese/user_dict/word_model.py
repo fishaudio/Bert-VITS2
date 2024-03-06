@@ -1,8 +1,10 @@
-# このファイルは、VOICEVOXプロジェクトのVOICEVOX engineからお借りしています。
-# 引用元:
-# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/model.py#L207
-# ライセンス: LGPL-3.0
-# 詳しくは、このファイルと同じフォルダにあるREADME.mdを参照してください。
+"""
+このファイルは、VOICEVOX プロジェクトの VOICEVOX ENGINE からお借りしています。
+引用元: https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/model.py#L207
+ライセンス: LGPL-3.0
+詳しくは、このファイルと同じフォルダにある README.md を参照してください。
+"""
+
 from enum import Enum
 from re import findall, fullmatch
 from typing import List, Optional

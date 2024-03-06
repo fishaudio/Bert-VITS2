@@ -1,11 +1,12 @@
-# このファイルは、VOICEVOXプロジェクトのVOICEVOX engineからお借りしています。
-# 引用元:
-# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/user_dict.py
-# ライセンス: LGPL-3.0
-# 詳しくは、このファイルと同じフォルダにあるREADME.mdを参照してください。
+"""
+このファイルは、VOICEVOX プロジェクトの VOICEVOX ENGINE からお借りしています。
+引用元: https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/user_dict.py
+ライセンス: LGPL-3.0
+詳しくは、このファイルと同じフォルダにある README.md を参照してください。
+"""
+
 import json
 import sys
-import threading
 import traceback
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -15,25 +16,21 @@ import numpy as np
 import pyopenjtalk
 from fastapi import HTTPException
 
-from .word_model import UserDictWord, WordTypes
-
+from style_bert_vits2.constants import DEFAULT_USER_DICT_DIR
+from style_bert_vits2.text_processing.japanese.user_dict.word_model import UserDictWord, WordTypes
 # from ..utility.mutex_utility import mutex_wrapper
 # from ..utility.path_utility import engine_root, get_save_dir
-from .part_of_speech_data import MAX_PRIORITY, MIN_PRIORITY, part_of_speech_data
-from common.constants import USER_DICT_DIR
+from style_bert_vits2.text_processing.japanese.user_dict.part_of_speech_data import MAX_PRIORITY, MIN_PRIORITY, part_of_speech_data
 
 # root_dir = engine_root()
 # save_dir = get_save_dir()
-root_dir = Path(USER_DICT_DIR)
-save_dir = Path(USER_DICT_DIR)
 
+# if not save_dir.is_dir():
+#     save_dir.mkdir(parents=True)
 
-if not save_dir.is_dir():
-    save_dir.mkdir(parents=True)
-
-default_dict_path = root_dir / "default.csv"  # VOICEVOXデフォルト辞書ファイルのパス
-user_dict_path = save_dir / "user_dict.json"  # ユーザー辞書ファイルのパス
-compiled_dict_path = save_dir / "user.dic"  # コンパイル済み辞書ファイルのパス
+default_dict_path = DEFAULT_USER_DICT_DIR / "default.csv"  # VOICEVOXデフォルト辞書ファイルのパス
+user_dict_path = DEFAULT_USER_DICT_DIR / "user_dict.json"  # ユーザー辞書ファイルのパス
+compiled_dict_path = DEFAULT_USER_DICT_DIR / "user.dic"  # コンパイル済み辞書ファイルのパス
 
 
 # # 同時書き込みの制御
@@ -54,7 +51,7 @@ def _write_to_json(user_dict: Dict[str, UserDictWord], user_dict_path: Path) -> 
     """
     converted_user_dict = {}
     for word_uuid, word in user_dict.items():
-        word_dict = word.dict()
+        word_dict = word.model_dump()
         word_dict["cost"] = _priority2cost(
             word_dict["context_id"], word_dict["priority"]
         )

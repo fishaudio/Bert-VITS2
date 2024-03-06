@@ -1,12 +1,13 @@
-# このファイルは、VOICEVOXプロジェクトのVOICEVOX engineからお借りしています。
-# 引用元:
-# https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/part_of_speech_data.py
-# ライセンス: LGPL-3.0
-# 詳しくは、このファイルと同じフォルダにあるREADME.mdを参照してください。
+"""
+このファイルは、VOICEVOX プロジェクトの VOICEVOX ENGINE からお借りしています。
+引用元: https://github.com/VOICEVOX/voicevox_engine/blob/f181411ec69812296989d9cc583826c22eec87ae/voicevox_engine/user_dict/part_of_speech_data.py
+ライセンス: LGPL-3.0
+詳しくは、このファイルと同じフォルダにある README.md を参照してください。
+"""
 
 from typing import Dict
 
-from .word_model import (
+from style_bert_vits2.text_processing.japanese.user_dict.word_model import (
     USER_DICT_MAX_PRIORITY,
     USER_DICT_MIN_PRIORITY,
     PartOfSpeechDetail,

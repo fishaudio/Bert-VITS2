@@ -15,7 +15,7 @@ from text.japanese_mora_list import (
     mora_phonemes_to_mora_kata,
 )
 
-from text.user_dict import update_dict
+from style_bert_vits2.text_processing.japanese.user_dict import update_dict
 
 # 最初にpyopenjtalkの辞書を更新
 update_dict()
