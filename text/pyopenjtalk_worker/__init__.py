@@ -74,8 +74,11 @@ def initialize(port: int = WOKER_PORT):
         args = [sys.executable, "-m", worker_pkg_path, "--port", str(port)]
         # new session, new process group
         if sys.platform.startswith("win"):
-            cf = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
-            subprocess.Popen(args, creationflags=cf)
+            cf = subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+            si = subprocess.STARTUPINFO()  # type: ignore
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # type: ignore
+            si.wShowWindow = subprocess.SW_HIDE  # type: ignore
+            subprocess.Popen(args, creationflags=cf, startupinfo=si)
         else:
             # align with Windows behavior
             # start_new_session is same as specifying setsid in preexec_fn
@@ -107,7 +110,7 @@ def terminate():
 
     # repare for unexpected errors
     try:
-        if WORKER_CLIENT.status().get("client-count") == 1:
+        if WORKER_CLIENT.status() == 1:
             WORKER_CLIENT.quit_server()
     except Exception as e:
         logger.error(e)

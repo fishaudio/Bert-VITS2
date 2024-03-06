@@ -38,9 +38,18 @@ class WorkerClient:
         return response.get("return")
 
     def status(self):
-        send_data(self.sock, {"request-type": RequestType.STATUS})
-        return receive_data(self.sock)
+        data = {"request-type": RequestType.STATUS}
+        logger.trace(f"client sends request: {data}")
+        send_data(self.sock, data)
+        logger.trace("client sent request successfully")
+        response = receive_data(self.sock)
+        logger.trace(f"client received response: {response}")
+        return response.get("client-count")
 
     def quit_server(self):
-        send_data(self.sock, {"request-type": RequestType.QUIT_SERVER})
-        receive_data(self.sock)
+        data = {"request-type": RequestType.QUIT_SERVER}
+        logger.trace(f"client sends request: {data}")
+        send_data(self.sock, data)
+        logger.trace("client sent request successfully")
+        response = receive_data(self.sock)
+        logger.trace(f"client received response: {response}")
