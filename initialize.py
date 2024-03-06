@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from huggingface_hub import hf_hub_download
 
-from common.log import logger
+from style_bert_vits2.logging import logger
 
 
 def download_bert_models():

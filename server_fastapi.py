@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from scipy.io import wavfile
 
-from common.constants import (
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
@@ -32,7 +32,7 @@ from common.constants import (
     DEFAULT_STYLE_WEIGHT,
     Languages,
 )
-from common.log import logger
+from style_bert_vits2.logging import logger
 from common.tts_model import Model, ModelHolder
 from config import config
 

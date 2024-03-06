@@ -8,7 +8,7 @@ import pyopenjtalk
 from num2words import num2words
 from transformers import AutoTokenizer
 
-from common.log import logger
+from style_bert_vits2.logging import logger
 from text import punctuation
 from text.japanese_mora_list import (
     mora_kata_to_mora_phonemes,

@@ -4,8 +4,8 @@ import os
 import gradio as gr
 import yaml
 
-from common.constants import GRADIO_THEME
-from common.log import logger
+from style_bert_vits2.constants import GRADIO_THEME
+from style_bert_vits2.logging import logger
 from common.subprocess_utils import run_script_with_log
 
 # Get path settings

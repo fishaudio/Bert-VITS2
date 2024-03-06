@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from common.log import logger
+from style_bert_vits2.logging import logger
 from common.tts_model import Model
 from config import config
 

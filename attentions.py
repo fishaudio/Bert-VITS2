@@ -4,7 +4,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from style_bert_vits2.models import commons
-from common.log import logger as logging
+from style_bert_vits2.logging import logger as logging
 
 
 class LayerNorm(nn.Module):

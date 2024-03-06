@@ -2,7 +2,7 @@ import torch
 import torchaudio
 from transformers import AutoModel
 
-from common.log import logger
+from style_bert_vits2.logging import logger
 
 
 def feature_loss(fmap_r, fmap_g):

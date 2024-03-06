@@ -12,8 +12,8 @@ from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
 from umap import UMAP
 
-from common.constants import DEFAULT_STYLE, GRADIO_THEME
-from common.log import logger
+from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
+from style_bert_vits2.logging import logger
 from config import config
 
 # Get path settings

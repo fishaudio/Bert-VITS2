@@ -7,8 +7,8 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
 from text.cleaner import clean_text
 

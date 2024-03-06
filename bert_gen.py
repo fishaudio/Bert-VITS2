@@ -7,8 +7,8 @@ from tqdm import tqdm
 
 from style_bert_vits2.models import commons
 import utils
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
 from text import cleaned_text_to_sequence, get_bert
 

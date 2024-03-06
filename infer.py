@@ -7,7 +7,7 @@ from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from text import cleaned_text_to_sequence, get_bert
 from text.cleaner import clean_text
 from text.symbols import symbols
-from common.log import logger
+from style_bert_vits2.logging import logger
 
 
 class InvalidToneError(ValueError):

@@ -10,7 +10,7 @@ import gradio as gr
 import torch
 import yaml
 
-from common.constants import (
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
@@ -21,10 +21,10 @@ from common.constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
     GRADIO_THEME,
-    LATEST_VERSION,
+    VERSION,
     Languages,
 )
-from common.log import logger
+from style_bert_vits2.logging import logger
 from common.tts_model import ModelHolder
 from infer import InvalidToneError
 from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
@@ -202,7 +202,7 @@ examples = [
 ]
 
 initial_md = f"""
-# Style-Bert-VITS2 ver {LATEST_VERSION} 音声合成
+# Style-Bert-VITS2 ver {VERSION} 音声合成
 
 - Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py`で起動できます。
 

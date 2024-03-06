@@ -14,9 +14,9 @@ from pathlib import Path
 import gradio as gr
 import yaml
 
-from common.constants import GRADIO_THEME, LATEST_VERSION
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.constants import GRADIO_THEME, VERSION
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from common.subprocess_utils import run_script_with_log, second_elem_of
 
 logger_handler = None
@@ -399,7 +399,7 @@ def run_tensorboard(model_name):
 
 
 initial_md = f"""
-# Style-Bert-VITS2 ver {LATEST_VERSION} 学習用WebUI
+# Style-Bert-VITS2 ver {VERSION} 学習用WebUI
 
 ## 使い方
 
