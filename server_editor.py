@@ -12,14 +12,13 @@ import io
 import shutil
 import sys
 import webbrowser
+import yaml
 import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-import yaml
 
 import numpy as np
-import pyopenjtalk
 import requests
 import torch
 import uvicorn
@@ -29,21 +28,29 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
+from transformers import AutoTokenizer
 
-from common.constants import (
+from common.tts_model import ModelHolder
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
     DEFAULT_NOISEW,
     DEFAULT_SDP_RATIO,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
-    LATEST_VERSION,
+    VERSION,
     Languages,
 )
-from common.log import logger
-from common.tts_model import ModelHolder
-from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
-from text.user_dict import apply_word, update_dict, read_dict, rewrite_word, delete_word
+from style_bert_vits2.logging import logger
+from style_bert_vits2.text_processing.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
+from style_bert_vits2.text_processing.japanese.normalizer import normalize_text
+from text.user_dict import (
+    apply_word,
+    update_dict,
+    read_dict,
+    rewrite_word,
+    delete_word,
+)
 
 
 # ---フロントエンド部分に関する処理---
@@ -140,6 +147,12 @@ def save_last_download(latest_release):
 # ---フロントエンド部分に関する処理ここまで---
 # 以降はAPIの設定
 
+# 最初に pyopenjtalk の辞書を更新
+update_dict()
+
+# 単語分割に使う BERT トークナイザーをロード
+tokenizer = AutoTokenizer.from_pretrained("./bert/deberta-v2-large-japanese-char-wwm")
+
 
 class AudioResponse(Response):
     media_type = "audio/wav"
@@ -197,7 +210,7 @@ router = APIRouter()
 
 @router.get("/version")
 def version() -> str:
-    return LATEST_VERSION
+    return VERSION
 
 
 class MoraTone(BaseModel):
@@ -213,8 +226,8 @@ class TextRequest(BaseModel):
 async def read_item(item: TextRequest):
     try:
         # 最初に正規化しないと整合性がとれない
-        text = text_normalize(item.text)
-        kata_tone_list = g2kata_tone(text)
+        text = normalize_text(item.text)
+        kata_tone_list = g2kata_tone(text, tokenizer)
     except Exception as e:
         raise HTTPException(
             status_code=400,
@@ -224,8 +237,8 @@ async def read_item(item: TextRequest):
 
 
 @router.post("/normalize")
-async def normalize_text(item: TextRequest):
-    return text_normalize(item.text)
+async def normalize(item: TextRequest):
+    return normalize_text(item.text)
 
 
 @router.get("/models_info")
@@ -311,6 +324,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
             detail=f"行数は{args.line_count}行以下にしてください。",
         )
     audios = []
+    sr = None
     for i, req in enumerate(lines):
         if args.line_length is not None and len(req.text) > args.line_length:
             raise HTTPException(
