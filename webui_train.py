@@ -17,7 +17,7 @@ import yaml
 from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
-from common.subprocess_utils import run_script_with_log, second_elem_of
+from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_of
 
 logger_handler = None
 tensorboard_executed = False

@@ -6,7 +6,7 @@ import yaml
 
 from style_bert_vits2.constants import GRADIO_THEME
 from style_bert_vits2.logging import logger
-from common.subprocess_utils import run_script_with_log
+from style_bert_vits2.utils.subprocess import run_script_with_log
 
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
