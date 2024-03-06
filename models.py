@@ -8,10 +8,10 @@ from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
 import attentions
-import commons
+from style_bert_vits2.models import commons
 import modules
 import monotonic_align
-from commons import get_padding, init_weights
+from style_bert_vits2.models.commons import get_padding, init_weights
 from text import num_languages, num_tones, symbols
 
 

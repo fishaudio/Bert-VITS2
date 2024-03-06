@@ -5,7 +5,7 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-import commons
+from style_bert_vits2.models import commons
 import utils
 from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT

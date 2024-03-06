@@ -7,7 +7,7 @@ import torch
 import torch.utils.data
 from tqdm import tqdm
 
-import commons
+from style_bert_vits2.models import commons
 from config import config
 from mel_processing import mel_spectrogram_torch, spectrogram_torch
 from text import cleaned_text_to_sequence

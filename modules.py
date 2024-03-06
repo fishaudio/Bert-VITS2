@@ -7,9 +7,9 @@ from torch.nn import Conv1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, weight_norm
 
-import commons
+from style_bert_vits2.models import commons
 from attentions import Encoder
-from commons import get_padding, init_weights
+from style_bert_vits2.models.commons import get_padding, init_weights
 from transforms import piecewise_rational_quadratic_transform
 
 LRELU_SLOPE = 0.1

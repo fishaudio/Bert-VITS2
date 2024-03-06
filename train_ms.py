@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
-import commons
+from style_bert_vits2.models import commons
 import default_style
 import utils
 from common.log import logger

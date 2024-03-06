@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-import commons
+from style_bert_vits2.models import commons
 from common.log import logger as logging
 
 

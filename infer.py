@@ -1,6 +1,6 @@
 import torch
 
-import commons
+from style_bert_vits2.models import commons
 import utils
 from models import SynthesizerTrn
 from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra

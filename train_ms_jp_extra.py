@@ -15,7 +15,7 @@ from tqdm import tqdm
 from huggingface_hub import HfApi
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
-import commons
+from style_bert_vits2.models import commons
 import default_style
 import utils
 from common.log import logger
