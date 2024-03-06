@@ -2,6 +2,7 @@
 
 __pycache__/
 venv/
+.venv/
 .ipynb_checkpoints/
 
 /*.yml
