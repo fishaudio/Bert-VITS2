@@ -1,11 +1,9 @@
-import os
 import warnings
 from pathlib import Path
 from typing import Optional, Union
 
 import gradio as gr
 import numpy as np
-
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
 
@@ -14,7 +12,7 @@ from infer import get_net_g, infer
 from models import SynthesizerTrn
 from models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 
-from .constants import (
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
@@ -25,7 +23,7 @@ from .constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
 )
-from .log import logger
+from style_bert_vits2.logging import logger
 
 
 def adjust_voice(fs, wave, pitch_scale, intonation_scale):

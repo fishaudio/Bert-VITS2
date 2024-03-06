@@ -1,8 +1,8 @@
 import subprocess
 import sys
 
-from .log import logger
-from .stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 python = sys.executable
 
