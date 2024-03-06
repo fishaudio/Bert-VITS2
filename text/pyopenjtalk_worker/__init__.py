@@ -54,6 +54,7 @@ def initialize(port: int = WOKER_PORT):
     import socket
     import sys
     import atexit
+    import signal
 
     logger.debug("initialize")
     global WORKER_CLIENT
@@ -99,6 +100,15 @@ def initialize(port: int = WOKER_PORT):
 
     WORKER_CLIENT = client
     atexit.register(terminate)
+
+    # when the process is killed
+    def signal_handler(signum, frame):
+        with open("signal_handler.txt", mode="w") as f:
+
+            pass
+        terminate()
+
+    signal.signal(signal.SIGTERM, signal_handler)
 
 
 # top-level declaration

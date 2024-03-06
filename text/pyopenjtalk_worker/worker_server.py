@@ -86,6 +86,12 @@ class WorkerServer:
                             self.client_count -= 1
                             logger.info("close connection")
                             continue
+                        except Exception as e:
+                            sock.close()
+                            sockets.remove(sock)
+                            self.client_count -= 1
+                            logger.error(e)
+                            continue
 
                         logger.trace(f"server received request: {request}")
 
