@@ -48,29 +48,6 @@ def normalize_text(text: str) -> str:
     return res
 
 
-def __convert_numbers_to_words(text: str) -> str:
-    """
-    記号や数字を日本語の文字表現に変換する。
-
-    Args:
-        text (str): 変換するテキスト
-
-    Returns:
-        str: 変換されたテキスト
-    """
-
-    NUMBER_WITH_SEPARATOR_PATTERN = re.compile("[0-9]{1,3}(,[0-9]{3})+")
-    CURRENCY_MAP = {"$": "ドル", "¥": "円", "£": "ポンド", "€": "ユーロ"}
-    CURRENCY_PATTERN = re.compile(r"([$¥£€])([0-9.]*[0-9])")
-    NUMBER_PATTERN = re.compile(r"[0-9]+(\.[0-9]+)?")
-
-    res = NUMBER_WITH_SEPARATOR_PATTERN.sub(lambda m: m[0].replace(",", ""), text)
-    res = CURRENCY_PATTERN.sub(lambda m: m[2] + CURRENCY_MAP.get(m[1], m[1]), res)
-    res = NUMBER_PATTERN.sub(lambda m: num2words(m[0], lang="ja"), res)
-
-    return res
-
-
 def replace_punctuation(text: str) -> str:
     """
     句読点等を「.」「,」「!」「?」「'」「-」に正規化し、OpenJTalk で読みが取得できるもののみ残す：
@@ -159,3 +136,26 @@ def replace_punctuation(text: str) -> str:
     )
 
     return replaced_text
+
+
+def __convert_numbers_to_words(text: str) -> str:
+    """
+    記号や数字を日本語の文字表現に変換する。
+
+    Args:
+        text (str): 変換するテキスト
+
+    Returns:
+        str: 変換されたテキスト
+    """
+
+    NUMBER_WITH_SEPARATOR_PATTERN = re.compile("[0-9]{1,3}(,[0-9]{3})+")
+    CURRENCY_MAP = {"$": "ドル", "¥": "円", "£": "ポンド", "€": "ユーロ"}
+    CURRENCY_PATTERN = re.compile(r"([$¥£€])([0-9.]*[0-9])")
+    NUMBER_PATTERN = re.compile(r"[0-9]+(\.[0-9]+)?")
+
+    res = NUMBER_WITH_SEPARATOR_PATTERN.sub(lambda m: m[0].replace(",", ""), text)
+    res = CURRENCY_PATTERN.sub(lambda m: m[2] + CURRENCY_MAP.get(m[1], m[1]), res)
+    res = NUMBER_PATTERN.sub(lambda m: num2words(m[0], lang="ja"), res)
+
+    return res

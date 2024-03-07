@@ -171,7 +171,7 @@ def __g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
         list[tuple[str, int]]: 音素とアクセントのペアのリスト
     """
 
-    prosodies = pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
+    prosodies = __pyopenjtalk_g2p_prosody(text, drop_unvoiced_vowels=True)
     # logger.debug(f"prosodies: {prosodies}")
     result: list[tuple[str, int]] = []
     current_phrase: list[tuple[str, int]] = []
@@ -212,7 +212,7 @@ def __g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     return result
 
 
-def pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> list[str]:
+def __pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> list[str]:
     """
     ESPnet の実装から引用、変更点無し。「ん」は「N」なことに注意。
     ref: https://github.com/espnet/espnet/blob/master/espnet2/text/phoneme_tokenizer.py
