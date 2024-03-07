@@ -10,10 +10,6 @@ from style_bert_vits2.text_processing import clean_text, cleaned_text_to_sequenc
 from style_bert_vits2.text_processing.symbols import SYMBOLS
 
 
-class InvalidToneError(ValueError):
-    pass
-
-
 def get_net_g(model_path: str, version: str, device: str, hps):
     if version.endswith("JP-Extra"):
         logger.info("Using JP-Extra model")
@@ -315,3 +311,7 @@ def infer_multilang(
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio
+
+
+class InvalidToneError(ValueError):
+    pass

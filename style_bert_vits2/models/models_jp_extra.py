@@ -6,10 +6,10 @@ from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
-import monotonic_align
 from style_bert_vits2.models import attentions
 from style_bert_vits2.models import commons
 from style_bert_vits2.models import modules
+from style_bert_vits2.models import monotonic_alignment
 from style_bert_vits2.text_processing.symbols import SYMBOLS, NUM_TONES, NUM_LANGUAGES
 
 
@@ -979,7 +979,7 @@ class SynthesizerTrn(nn.Module):
 
             attn_mask = torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
             attn = (
-                monotonic_align.maximum_path(neg_cent, attn_mask.squeeze(1))
+                monotonic_alignment.maximum_path(neg_cent, attn_mask.squeeze(1))
                 .unsqueeze(1)
                 .detach()
             )
