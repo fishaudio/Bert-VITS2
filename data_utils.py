@@ -7,12 +7,12 @@ import torch
 import torch.utils.data
 from tqdm import tqdm
 
-from style_bert_vits2.models import commons
 from config import config
 from mel_processing import mel_spectrogram_torch, spectrogram_torch
-from text import cleaned_text_to_sequence
-from style_bert_vits2.logging import logger
 from utils import load_filepaths_and_text, load_wav_to_torch
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.text_processing import cleaned_text_to_sequence
 
 """Multi speaker version"""
 

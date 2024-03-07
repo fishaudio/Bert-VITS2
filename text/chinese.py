@@ -176,20 +176,14 @@ def normalize_text(text):
     return text
 
 
-def get_bert_feature(text, word2ph):
-    from text import chinese_bert
-
-    return chinese_bert.get_bert_feature(text, word2ph)
-
-
 if __name__ == "__main__":
-    from text.chinese_bert import get_bert_feature
+    from style_bert_vits2.text_processing.chinese.bert_feature import extract_bert_feature
 
     text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
     text = normalize_text(text)
     print(text)
     phones, tones, word2ph = g2p(text)
-    bert = get_bert_feature(text, word2ph)
+    bert = extract_bert_feature(text, word2ph, 'cuda')
 
     print(phones, tones, word2ph, bert.shape)
 

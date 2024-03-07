@@ -1,12 +1,12 @@
 import torch
 
 import utils
-from text import cleaned_text_to_sequence, get_bert
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
+from style_bert_vits2.text_processing import cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.text_processing.cleaner import clean_text
 from style_bert_vits2.text_processing.symbols import SYMBOLS
 
@@ -77,7 +77,7 @@ def get_text(
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
-    bert_ori = get_bert(
+    bert_ori = extract_bert_feature(
         norm_text,
         word2ph,
         language_str,

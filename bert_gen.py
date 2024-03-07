@@ -5,12 +5,12 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-from style_bert_vits2.models import commons
 import utils
-from style_bert_vits2.logging import logger
-from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
-from text import cleaned_text_to_sequence, get_bert
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.text_processing import cleaned_text_to_sequence, extract_bert_feature
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
 def process_line(x):
@@ -45,7 +45,7 @@ def process_line(x):
         bert = torch.load(bert_path)
         assert bert.shape[-1] == len(phone)
     except Exception:
-        bert = get_bert(text, word2ph, language_str, device)
+        bert = extract_bert_feature(text, word2ph, language_str, device)
         assert bert.shape[-1] == len(phone)
         torch.save(bert, bert_path)
 

@@ -477,12 +477,6 @@ def g2p(text):
     return phones, tones, word2ph
 
 
-def get_bert_feature(text, word2ph):
-    from text import english_bert_mock
-
-    return english_bert_mock.get_bert_feature(text, word2ph)
-
-
 if __name__ == "__main__":
     # print(get_dict())
     # print(eng_word_to_phoneme("hello"))
