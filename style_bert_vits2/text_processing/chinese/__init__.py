@@ -2,18 +2,18 @@ import os
 import re
 
 import cn2an
+import jieba.posseg as psg
 from pypinyin import lazy_pinyin, Style
 
+from style_bert_vits2.text_processing.chinese.tone_sandhi import ToneSandhi
 from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
-from text.tone_sandhi import ToneSandhi
+
 
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
     line.split("\t")[0]: line.strip().split("\t")[1]
     for line in open(os.path.join(current_file_path, "opencpop-strict.txt")).readlines()
 }
-
-import jieba.posseg as psg
 
 
 rep_map = {
