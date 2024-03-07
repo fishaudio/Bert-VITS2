@@ -2,16 +2,16 @@ import pickle
 import os
 import re
 from g2p_en import G2p
-from transformers import DebertaV2Tokenizer
 
+from style_bert_vits2.constants import Languages
+from style_bert_vits2.text_processing import bert_models
 from style_bert_vits2.text_processing.symbols import PUNCTUATIONS, SYMBOLS
+
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
 CACHE_PATH = os.path.join(current_file_path, "cmudict_cache.pickle")
 _g2p = G2p()
-LOCAL_PATH = "./bert/deberta-v3-large"
-tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 
 arpa = {
     "AH0",
@@ -392,6 +392,7 @@ def sep_text(text):
 
 
 def text_to_words(text):
+    tokenizer = bert_models.load_tokenizer(Languages.EN)
     tokens = tokenizer.tokenize(text)
     words = []
     for idx, t in enumerate(tokens):

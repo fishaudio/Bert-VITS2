@@ -1,5 +1,3 @@
-from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
-
 from style_bert_vits2.text_processing.japanese.g2p import g2p
 from style_bert_vits2.text_processing.japanese.mora_list import (
     MORA_KATA_TO_MORA_PHONEMES,
@@ -8,21 +6,19 @@ from style_bert_vits2.text_processing.japanese.mora_list import (
 from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
 
 
-def g2kata_tone(norm_text: str, tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast) -> list[tuple[str, int]]:
+def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
     """
     テキストからカタカナとアクセントのペアのリストを返す。
-    推論時のみに使われるので、常に`raise_yomi_error=False`でg2pを呼ぶ。
-    tokenizer には deberta-v2-large-japanese-char-wwm を AutoTokenizer.from_pretrained() でロードしたものを指定する。
+    推論時のみに使われるので、常に `raise_yomi_error=False` で g2p を呼ぶ。
 
     Args:
         norm_text: 正規化されたテキスト。
-        tokenizer (PreTrainedTokenizer | PreTrainedTokenizerFast): 単語分割に使うロード済みの BERT Tokenizer インスタンス
 
     Returns:
         カタカナと音高のリスト。
     """
 
-    phones, tones, _ = g2p(norm_text, tokenizer, use_jp_extra=True, raise_yomi_error=False)
+    phones, tones, _ = g2p(norm_text, use_jp_extra=True, raise_yomi_error=False)
     return phone_tone2kata_tone(list(zip(phones, tones)))
 
 

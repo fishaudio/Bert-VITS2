@@ -28,7 +28,6 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
-from transformers import AutoTokenizer
 
 from common.tts_model import ModelHolder
 from style_bert_vits2.constants import (
@@ -42,6 +41,7 @@ from style_bert_vits2.constants import (
     Languages,
 )
 from style_bert_vits2.logging import logger
+from style_bert_vits2.text_processing import bert_models
 from style_bert_vits2.text_processing.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.text_processing.japanese.normalizer import normalize_text
 from style_bert_vits2.text_processing.japanese.user_dict import (
@@ -150,8 +150,10 @@ def save_last_download(latest_release):
 # 最初に pyopenjtalk の辞書を更新
 update_dict()
 
-# 単語分割に使う BERT トークナイザーをロード
-tokenizer = AutoTokenizer.from_pretrained("./bert/deberta-v2-large-japanese-char-wwm")
+# 単語分割に使う BERT モデル/トークナイザーを事前にロードしておく
+## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
 
 
 class AudioResponse(Response):
@@ -227,7 +229,7 @@ async def read_item(item: TextRequest):
     try:
         # 最初に正規化しないと整合性がとれない
         text = normalize_text(item.text)
-        kata_tone_list = g2kata_tone(text, tokenizer)
+        kata_tone_list = g2kata_tone(text)
     except Exception as e:
         raise HTTPException(
             status_code=400,

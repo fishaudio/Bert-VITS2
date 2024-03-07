@@ -1,23 +1,21 @@
 import sys
 
 import torch
-from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
+from style_bert_vits2.constants import Languages
+from style_bert_vits2.text_processing import bert_models
 
-LOCAL_PATH = "./bert/chinese-roberta-wwm-ext-large"
-
-tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
 
 def get_bert_feature(
-    text,
+    text: str,
     word2ph,
-    device=config.bert_gen_config.device,
-    assist_text=None,
-    assist_text_weight=0.7,
+    device = config.bert_gen_config.device,
+    assist_text: str | None = None,
+    assist_text_weight: float = 0.7,
 ):
     if (
         sys.platform == "darwin"
@@ -30,8 +28,9 @@ def get_bert_feature(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+        models[device] = bert_models.load_model(Languages.ZH).to(device)
     with torch.no_grad():
+        tokenizer = bert_models.load_tokenizer(Languages.ZH)
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)

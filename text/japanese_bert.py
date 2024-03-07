@@ -1,24 +1,22 @@
 import sys
 
 import torch
-from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
+from style_bert_vits2.constants import Languages
+from style_bert_vits2.text_processing import bert_models
 from style_bert_vits2.text_processing.japanese.g2p import text_to_sep_kata
 
-LOCAL_PATH = "./bert/deberta-v2-large-japanese-char-wwm"
-
-tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
 
 def get_bert_feature(
-    text,
+    text: str,
     word2ph,
-    device=config.bert_gen_config.device,
-    assist_text=None,
-    assist_text_weight=0.7,
+    device = config.bert_gen_config.device,
+    assist_text: str | None = None,
+    assist_text_weight: float = 0.7,
 ):
     # 各単語が何文字かを作る`word2ph`を使う必要があるので、読めない文字は必ず無視する
     # でないと`word2ph`の結果とテキストの文字数結果が整合性が取れない
@@ -37,8 +35,9 @@ def get_bert_feature(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+        models[device] = bert_models.load_model(Languages.JP).to(device)
     with torch.no_grad():
+        tokenizer = bert_models.load_tokenizer(Languages.JP)
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)

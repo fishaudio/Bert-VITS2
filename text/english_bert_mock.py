@@ -1,24 +1,21 @@
 import sys
 
 import torch
-from transformers import DebertaV2Model, DebertaV2Tokenizer
 
 from config import config
+from style_bert_vits2.constants import Languages
+from style_bert_vits2.text_processing import bert_models
 
-
-LOCAL_PATH = "./bert/deberta-v3-large"
-
-tokenizer = DebertaV2Tokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
 
 def get_bert_feature(
-    text,
+    text: str,
     word2ph,
-    device=config.bert_gen_config.device,
-    assist_text=None,
-    assist_text_weight=0.7,
+    device = config.bert_gen_config.device,
+    assist_text: str | None = None,
+    assist_text_weight: float = 0.7,
 ):
     if (
         sys.platform == "darwin"
@@ -31,8 +28,9 @@ def get_bert_feature(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
     if device not in models.keys():
-        models[device] = DebertaV2Model.from_pretrained(LOCAL_PATH).to(device)
+        models[device] = bert_models.load_model(Languages.EN).to(device)
     with torch.no_grad():
+        tokenizer = bert_models.load_tokenizer(Languages.EN)
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)

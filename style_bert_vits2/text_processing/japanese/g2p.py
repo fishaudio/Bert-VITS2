@@ -1,8 +1,9 @@
 import pyopenjtalk
 import re
-from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
 
+from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
+from style_bert_vits2.text_processing import bert_models
 from style_bert_vits2.text_processing.japanese.mora_list import MORA_KATA_TO_MORA_PHONEMES
 from style_bert_vits2.text_processing.japanese.normalizer import replace_punctuation
 from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
@@ -10,7 +11,6 @@ from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
 
 def g2p(
     norm_text: str,
-    tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast,
     use_jp_extra: bool = True,
     raise_yomi_error: bool = False
 ) -> tuple[list[str], list[int], list[int]]:
@@ -21,11 +21,9 @@ def g2p(
     - word2ph: 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
     のタプルを返す。
     ただし `phones` と `tones` の最初と終わりに `_` が入り、応じて `word2ph` の最初と最後に 1 が追加される。
-    tokenizer には deberta-v2-large-japanese-char-wwm を AutoTokenizer.from_pretrained() でロードしたものを指定する。
 
     Args:
         norm_text (str): 正規化されたテキスト
-        tokenizer (PreTrainedTokenizer | PreTrainedTokenizerFast): 単語分割に使うロード済みの BERT Tokenizer インスタンス
         use_jp_extra (bool, optional): False の場合、「ん」の音素を「N」ではなく「n」とする。Defaults to True.
         raise_yomi_error (bool, optional): False の場合、読めない文字が消えたような扱いとして処理される。Defaults to False.
 
@@ -66,7 +64,7 @@ def g2p(
     for i in sep_text:
         if i not in PUNCTUATIONS:
             sep_tokenized.append(
-                tokenizer.tokenize(i)
+                bert_models.load_tokenizer(Languages.JP).tokenize(i)
             )  # ここでおそらく`i`が文字単位に分割される
         else:
             sep_tokenized.append([i])

@@ -1,9 +1,8 @@
-from typing import Literal
-
 import torch
 
 import utils
 from text import cleaned_text_to_sequence, get_bert
+from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models.models import SynthesizerTrn
@@ -48,7 +47,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
 
 def get_text(
     text: str,
-    language_str: Literal["JP", "EN", "ZH"],
+    language_str: Languages,
     hps,
     device: str,
     assist_text: str | None = None,
@@ -89,15 +88,15 @@ def get_text(
     del word2ph
     assert bert_ori.shape[-1] == len(phone), phone
 
-    if language_str == "ZH":
+    if language_str == Languages.ZH:
         bert = bert_ori
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = torch.zeros(1024, len(phone))
-    elif language_str == "JP":
+    elif language_str == Languages.JP:
         bert = torch.zeros(1024, len(phone))
         ja_bert = bert_ori
         en_bert = torch.zeros(1024, len(phone))
-    elif language_str == "EN":
+    elif language_str == Languages.EN:
         bert = torch.zeros(1024, len(phone))
         ja_bert = torch.zeros(1024, len(phone))
         en_bert = bert_ori
@@ -122,7 +121,7 @@ def infer(
     noise_scale_w: float,
     length_scale: float,
     sid: int,  # In the original Bert-VITS2, its speaker_name: str, but here it's id
-    language: Literal["JP", "EN", "ZH"],
+    language: Languages,
     hps,
     net_g,
     device: str,
@@ -222,7 +221,7 @@ def infer_multilang(
     noise_scale_w: float,
     length_scale: float,
     sid: int,
-    language: Literal["JP", "EN", "ZH"],
+    language: Languages,
     hps,
     net_g,
     device: str,
