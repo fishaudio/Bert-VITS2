@@ -1,6 +1,7 @@
 import pyopenjtalk
 import socket
 import select
+import time
 
 from .worker_common import (
     ConnectionClosedException,
@@ -62,13 +63,23 @@ class WorkerServer:
 
         return response
 
-    def start_server(self, port: int):
+    def start_server(self, port: int, no_client_timeout: int = 30):
         logger.info("start pyopenjtalk worker server")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((socket.gethostname(), port))
             server_socket.listen()
             sockets = [server_socket]
+            no_client_since = time.time()
             while True:
+                if self.client_count == 0:
+                    if no_client_since is None:
+                        no_client_since = time.time()
+                    elif (time.time() - no_client_since) > no_client_timeout:
+                        logger.info("quit because there is no client")
+                        return
+                else:
+                    no_client_since = None
+
                 ready_sockets, _, _ = select.select(sockets, [], [], 0.1)
                 for sock in ready_sockets:
                     if sock is server_socket:
@@ -80,17 +91,15 @@ class WorkerServer:
                         # client
                         try:
                             request = receive_data(sock)
-                        except ConnectionClosedException as e:
-                            sock.close()
-                            sockets.remove(sock)
-                            self.client_count -= 1
-                            logger.info("close connection")
-                            continue
                         except Exception as e:
                             sock.close()
                             sockets.remove(sock)
                             self.client_count -= 1
-                            logger.error(e)
+                            # unexpected disconnections
+                            if not isinstance(e, ConnectionClosedException):
+                                logger.error(e)
+
+                            logger.info("close connection")
                             continue
 
                         logger.trace(f"server received request: {request}")
