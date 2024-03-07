@@ -369,7 +369,7 @@ def normalize_numbers(text):
     return text
 
 
-def text_normalize(text):
+def normalize_text(text):
     text = normalize_numbers(text)
     text = replace_punctuation(text)
     text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)

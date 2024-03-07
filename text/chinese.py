@@ -168,7 +168,7 @@ def _g2p(segments):
     return phones_list, tones_list, word2ph
 
 
-def text_normalize(text):
+def normalize_text(text):
     numbers = re.findall(r"\d+(?:\.?\d+)?", text)
     for number in numbers:
         text = text.replace(number, cn2an.an2cn(number), 1)
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     from text.chinese_bert import get_bert_feature
 
     text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
-    text = text_normalize(text)
+    text = normalize_text(text)
     print(text)
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)

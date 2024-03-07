@@ -7,10 +7,10 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
-from style_bert_vits2.logging import logger
-from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from config import config
-from text.cleaner import clean_text
+from style_bert_vits2.logging import logger
+from style_bert_vits2.text_processing.cleaner import clean_text
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -72,7 +72,7 @@ def preprocess(
                         utt, spk, language, text = line.strip().split("|")
                         norm_text, phones, tones, word2ph = clean_text(
                             text=text,
-                            language=language,
+                            language=language,  # type: ignore
                             use_jp_extra=use_jp_extra,
                             raise_yomi_error=(yomi_error != "use"),
                         )

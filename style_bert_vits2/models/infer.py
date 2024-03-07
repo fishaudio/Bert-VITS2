@@ -1,12 +1,14 @@
+from typing import Literal
+
 import torch
 
 import utils
 from text import cleaned_text_to_sequence, get_bert
-from text.cleaner import clean_text
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
+from style_bert_vits2.text_processing.cleaner import clean_text
 from style_bert_vits2.text_processing.symbols import SYMBOLS
 
 
@@ -45,18 +47,21 @@ def get_net_g(model_path: str, version: str, device: str, hps):
 
 
 def get_text(
-    text,
-    language_str,
+    text: str,
+    language_str: Literal["JP", "EN", "ZH"],
     hps,
-    device,
-    assist_text=None,
-    assist_text_weight=0.7,
-    given_tone=None,
+    device: str,
+    assist_text: str | None = None,
+    assist_text_weight: float = 0.7,
+    given_tone: list[int] | None = None,
 ):
     use_jp_extra = hps.version.endswith("JP-Extra")
-    # 推論のときにのみ呼び出されるので、raise_yomi_errorはFalseに設定
+    # 推論時のみ呼び出されるので、raise_yomi_error は False に設定
     norm_text, phone, tone, word2ph = clean_text(
-        text, language_str, use_jp_extra, raise_yomi_error=False
+        text,
+        language_str,
+        use_jp_extra = use_jp_extra,
+        raise_yomi_error = False,
     )
     if given_tone is not None:
         if len(given_tone) != len(phone):
@@ -110,22 +115,22 @@ def get_text(
 
 
 def infer(
-    text,
+    text: str,
     style_vec,
-    sdp_ratio,
-    noise_scale,
-    noise_scale_w,
-    length_scale,
+    sdp_ratio: float,
+    noise_scale: float,
+    noise_scale_w: float,
+    length_scale: float,
     sid: int,  # In the original Bert-VITS2, its speaker_name: str, but here it's id
-    language,
+    language: Literal["JP", "EN", "ZH"],
     hps,
     net_g,
-    device,
-    skip_start=False,
-    skip_end=False,
-    assist_text=None,
-    assist_text_weight=0.7,
-    given_tone=None,
+    device: str,
+    skip_start: bool = False,
+    skip_end: bool = False,
+    assist_text: str | None = None,
+    assist_text_weight: float = 0.7,
+    given_tone: list[int] | None = None,
 ):
     is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
@@ -210,19 +215,19 @@ def infer(
 
 
 def infer_multilang(
-    text,
+    text: str,
     style_vec,
-    sdp_ratio,
-    noise_scale,
-    noise_scale_w,
-    length_scale,
-    sid,
-    language,
+    sdp_ratio: float,
+    noise_scale: float,
+    noise_scale_w: float,
+    length_scale: float,
+    sid: int,
+    language: Literal["JP", "EN", "ZH"],
     hps,
     net_g,
-    device,
-    skip_start=False,
-    skip_end=False,
+    device: str,
+    skip_start: bool = False,
+    skip_end: bool = False,
 ):
     bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
     # emo = get_emo_(reference_audio, emotion, sid)
@@ -241,7 +246,7 @@ def infer_multilang(
             temp_phones,
             temp_tones,
             temp_lang_ids,
-        ) = get_text(txt, lang, hps, device)
+        ) = get_text(txt, lang, hps, device)  # type: ignore
         if _skip_start:
             temp_bert = temp_bert[:, 3:]
             temp_ja_bert = temp_ja_bert[:, 3:]

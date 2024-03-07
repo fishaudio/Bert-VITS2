@@ -96,7 +96,7 @@ rep_map = {
 }
 
 
-def text_normalize(text):
+def normalize_text(text):
     """
     日本語のテキストを正規化する。
     結果は、ちょうど次の文字のみからなる：
@@ -177,7 +177,7 @@ def g2p(
     norm_text: str, use_jp_extra: bool = True, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[int], list[int]]:
     """
-    他で使われるメインの関数。`text_normalize()`で正規化された`norm_text`を受け取り、
+    他で使われるメインの関数。`normalize_text()`で正規化された`norm_text`を受け取り、
     - phones: 音素のリスト（ただし`!`や`,`や`.`等punctuationが含まれうる）
     - tones: アクセントのリスト、0（低）と1（高）からなり、phonesと同じ長さ
     - word2ph: 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
@@ -350,7 +350,7 @@ def text2sep_kata(
     norm_text: str, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[str]]:
     """
-    `text_normalize`で正規化済みの`norm_text`を受け取り、それを単語分割し、
+    `normalize_text()`で正規化済みの`norm_text`を受け取り、それを単語分割し、
     分割された単語リストとその読み（カタカナor記号1文字）のリストのタプルを返す。
     単語分割結果は、`g2p()`の`word2ph`で1文字あたりに割り振る音素記号の数を決めるために使う。
     例:
@@ -634,7 +634,7 @@ if __name__ == "__main__":
     text = "こんにちは、世界。"
     from text.japanese_bert import get_bert_feature
 
-    text = text_normalize(text)
+    text = normalize_text(text)
 
     phones, tones, word2ph = g2p(text)
     bert = get_bert_feature(text, word2ph)
