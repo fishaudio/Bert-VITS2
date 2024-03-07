@@ -11,28 +11,6 @@ from style_bert_vits2.text_processing.symbols import (
 _symbol_to_id = {s: i for i, s in enumerate(SYMBOLS)}
 
 
-def cleaned_text_to_sequence(cleaned_text: str, tones: list[int], language: Languages) -> tuple[list[int], list[int], list[int]]:
-    """
-    Converts a string of text to a sequence of IDs corresponding to the symbols in the text.
-
-    Args:
-        cleaned_text (str): string to convert to a sequence
-        tones (list[int]): List of tones
-        language (Languages): Language of the text
-
-    Returns:
-        tuple[list[int], list[int], list[int]]: List of integers corresponding to the symbols in the text
-    """
-
-    phones = [_symbol_to_id[symbol] for symbol in cleaned_text]
-    tone_start = LANGUAGE_TONE_START_MAP[language]
-    tones = [i + tone_start for i in tones]
-    lang_id = LANGUAGE_ID_MAP[language]
-    lang_ids = [lang_id for i in phones]
-
-    return phones, tones, lang_ids
-
-
 def extract_bert_feature(
     text: str,
     word2ph: list[int],
@@ -66,3 +44,64 @@ def extract_bert_feature(
         raise ValueError(f"Language {language} not supported")
 
     return extract_bert_feature(text, word2ph, device, assist_text, assist_text_weight)
+
+
+def clean_text(
+    text: str,
+    language: Languages,
+    use_jp_extra: bool = True,
+    raise_yomi_error: bool = False,
+) -> tuple[str, list[str], list[int], list[int]]:
+    """
+    テキストをクリーニングし、音素に変換する
+
+    Args:
+        text (str): クリーニングするテキスト
+        language (Languages): テキストの言語
+        use_jp_extra (bool, optional): テキストが日本語の場合に JP-Extra モデルを利用するかどうか。Defaults to True.
+        raise_yomi_error (bool, optional): False の場合、読めない文字が消えたような扱いとして処理される。Defaults to False.
+
+    Returns:
+        tuple[str, list[str], list[int], list[int]]: クリーニングされたテキストと、音素・アクセント・元のテキストの各文字に音素が何個割り当てられるかのリスト
+    """
+
+    # Changed to import inside if condition to avoid unnecessary import
+    if language == Languages.JP:
+        from style_bert_vits2.text_processing.japanese.g2p import g2p
+        from style_bert_vits2.text_processing.japanese.normalizer import normalize_text
+        norm_text = normalize_text(text)
+        phones, tones, word2ph = g2p(norm_text, use_jp_extra, raise_yomi_error)
+    elif language == Languages.EN:
+        from ...text import english as language_module
+        norm_text = language_module.normalize_text(text)
+        phones, tones, word2ph = language_module.g2p(norm_text)
+    elif language == Languages.ZH:
+        from ...text import chinese as language_module
+        norm_text = language_module.normalize_text(text)
+        phones, tones, word2ph = language_module.g2p(norm_text)
+    else:
+        raise ValueError(f"Language {language} not supported")
+
+    return norm_text, phones, tones, word2ph
+
+
+def cleaned_text_to_sequence(cleaned_phones: list[str], tones: list[int], language: Languages) -> tuple[list[int], list[int], list[int]]:
+    """
+    テキスト文字列を、テキスト内の記号に対応する一連の ID に変換する
+
+    Args:
+        cleaned_phones (list[str]): clean_text() でクリーニングされた音素のリスト (?)
+        tones (list[int]): 各音素のアクセント
+        language (Languages): テキストの言語
+
+    Returns:
+        tuple[list[int], list[int], list[int]]: List of integers corresponding to the symbols in the text
+    """
+
+    phones = [_symbol_to_id[symbol] for symbol in cleaned_phones]
+    tone_start = LANGUAGE_TONE_START_MAP[language]
+    tones = [i + tone_start for i in tones]
+    lang_id = LANGUAGE_ID_MAP[language]
+    lang_ids = [lang_id for i in phones]
+
+    return phones, tones, lang_ids
