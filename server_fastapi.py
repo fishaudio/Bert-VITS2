@@ -104,7 +104,7 @@ if __name__ == "__main__":
     @app.get("/voice", response_class=AudioResponse)
     async def voice(
         request: Request,
-        text: str = Query(..., min_length=1, max_length=limit, description=f"セリフ"),
+        text: str = Query(..., min_length=1, max_length=limit, description="セリフ"),
         encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
         model_id: int = Query(
             0, description="モデルID。`GET /models/info`のkeyの値を指定ください"
@@ -132,7 +132,7 @@ if __name__ == "__main__":
             DEFAULT_LENGTH,
             description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる",
         ),
-        language: Languages = Query(ln, description=f"textの言語"),
+        language: Languages = Query(ln, description="textの言語"),
         auto_split: bool = Query(DEFAULT_LINE_SPLIT, description="改行で分けて生成"),
         split_interval: float = Query(
             DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"

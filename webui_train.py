@@ -147,10 +147,10 @@ def resample(model_name, normalize, trim, num_processes):
         cmd.append("--trim")
     success, message = run_script_with_log(cmd)
     if not success:
-        logger.error(f"Step 2: resampling failed.")
+        logger.error("Step 2: resampling failed.")
         return False, f"Step 2, Error: 音声ファイルの前処理に失敗しました:\n{message}"
     elif message:
-        logger.warning(f"Step 2: resampling finished with stderr.")
+        logger.warning("Step 2: resampling finished with stderr.")
         return True, f"Step 2, Success: 音声ファイルの前処理が完了しました:\n{message}"
     logger.success("Step 2: resampling finished.")
     return True, "Step 2, Success: 音声ファイルの前処理が完了しました"
@@ -197,13 +197,13 @@ def preprocess_text(model_name, use_jp_extra, val_per_lang, yomi_error):
         cmd.append("--use_jp_extra")
     success, message = run_script_with_log(cmd)
     if not success:
-        logger.error(f"Step 3: preprocessing text failed.")
+        logger.error("Step 3: preprocessing text failed.")
         return (
             False,
             f"Step 3, Error: 書き起こしファイルの前処理に失敗しました:\n{message}",
         )
     elif message:
-        logger.warning(f"Step 3: preprocessing text finished with stderr.")
+        logger.warning("Step 3: preprocessing text finished with stderr.")
         return (
             True,
             f"Step 3, Success: 書き起こしファイルの前処理が完了しました:\n{message}",
@@ -225,10 +225,10 @@ def bert_gen(model_name):
         ]
     )
     if not success:
-        logger.error(f"Step 4: bert_gen failed.")
+        logger.error("Step 4: bert_gen failed.")
         return False, f"Step 4, Error: BERT特徴ファイルの生成に失敗しました:\n{message}"
     elif message:
-        logger.warning(f"Step 4: bert_gen finished with stderr.")
+        logger.warning("Step 4: bert_gen finished with stderr.")
         return (
             True,
             f"Step 4, Success: BERT特徴ファイルの生成が完了しました:\n{message}",
@@ -250,13 +250,13 @@ def style_gen(model_name, num_processes):
         ]
     )
     if not success:
-        logger.error(f"Step 5: style_gen failed.")
+        logger.error("Step 5: style_gen failed.")
         return (
             False,
             f"Step 5, Error: スタイル特徴ファイルの生成に失敗しました:\n{message}",
         )
     elif message:
-        logger.warning(f"Step 5: style_gen finished with stderr.")
+        logger.warning("Step 5: style_gen finished with stderr.")
         return (
             True,
             f"Step 5, Success: スタイル特徴ファイルの生成が完了しました:\n{message}",
@@ -350,10 +350,10 @@ def train(model_name, skip_style=False, use_jp_extra=True, speedup=False):
         cmd.append("--speedup")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
-        logger.error(f"Train failed.")
+        logger.error("Train failed.")
         return False, f"Error: 学習に失敗しました:\n{message}"
     elif message:
-        logger.warning(f"Train finished with stderr.")
+        logger.warning("Train finished with stderr.")
         return True, f"Success: 学習が完了しました:\n{message}"
     logger.success("Train finished.")
     return True, "Success: 学習が完了しました"

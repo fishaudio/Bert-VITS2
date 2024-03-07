@@ -1,0 +1,9 @@
+[tool.ruff]
+# インデント幅を 4 に設定
+indent-width = 4
+
+# 行の長さを 100 文字に設定
+line-length = 100
+
+# Python 3.10 向けにフォーマット
+target-version = "py310"

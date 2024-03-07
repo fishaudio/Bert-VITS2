@@ -153,7 +153,7 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
         return [
             plt,
             gr.Slider(maximum=MAX_CLUSTER_NUM),
-            f"クラスタが数が0です。パラメータを変えてみてください。",
+            "クラスタが数が0です。パラメータを変えてみてください。",
         ] + [gr.Audio(visible=False)] * MAX_AUDIO_NUM
 
     return [plt, gr.Slider(maximum=n_clusters, value=1), n_clusters] + [
@@ -212,7 +212,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
     if len(style_name_list) != len(centroids) + 1:
         return f"スタイルの数が合いません。`,`で正しく{len(centroids)}個に区切られているか確認してください: {style_names_str}"
     if len(set(style_names)) != len(style_names):
-        return f"スタイル名が重複しています。"
+        return "スタイル名が重複しています。"
 
     logger.info(f"Backup {config_path} to {config_path}.bak")
     shutil.copy(config_path, f"{config_path}.bak")
@@ -243,7 +243,7 @@ def save_style_vectors_from_files(
         return f"音声ファイルとスタイル名の数が合いません。`,`で正しく{len(style_names)}個に区切られているか確認してください: {audio_files_str}と{style_names_str}"
     style_name_list = [DEFAULT_STYLE] + style_names
     if len(set(style_names)) != len(style_names):
-        return f"スタイル名が重複しています。"
+        return "スタイル名が重複しています。"
     style_vectors = [mean]
 
     wavs_dir = os.path.join(dataset_root, model_name, "wavs")
