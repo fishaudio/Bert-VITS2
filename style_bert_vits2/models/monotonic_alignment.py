@@ -28,7 +28,7 @@ def maximum_path(neg_cent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
 
     t_t_max = mask.sum(1)[:, 0].data.cpu().numpy().astype(int32)
     t_s_max = mask.sum(2)[:, 0].data.cpu().numpy().astype(int32)
-    maximum_path_jit(path, neg_cent, t_t_max, t_s_max)
+    __maximum_path_jit(path, neg_cent, t_t_max, t_s_max)
 
     return torch.from_numpy(path).to(device=device, dtype=dtype)
 
@@ -43,7 +43,7 @@ def maximum_path(neg_cent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     nopython = True,
     nogil = True,
 )  # type: ignore
-def maximum_path_jit(paths: Any, values: Any, t_ys: Any, t_xs: Any) -> None:
+def __maximum_path_jit(paths: Any, values: Any, t_ys: Any, t_xs: Any) -> None:
     """
     与えられたパス、値、およびターゲットの y と x 座標を使用して JIT で最大パスを計算する
 

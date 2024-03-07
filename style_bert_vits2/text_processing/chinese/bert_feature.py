@@ -7,7 +7,7 @@ from style_bert_vits2.constants import Languages
 from style_bert_vits2.text_processing import bert_models
 
 
-models: dict[torch.device | str, PreTrainedModel] = {}
+__models: dict[torch.device | str, PreTrainedModel] = {}
 
 
 def extract_bert_feature(
@@ -41,8 +41,8 @@ def extract_bert_feature(
         device = "cuda"
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
-    if device not in models.keys():
-        models[device] = bert_models.load_model(Languages.ZH).to(device)  # type: ignore
+    if device not in __models.keys():
+        __models[device] = bert_models.load_model(Languages.ZH).to(device)  # type: ignore
 
     style_res_mean = None
     with torch.no_grad():
@@ -50,13 +50,13 @@ def extract_bert_feature(
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)  # type: ignore
-        res = models[device](**inputs, output_hidden_states=True)
+        res = __models[device](**inputs, output_hidden_states=True)
         res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
         if assist_text:
             style_inputs = tokenizer(assist_text, return_tensors="pt")
             for i in style_inputs:
                 style_inputs[i] = style_inputs[i].to(device)  # type: ignore
-            style_res = models[device](**style_inputs, output_hidden_states=True)
+            style_res = __models[device](**style_inputs, output_hidden_states=True)
             style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].cpu()
             style_res_mean = style_res.mean(0)
 

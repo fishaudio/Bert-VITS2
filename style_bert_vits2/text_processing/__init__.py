@@ -8,7 +8,7 @@ from style_bert_vits2.text_processing.symbols import (
 )
 
 
-_symbol_to_id = {s: i for i, s in enumerate(SYMBOLS)}
+__symbol_to_id = {s: i for i, s in enumerate(SYMBOLS)}
 
 
 def extract_bert_feature(
@@ -97,7 +97,7 @@ def cleaned_text_to_sequence(cleaned_phones: list[str], tones: list[int], langua
         tuple[list[int], list[int], list[int]]: List of integers corresponding to the symbols in the text
     """
 
-    phones = [_symbol_to_id[symbol] for symbol in cleaned_phones]
+    phones = [__symbol_to_id[symbol] for symbol in cleaned_phones]
     tone_start = LANGUAGE_TONE_START_MAP[language]
     tones = [i + tone_start for i in tones]
     lang_id = LANGUAGE_ID_MAP[language]

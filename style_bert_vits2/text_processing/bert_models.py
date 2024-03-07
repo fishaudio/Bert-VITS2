@@ -5,11 +5,13 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 場合によっては多重にロードされて非効率なほか、BERT モデルのロード元のパスがハードコードされているためライブラリ化ができない。
 
 そこで、ライブラリの利用前に、音声合成に利用する言語の BERT モデルだけを「明示的に」ロードできるようにした。
-一度 load_tokenizer() で当該言語の BERT モデルがロードされていれば、ライブラリ内部のどこからでもロード済みのモデル/トークナイザーを取得できる。
+一度 load_model/tokenizer() で当該言語の BERT モデルがロードされていれば、ライブラリ内部のどこからでもロード済みのモデル/トークナイザーを取得できる。
 """
 
+import gc
 from typing import cast
 
+import torch
 from transformers import (
     AutoModelForMaskedLM,
     AutoTokenizer,
@@ -25,10 +27,10 @@ from style_bert_vits2.logging import logger
 
 
 # 各言語ごとのロード済みの BERT モデルを格納する辞書
-loaded_models: dict[Languages, PreTrainedModel | DebertaV2Model] = {}
+__loaded_models: dict[Languages, PreTrainedModel | DebertaV2Model] = {}
 
 # 各言語ごとのロード済みの BERT トークナイザーを格納する辞書
-loaded_tokenizers: dict[Languages, PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer] = {}
+__loaded_tokenizers: dict[Languages, PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer] = {}
 
 
 def load_model(
@@ -56,8 +58,8 @@ def load_model(
     """
 
     # すでにロード済みの場合はそのまま返す
-    if language in loaded_models:
-        return loaded_models[language]
+    if language in __loaded_models:
+        return __loaded_models[language]
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
@@ -71,7 +73,7 @@ def load_model(
         model = cast(DebertaV2Model, DebertaV2Model.from_pretrained(pretrained_model_name_or_path))
     else:
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path)
-    loaded_models[language] = model
+    __loaded_models[language] = model
     logger.info(f"Loaded the {language} BERT model from {pretrained_model_name_or_path}")
 
     return model
@@ -102,8 +104,8 @@ def load_tokenizer(
     """
 
     # すでにロード済みの場合はそのまま返す
-    if language in loaded_tokenizers:
-        return loaded_tokenizers[language]
+    if language in __loaded_tokenizers:
+        return __loaded_tokenizers[language]
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
@@ -117,7 +119,59 @@ def load_tokenizer(
         tokenizer = DebertaV2Tokenizer.from_pretrained(pretrained_model_name_or_path)
     else:
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
-    loaded_tokenizers[language] = tokenizer
+    __loaded_tokenizers[language] = tokenizer
     logger.info(f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}")
 
     return tokenizer
+
+
+def unload_model(language: Languages) -> None:
+    """
+    指定された言語の BERT モデルをアンロードする
+
+    Args:
+        language (Languages): アンロードする BERT モデルの言語
+    """
+
+    if language in __loaded_models:
+        del __loaded_models[language]
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        logger.info(f"Unloaded the {language} BERT model")
+
+
+def unload_tokenizer(language: Languages) -> None:
+    """
+    指定された言語の BERT トークナイザーをアンロードする
+
+    Args:
+        language (Languages): アンロードする BERT トークナイザーの言語
+    """
+
+    if language in __loaded_tokenizers:
+        del __loaded_tokenizers[language]
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        logger.info(f"Unloaded the {language} BERT tokenizer")
+
+
+def unload_all_models() -> None:
+    """
+    すべての BERT モデルをアンロードする
+    """
+
+    for language in list(__loaded_models.keys()):
+        unload_model(language)
+    logger.info("Unloaded all BERT models")
+
+
+def unload_all_tokenizers() -> None:
+    """
+    すべての BERT トークナイザーをアンロードする
+    """
+
+    for language in list(__loaded_tokenizers.keys()):
+        unload_tokenizer(language)
+    logger.info("Unloaded all BERT tokenizers")
