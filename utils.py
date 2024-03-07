@@ -8,26 +8,14 @@ import subprocess
 
 import numpy as np
 import torch
-from huggingface_hub import hf_hub_download
 from safetensors import safe_open
 from safetensors.torch import save_file
 from scipy.io.wavfile import read
 
 from style_bert_vits2.logging import logger
 
+
 MATPLOTLIB_FLAG = False
-
-
-def download_checkpoint(
-    dir_path, repo_config, token=None, regex="G_*.pth", mirror="openi"
-):
-    repo_id = repo_config["repo_id"]
-    f_list = glob.glob(os.path.join(dir_path, regex))
-    if f_list:
-        print("Use existed model, skip downloading.")
-        return
-    for file in ["DUR_0.pth", "D_0.pth", "G_0.pth"]:
-        hf_hub_download(repo_id, file, local_dir=dir_path, local_dir_use_symlinks=False)
 
 
 def load_checkpoint(
@@ -114,28 +102,54 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
     )
 
 
-def save_safetensors(model, iteration, checkpoint_path, is_half=False, for_infer=False):
-    """
-    Save model with safetensors.
-    """
-    if hasattr(model, "module"):
-        state_dict = model.module.state_dict()
-    else:
-        state_dict = model.state_dict()
-    keys = []
-    for k in state_dict:
-        if "enc_q" in k and for_infer:
-            continue  # noqa: E701
-        keys.append(k)
+def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_time=True):
+    """Freeing up space by deleting saved ckpts
 
-    new_dict = (
-        {k: state_dict[k].half() for k in keys}
-        if is_half
-        else {k: state_dict[k] for k in keys}
-    )
-    new_dict["iteration"] = torch.LongTensor([iteration])
-    logger.info(f"Saved safetensors to {checkpoint_path}")
-    save_file(new_dict, checkpoint_path)
+    Arguments:
+    path_to_models    --  Path to the model directory
+    n_ckpts_to_keep   --  Number of ckpts to keep, excluding G_0.pth and D_0.pth
+    sort_by_time      --  True -> chronologically delete ckpts
+                          False -> lexicographically delete ckpts
+    """
+    import re
+
+    ckpts_files = [
+        f
+        for f in os.listdir(path_to_models)
+        if os.path.isfile(os.path.join(path_to_models, f))
+    ]
+
+    def name_key(_f):
+        return int(re.compile("._(\\d+)\\.pth").match(_f).group(1))
+
+    def time_key(_f):
+        return os.path.getmtime(os.path.join(path_to_models, _f))
+
+    sort_key = time_key if sort_by_time else name_key
+
+    def x_sorted(_x):
+        return sorted(
+            [f for f in ckpts_files if f.startswith(_x) and not f.endswith("_0.pth")],
+            key=sort_key,
+        )
+
+    to_del = [
+        os.path.join(path_to_models, fn)
+        for fn in (
+            x_sorted("G_")[:-n_ckpts_to_keep]
+            + x_sorted("D_")[:-n_ckpts_to_keep]
+            + x_sorted("WD_")[:-n_ckpts_to_keep]
+            + x_sorted("DUR_")[:-n_ckpts_to_keep]
+        )
+    ]
+
+    def del_info(fn):
+        return logger.info(f"Free up space by deleting ckpt {fn}")
+
+    def del_routine(x):
+        return [os.remove(x), del_info(x)]
+
+    [del_routine(fn) for fn in to_del]
 
 
 def load_safetensors(checkpoint_path, model, for_infer=False):
@@ -167,6 +181,30 @@ def load_safetensors(checkpoint_path, model, for_infer=False):
     else:
         logger.info(f"Loaded '{checkpoint_path}' (iteration {iteration})")
     return model, iteration
+
+
+def save_safetensors(model, iteration, checkpoint_path, is_half=False, for_infer=False):
+    """
+    Save model with safetensors.
+    """
+    if hasattr(model, "module"):
+        state_dict = model.module.state_dict()
+    else:
+        state_dict = model.state_dict()
+    keys = []
+    for k in state_dict:
+        if "enc_q" in k and for_infer:
+            continue  # noqa: E701
+        keys.append(k)
+
+    new_dict = (
+        {k: state_dict[k].half() for k in keys}
+        if is_half
+        else {k: state_dict[k] for k in keys}
+    )
+    new_dict["iteration"] = torch.LongTensor([iteration])
+    logger.info(f"Saved safetensors to {checkpoint_path}")
+    save_file(new_dict, checkpoint_path)
 
 
 def summarize(
@@ -274,6 +312,51 @@ def load_filepaths_and_text(filename, split="|"):
     return filepaths_and_text
 
 
+def get_logger(model_dir, filename="train.log"):
+    global logger
+    logger = logging.getLogger(os.path.basename(model_dir))
+    logger.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter("%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s")
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    h = logging.FileHandler(os.path.join(model_dir, filename))
+    h.setLevel(logging.DEBUG)
+    h.setFormatter(formatter)
+    logger.addHandler(h)
+    return logger
+
+
+def get_steps(model_path):
+    matches = re.findall(r"\d+", model_path)
+    return matches[-1] if matches else None
+
+
+def check_git_hash(model_dir):
+    source_dir = os.path.dirname(os.path.realpath(__file__))
+    if not os.path.exists(os.path.join(source_dir, ".git")):
+        logger.warning(
+            "{} is not a git repository, therefore hash value comparison will be ignored.".format(
+                source_dir
+            )
+        )
+        return
+
+    cur_hash = subprocess.getoutput("git rev-parse HEAD")
+
+    path = os.path.join(model_dir, "githash")
+    if os.path.exists(path):
+        saved_hash = open(path).read()
+        if saved_hash != cur_hash:
+            logger.warning(
+                "git hash values are different. {}(saved) != {}(current)".format(
+                    saved_hash[:8], cur_hash[:8]
+                )
+            )
+    else:
+        open(path, "w").write(cur_hash)
+
+
 def get_hparams(init=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -307,67 +390,6 @@ def get_hparams(init=True):
     return hparams
 
 
-def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_time=True):
-    """Freeing up space by deleting saved ckpts
-
-    Arguments:
-    path_to_models    --  Path to the model directory
-    n_ckpts_to_keep   --  Number of ckpts to keep, excluding G_0.pth and D_0.pth
-    sort_by_time      --  True -> chronologically delete ckpts
-                          False -> lexicographically delete ckpts
-    """
-    import re
-
-    ckpts_files = [
-        f
-        for f in os.listdir(path_to_models)
-        if os.path.isfile(os.path.join(path_to_models, f))
-    ]
-
-    def name_key(_f):
-        return int(re.compile("._(\\d+)\\.pth").match(_f).group(1))
-
-    def time_key(_f):
-        return os.path.getmtime(os.path.join(path_to_models, _f))
-
-    sort_key = time_key if sort_by_time else name_key
-
-    def x_sorted(_x):
-        return sorted(
-            [f for f in ckpts_files if f.startswith(_x) and not f.endswith("_0.pth")],
-            key=sort_key,
-        )
-
-    to_del = [
-        os.path.join(path_to_models, fn)
-        for fn in (
-            x_sorted("G_")[:-n_ckpts_to_keep]
-            + x_sorted("D_")[:-n_ckpts_to_keep]
-            + x_sorted("WD_")[:-n_ckpts_to_keep]
-            + x_sorted("DUR_")[:-n_ckpts_to_keep]
-        )
-    ]
-
-    def del_info(fn):
-        return logger.info(f"Free up space by deleting ckpt {fn}")
-
-    def del_routine(x):
-        return [os.remove(x), del_info(x)]
-
-    [del_routine(fn) for fn in to_del]
-
-
-def get_hparams_from_dir(model_dir):
-    config_save_path = os.path.join(model_dir, "config.json")
-    with open(config_save_path, "r", encoding="utf-8") as f:
-        data = f.read()
-    config = json.loads(data)
-
-    hparams = HParams(**config)
-    hparams.model_dir = model_dir
-    return hparams
-
-
 def get_hparams_from_file(config_path):
     # print("config_path: ", config_path)
     with open(config_path, "r", encoding="utf-8") as f:
@@ -376,46 +398,6 @@ def get_hparams_from_file(config_path):
 
     hparams = HParams(**config)
     return hparams
-
-
-def check_git_hash(model_dir):
-    source_dir = os.path.dirname(os.path.realpath(__file__))
-    if not os.path.exists(os.path.join(source_dir, ".git")):
-        logger.warning(
-            "{} is not a git repository, therefore hash value comparison will be ignored.".format(
-                source_dir
-            )
-        )
-        return
-
-    cur_hash = subprocess.getoutput("git rev-parse HEAD")
-
-    path = os.path.join(model_dir, "githash")
-    if os.path.exists(path):
-        saved_hash = open(path).read()
-        if saved_hash != cur_hash:
-            logger.warning(
-                "git hash values are different. {}(saved) != {}(current)".format(
-                    saved_hash[:8], cur_hash[:8]
-                )
-            )
-    else:
-        open(path, "w").write(cur_hash)
-
-
-def get_logger(model_dir, filename="train.log"):
-    global logger
-    logger = logging.getLogger(os.path.basename(model_dir))
-    logger.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter("%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s")
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-    h = logging.FileHandler(os.path.join(model_dir, filename))
-    h.setLevel(logging.DEBUG)
-    h.setFormatter(formatter)
-    logger.addHandler(h)
-    return logger
 
 
 class HParams:
@@ -448,39 +430,3 @@ class HParams:
 
     def __repr__(self):
         return self.__dict__.__repr__()
-
-
-def mix_model(
-    network1, network2, output_path, voice_ratio=(0.5, 0.5), tone_ratio=(0.5, 0.5)
-):
-    if hasattr(network1, "module"):
-        state_dict1 = network1.module.state_dict()
-        state_dict2 = network2.module.state_dict()
-    else:
-        state_dict1 = network1.state_dict()
-        state_dict2 = network2.state_dict()
-    for k in state_dict1.keys():
-        if k not in state_dict2.keys():
-            continue
-        if "enc_p" in k:
-            state_dict1[k] = (
-                state_dict1[k].clone() * tone_ratio[0]
-                + state_dict2[k].clone() * tone_ratio[1]
-            )
-        else:
-            state_dict1[k] = (
-                state_dict1[k].clone() * voice_ratio[0]
-                + state_dict2[k].clone() * voice_ratio[1]
-            )
-    for k in state_dict2.keys():
-        if k not in state_dict1.keys():
-            state_dict1[k] = state_dict2[k].clone()
-    torch.save(
-        {"model": state_dict1, "iteration": 0, "optimizer": None, "learning_rate": 0},
-        output_path,
-    )
-
-
-def get_steps(model_path):
-    matches = re.findall(r"\d+", model_path)
-    return matches[-1] if matches else None
