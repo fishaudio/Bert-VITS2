@@ -450,21 +450,6 @@ class HParams:
         return self.__dict__.__repr__()
 
 
-def load_model(model_path, config_path):
-    hps = get_hparams_from_file(config_path)
-    net = SynthesizerTrn(
-        # len(symbols),
-        108,
-        hps.data.filter_length // 2 + 1,
-        hps.train.segment_size // hps.data.hop_length,
-        n_speakers=hps.data.n_speakers,
-        **hps.model,
-    ).to("cpu")
-    _ = net.eval()
-    _ = load_checkpoint(model_path, net, None, skip_optimizer=True)
-    return net
-
-
 def mix_model(
     network1, network2, output_path, voice_ratio=(0.5, 0.5), tone_ratio=(0.5, 0.5)
 ):

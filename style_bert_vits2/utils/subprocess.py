@@ -5,8 +5,6 @@ from typing import Any, Callable
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
-PYTHON = sys.executable
-
 
 def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[bool, str]:
     """
@@ -22,7 +20,7 @@ def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[b
 
     logger.info(f"Running: {' '.join(cmd)}")
     result = subprocess.run(
-        [PYTHON] + cmd,
+        [sys.executable] + cmd,
         stdout = SAFE_STDOUT,
         stderr = subprocess.PIPE,
         text = True,

@@ -8,7 +8,7 @@ from style_bert_vits2.text_processing import bert_models
 from style_bert_vits2.text_processing.japanese.g2p import text_to_sep_kata
 
 
-models: dict[str, PreTrainedModel] = {}
+models: dict[torch.device | str, PreTrainedModel] = {}
 
 
 def extract_bert_feature(

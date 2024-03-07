@@ -7,7 +7,7 @@ from style_bert_vits2.constants import Languages
 from style_bert_vits2.text_processing import bert_models
 
 
-models: dict[str, PreTrainedModel] = {}
+models: dict[torch.device | str, PreTrainedModel] = {}
 
 
 def extract_bert_feature(

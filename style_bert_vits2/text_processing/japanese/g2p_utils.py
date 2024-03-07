@@ -9,7 +9,7 @@ from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
 def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:
     """
     テキストからカタカナとアクセントのペアのリストを返す。
-    推論時のみに使われるので、常に `raise_yomi_error=False` で g2p を呼ぶ。
+    推論時のみに使われる関数のため、常に `raise_yomi_error=False` を指定して g2p() を呼ぶ仕様になっている。
 
     Args:
         norm_text: 正規化されたテキスト。

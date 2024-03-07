@@ -391,7 +391,7 @@ def __kata_to_phoneme_list(text: str) -> list[str]:
 
     if set(text).issubset(set(PUNCTUATIONS)):
         return list(text)
-    # `text`がカタカナ（`ー`含む）のみからなるかどうかをチェック
+    # `text` がカタカナ（`ー`含む）のみからなるかどうかをチェック
     if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
         raise ValueError(f"Input must be katakana only: {text}")
     sorted_keys = sorted(MORA_KATA_TO_MORA_PHONEMES.keys(), key=len, reverse=True)
@@ -438,15 +438,15 @@ def __align_tones(
     tone_index = 0
     for phone in phones_with_punct:
         if tone_index >= len(phone_tone_list):
-            # 余ったpunctuationがある場合 → (punctuation, 0)を追加
+            # 余った punctuation がある場合 → (punctuation, 0) を追加
             result.append((phone, 0))
         elif phone == phone_tone_list[tone_index][0]:
-            # phone_tone_listの現在の音素と一致する場合 → toneをそこから取得、(phone, tone)を追加
+            # phone_tone_list の現在の音素と一致する場合 → tone をそこから取得、(phone, tone) を追加
             result.append((phone, phone_tone_list[tone_index][1]))
-            # 探すindexを1つ進める
+            # 探す index を1つ進める
             tone_index += 1
         elif phone in PUNCTUATIONS:
-            # phoneがpunctuationの場合 → (phone, 0)を追加
+            # phone が punctuation の場合 → (phone, 0) を追加
             result.append((phone, 0))
         else:
             logger.debug(f"phones: {phones_with_punct}")
