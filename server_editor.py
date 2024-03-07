@@ -42,8 +42,8 @@ from style_bert_vits2.constants import (
 )
 from style_bert_vits2.logging import logger
 from style_bert_vits2.text_processing import bert_models
+from style_bert_vits2.text_processing.japanese import normalize_text
 from style_bert_vits2.text_processing.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
-from style_bert_vits2.text_processing.japanese.normalizer import normalize_text
 from style_bert_vits2.text_processing.japanese.user_dict import (
     apply_word,
     update_dict,

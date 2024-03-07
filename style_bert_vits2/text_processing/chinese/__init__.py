@@ -66,7 +66,7 @@ def replace_punctuation(text):
     return replaced_text
 
 
-def g2p(text):
+def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     pattern = r"(?<=[{0}])\s*".format("".join(PUNCTUATIONS))
     sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
     phones, tones, word2ph = _g2p(sentences)
@@ -168,7 +168,7 @@ def _g2p(segments):
     return phones_list, tones_list, word2ph
 
 
-def normalize_text(text):
+def normalize_text(text: str) -> str:
     numbers = re.findall(r"\d+(?:\.?\d+)?", text)
     for number in numbers:
         text = text.replace(number, cn2an.an2cn(number), 1)

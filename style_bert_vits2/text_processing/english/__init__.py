@@ -369,7 +369,7 @@ def normalize_numbers(text):
     return text
 
 
-def normalize_text(text):
+def normalize_text(text: str) -> str:
     text = normalize_numbers(text)
     text = replace_punctuation(text)
     text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)
@@ -419,7 +419,7 @@ def text_to_words(text):
     return words
 
 
-def g2p(text):
+def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     phones = []
     tones = []
     phone_len = []
