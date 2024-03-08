@@ -113,6 +113,7 @@ def text_to_sep_kata(
     """
 
     # pyopenjtalk_worker を初期化
+    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
     pyopenjtalk.initialize()
 
     # parsed: OpenJTalkの解析結果

@@ -81,7 +81,7 @@ def update_dict(
     """
 
     # pyopenjtalk_worker を初期化
-    # ファイルを開く前に実行する必要がある
+    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
     pyopenjtalk.initialize()
 
     random_string = uuid4()
