@@ -12,7 +12,9 @@ from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 import numpy as np
-import pyopenjtalk
+from .. import pyopenjtalk_worker as pyopenjtalk
+
+pyopenjtalk.initialize()
 from fastapi import HTTPException
 
 from .word_model import UserDictWord, WordTypes

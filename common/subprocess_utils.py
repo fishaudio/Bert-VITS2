@@ -14,6 +14,7 @@ def run_script_with_log(cmd: list[str], ignore_warning=False) -> tuple[bool, str
         stdout=SAFE_STDOUT,  # type: ignore
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
     )
     if result.returncode != 0:
         logger.error(f"Error: {' '.join(cmd)}\n{result.stderr}")

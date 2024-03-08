@@ -19,7 +19,6 @@ from pathlib import Path
 import yaml
 
 import numpy as np
-import pyopenjtalk
 import requests
 import torch
 import uvicorn

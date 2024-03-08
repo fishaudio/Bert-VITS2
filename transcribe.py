@@ -61,13 +61,9 @@ if __name__ == "__main__":
         logger.warning(f"Failed to load model, so use `auto` compute_type: {e}")
         model = WhisperModel(args.model, device=device)
 
-    # wav_files = [
-    #     os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".wav")
-    # ]
     wav_files = [f for f in input_dir.rglob("*.wav") if f.is_file()]
     if output_file.exists():
         logger.warning(f"{output_file} exists, backing up to {output_file}.bak")
-        # if os.path.exists(output_file + ".bak"):
         backup_path = output_file.with_name(output_file.name + ".bak")
         if backup_path.exists():
             logger.warning(f"{output_file}.bak exists, deleting...")

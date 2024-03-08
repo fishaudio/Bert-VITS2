@@ -4,7 +4,9 @@ import re
 import unicodedata
 from pathlib import Path
 
-import pyopenjtalk
+from . import pyopenjtalk_worker as pyopenjtalk
+
+pyopenjtalk.initialize()
 from num2words import num2words
 from transformers import AutoTokenizer
 
