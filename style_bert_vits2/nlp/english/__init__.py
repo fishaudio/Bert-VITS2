@@ -1,6 +1,9 @@
 import pickle
 import os
 import re
+from pathlib import Path
+
+import inflect
 from g2p_en import G2p
 
 from style_bert_vits2.constants import Languages
@@ -8,88 +11,215 @@ from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS, SYMBOLS
 
 
-current_file_path = os.path.dirname(__file__)
-CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
-CACHE_PATH = os.path.join(current_file_path, "cmudict_cache.pickle")
-_g2p = G2p()
-
-arpa = {
-    "AH0",
-    "S",
-    "AH1",
-    "EY2",
-    "AE2",
-    "EH0",
-    "OW2",
-    "UH0",
-    "NG",
-    "B",
-    "G",
-    "AY0",
-    "M",
-    "AA0",
-    "F",
-    "AO0",
-    "ER2",
-    "UH1",
-    "IY1",
-    "AH2",
-    "DH",
-    "IY0",
-    "EY1",
-    "IH0",
-    "K",
-    "N",
-    "W",
-    "IY2",
-    "T",
-    "AA1",
-    "ER1",
-    "EH2",
-    "OY0",
-    "UH2",
-    "UW1",
-    "Z",
-    "AW2",
-    "AW1",
-    "V",
-    "UW2",
-    "AA2",
-    "ER",
-    "AW0",
-    "UW0",
-    "R",
-    "OW1",
-    "EH1",
-    "ZH",
-    "AE0",
-    "IH2",
-    "IH",
-    "Y",
-    "JH",
-    "P",
-    "AY1",
-    "EY0",
-    "OY2",
-    "TH",
-    "HH",
-    "D",
-    "ER0",
-    "CH",
-    "AO1",
-    "AE1",
-    "AO2",
-    "OY1",
-    "AY2",
-    "IH1",
-    "OW0",
-    "L",
-    "SH",
-}
+CMU_DICT_PATH = Path(__file__).parent / "cmudict.rep"
+CACHE_PATH = Path(__file__).parent / "cmudict_cache.pickle"
 
 
-def post_replace_ph(ph):
-    rep_map = {
+def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
+
+    ARPA = {
+        "AH0",
+        "S",
+        "AH1",
+        "EY2",
+        "AE2",
+        "EH0",
+        "OW2",
+        "UH0",
+        "NG",
+        "B",
+        "G",
+        "AY0",
+        "M",
+        "AA0",
+        "F",
+        "AO0",
+        "ER2",
+        "UH1",
+        "IY1",
+        "AH2",
+        "DH",
+        "IY0",
+        "EY1",
+        "IH0",
+        "K",
+        "N",
+        "W",
+        "IY2",
+        "T",
+        "AA1",
+        "ER1",
+        "EH2",
+        "OY0",
+        "UH2",
+        "UW1",
+        "Z",
+        "AW2",
+        "AW1",
+        "V",
+        "UW2",
+        "AA2",
+        "ER",
+        "AW0",
+        "UW0",
+        "R",
+        "OW1",
+        "EH1",
+        "ZH",
+        "AE0",
+        "IH2",
+        "IH",
+        "Y",
+        "JH",
+        "P",
+        "AY1",
+        "EY0",
+        "OY2",
+        "TH",
+        "HH",
+        "D",
+        "ER0",
+        "CH",
+        "AO1",
+        "AE1",
+        "AO2",
+        "OY1",
+        "AY2",
+        "IH1",
+        "OW0",
+        "L",
+        "SH",
+    }
+
+    _g2p = G2p()
+
+    phones = []
+    tones = []
+    phone_len = []
+    # tokens = [tokenizer.tokenize(i) for i in words]
+    words = __text_to_words(text)
+    eng_dict = __get_dict()
+
+    for word in words:
+        temp_phones, temp_tones = [], []
+        if len(word) > 1:
+            if "'" in word:
+                word = ["".join(word)]
+        for w in word:
+            if w in PUNCTUATIONS:
+                temp_phones.append(w)
+                temp_tones.append(0)
+                continue
+            if w.upper() in eng_dict:
+                phns, tns = __refine_syllables(eng_dict[w.upper()])
+                temp_phones += [__post_replace_ph(i) for i in phns]
+                temp_tones += tns
+                # w2ph.append(len(phns))
+            else:
+                phone_list = list(filter(lambda p: p != " ", _g2p(w)))  # type: ignore
+                phns = []
+                tns = []
+                for ph in phone_list:
+                    if ph in ARPA:
+                        ph, tn = __refine_ph(ph)
+                        phns.append(ph)
+                        tns.append(tn)
+                    else:
+                        phns.append(ph)
+                        tns.append(0)
+                temp_phones += [__post_replace_ph(i) for i in phns]
+                temp_tones += tns
+        phones += temp_phones
+        tones += temp_tones
+        phone_len.append(len(temp_phones))
+        # phones = [post_replace_ph(i) for i in phones]
+
+    word2ph = []
+    for token, pl in zip(words, phone_len):
+        word_len = len(token)
+
+        aaa = __distribute_phone(pl, word_len)
+        word2ph += aaa
+
+    phones = ["_"] + phones + ["_"]
+    tones = [0] + tones + [0]
+    word2ph = [1] + word2ph + [1]
+    assert len(phones) == len(tones), text
+    assert len(phones) == sum(word2ph), text
+
+    return phones, tones, word2ph
+
+
+def normalize_text(text: str) -> str:
+    text = __normalize_numbers(text)
+    text = __replace_punctuation(text)
+    text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)
+    return text
+
+
+def __normalize_numbers(text: str) -> str:
+    text = re.sub(__comma_number_re, __remove_commas, text)
+    text = re.sub(__pounds_re, r"\1 pounds", text)
+    text = re.sub(__dollars_re, __expand_dollars, text)
+    text = re.sub(__decimal_number_re, __expand_decimal_point, text)
+    text = re.sub(__ordinal_re, __expand_ordinal, text)
+    text = re.sub(__number_re, __expand_number, text)
+    return text
+
+
+def __replace_punctuation(text: str) -> str:
+    REPLACE_MAP = {
+        "：": ",",
+        "；": ",",
+        "，": ",",
+        "。": ".",
+        "！": "!",
+        "？": "?",
+        "\n": ".",
+        "．": ".",
+        "…": "...",
+        "···": "...",
+        "・・・": "...",
+        "·": ",",
+        "・": ",",
+        "、": ",",
+        "$": ".",
+        "“": "'",
+        "”": "'",
+        '"': "'",
+        "‘": "'",
+        "’": "'",
+        "（": "'",
+        "）": "'",
+        "(": "'",
+        ")": "'",
+        "《": "'",
+        "》": "'",
+        "【": "'",
+        "】": "'",
+        "[": "'",
+        "]": "'",
+        "—": "-",
+        "−": "-",
+        "～": "-",
+        "~": "-",
+        "「": "'",
+        "」": "'",
+    }
+    pattern = re.compile("|".join(re.escape(p) for p in REPLACE_MAP.keys()))
+    replaced_text = pattern.sub(lambda x: REPLACE_MAP[x.group()], text)
+    # replaced_text = re.sub(
+    #     r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005"
+    #     + "".join(punctuation)
+    #     + r"]+",
+    #     "",
+    #     replaced_text,
+    # )
+    return replaced_text
+
+
+def __post_replace_ph(ph: str) -> str:
+    REPLACE_MAP = {
         "：": ",",
         "；": ",",
         "，": ",",
@@ -104,8 +234,8 @@ def post_replace_ph(ph):
         "・・・": "...",
         "v": "V",
     }
-    if ph in rep_map.keys():
-        ph = rep_map[ph]
+    if ph in REPLACE_MAP.keys():
+        ph = REPLACE_MAP[ph]
     if ph in SYMBOLS:
         return ph
     if ph not in SYMBOLS:
@@ -113,63 +243,7 @@ def post_replace_ph(ph):
     return ph
 
 
-rep_map = {
-    "：": ",",
-    "；": ",",
-    "，": ",",
-    "。": ".",
-    "！": "!",
-    "？": "?",
-    "\n": ".",
-    "．": ".",
-    "…": "...",
-    "···": "...",
-    "・・・": "...",
-    "·": ",",
-    "・": ",",
-    "、": ",",
-    "$": ".",
-    "“": "'",
-    "”": "'",
-    '"': "'",
-    "‘": "'",
-    "’": "'",
-    "（": "'",
-    "）": "'",
-    "(": "'",
-    ")": "'",
-    "《": "'",
-    "》": "'",
-    "【": "'",
-    "】": "'",
-    "[": "'",
-    "]": "'",
-    "—": "-",
-    "−": "-",
-    "～": "-",
-    "~": "-",
-    "「": "'",
-    "」": "'",
-}
-
-
-def replace_punctuation(text):
-    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
-
-    replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
-
-    # replaced_text = re.sub(
-    #     r"[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005"
-    #     + "".join(punctuation)
-    #     + r"]+",
-    #     "",
-    #     replaced_text,
-    # )
-
-    return replaced_text
-
-
-def read_dict():
+def __read_dict() -> dict[str, list[list[str]]]:
     g2p_dict = {}
     start_line = 49
     with open(CMU_DICT_PATH) as f:
@@ -193,26 +267,23 @@ def read_dict():
     return g2p_dict
 
 
-def cache_dict(g2p_dict, file_path):
+def __cache_dict(g2p_dict: dict[str, list[list[str]]], file_path: Path) -> None:
     with open(file_path, "wb") as pickle_file:
         pickle.dump(g2p_dict, pickle_file)
 
 
-def get_dict():
+def __get_dict() -> dict[str, list[list[str]]]:
     if os.path.exists(CACHE_PATH):
         with open(CACHE_PATH, "rb") as pickle_file:
             g2p_dict = pickle.load(pickle_file)
     else:
-        g2p_dict = read_dict()
-        cache_dict(g2p_dict, CACHE_PATH)
+        g2p_dict = __read_dict()
+        __cache_dict(g2p_dict, CACHE_PATH)
 
     return g2p_dict
 
 
-eng_dict = get_dict()
-
-
-def refine_ph(phn):
+def __refine_ph(phn: str) -> tuple[str, int]:
     tone = 0
     if re.search(r"\d$", phn):
         tone = int(phn[-1]) + 1
@@ -222,93 +293,28 @@ def refine_ph(phn):
     return phn.lower(), tone
 
 
-def refine_syllables(syllables):
+def __refine_syllables(syllables: list[list[str]]) -> tuple[list[str], list[int]]:
     tones = []
     phonemes = []
     for phn_list in syllables:
         for i in range(len(phn_list)):
             phn = phn_list[i]
-            phn, tone = refine_ph(phn)
+            phn, tone = __refine_ph(phn)
             phonemes.append(phn)
             tones.append(tone)
     return phonemes, tones
 
 
-import inflect
-
-_inflect = inflect.engine()
-_comma_number_re = re.compile(r"([0-9][0-9\,]+[0-9])")
-_decimal_number_re = re.compile(r"([0-9]+\.[0-9]+)")
-_pounds_re = re.compile(r"£([0-9\,]*[0-9]+)")
-_dollars_re = re.compile(r"\$([0-9\.\,]*[0-9]+)")
-_ordinal_re = re.compile(r"[0-9]+(st|nd|rd|th)")
-_number_re = re.compile(r"[0-9]+")
-
-# List of (regular expression, replacement) pairs for abbreviations:
-_abbreviations = [
-    (re.compile("\\b%s\\." % x[0], re.IGNORECASE), x[1])
-    for x in [
-        ("mrs", "misess"),
-        ("mr", "mister"),
-        ("dr", "doctor"),
-        ("st", "saint"),
-        ("co", "company"),
-        ("jr", "junior"),
-        ("maj", "major"),
-        ("gen", "general"),
-        ("drs", "doctors"),
-        ("rev", "reverend"),
-        ("lt", "lieutenant"),
-        ("hon", "honorable"),
-        ("sgt", "sergeant"),
-        ("capt", "captain"),
-        ("esq", "esquire"),
-        ("ltd", "limited"),
-        ("col", "colonel"),
-        ("ft", "fort"),
-    ]
-]
+__inflect = inflect.engine()
+__comma_number_re = re.compile(r"([0-9][0-9\,]+[0-9])")
+__decimal_number_re = re.compile(r"([0-9]+\.[0-9]+)")
+__pounds_re = re.compile(r"£([0-9\,]*[0-9]+)")
+__dollars_re = re.compile(r"\$([0-9\.\,]*[0-9]+)")
+__ordinal_re = re.compile(r"[0-9]+(st|nd|rd|th)")
+__number_re = re.compile(r"[0-9]+")
 
 
-# List of (ipa, lazy ipa) pairs:
-_lazy_ipa = [
-    (re.compile("%s" % x[0]), x[1])
-    for x in [
-        ("r", "ɹ"),
-        ("æ", "e"),
-        ("ɑ", "a"),
-        ("ɔ", "o"),
-        ("ð", "z"),
-        ("θ", "s"),
-        ("ɛ", "e"),
-        ("ɪ", "i"),
-        ("ʊ", "u"),
-        ("ʒ", "ʥ"),
-        ("ʤ", "ʥ"),
-        ("ˈ", "↓"),
-    ]
-]
-
-# List of (ipa, lazy ipa2) pairs:
-_lazy_ipa2 = [
-    (re.compile("%s" % x[0]), x[1])
-    for x in [
-        ("r", "ɹ"),
-        ("ð", "z"),
-        ("θ", "s"),
-        ("ʒ", "ʑ"),
-        ("ʤ", "dʑ"),
-        ("ˈ", "↓"),
-    ]
-]
-
-# List of (ipa, ipa2) pairs
-_ipa_to_ipa2 = [
-    (re.compile("%s" % x[0]), x[1]) for x in [("r", "ɹ"), ("ʤ", "dʒ"), ("ʧ", "tʃ")]
-]
-
-
-def _expand_dollars(m):
+def __expand_dollars(m: re.Match[str]) -> str:
     match = m.group(1)
     parts = match.split(".")
     if len(parts) > 2:
@@ -329,53 +335,36 @@ def _expand_dollars(m):
         return "zero dollars"
 
 
-def _remove_commas(m):
+def __remove_commas(m: re.Match[str]) -> str:
     return m.group(1).replace(",", "")
 
 
-def _expand_ordinal(m):
-    return _inflect.number_to_words(m.group(0))
+def __expand_ordinal(m: re.Match[str]) -> str:
+    return __inflect.number_to_words(m.group(0))  # type: ignore
 
 
-def _expand_number(m):
+def __expand_number(m: re.Match[str]) -> str:
     num = int(m.group(0))
     if num > 1000 and num < 3000:
         if num == 2000:
             return "two thousand"
         elif num > 2000 and num < 2010:
-            return "two thousand " + _inflect.number_to_words(num % 100)
+            return "two thousand " + __inflect.number_to_words(num % 100)  # type: ignore
         elif num % 100 == 0:
-            return _inflect.number_to_words(num // 100) + " hundred"
+            return __inflect.number_to_words(num // 100) + " hundred"  # type: ignore
         else:
-            return _inflect.number_to_words(
-                num, andword="", zero="oh", group=2
-            ).replace(", ", " ")
+            return __inflect.number_to_words(
+                num, andword="", zero="oh", group=2  # type: ignore
+            ).replace(", ", " ")  # type: ignore
     else:
-        return _inflect.number_to_words(num, andword="")
+        return __inflect.number_to_words(num, andword="")  # type: ignore
 
 
-def _expand_decimal_point(m):
+def __expand_decimal_point(m: re.Match[str]) -> str:
     return m.group(1).replace(".", " point ")
 
 
-def normalize_numbers(text):
-    text = re.sub(_comma_number_re, _remove_commas, text)
-    text = re.sub(_pounds_re, r"\1 pounds", text)
-    text = re.sub(_dollars_re, _expand_dollars, text)
-    text = re.sub(_decimal_number_re, _expand_decimal_point, text)
-    text = re.sub(_ordinal_re, _expand_ordinal, text)
-    text = re.sub(_number_re, _expand_number, text)
-    return text
-
-
-def normalize_text(text: str) -> str:
-    text = normalize_numbers(text)
-    text = replace_punctuation(text)
-    text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)
-    return text
-
-
-def distribute_phone(n_phone, n_word):
+def __distribute_phone(n_phone: int, n_word: int) -> list[int]:
     phones_per_word = [0] * n_word
     for task in range(n_phone):
         min_tasks = min(phones_per_word)
@@ -384,13 +373,7 @@ def distribute_phone(n_phone, n_word):
     return phones_per_word
 
 
-def sep_text(text):
-    words = re.split(r"([,;.\?\!\s+])", text)
-    words = [word for word in words if word.strip() != ""]
-    return words
-
-
-def text_to_words(text):
+def __text_to_words(text: str) -> list[list[str]]:
     tokenizer = bert_models.load_tokenizer(Languages.EN)
     tokens = tokenizer.tokenize(text)
     words = []
@@ -418,69 +401,12 @@ def text_to_words(text):
     return words
 
 
-def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
-    phones = []
-    tones = []
-    phone_len = []
-    # words = sep_text(text)
-    # tokens = [tokenizer.tokenize(i) for i in words]
-    words = text_to_words(text)
-
-    for word in words:
-        temp_phones, temp_tones = [], []
-        if len(word) > 1:
-            if "'" in word:
-                word = ["".join(word)]
-        for w in word:
-            if w in PUNCTUATIONS:
-                temp_phones.append(w)
-                temp_tones.append(0)
-                continue
-            if w.upper() in eng_dict:
-                phns, tns = refine_syllables(eng_dict[w.upper()])
-                temp_phones += [post_replace_ph(i) for i in phns]
-                temp_tones += tns
-                # w2ph.append(len(phns))
-            else:
-                phone_list = list(filter(lambda p: p != " ", _g2p(w)))
-                phns = []
-                tns = []
-                for ph in phone_list:
-                    if ph in arpa:
-                        ph, tn = refine_ph(ph)
-                        phns.append(ph)
-                        tns.append(tn)
-                    else:
-                        phns.append(ph)
-                        tns.append(0)
-                temp_phones += [post_replace_ph(i) for i in phns]
-                temp_tones += tns
-        phones += temp_phones
-        tones += temp_tones
-        phone_len.append(len(temp_phones))
-        # phones = [post_replace_ph(i) for i in phones]
-
-    word2ph = []
-    for token, pl in zip(words, phone_len):
-        word_len = len(token)
-
-        aaa = distribute_phone(pl, word_len)
-        word2ph += aaa
-
-    phones = ["_"] + phones + ["_"]
-    tones = [0] + tones + [0]
-    word2ph = [1] + word2ph + [1]
-    assert len(phones) == len(tones), text
-    assert len(phones) == sum(word2ph), text
-
-    return phones, tones, word2ph
-
-
 if __name__ == "__main__":
     # print(get_dict())
     # print(eng_word_to_phoneme("hello"))
     print(g2p("In this paper, we propose 1 DSPGAN, a GAN-based universal vocoder."))
     # all_phones = set()
+    # eng_dict = get_dict()
     # for k, syllables in eng_dict.items():
     #     for group in syllables:
     #         for ph in group:
