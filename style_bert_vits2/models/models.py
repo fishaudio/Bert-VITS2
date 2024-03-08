@@ -1,4 +1,5 @@
 import math
+from typing import Any, Optional
 
 import torch
 from torch import nn
@@ -10,14 +11,18 @@ from style_bert_vits2.models import attentions
 from style_bert_vits2.models import commons
 from style_bert_vits2.models import modules
 from style_bert_vits2.models import monotonic_alignment
-from style_bert_vits2.models.commons import get_padding, init_weights
 from style_bert_vits2.nlp.symbols import NUM_LANGUAGES, NUM_TONES, SYMBOLS
 
 
 class DurationDiscriminator(nn.Module):  # vits2
     def __init__(
-        self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0
-    ):
+        self,
+        in_channels: int,
+        filter_channels: int,
+        kernel_size: int,
+        p_dropout: float,
+        gin_channels: int = 0
+    ) -> None:
         super().__init__()
 
         self.in_channels = in_channels
@@ -51,7 +56,13 @@ class DurationDiscriminator(nn.Module):  # vits2
 
         self.output_layer = nn.Sequential(nn.Linear(filter_channels, 1), nn.Sigmoid())
 
-    def forward_probability(self, x, x_mask, dur, g=None):
+    def forward_probability(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        dur: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         dur = self.dur_proj(dur)
         x = torch.cat([x, dur], dim=1)
         x = self.pre_out_conv_1(x * x_mask)
@@ -67,7 +78,14 @@ class DurationDiscriminator(nn.Module):  # vits2
         output_prob = self.output_layer(x)
         return output_prob
 
-    def forward(self, x, x_mask, dur_r, dur_hat, g=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        dur_r: torch.Tensor,
+        dur_hat: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+    ) -> list[torch.Tensor]:
         x = torch.detach(x)
         if g is not None:
             g = torch.detach(g)
@@ -92,17 +110,17 @@ class DurationDiscriminator(nn.Module):  # vits2
 class TransformerCouplingBlock(nn.Module):
     def __init__(
         self,
-        channels,
-        hidden_channels,
-        filter_channels,
-        n_heads,
-        n_layers,
-        kernel_size,
-        p_dropout,
-        n_flows=4,
-        gin_channels=0,
-        share_parameter=False,
-    ):
+        channels: int,
+        hidden_channels: int,
+        filter_channels: int,
+        n_heads: int,
+        n_layers: int,
+        kernel_size: int,
+        p_dropout: float,
+        n_flows: int = 4,
+        gin_channels: int = 0,
+        share_parameter: bool = False,
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.hidden_channels = hidden_channels
@@ -114,16 +132,17 @@ class TransformerCouplingBlock(nn.Module):
         self.flows = nn.ModuleList()
 
         self.wn = (
-            attentions.FFT(
-                hidden_channels,
-                filter_channels,
-                n_heads,
-                n_layers,
-                kernel_size,
-                p_dropout,
-                isflow=True,
-                gin_channels=self.gin_channels,
-            )
+            # attentions.FFT(
+            #     hidden_channels,
+            #     filter_channels,
+            #     n_heads,
+            #     n_layers,
+            #     kernel_size,
+            #     p_dropout,
+            #     isflow=True,
+            #     gin_channels=self.gin_channels,
+            # )
+            None
             if share_parameter
             else None
         )
@@ -145,7 +164,13 @@ class TransformerCouplingBlock(nn.Module):
             )
             self.flows.append(modules.Flip())
 
-    def forward(self, x, x_mask, g=None, reverse=False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ) -> torch.Tensor:
         if not reverse:
             for flow in self.flows:
                 x, _ = flow(x, x_mask, g=g, reverse=reverse)
@@ -158,13 +183,13 @@ class TransformerCouplingBlock(nn.Module):
 class StochasticDurationPredictor(nn.Module):
     def __init__(
         self,
-        in_channels,
-        filter_channels,
-        kernel_size,
-        p_dropout,
-        n_flows=4,
-        gin_channels=0,
-    ):
+        in_channels: int,
+        filter_channels: int,
+        kernel_size: int,
+        p_dropout: float,
+        n_flows: int = 4,
+        gin_channels: int = 0,
+    ) -> None:
         super().__init__()
         filter_channels = in_channels  # it needs to be removed from future version.
         self.in_channels = in_channels
@@ -204,7 +229,15 @@ class StochasticDurationPredictor(nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, filter_channels, 1)
 
-    def forward(self, x, x_mask, w=None, g=None, reverse=False, noise_scale=1.0):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        w: Optional[torch.Tensor] = None,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+        noise_scale: float = 1.0,
+    ) -> torch.Tensor:
         x = torch.detach(x)
         x = self.pre(x)
         if g is not None:
@@ -268,8 +301,13 @@ class StochasticDurationPredictor(nn.Module):
 
 class DurationPredictor(nn.Module):
     def __init__(
-        self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0
-    ):
+        self,
+        in_channels: int,
+        filter_channels: int,
+        kernel_size: int,
+        p_dropout: float,
+        gin_channels: int = 0,
+    ) -> None:
         super().__init__()
 
         self.in_channels = in_channels
@@ -292,7 +330,7 @@ class DurationPredictor(nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, in_channels, 1)
 
-    def forward(self, x, x_mask, g=None):
+    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
         x = torch.detach(x)
         if g is not None:
             g = torch.detach(g)
@@ -312,17 +350,17 @@ class DurationPredictor(nn.Module):
 class TextEncoder(nn.Module):
     def __init__(
         self,
-        n_vocab,
-        out_channels,
-        hidden_channels,
-        filter_channels,
-        n_heads,
-        n_layers,
-        kernel_size,
-        p_dropout,
-        n_speakers,
-        gin_channels=0,
-    ):
+        n_vocab: int,
+        out_channels: int,
+        hidden_channels: int,
+        filter_channels: int,
+        n_heads: int,
+        n_layers: int,
+        kernel_size: int,
+        p_dropout: float,
+        n_speakers: int,
+        gin_channels: int = 0,
+    ) -> None:
         super().__init__()
         self.n_vocab = n_vocab
         self.out_channels = out_channels
@@ -357,17 +395,17 @@ class TextEncoder(nn.Module):
 
     def forward(
         self,
-        x,
-        x_lengths,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
-        style_vec,
-        sid,
-        g=None,
-    ):
+        x: torch.Tensor,
+        x_lengths: torch.Tensor,
+        tone: torch.Tensor,
+        language: torch.Tensor,
+        bert: torch.Tensor,
+        ja_bert: torch.Tensor,
+        en_bert: torch.Tensor,
+        style_vec: torch.Tensor,
+        sid: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
         en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
@@ -399,14 +437,14 @@ class TextEncoder(nn.Module):
 class ResidualCouplingBlock(nn.Module):
     def __init__(
         self,
-        channels,
-        hidden_channels,
-        kernel_size,
-        dilation_rate,
-        n_layers,
-        n_flows=4,
-        gin_channels=0,
-    ):
+        channels: int,
+        hidden_channels: int,
+        kernel_size: int,
+        dilation_rate: int,
+        n_layers: int,
+        n_flows: int = 4,
+        gin_channels: int = 0,
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.hidden_channels = hidden_channels
@@ -431,7 +469,13 @@ class ResidualCouplingBlock(nn.Module):
             )
             self.flows.append(modules.Flip())
 
-    def forward(self, x, x_mask, g=None, reverse=False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ) -> torch.Tensor:
         if not reverse:
             for flow in self.flows:
                 x, _ = flow(x, x_mask, g=g, reverse=reverse)
@@ -444,14 +488,14 @@ class ResidualCouplingBlock(nn.Module):
 class PosteriorEncoder(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        hidden_channels,
-        kernel_size,
-        dilation_rate,
-        n_layers,
-        gin_channels=0,
-    ):
+        in_channels: int,
+        out_channels: int,
+        hidden_channels: int,
+        kernel_size: int,
+        dilation_rate: int,
+        n_layers: int,
+        gin_channels: int = 0,
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -471,7 +515,12 @@ class PosteriorEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x, x_lengths, g=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_lengths: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(
             x.dtype
         )
@@ -486,22 +535,22 @@ class PosteriorEncoder(nn.Module):
 class Generator(torch.nn.Module):
     def __init__(
         self,
-        initial_channel,
-        resblock,
-        resblock_kernel_sizes,
-        resblock_dilation_sizes,
-        upsample_rates,
-        upsample_initial_channel,
-        upsample_kernel_sizes,
-        gin_channels=0,
-    ):
+        initial_channel: int,
+        resblock_str: str,
+        resblock_kernel_sizes: list[int],
+        resblock_dilation_sizes: list[list[int]],
+        upsample_rates: list[int],
+        upsample_initial_channel: int,
+        upsample_kernel_sizes: list[int],
+        gin_channels: int = 0,
+    ) -> None:
         super(Generator, self).__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
         self.conv_pre = Conv1d(
             initial_channel, upsample_initial_channel, 7, 1, padding=3
         )
-        resblock = modules.ResBlock1 if resblock == "1" else modules.ResBlock2
+        resblock = modules.ResBlock1 if resblock_str == "1" else modules.ResBlock2
 
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
@@ -518,20 +567,22 @@ class Generator(torch.nn.Module):
             )
 
         self.resblocks = nn.ModuleList()
+        ch = None
         for i in range(len(self.ups)):
             ch = upsample_initial_channel // (2 ** (i + 1))
             for j, (k, d) in enumerate(
                 zip(resblock_kernel_sizes, resblock_dilation_sizes)
             ):
-                self.resblocks.append(resblock(ch, k, d))
+                self.resblocks.append(resblock(ch, k, d))  # type: ignore
 
+        assert ch is not None
         self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
-        self.ups.apply(init_weights)
+        self.ups.apply(commons.init_weights)
 
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x, g=None):
+    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -545,6 +596,7 @@ class Generator(torch.nn.Module):
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
+            assert xs is not None
             x = xs / self.num_kernels
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -552,7 +604,7 @@ class Generator(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         print("Removing weight norm...")
         for layer in self.ups:
             remove_weight_norm(layer)
@@ -561,7 +613,7 @@ class Generator(torch.nn.Module):
 
 
 class DiscriminatorP(torch.nn.Module):
-    def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False):
+    def __init__(self, period: int, kernel_size: int = 5, stride: int = 3, use_spectral_norm: bool = False) -> None:
         super(DiscriminatorP, self).__init__()
         self.period = period
         self.use_spectral_norm = use_spectral_norm
@@ -574,7 +626,7 @@ class DiscriminatorP(torch.nn.Module):
                         32,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -583,7 +635,7 @@ class DiscriminatorP(torch.nn.Module):
                         128,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -592,7 +644,7 @@ class DiscriminatorP(torch.nn.Module):
                         512,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -601,7 +653,7 @@ class DiscriminatorP(torch.nn.Module):
                         1024,
                         (kernel_size, 1),
                         (stride, 1),
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
                 norm_f(
@@ -610,14 +662,14 @@ class DiscriminatorP(torch.nn.Module):
                         1024,
                         (kernel_size, 1),
                         1,
-                        padding=(get_padding(kernel_size, 1), 0),
+                        padding=(commons.get_padding(kernel_size, 1), 0),
                     )
                 ),
             ]
         )
         self.conv_post = norm_f(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
         fmap = []
 
         # 1d to 2d
@@ -640,7 +692,7 @@ class DiscriminatorP(torch.nn.Module):
 
 
 class DiscriminatorS(torch.nn.Module):
-    def __init__(self, use_spectral_norm=False):
+    def __init__(self, use_spectral_norm: bool = False) -> None:
         super(DiscriminatorS, self).__init__()
         norm_f = weight_norm if use_spectral_norm is False else spectral_norm
         self.convs = nn.ModuleList(
@@ -655,7 +707,7 @@ class DiscriminatorS(torch.nn.Module):
         )
         self.conv_post = norm_f(Conv1d(1024, 1, 3, 1, padding=1))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
         fmap = []
 
         for layer in self.convs:
@@ -670,7 +722,7 @@ class DiscriminatorS(torch.nn.Module):
 
 
 class MultiPeriodDiscriminator(torch.nn.Module):
-    def __init__(self, use_spectral_norm=False):
+    def __init__(self, use_spectral_norm: bool = False) -> None:
         super(MultiPeriodDiscriminator, self).__init__()
         periods = [2, 3, 5, 7, 11]
 
@@ -680,7 +732,11 @@ class MultiPeriodDiscriminator(torch.nn.Module):
         ]
         self.discriminators = nn.ModuleList(discs)
 
-    def forward(self, y, y_hat):
+    def forward(
+        self,
+        y: torch.Tensor,
+        y_hat: torch.Tensor,
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
         y_d_rs = []
         y_d_gs = []
         fmap_rs = []
@@ -702,7 +758,7 @@ class ReferenceEncoder(nn.Module):
     outputs --- [N, ref_enc_gru_size]
     """
 
-    def __init__(self, spec_channels, gin_channels=0):
+    def __init__(self, spec_channels: int, gin_channels: int = 0) -> None:
         super().__init__()
         self.spec_channels = spec_channels
         ref_enc_filters = [32, 32, 64, 64, 128, 128]
@@ -731,7 +787,7 @@ class ReferenceEncoder(nn.Module):
         )
         self.proj = nn.Linear(128, gin_channels)
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         N = inputs.size(0)
         out = inputs.view(N, 1, -1, self.spec_channels)  # [N, 1, Ty, n_freqs]
         for conv in self.convs:
@@ -749,7 +805,7 @@ class ReferenceEncoder(nn.Module):
 
         return self.proj(out.squeeze(0))
 
-    def calculate_channels(self, L, kernel_size, stride, pad, n_convs):
+    def calculate_channels(self, L: int, kernel_size: int, stride: int, pad: int, n_convs: int) -> int:
         for i in range(n_convs):
             L = (L - kernel_size + 2 * pad) // stride + 1
         return L
@@ -762,31 +818,31 @@ class SynthesizerTrn(nn.Module):
 
     def __init__(
         self,
-        n_vocab,
-        spec_channels,
-        segment_size,
-        inter_channels,
-        hidden_channels,
-        filter_channels,
-        n_heads,
-        n_layers,
-        kernel_size,
-        p_dropout,
-        resblock,
-        resblock_kernel_sizes,
-        resblock_dilation_sizes,
-        upsample_rates,
-        upsample_initial_channel,
-        upsample_kernel_sizes,
-        n_speakers=256,
-        gin_channels=256,
-        use_sdp=True,
-        n_flow_layer=4,
-        n_layers_trans_flow=4,
-        flow_share_parameter=False,
-        use_transformer_flow=True,
-        **kwargs,
-    ):
+        n_vocab: int,
+        spec_channels: int,
+        segment_size: int,
+        inter_channels: int,
+        hidden_channels: int,
+        filter_channels: int,
+        n_heads: int,
+        n_layers: int,
+        kernel_size: int,
+        p_dropout: float,
+        resblock: str,
+        resblock_kernel_sizes: list[int],
+        resblock_dilation_sizes: list[list[int]],
+        upsample_rates: list[int],
+        upsample_initial_channel: int,
+        upsample_kernel_sizes: list[int],
+        n_speakers: int = 256,
+        gin_channels: int = 256,
+        use_sdp: bool = True,
+        n_flow_layer: int = 4,
+        n_layers_trans_flow: int = 4,
+        flow_share_parameter: bool = False,
+        use_transformer_flow: bool = True,
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
         self.n_vocab = n_vocab
         self.spec_channels = spec_channels
@@ -884,18 +940,27 @@ class SynthesizerTrn(nn.Module):
 
     def forward(
         self,
-        x,
-        x_lengths,
-        y,
-        y_lengths,
-        sid,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
-        style_vec,
-    ):
+        x: torch.Tensor,
+        x_lengths: torch.Tensor,
+        y: torch.Tensor,
+        y_lengths: torch.Tensor,
+        sid: torch.Tensor,
+        tone: torch.Tensor,
+        language: torch.Tensor,
+        bert: torch.Tensor,
+        ja_bert: torch.Tensor,
+        en_bert: torch.Tensor,
+        style_vec: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        tuple[torch.Tensor, ...],
+        tuple[torch.Tensor, ...],
+    ]:
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
@@ -973,27 +1038,28 @@ class SynthesizerTrn(nn.Module):
 
     def infer(
         self,
-        x,
-        x_lengths,
-        sid,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
-        style_vec,
-        noise_scale=0.667,
-        length_scale=1.0,
-        noise_scale_w=0.8,
-        max_len=None,
-        sdp_ratio=0.0,
-        y=None,
-    ):
+        x: torch.Tensor,
+        x_lengths: torch.Tensor,
+        sid: torch.Tensor,
+        tone: torch.Tensor,
+        language: torch.Tensor,
+        bert: torch.Tensor,
+        ja_bert: torch.Tensor,
+        en_bert: torch.Tensor,
+        style_vec: torch.Tensor,
+        noise_scale: float = 0.667,
+        length_scale: float = 1.0,
+        noise_scale_w: float = 0.8,
+        max_len: Optional[int] = None,
+        sdp_ratio: float = 0.0,
+        y: Optional[torch.Tensor] = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor, ...]]:
         # x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert)
         # g = self.gst(y)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
+            assert y is not None
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
         x, m_p, logs_p, x_mask = self.enc_p(
             x, x_lengths, tone, language, bert, ja_bert, en_bert, style_vec, sid, g=g

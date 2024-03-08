@@ -16,7 +16,7 @@ LRELU_SLOPE = 0.1
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels: int, eps: float = 1e-5):
+    def __init__(self, channels: int, eps: float = 1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -39,7 +39,7 @@ class ConvReluNorm(nn.Module):
         kernel_size: int,
         n_layers: int,
         p_dropout: float,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -88,7 +88,7 @@ class DDSConv(nn.Module):
     Dialted and Depth-Separable Convolution
     """
 
-    def __init__(self, channels: int, kernel_size: int, n_layers: int, p_dropout: float = 0.0):
+    def __init__(self, channels: int, kernel_size: int, n_layers: int, p_dropout: float = 0.0) -> None:
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -141,7 +141,7 @@ class WN(torch.nn.Module):
         n_layers: int,
         gin_channels: int = 0,
         p_dropout: float = 0,
-    ):
+    ) -> None:
         super(WN, self).__init__()
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
@@ -221,7 +221,7 @@ class WN(torch.nn.Module):
 
 
 class ResBlock1(torch.nn.Module):
-    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int, int] = (1, 3, 5)):
+    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int, int] = (1, 3, 5)) -> None:
         super(ResBlock1, self).__init__()
         self.convs1 = nn.ModuleList(
             [
@@ -318,7 +318,7 @@ class ResBlock1(torch.nn.Module):
 
 
 class ResBlock2(torch.nn.Module):
-    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int] = (1, 3)):
+    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int] = (1, 3)) -> None:
         super(ResBlock2, self).__init__()
         self.convs = nn.ModuleList(
             [
@@ -363,7 +363,13 @@ class ResBlock2(torch.nn.Module):
 
 
 class Log(nn.Module):
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, reverse: bool = False, **kwargs: Any):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        reverse: bool = False,
+        **kwargs: Any,
+    ) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         if not reverse:
             y = torch.log(torch.clamp_min(x, 1e-5)) * x_mask
             logdet = torch.sum(-y, [1, 2])
@@ -390,7 +396,7 @@ class Flip(nn.Module):
 
 
 class ElementwiseAffine(nn.Module):
-    def __init__(self, channels: int):
+    def __init__(self, channels: int) -> None:
         super().__init__()
         self.channels = channels
         self.m = nn.Parameter(torch.zeros(channels, 1))
@@ -424,7 +430,7 @@ class ResidualCouplingLayer(nn.Module):
         p_dropout: float = 0,
         gin_channels: int = 0,
         mean_only: bool = False,
-    ):
+    ) -> None:
         assert channels % 2 == 0, "channels should be divisible by 2"
         super().__init__()
         self.channels = channels
@@ -449,7 +455,13 @@ class ResidualCouplingLayer(nn.Module):
         assert self.post.bias is not None
         self.post.bias.data.zero_()
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None, reverse: bool = False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         x0, x1 = torch.split(x, [self.half_channels] * 2, 1)
         h = self.pre(x0) * x_mask
         h = self.enc(h, x_mask, g=g)
@@ -480,7 +492,7 @@ class ConvFlow(nn.Module):
         n_layers: int,
         num_bins: int = 10,
         tail_bound: float = 5.0,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.filter_channels = filter_channels
@@ -499,7 +511,13 @@ class ConvFlow(nn.Module):
         assert self.proj.bias is not None
         self.proj.bias.data.zero_()
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None, reverse: bool = False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ) -> Union[tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         x0, x1 = torch.split(x, [self.half_channels] * 2, 1)
         h = self.pre(x0)
         h = self.convs(h, x_mask, g=g)

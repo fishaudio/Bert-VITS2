@@ -9,7 +9,7 @@ from style_bert_vits2.models import commons
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels: int, eps: float = 1e-5):
+    def __init__(self, channels: int, eps: float = 1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -45,7 +45,7 @@ class Encoder(nn.Module):
         window_size: int = 4,
         isflow: bool = True,
         **kwargs: Any
-    ):
+    ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -132,7 +132,7 @@ class Decoder(nn.Module):
         proximal_bias: bool = False,
         proximal_init: bool = True,
         **kwargs: Any
-    ):
+    ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -180,7 +180,7 @@ class Decoder(nn.Module):
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, h: torch.Tensor, h_mask: torch.Tensor):
+    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, h: torch.Tensor, h_mask: torch.Tensor) -> torch.Tensor:
         """
         x: decoder input
         h: encoder output
@@ -218,7 +218,7 @@ class MultiHeadAttention(nn.Module):
         block_length: Optional[int] = None,
         proximal_bias: bool = False,
         proximal_init: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         assert channels % n_heads == 0
 
@@ -272,7 +272,13 @@ class MultiHeadAttention(nn.Module):
         x = self.conv_o(x)
         return x
 
-    def attention(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, mask: Optional[torch.Tensor] = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def attention(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         # reshape [b, d, t] -> [b, n_h, t, d_k]
         b, d, t_s, t_t = (*key.size(), query.size(2))
         query = query.view(b, self.n_heads, self.k_channels, t_t).transpose(2, 3)
@@ -419,7 +425,7 @@ class FFN(nn.Module):
         p_dropout: float = 0.0,
         activation: Optional[str] = None,
         causal: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
