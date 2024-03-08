@@ -106,7 +106,6 @@ def initialize(port: int = WORKER_PORT) -> None:
         terminate()
 
     try:
-        signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
     except ValueError:
         # signal only works in main thread
