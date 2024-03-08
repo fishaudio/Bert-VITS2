@@ -50,11 +50,11 @@ def unset_user_dict():
 
 
 def initialize(port: int = WORKER_PORT) -> None:
-    import time
-    import socket
-    import sys
     import atexit
     import signal
+    import socket
+    import sys
+    import time
 
     logger.debug("initialize")
     global WORKER_CLIENT
@@ -83,7 +83,7 @@ def initialize(port: int = WORKER_PORT) -> None:
         else:
             # align with Windows behavior
             # start_new_session is same as specifying setsid in preexec_fn
-            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)  # type: ignore
+            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
 
         # wait until server listening
         count = 0
@@ -92,10 +92,10 @@ def initialize(port: int = WORKER_PORT) -> None:
                 client = WorkerClient(port)
                 break
             except socket.error:
-                time.sleep(1)
+                time.sleep(0.5)
                 count += 1
-                # 10: max number of retries
-                if count == 10:
+                # 20: max number of retries
+                if count == 20:
                     raise TimeoutError("サーバーに接続できませんでした")
 
     WORKER_CLIENT = client

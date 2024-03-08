@@ -8,8 +8,6 @@ from style_bert_vits2.nlp.japanese.mora_list import MORA_KATA_TO_MORA_PHONEMES
 from style_bert_vits2.nlp.japanese.normalizer import replace_punctuation
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
-pyopenjtalk.initialize()
-
 
 def g2p(
     norm_text: str,
@@ -113,6 +111,9 @@ def text_to_sep_kata(
     Returns:
         tuple[list[str], list[str]]: 分割された単語リストと、その読み（カタカナ or 記号1文字）のリスト
     """
+
+    # pyopenjtalk_worker を初期化
+    pyopenjtalk.initialize()
 
     # parsed: OpenJTalkの解析結果
     parsed = pyopenjtalk.run_frontend(norm_text)

@@ -273,7 +273,7 @@ def __cache_dict(g2p_dict: dict[str, list[list[str]]], file_path: Path) -> None:
 
 
 def __get_dict() -> dict[str, list[list[str]]]:
-    if os.path.exists(CACHE_PATH):
+    if CACHE_PATH.exists():
         with open(CACHE_PATH, "rb") as pickle_file:
             g2p_dict = pickle.load(pickle_file)
     else:

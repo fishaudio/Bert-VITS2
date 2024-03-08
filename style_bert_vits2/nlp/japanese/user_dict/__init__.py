@@ -20,8 +20,6 @@ from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.user_dict.word_model import UserDictWord, WordTypes
 from style_bert_vits2.nlp.japanese.user_dict.part_of_speech_data import MAX_PRIORITY, MIN_PRIORITY, part_of_speech_data
 
-pyopenjtalk.initialize()
-
 # root_dir = engine_root()
 # save_dir = get_save_dir()
 
@@ -81,6 +79,11 @@ def update_dict(
     compiled_dict_path : Path
         コンパイル済み辞書ファイルのパス
     """
+
+    # pyopenjtalk_worker を初期化
+    # ファイルを開く前に実行する必要がある
+    pyopenjtalk.initialize()
+
     random_string = uuid4()
     tmp_csv_path = compiled_dict_path.with_suffix(
         f".dict_csv-{random_string}.tmp"
