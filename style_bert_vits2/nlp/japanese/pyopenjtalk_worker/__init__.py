@@ -56,7 +56,6 @@ def initialize(port: int = WORKER_PORT) -> None:
     import sys
     import time
 
-    logger.debug("initialize")
     global WORKER_CLIENT
     if WORKER_CLIENT:
         return
@@ -98,6 +97,7 @@ def initialize(port: int = WORKER_PORT) -> None:
                 if count == 20:
                     raise TimeoutError("サーバーに接続できませんでした")
 
+    logger.debug("pyopenjtalk worker server started")
     WORKER_CLIENT = client
     atexit.register(terminate)
 
@@ -110,7 +110,7 @@ def initialize(port: int = WORKER_PORT) -> None:
 
 # top-level declaration
 def terminate() -> None:
-    logger.debug("terminate")
+    logger.debug("pyopenjtalk worker server terminated")
     global WORKER_CLIENT
     if not WORKER_CLIENT:
         return

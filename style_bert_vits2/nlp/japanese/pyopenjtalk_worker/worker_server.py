@@ -16,7 +16,7 @@ from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import (
 
 # To make it as fast as possible
 # Probably faster than calling getattr every time
-__PYOPENJTALK_FUNC_DICT = {
+PYOPENJTALK_FUNC_DICT = {
     "run_frontend": pyopenjtalk.run_frontend,
     "make_label": pyopenjtalk.make_label,
     "mecab_dict_index": pyopenjtalk.mecab_dict_index,
@@ -57,7 +57,7 @@ class WorkerServer:
             elif request_type == RequestType.PYOPENJTALK:
                 func_name = request.get("func")
                 assert isinstance(func_name, str)
-                func = __PYOPENJTALK_FUNC_DICT[func_name]
+                func = PYOPENJTALK_FUNC_DICT[func_name]
                 args = request.get("args")
                 kwargs = request.get("kwargs")
                 assert isinstance(args, list)
