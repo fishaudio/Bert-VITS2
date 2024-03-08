@@ -6,7 +6,7 @@ import torch
 import yaml
 
 from style_bert_vits2.constants import GRADIO_THEME, LATEST_VERSION
-from common.tts_model import ModelHolder
+from style_bert_vits2.tts_model import ModelHolder
 from webui import (
     create_dataset_app,
     create_inference_app,

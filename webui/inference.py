@@ -4,7 +4,6 @@ from typing import Optional
 
 import gradio as gr
 
-from common.tts_model import ModelHolder
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -22,6 +21,7 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.models.infer import InvalidToneError
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
+from style_bert_vits2.tts_model import ModelHolder
 
 languages = [l.value for l in Languages]
 

@@ -30,7 +30,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
 
-from common.tts_model import ModelHolder
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
@@ -52,6 +51,7 @@ from style_bert_vits2.nlp.japanese.user_dict import (
     rewrite_word,
     update_dict,
 )
+from style_bert_vits2.tts_model import ModelHolder
 
 
 # ---フロントエンド部分に関する処理---

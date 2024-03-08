@@ -9,9 +9,9 @@ import yaml
 from safetensors import safe_open
 from safetensors.torch import save_file
 
-from common.tts_model import Model, ModelHolder
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
+from style_bert_vits2.tts_model import Model, ModelHolder
 
 
 voice_keys = ["dec"]

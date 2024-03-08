@@ -10,9 +10,9 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from style_bert_vits2.logging import logger
-from common.tts_model import Model
 from config import config
+from style_bert_vits2.logging import logger
+from style_bert_vits2.tts_model import Model
 
 warnings.filterwarnings("ignore")
 
