@@ -7,7 +7,6 @@ import numpy as np
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
 
-import utils
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -19,6 +18,7 @@ from style_bert_vits2.constants import (
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
 )
+from style_bert_vits2.models import utils
 from style_bert_vits2.models.infer import get_net_g, infer
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra

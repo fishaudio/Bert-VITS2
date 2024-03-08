@@ -15,7 +15,6 @@ from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import default_style
-import utils
 from config import config
 from data_utils import (
     DistributedBucketSampler,
@@ -26,6 +25,7 @@ from losses import WavLMLoss, discriminator_loss, feature_loss, generator_loss, 
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
+from style_bert_vits2.models import utils
 from style_bert_vits2.models.models_jp_extra import (
     DurationDiscriminator,
     MultiPeriodDiscriminator,

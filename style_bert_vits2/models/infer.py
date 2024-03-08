@@ -1,10 +1,10 @@
 import torch
 from typing import Optional
 
-import utils
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
+from style_bert_vits2.models import utils
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from style_bert_vits2.nlp import clean_text, cleaned_text_to_sequence, extract_bert_feature

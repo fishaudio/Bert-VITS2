@@ -5,10 +5,10 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-import utils
 from config import config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
+from style_bert_vits2.models import utils
 from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
