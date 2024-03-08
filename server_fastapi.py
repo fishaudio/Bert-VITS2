@@ -101,7 +101,7 @@ if __name__ == "__main__":
         )
     app.logger = logger
 
-    @app.get("/voice", response_class=AudioResponse)
+    @app.post("/voice", response_class=AudioResponse)
     async def voice(
         request: Request,
         text: str = Query(..., min_length=1, max_length=limit, description=f"セリフ"),
