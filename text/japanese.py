@@ -4,9 +4,6 @@ import re
 import unicodedata
 from pathlib import Path
 
-from . import pyopenjtalk_worker as pyopenjtalk
-
-pyopenjtalk.initialize()
 from num2words import num2words
 from transformers import AutoTokenizer
 
@@ -16,8 +13,9 @@ from text.japanese_mora_list import (
     mora_kata_to_mora_phonemes,
     mora_phonemes_to_mora_kata,
 )
-
 from text.user_dict import update_dict
+
+from . import pyopenjtalk_worker as pyopenjtalk
 
 # 最初にpyopenjtalkの辞書を更新
 update_dict()
