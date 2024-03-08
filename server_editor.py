@@ -16,13 +16,13 @@ import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-import yaml
+from typing import Optional
 
 import numpy as np
-import pyopenjtalk
 import requests
 import torch
 import uvicorn
+import yaml
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -43,8 +43,7 @@ from common.constants import (
 from common.log import logger
 from common.tts_model import ModelHolder
 from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
-from text.user_dict import apply_word, update_dict, read_dict, rewrite_word, delete_word
-
+from text.user_dict import apply_word, delete_word, read_dict, rewrite_word, update_dict
 
 # ---フロントエンド部分に関する処理---
 
@@ -230,7 +229,7 @@ async def normalize_text(item: TextRequest):
 
 @router.get("/models_info")
 def models_info():
-    return model_holder.models_info()
+    return model_holder.models_info
 
 
 class SynthesisRequest(BaseModel):
@@ -250,6 +249,7 @@ class SynthesisRequest(BaseModel):
     silenceAfter: float = 0.5
     pitchScale: float = 1.0
     intonationScale: float = 1.0
+    speaker: Optional[str] = None
 
 
 @router.post("/synthesis", response_class=AudioResponse)
@@ -275,6 +275,13 @@ def synthesis(request: SynthesisRequest):
     ]
     phone_tone = kata_tone2phone_tone(kata_tone_list)
     tone = [t for _, t in phone_tone]
+    try:
+        sid = 0 if request.speaker is None else model.spk2id[request.speaker]
+    except KeyError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Speaker {request.speaker} not found in {model.spk2id}",
+        )
     sr, audio = model.infer(
         text=text,
         language=request.language.value,
@@ -291,6 +298,7 @@ def synthesis(request: SynthesisRequest):
         line_split=False,
         pitch_scale=request.pitchScale,
         intonation_scale=request.intonationScale,
+        sid=sid,
     )
 
     with BytesIO() as wavContent:
