@@ -82,7 +82,8 @@ def clean_text(
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     elif language == Languages.ZH:
-        from style_bert_vits2.nlp.chinese import g2p, normalize_text
+        from style_bert_vits2.nlp.chinese.g2p import g2p
+        from style_bert_vits2.nlp.chinese.normalizer import normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     else:

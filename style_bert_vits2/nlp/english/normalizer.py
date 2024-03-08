@@ -14,22 +14,12 @@ __NUMBER_PATTERN = re.compile(r"[0-9]+")
 
 def normalize_text(text: str) -> str:
     text = __normalize_numbers(text)
-    text = __replace_punctuation(text)
+    text = replace_punctuation(text)
     text = re.sub(r"([,;.\?\!])([\w])", r"\1 \2", text)
     return text
 
 
-def __normalize_numbers(text: str) -> str:
-    text = re.sub(__COMMA_NUMBER_PATTERN, __remove_commas, text)
-    text = re.sub(__POUNDS_PATTERN, r"\1 pounds", text)
-    text = re.sub(__DOLLARS_PATTERN, __expand_dollars, text)
-    text = re.sub(__DECIMAL_NUMBER_PATTERN, __expand_decimal_point, text)
-    text = re.sub(__ORDINAL_PATTERN, __expand_ordinal, text)
-    text = re.sub(__NUMBER_PATTERN, __expand_number, text)
-    return text
-
-
-def __replace_punctuation(text: str) -> str:
+def replace_punctuation(text: str) -> str:
     REPLACE_MAP = {
         "：": ",",
         "；": ",",
@@ -78,6 +68,16 @@ def __replace_punctuation(text: str) -> str:
     #     replaced_text,
     # )
     return replaced_text
+
+
+def __normalize_numbers(text: str) -> str:
+    text = re.sub(__COMMA_NUMBER_PATTERN, __remove_commas, text)
+    text = re.sub(__POUNDS_PATTERN, r"\1 pounds", text)
+    text = re.sub(__DOLLARS_PATTERN, __expand_dollars, text)
+    text = re.sub(__DECIMAL_NUMBER_PATTERN, __expand_decimal_point, text)
+    text = re.sub(__ORDINAL_PATTERN, __expand_ordinal, text)
+    text = re.sub(__NUMBER_PATTERN, __expand_number, text)
+    return text
 
 
 def __expand_dollars(m: re.Match[str]) -> str:
