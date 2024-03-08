@@ -1,5 +1,4 @@
-import torch
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.nlp.symbols import (
@@ -7,6 +6,11 @@ from style_bert_vits2.nlp.symbols import (
     LANGUAGE_TONE_START_MAP,
     SYMBOLS,
 )
+
+# __init__.py は配下のモジュールをインポートした時点で実行される
+# Pytorch のインポートは重いので、型チェック時以外はインポートしない
+if TYPE_CHECKING:
+    import torch
 
 
 __symbol_to_id = {s: i for i, s in enumerate(SYMBOLS)}
@@ -16,10 +20,10 @@ def extract_bert_feature(
     text: str,
     word2ph: list[int],
     language: Languages,
-    device: torch.device | str,
+    device: str,
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
-) -> torch.Tensor:
+) -> "torch.Tensor":
     """
     テキストから BERT の特徴量を抽出する
 
@@ -27,7 +31,7 @@ def extract_bert_feature(
         text (str): テキスト
         word2ph (list[int]): 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
         language (Languages): テキストの言語
-        device (torch.device | str): 推論に利用するデバイス
+        device (str): 推論に利用するデバイス
         assist_text (Optional[str], optional): 補助テキスト (デフォルト: None)
         assist_text_weight (float, optional): 補助テキストの重み (デフォルト: 0.7)
 
@@ -68,11 +72,13 @@ def clean_text(
 
     # Changed to import inside if condition to avoid unnecessary import
     if language == Languages.JP:
-        from style_bert_vits2.nlp.japanese import g2p, normalize_text
+        from style_bert_vits2.nlp.japanese.g2p import g2p
+        from style_bert_vits2.nlp.japanese.normalizer import normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text, use_jp_extra, raise_yomi_error)
     elif language == Languages.EN:
-        from style_bert_vits2.nlp.english import g2p, normalize_text
+        from style_bert_vits2.nlp.english.g2p import g2p
+        from style_bert_vits2.nlp.english.normalizer import normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     elif language == Languages.ZH:

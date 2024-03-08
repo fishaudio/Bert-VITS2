@@ -8,13 +8,13 @@ from style_bert_vits2.constants import Languages
 from style_bert_vits2.nlp import bert_models
 
 
-__models: dict[torch.device | str, PreTrainedModel] = {}
+__models: dict[str, PreTrainedModel] = {}
 
 
 def extract_bert_feature(
     text: str,
     word2ph: list[int],
-    device: torch.device | str,
+    device: str,
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
 ) -> torch.Tensor:
@@ -24,7 +24,7 @@ def extract_bert_feature(
     Args:
         text (str): 英語のテキスト
         word2ph (list[int]): 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
-        device (torch.device | str): 推論に利用するデバイス
+        device (str): 推論に利用するデバイス
         assist_text (Optional[str], optional): 補助テキスト (デフォルト: None)
         assist_text_weight (float, optional): 補助テキストの重み (デフォルト: 0.7)
 
