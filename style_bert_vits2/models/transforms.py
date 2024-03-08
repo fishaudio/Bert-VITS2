@@ -1,7 +1,8 @@
-import torch
-from torch.nn import functional as F
+from typing import Optional
 
 import numpy as np
+import torch
+from torch.nn import functional as F
 
 
 DEFAULT_MIN_BIN_WIDTH = 1e-3
@@ -10,17 +11,18 @@ DEFAULT_MIN_DERIVATIVE = 1e-3
 
 
 def piecewise_rational_quadratic_transform(
-    inputs,
-    unnormalized_widths,
-    unnormalized_heights,
-    unnormalized_derivatives,
-    inverse=False,
-    tails=None,
-    tail_bound=1.0,
-    min_bin_width=DEFAULT_MIN_BIN_WIDTH,
-    min_bin_height=DEFAULT_MIN_BIN_HEIGHT,
-    min_derivative=DEFAULT_MIN_DERIVATIVE,
-):
+    inputs: torch.Tensor,
+    unnormalized_widths: torch.Tensor,
+    unnormalized_heights: torch.Tensor,
+    unnormalized_derivatives: torch.Tensor,
+    inverse: bool = False,
+    tails: Optional[str] = None,
+    tail_bound: float = 1.0,
+    min_bin_width: float = DEFAULT_MIN_BIN_WIDTH,
+    min_bin_height: float = DEFAULT_MIN_BIN_HEIGHT,
+    min_derivative: float = DEFAULT_MIN_DERIVATIVE,
+) -> tuple[torch.Tensor, torch.Tensor]:
+
     if tails is None:
         spline_fn = rational_quadratic_spline
         spline_kwargs = {}
@@ -37,28 +39,29 @@ def piecewise_rational_quadratic_transform(
         min_bin_width=min_bin_width,
         min_bin_height=min_bin_height,
         min_derivative=min_derivative,
-        **spline_kwargs
+        **spline_kwargs  # type: ignore
     )
     return outputs, logabsdet
 
 
-def searchsorted(bin_locations, inputs, eps=1e-6):
+def searchsorted(bin_locations: torch.Tensor, inputs: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     bin_locations[..., -1] += eps
     return torch.sum(inputs[..., None] >= bin_locations, dim=-1) - 1
 
 
 def unconstrained_rational_quadratic_spline(
-    inputs,
-    unnormalized_widths,
-    unnormalized_heights,
-    unnormalized_derivatives,
-    inverse=False,
-    tails="linear",
-    tail_bound=1.0,
-    min_bin_width=DEFAULT_MIN_BIN_WIDTH,
-    min_bin_height=DEFAULT_MIN_BIN_HEIGHT,
-    min_derivative=DEFAULT_MIN_DERIVATIVE,
-):
+    inputs: torch.Tensor,
+    unnormalized_widths: torch.Tensor,
+    unnormalized_heights: torch.Tensor,
+    unnormalized_derivatives: torch.Tensor,
+    inverse: bool = False,
+    tails: str = "linear",
+    tail_bound: float = 1.0,
+    min_bin_width: float = DEFAULT_MIN_BIN_WIDTH,
+    min_bin_height: float = DEFAULT_MIN_BIN_HEIGHT,
+    min_derivative: float = DEFAULT_MIN_DERIVATIVE,
+) -> tuple[torch.Tensor, torch.Tensor]:
+
     inside_interval_mask = (inputs >= -tail_bound) & (inputs <= tail_bound)
     outside_interval_mask = ~inside_interval_mask
 
@@ -74,7 +77,7 @@ def unconstrained_rational_quadratic_spline(
         outputs[outside_interval_mask] = inputs[outside_interval_mask]
         logabsdet[outside_interval_mask] = 0
     else:
-        raise RuntimeError("{} tails are not implemented.".format(tails))
+        raise RuntimeError(f"{tails} tails are not implemented.")
 
     (
         outputs[inside_interval_mask],
@@ -98,19 +101,20 @@ def unconstrained_rational_quadratic_spline(
 
 
 def rational_quadratic_spline(
-    inputs,
-    unnormalized_widths,
-    unnormalized_heights,
-    unnormalized_derivatives,
-    inverse=False,
-    left=0.0,
-    right=1.0,
-    bottom=0.0,
-    top=1.0,
-    min_bin_width=DEFAULT_MIN_BIN_WIDTH,
-    min_bin_height=DEFAULT_MIN_BIN_HEIGHT,
-    min_derivative=DEFAULT_MIN_DERIVATIVE,
-):
+    inputs: torch.Tensor,
+    unnormalized_widths: torch.Tensor,
+    unnormalized_heights: torch.Tensor,
+    unnormalized_derivatives: torch.Tensor,
+    inverse: bool = False,
+    left: float = 0.0,
+    right: float = 1.0,
+    bottom: float = 0.0,
+    top: float = 1.0,
+    min_bin_width: float = DEFAULT_MIN_BIN_WIDTH,
+    min_bin_height: float = DEFAULT_MIN_BIN_HEIGHT,
+    min_derivative: float = DEFAULT_MIN_DERIVATIVE,
+) -> tuple[torch.Tensor, torch.Tensor]:
+
     if torch.min(inputs) < left or torch.max(inputs) > right:
         raise ValueError("Input to a transform is not within its domain")
 
