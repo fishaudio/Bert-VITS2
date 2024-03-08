@@ -24,6 +24,8 @@ with Path("configs/paths.yml").open("r", encoding="utf-8") as f:
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="cuda")
+parser.add_argument("--host", type=str, default="127.0.0.1")
+parser.add_argument("--port", type=int, default=7860)
 parser.add_argument("--no_autolaunch", action="store_true")
 parser.add_argument("--share", action="store_true")
 
@@ -49,4 +51,4 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             create_merge_app(model_holder=model_holder)
 
 
-app.launch(inbrowser=not args.no_autolaunch, share=args.share)
+app.launch(server_name=args.host, server_port=args.port, inbrowser=not args.no_autolaunch, share=args.share)

@@ -792,5 +792,4 @@ def create_train_app():
             outputs=[use_jp_extra_train],
         )
 
-    # app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
     return app
