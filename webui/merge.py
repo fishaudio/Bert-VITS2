@@ -1,7 +1,5 @@
-import argparse
 import json
 import os
-import sys
 from pathlib import Path
 
 import gradio as gr
@@ -28,8 +26,6 @@ with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     path_config: dict[str, str] = yaml.safe_load(f.read())
     # dataset_root = path_config["dataset_root"]
     assets_root = path_config["assets_root"]
-
-model_holder = ModelHolder(Path(assets_root), device)
 
 
 def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_list):
@@ -259,6 +255,7 @@ def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
 
 
 def update_two_model_names_dropdown():
+    model_holder = ModelHolder(Path(assets_root), device)
     new_names, new_files, _ = model_holder.update_model_names_gr()
     return new_names, new_files, new_names, new_files
 
@@ -331,187 +328,177 @@ Happy, Surprise, HappySurprise
 - 構造上の相性の関係で、スタイルベクトルを混ぜる重みは、上の「話し方」と同じ比率で混ぜられます。例えば「話し方」が0のときはモデルAのみしか使われません。
 """
 
-model_names = model_holder.model_names
-if len(model_names) == 0:
-    logger.error(
-        f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
-    )
-    sys.exit(1)
-initial_id = 0
-initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
 
-with gr.Blocks(theme=GRADIO_THEME) as app:
-    gr.Markdown(initial_md)
-    with gr.Accordion(label="使い方", open=False):
+def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
+    model_names = model_holder.model_names
+    if len(model_names) == 0:
+        logger.error(
+            f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
+        )
+        with gr.Blocks() as app:
+            gr.Markdown(
+                f"Error: モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
+            )
+        return app
+    initial_id = 0
+    initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
+
+    with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
-    with gr.Row():
-        with gr.Column(scale=3):
-            model_name_a = gr.Dropdown(
-                label="モデルA",
-                choices=model_names,
-                value=model_names[initial_id],
-            )
-            model_path_a = gr.Dropdown(
-                label="モデルファイル",
-                choices=initial_model_files,
-                value=initial_model_files[0],
-            )
-        with gr.Column(scale=3):
-            model_name_b = gr.Dropdown(
-                label="モデルB",
-                choices=model_names,
-                value=model_names[initial_id],
-            )
-            model_path_b = gr.Dropdown(
-                label="モデルファイル",
-                choices=initial_model_files,
-                value=initial_model_files[0],
-            )
-        refresh_button = gr.Button("更新", scale=1, visible=True)
-    with gr.Column(variant="panel"):
-        new_name = gr.Textbox(label="新しいモデル名", placeholder="new_model")
+        with gr.Accordion(label="使い方", open=False):
+            gr.Markdown(initial_md)
         with gr.Row():
-            voice_slider = gr.Slider(
-                label="声質",
-                value=0,
-                minimum=0,
-                maximum=1,
-                step=0.1,
-            )
-            voice_pitch_slider = gr.Slider(
-                label="声の高さ",
-                value=0,
-                minimum=0,
-                maximum=1,
-                step=0.1,
-            )
-            speech_style_slider = gr.Slider(
-                label="話し方（抑揚・感情表現等）",
-                value=0,
-                minimum=0,
-                maximum=1,
-                step=0.1,
-            )
-            tempo_slider = gr.Slider(
-                label="話す速さ・リズム・テンポ",
-                value=0,
-                minimum=0,
-                maximum=1,
-                step=0.1,
-            )
-            use_slerp_instead_of_lerp = gr.Checkbox(
-                label="線形補完のかわりに球面線形補完を使う",
-                value=False,
-            )
+            with gr.Column(scale=3):
+                model_name_a = gr.Dropdown(
+                    label="モデルA",
+                    choices=model_names,
+                    value=model_names[initial_id],
+                )
+                model_path_a = gr.Dropdown(
+                    label="モデルファイル",
+                    choices=initial_model_files,
+                    value=initial_model_files[0],
+                )
+            with gr.Column(scale=3):
+                model_name_b = gr.Dropdown(
+                    label="モデルB",
+                    choices=model_names,
+                    value=model_names[initial_id],
+                )
+                model_path_b = gr.Dropdown(
+                    label="モデルファイル",
+                    choices=initial_model_files,
+                    value=initial_model_files[0],
+                )
+            refresh_button = gr.Button("更新", scale=1, visible=True)
         with gr.Column(variant="panel"):
-            gr.Markdown("## モデルファイル（safetensors）のマージ")
-            model_merge_button = gr.Button("モデルファイルのマージ", variant="primary")
-            info_model_merge = gr.Textbox(label="情報")
-        with gr.Column(variant="panel"):
-            gr.Markdown(style_merge_md)
+            new_name = gr.Textbox(label="新しいモデル名", placeholder="new_model")
             with gr.Row():
-                load_style_button = gr.Button("スタイル一覧をロード", scale=1)
-                styles_a = gr.Textbox(label="モデルAのスタイル一覧")
-                styles_b = gr.Textbox(label="モデルBのスタイル一覧")
-            style_triple_list = gr.TextArea(
-                label="スタイルのマージリスト",
-                placeholder=f"{DEFAULT_STYLE}, {DEFAULT_STYLE},{DEFAULT_STYLE}\nAngry, Angry, Angry",
-                value=f"{DEFAULT_STYLE}, {DEFAULT_STYLE}, {DEFAULT_STYLE}",
-            )
-            style_merge_button = gr.Button("スタイルのマージ", variant="primary")
-            info_style_merge = gr.Textbox(label="情報")
+                voice_slider = gr.Slider(
+                    label="声質",
+                    value=0,
+                    minimum=0,
+                    maximum=1,
+                    step=0.1,
+                )
+                voice_pitch_slider = gr.Slider(
+                    label="声の高さ",
+                    value=0,
+                    minimum=0,
+                    maximum=1,
+                    step=0.1,
+                )
+                speech_style_slider = gr.Slider(
+                    label="話し方（抑揚・感情表現等）",
+                    value=0,
+                    minimum=0,
+                    maximum=1,
+                    step=0.1,
+                )
+                tempo_slider = gr.Slider(
+                    label="話す速さ・リズム・テンポ",
+                    value=0,
+                    minimum=0,
+                    maximum=1,
+                    step=0.1,
+                )
+                use_slerp_instead_of_lerp = gr.Checkbox(
+                    label="線形補完のかわりに球面線形補完を使う",
+                    value=False,
+                )
+            with gr.Column(variant="panel"):
+                gr.Markdown("## モデルファイル（safetensors）のマージ")
+                model_merge_button = gr.Button(
+                    "モデルファイルのマージ", variant="primary"
+                )
+                info_model_merge = gr.Textbox(label="情報")
+            with gr.Column(variant="panel"):
+                gr.Markdown(style_merge_md)
+                with gr.Row():
+                    load_style_button = gr.Button("スタイル一覧をロード", scale=1)
+                    styles_a = gr.Textbox(label="モデルAのスタイル一覧")
+                    styles_b = gr.Textbox(label="モデルBのスタイル一覧")
+                style_triple_list = gr.TextArea(
+                    label="スタイルのマージリスト",
+                    placeholder=f"{DEFAULT_STYLE}, {DEFAULT_STYLE},{DEFAULT_STYLE}\nAngry, Angry, Angry",
+                    value=f"{DEFAULT_STYLE}, {DEFAULT_STYLE}, {DEFAULT_STYLE}",
+                )
+                style_merge_button = gr.Button("スタイルのマージ", variant="primary")
+                info_style_merge = gr.Textbox(label="情報")
 
-    text_input = gr.TextArea(
-        label="テキスト", value="これはテストです。聞こえていますか？"
-    )
-    style = gr.Dropdown(
-        label="スタイル",
-        choices=["スタイルをマージしてください"],
-        value="スタイルをマージしてください",
-    )
-    emotion_weight = gr.Slider(
-        minimum=0,
-        maximum=50,
-        value=1,
-        step=0.1,
-        label="スタイルの強さ",
-    )
-    tts_button = gr.Button("音声合成", variant="primary")
-    audio_output = gr.Audio(label="結果")
+        text_input = gr.TextArea(
+            label="テキスト", value="これはテストです。聞こえていますか？"
+        )
+        style = gr.Dropdown(
+            label="スタイル",
+            choices=["スタイルをマージしてください"],
+            value="スタイルをマージしてください",
+        )
+        emotion_weight = gr.Slider(
+            minimum=0,
+            maximum=50,
+            value=1,
+            step=0.1,
+            label="スタイルの強さ",
+        )
+        tts_button = gr.Button("音声合成", variant="primary")
+        audio_output = gr.Audio(label="結果")
 
-    model_name_a.change(
-        model_holder.update_model_files_gr,
-        inputs=[model_name_a],
-        outputs=[model_path_a],
-    )
-    model_name_b.change(
-        model_holder.update_model_files_gr,
-        inputs=[model_name_b],
-        outputs=[model_path_b],
-    )
+        model_name_a.change(
+            model_holder.update_model_files_gr,
+            inputs=[model_name_a],
+            outputs=[model_path_a],
+        )
+        model_name_b.change(
+            model_holder.update_model_files_gr,
+            inputs=[model_name_b],
+            outputs=[model_path_b],
+        )
 
-    refresh_button.click(
-        update_two_model_names_dropdown,
-        outputs=[model_name_a, model_path_a, model_name_b, model_path_b],
-    )
+        refresh_button.click(
+            update_two_model_names_dropdown,
+            outputs=[model_name_a, model_path_a, model_name_b, model_path_b],
+        )
 
-    load_style_button.click(
-        load_styles_gr,
-        inputs=[model_name_a, model_name_b],
-        outputs=[styles_a, styles_b, style_triple_list],
-    )
+        load_style_button.click(
+            load_styles_gr,
+            inputs=[model_name_a, model_name_b],
+            outputs=[styles_a, styles_b, style_triple_list],
+        )
 
-    model_merge_button.click(
-        merge_models_gr,
-        inputs=[
-            model_name_a,
-            model_path_a,
-            model_name_b,
-            model_path_b,
-            new_name,
-            voice_slider,
-            voice_pitch_slider,
-            speech_style_slider,
-            tempo_slider,
-            use_slerp_instead_of_lerp,
-        ],
-        outputs=[info_model_merge],
-    )
+        model_merge_button.click(
+            merge_models_gr,
+            inputs=[
+                model_name_a,
+                model_path_a,
+                model_name_b,
+                model_path_b,
+                new_name,
+                voice_slider,
+                voice_pitch_slider,
+                speech_style_slider,
+                tempo_slider,
+                use_slerp_instead_of_lerp,
+            ],
+            outputs=[info_model_merge],
+        )
 
-    style_merge_button.click(
-        merge_style_gr,
-        inputs=[
-            model_name_a,
-            model_name_b,
-            speech_style_slider,
-            new_name,
-            style_triple_list,
-        ],
-        outputs=[info_style_merge, style],
-    )
+        style_merge_button.click(
+            merge_style_gr,
+            inputs=[
+                model_name_a,
+                model_name_b,
+                speech_style_slider,
+                new_name,
+                style_triple_list,
+            ],
+            outputs=[info_style_merge, style],
+        )
 
-    tts_button.click(
-        simple_tts,
-        inputs=[new_name, text_input, style, emotion_weight],
-        outputs=[audio_output],
-    )
+        tts_button.click(
+            simple_tts,
+            inputs=[new_name, text_input, style, emotion_weight],
+            outputs=[audio_output],
+        )
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--server-name",
-    type=str,
-    default=None,
-    help="Server name for Gradio app",
-)
-parser.add_argument(
-    "--no-autolaunch",
-    action="store_true",
-    default=False,
-    help="Do not launch app automatically",
-)
-parser.add_argument("--share", action="store_true", default=False)
-args = parser.parse_args()
-
-app.launch(
-    inbrowser=not args.no_autolaunch, server_name=args.server_name, share=args.share
-)
+    return app

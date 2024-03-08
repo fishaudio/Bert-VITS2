@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 import shutil
@@ -278,9 +277,7 @@ def save_style_vectors_from_files(
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
-initial_md = f"""
-# Style Bert-VITS2 スタイルベクトルの作成
-
+how_to_md = f"""
 Style-Bert-VITS2でこまかくスタイルを指定して音声合成するには、モデルごとにスタイルベクトルのファイル`style_vectors.npy`を手動で作成する必要があります。
 
 ただし、学習の過程で自動的に平均スタイル「{DEFAULT_STYLE}」のみは作成されるので、それをそのまま使うこともできます（その場合はこのWebUIは使いません）。
@@ -324,158 +321,143 @@ UMAPの場合はepsは0.3くらい、t-SNEの場合は2.5くらいがいいか�
 https://ja.wikipedia.org/wiki/DBSCAN
 """
 
-with gr.Blocks(theme=GRADIO_THEME) as app:
-    gr.Markdown(initial_md)
-    with gr.Row():
-        model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
-        reduction_method = gr.Radio(
-            choices=["UMAP", "t-SNE"],
-            label="次元削減方法",
-            info="v 1.3以前はt-SNEでしたがUMAPのほうがよい可能性もあります。",
-            value="UMAP",
-        )
-        load_button = gr.Button("スタイルベクトルを読み込む", variant="primary")
-    output = gr.Plot(label="音声スタイルの可視化")
-    load_button.click(load, inputs=[model_name, reduction_method], outputs=[output])
-    with gr.Tab("方法1: スタイル分けを自動で行う"):
-        with gr.Tab("スタイル分け1"):
-            n_clusters = gr.Slider(
-                minimum=2,
-                maximum=10,
-                step=1,
-                value=4,
-                label="作るスタイルの数（平均スタイルを除く）",
-                info="上の図を見ながらスタイルの数を試行錯誤してください。",
+
+def create_style_vectors_app():
+    with gr.Blocks(theme=GRADIO_THEME) as app:
+        with gr.Accordion("使い方", open=False):
+            gr.Markdown(how_to_md)
+        with gr.Row():
+            model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
+            reduction_method = gr.Radio(
+                choices=["UMAP", "t-SNE"],
+                label="次元削減方法",
+                info="v 1.3以前はt-SNEでしたがUMAPのほうがよい可能性もあります。",
+                value="UMAP",
             )
-            c_method = gr.Radio(
-                choices=[
-                    "Agglomerative after reduction",
-                    "KMeans after reduction",
-                    "Agglomerative",
-                    "KMeans",
-                ],
-                label="アルゴリズム",
-                info="分類する（クラスタリング）アルゴリズムを選択します。いろいろ試してみてください。",
-                value="Agglomerative after reduction",
-            )
-            c_button = gr.Button("スタイル分けを実行")
-        with gr.Tab("スタイル分け2: DBSCAN"):
-            gr.Markdown(dbscan_md)
-            eps = gr.Slider(
-                minimum=0.1,
-                maximum=10,
-                step=0.01,
-                value=0.3,
-                label="eps",
-            )
-            min_samples = gr.Slider(
-                minimum=1,
-                maximum=50,
-                step=1,
-                value=15,
-                label="min_samples",
+            load_button = gr.Button("スタイルベクトルを読み込む", variant="primary")
+        output = gr.Plot(label="音声スタイルの可視化")
+        load_button.click(load, inputs=[model_name, reduction_method], outputs=[output])
+        with gr.Tab("方法1: スタイル分けを自動で行う"):
+            with gr.Tab("スタイル分け1"):
+                n_clusters = gr.Slider(
+                    minimum=2,
+                    maximum=10,
+                    step=1,
+                    value=4,
+                    label="作るスタイルの数（平均スタイルを除く）",
+                    info="上の図を見ながらスタイルの数を試行錯誤してください。",
+                )
+                c_method = gr.Radio(
+                    choices=[
+                        "Agglomerative after reduction",
+                        "KMeans after reduction",
+                        "Agglomerative",
+                        "KMeans",
+                    ],
+                    label="アルゴリズム",
+                    info="分類する（クラスタリング）アルゴリズムを選択します。いろいろ試してみてください。",
+                    value="Agglomerative after reduction",
+                )
+                c_button = gr.Button("スタイル分けを実行")
+            with gr.Tab("スタイル分け2: DBSCAN"):
+                gr.Markdown(dbscan_md)
+                eps = gr.Slider(
+                    minimum=0.1,
+                    maximum=10,
+                    step=0.01,
+                    value=0.3,
+                    label="eps",
+                )
+                min_samples = gr.Slider(
+                    minimum=1,
+                    maximum=50,
+                    step=1,
+                    value=15,
+                    label="min_samples",
+                )
+                with gr.Row():
+                    dbscan_button = gr.Button("スタイル分けを実行")
+                    num_styles_result = gr.Textbox(label="スタイル数")
+            gr.Markdown("スタイル分けの結果")
+            gr.Markdown(
+                "注意: もともと256次元なものをを2次元に落としているので、正確なベクトルの位置関係ではありません。"
             )
             with gr.Row():
-                dbscan_button = gr.Button("スタイル分けを実行")
-                num_styles_result = gr.Textbox(label="スタイル数")
-        gr.Markdown("スタイル分けの結果")
-        gr.Markdown(
-            "注意: もともと256次元なものをを2次元に落としているので、正確なベクトルの位置関係ではありません。"
-        )
-        with gr.Row():
-            gr_plot = gr.Plot()
-            with gr.Column():
-                with gr.Row():
-                    cluster_index = gr.Slider(
-                        minimum=1,
-                        maximum=MAX_CLUSTER_NUM,
-                        step=1,
-                        value=1,
-                        label="スタイル番号",
-                        info="選択したスタイルの代表音声を表示します。",
-                    )
-                    num_files = gr.Slider(
-                        minimum=1,
-                        maximum=MAX_AUDIO_NUM,
-                        step=1,
-                        value=5,
-                        label="代表音声の数をいくつ表示するか",
-                    )
-                    get_audios_button = gr.Button("代表音声を取得")
-                with gr.Row():
-                    audio_list = []
-                    for i in range(MAX_AUDIO_NUM):
-                        audio_list.append(gr.Audio(visible=False, show_label=True))
-            c_button.click(
-                do_clustering_gradio,
-                inputs=[n_clusters, c_method],
-                outputs=[gr_plot, cluster_index] + audio_list,
+                gr_plot = gr.Plot()
+                with gr.Column():
+                    with gr.Row():
+                        cluster_index = gr.Slider(
+                            minimum=1,
+                            maximum=MAX_CLUSTER_NUM,
+                            step=1,
+                            value=1,
+                            label="スタイル番号",
+                            info="選択したスタイルの代表音声を表示します。",
+                        )
+                        num_files = gr.Slider(
+                            minimum=1,
+                            maximum=MAX_AUDIO_NUM,
+                            step=1,
+                            value=5,
+                            label="代表音声の数をいくつ表示するか",
+                        )
+                        get_audios_button = gr.Button("代表音声を取得")
+                    with gr.Row():
+                        audio_list = []
+                        for i in range(MAX_AUDIO_NUM):
+                            audio_list.append(gr.Audio(visible=False, show_label=True))
+                c_button.click(
+                    do_clustering_gradio,
+                    inputs=[n_clusters, c_method],
+                    outputs=[gr_plot, cluster_index] + audio_list,
+                )
+                dbscan_button.click(
+                    do_dbscan_gradio,
+                    inputs=[eps, min_samples],
+                    outputs=[gr_plot, cluster_index, num_styles_result] + audio_list,
+                )
+                get_audios_button.click(
+                    representative_wav_files_gradio,
+                    inputs=[cluster_index, num_files],
+                    outputs=audio_list,
+                )
+            gr.Markdown("結果が良さそうなら、これを保存します。")
+            style_names = gr.Textbox(
+                "Angry, Sad, Happy",
+                label="スタイルの名前",
+                info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
             )
-            dbscan_button.click(
-                do_dbscan_gradio,
-                inputs=[eps, min_samples],
-                outputs=[gr_plot, cluster_index, num_styles_result] + audio_list,
-            )
-            get_audios_button.click(
-                representative_wav_files_gradio,
-                inputs=[cluster_index, num_files],
-                outputs=audio_list,
-            )
-        gr.Markdown("結果が良さそうなら、これを保存します。")
-        style_names = gr.Textbox(
-            "Angry, Sad, Happy",
-            label="スタイルの名前",
-            info=f"スタイルの名前を`,`で区切って入力してください（日本語可）。例: `Angry, Sad, Happy`や`怒り, 悲しみ, 喜び`など。平均音声は{DEFAULT_STYLE}として自動的に保存されます。",
-        )
-        with gr.Row():
-            save_button1 = gr.Button("スタイルベクトルを保存", variant="primary")
-            info2 = gr.Textbox(label="保存結果")
+            with gr.Row():
+                save_button1 = gr.Button("スタイルベクトルを保存", variant="primary")
+                info2 = gr.Textbox(label="保存結果")
 
-        save_button1.click(
-            save_style_vectors_from_clustering,
-            inputs=[model_name, style_names],
-            outputs=[info2],
-        )
-    with gr.Tab("方法2: 手動でスタイルを選ぶ"):
-        gr.Markdown(
-            "下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。"
-        )
-        gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
-        gr.Markdown(
-            f"注意: {DEFAULT_STYLE}スタイルは自動的に保存されます、手動では{DEFAULT_STYLE}という名前のスタイルは指定しないでください。"
-        )
-        with gr.Row():
-            audio_files_text = gr.Textbox(
-                label="音声ファイル名", placeholder="angry.wav, sad.wav, happy.wav"
-            )
-            style_names_text = gr.Textbox(
-                label="スタイル名", placeholder="Angry, Sad, Happy"
-            )
-        with gr.Row():
-            save_button2 = gr.Button("スタイルベクトルを保存", variant="primary")
-            info2 = gr.Textbox(label="保存結果")
-            save_button2.click(
-                save_style_vectors_from_files,
-                inputs=[model_name, audio_files_text, style_names_text],
+            save_button1.click(
+                save_style_vectors_from_clustering,
+                inputs=[model_name, style_names],
                 outputs=[info2],
             )
+        with gr.Tab("方法2: 手動でスタイルを選ぶ"):
+            gr.Markdown(
+                "下のテキスト欄に、各スタイルの代表音声のファイル名を`,`区切りで、その横に対応するスタイル名を`,`区切りで入力してください。"
+            )
+            gr.Markdown("例: `angry.wav, sad.wav, happy.wav`と`Angry, Sad, Happy`")
+            gr.Markdown(
+                f"注意: {DEFAULT_STYLE}スタイルは自動的に保存されます、手動では{DEFAULT_STYLE}という名前のスタイルは指定しないでください。"
+            )
+            with gr.Row():
+                audio_files_text = gr.Textbox(
+                    label="音声ファイル名", placeholder="angry.wav, sad.wav, happy.wav"
+                )
+                style_names_text = gr.Textbox(
+                    label="スタイル名", placeholder="Angry, Sad, Happy"
+                )
+            with gr.Row():
+                save_button2 = gr.Button("スタイルベクトルを保存", variant="primary")
+                info2 = gr.Textbox(label="保存結果")
+                save_button2.click(
+                    save_style_vectors_from_files,
+                    inputs=[model_name, audio_files_text, style_names_text],
+                    outputs=[info2],
+                )
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--server-name",
-    type=str,
-    default=None,
-    help="Server name for Gradio app",
-)
-parser.add_argument(
-    "--no-autolaunch",
-    action="store_true",
-    default=False,
-    help="Do not launch app automatically",
-)
-parser.add_argument("--share", action="store_true", default=False)
-args = parser.parse_args()
-
-app.launch(
-    inbrowser=not args.no_autolaunch, server_name=args.server_name, share=args.share
-)
+    return app

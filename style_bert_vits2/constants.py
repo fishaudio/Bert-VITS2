@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 # Style-Bert-VITS2 のバージョン
-VERSION = "2.3.1"
+VERSION = "2.4"
 
 # Style-Bert-VITS2 のベースディレクトリ
 BASE_DIR = Path(__file__).parent.parent

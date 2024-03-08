@@ -12,7 +12,6 @@ import io
 import shutil
 import sys
 import webbrowser
-import yaml
 import zipfile
 from datetime import datetime
 from io import BytesIO
@@ -22,6 +21,7 @@ import numpy as np
 import requests
 import torch
 import uvicorn
+import yaml
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -46,10 +46,10 @@ from style_bert_vits2.text_processing.japanese import normalize_text
 from style_bert_vits2.text_processing.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.text_processing.japanese.user_dict import (
     apply_word,
-    update_dict,
+    delete_word,
     read_dict,
     rewrite_word,
-    delete_word,
+    update_dict,
 )
 
 
@@ -245,7 +245,7 @@ async def normalize(item: TextRequest):
 
 @router.get("/models_info")
 def models_info():
-    return model_holder.models_info()
+    return model_holder.models_info
 
 
 class SynthesisRequest(BaseModel):
@@ -265,6 +265,7 @@ class SynthesisRequest(BaseModel):
     silenceAfter: float = 0.5
     pitchScale: float = 1.0
     intonationScale: float = 1.0
+    speaker: str | None = None
 
 
 @router.post("/synthesis", response_class=AudioResponse)
@@ -290,6 +291,13 @@ def synthesis(request: SynthesisRequest):
     ]
     phone_tone = kata_tone2phone_tone(kata_tone_list)
     tone = [t for _, t in phone_tone]
+    try:
+        sid = 0 if request.speaker is None else model.spk2id[request.speaker]
+    except KeyError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Speaker {request.speaker} not found in {model.spk2id}",
+        )
     sr, audio = model.infer(
         text=text,
         language=request.language.value,
@@ -306,6 +314,7 @@ def synthesis(request: SynthesisRequest):
         line_split=False,
         pitch_scale=request.pitchScale,
         intonation_scale=request.intonationScale,
+        sid=sid,
     )
 
     with BytesIO() as wavContent:

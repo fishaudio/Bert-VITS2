@@ -219,12 +219,14 @@ class ModelHolder:
         self.current_model: Optional[Model] = None
         self.model_names: list[str] = []
         self.models: list[Model] = []
+        self.models_info: list[dict[str, Union[str, list[str]]]] = []
         self.refresh()
 
     def refresh(self):
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
+        self.models_info = []
 
         model_dirs = [d for d in self.root_dir.iterdir() if d.is_dir()]
         for model_dir in model_dirs:
@@ -244,26 +246,19 @@ class ModelHolder:
                 continue
             self.model_files_dict[model_dir.name] = model_files
             self.model_names.append(model_dir.name)
-
-    def models_info(self):
-        if hasattr(self, "_models_info"):
-            return self._models_info
-        result = []
-        for name, files in self.model_files_dict.items():
-            # Get styles
-            config_path = self.root_dir / name / "config.json"
             hps = utils.get_hparams_from_file(config_path)
             style2id: dict[str, int] = hps.data.style2id
             styles = list(style2id.keys())
-            result.append(
+            spk2id: dict[str, int] = hps.data.spk2id
+            speakers = list(spk2id.keys())
+            self.models_info.append(
                 {
-                    "name": name,
-                    "files": [str(f) for f in files],
+                    "name": model_dir.name,
+                    "files": [str(f) for f in model_files],
                     "styles": styles,
+                    "speakers": speakers,
                 }
             )
-        self._models_info = result
-        return result
 
     def load_model(self, model_name: str, model_path_str: str):
         model_path = Path(model_path_str)

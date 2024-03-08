@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 import shutil
@@ -14,7 +13,6 @@ from pathlib import Path
 import gradio as gr
 import yaml
 
-from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_of
@@ -399,9 +397,7 @@ def run_tensorboard(model_name):
     yield gr.Button("Tensorboardを開く")
 
 
-initial_md = f"""
-# Style-Bert-VITS2 ver {VERSION} 学習用WebUI
-
+how_to_md = f"""
 ## 使い方
 
 - データを準備して、モデル名を入力して、必要なら設定を調整してから、「自動前処理を実行」ボタンを押してください。進捗状況等はターミナルに表示されます。
@@ -451,11 +447,13 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 日本語話者の単一話者データセットでも構いません。
 """
 
-if __name__ == "__main__":
-    with gr.Blocks(theme=GRADIO_THEME).queue() as app:
-        gr.Markdown(initial_md)
-        with gr.Accordion(label="データの前準備", open=False):
-            gr.Markdown(prepare_md)
+
+def create_train_app():
+    with gr.Blocks().queue() as app:
+        with gr.Accordion("使い方", open=False):
+            gr.Markdown(how_to_md)
+            with gr.Accordion(label="データの前準備", open=False):
+                gr.Markdown(prepare_md)
         model_name = gr.Textbox(label="モデル名")
         gr.Markdown("### 自動前処理")
         with gr.Row(variant="panel"):
@@ -794,19 +792,5 @@ if __name__ == "__main__":
             outputs=[use_jp_extra_train],
         )
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--server-name",
-        type=str,
-        default=None,
-        help="Server name for Gradio app",
-    )
-    parser.add_argument(
-        "--no-autolaunch",
-        action="store_true",
-        default=False,
-        help="Do not launch app automatically",
-    )
-    args = parser.parse_args()
-
-    app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
+    # app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
+    return app

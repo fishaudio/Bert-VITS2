@@ -13,14 +13,14 @@ from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 import numpy as np
-import pyopenjtalk
 from fastapi import HTTPException
 
 from style_bert_vits2.constants import DEFAULT_USER_DICT_DIR
+from style_bert_vits2.text_processing.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.text_processing.japanese.user_dict.word_model import UserDictWord, WordTypes
-# from ..utility.mutex_utility import mutex_wrapper
-# from ..utility.path_utility import engine_root, get_save_dir
 from style_bert_vits2.text_processing.japanese.user_dict.part_of_speech_data import MAX_PRIORITY, MIN_PRIORITY, part_of_speech_data
+
+pyopenjtalk.initialize()
 
 # root_dir = engine_root()
 # save_dir = get_save_dir()
