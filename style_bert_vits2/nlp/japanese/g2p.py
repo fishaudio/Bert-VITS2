@@ -249,6 +249,10 @@ def __pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> l
             return -50
         return int(match.group(1))
 
+    # pyopenjtalk_worker を初期化
+    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
+    pyopenjtalk.initialize()
+
     labels = pyopenjtalk.make_label(pyopenjtalk.run_frontend(text))
     N = len(labels)
 
