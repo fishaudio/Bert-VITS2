@@ -254,8 +254,7 @@ def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
     return model.infer(text, style=style, style_weight=style_weight)
 
 
-def update_two_model_names_dropdown():
-    model_holder = ModelHolder(Path(assets_root), device)
+def update_two_model_names_dropdown(model_holder: ModelHolder):
     new_names, new_files, _ = model_holder.update_model_names_gr()
     return new_names, new_files, new_names, new_files
 
@@ -456,7 +455,7 @@ def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
         )
 
         refresh_button.click(
-            update_two_model_names_dropdown,
+            lambda: update_two_model_names_dropdown(model_holder),
             outputs=[model_name_a, model_path_a, model_name_b, model_path_b],
         )
 

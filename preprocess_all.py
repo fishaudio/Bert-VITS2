@@ -1,5 +1,5 @@
 import argparse
-from webui_train import preprocess_all
+from webui.train import preprocess_all
 from multiprocessing import cpu_count
 
 if __name__ == "__main__":
@@ -75,7 +75,10 @@ if __name__ == "__main__":
         default=200,
     )
     parser.add_argument(
-        "--yomi_error", type=str, help="Yomi error. raise, skip, use", default="raise"
+        "--yomi_error",
+        type=str,
+        help="Yomi error. Options: raise, skip, use",
+        default="raise",
     )
 
     args = parser.parse_args()
