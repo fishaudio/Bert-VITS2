@@ -9,8 +9,8 @@ from common.log import logger
 class WorkerClient:
     def __init__(self, port: int) -> None:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # 5: timeout
-        sock.settimeout(5)
+        # 60: timeout
+        sock.settimeout(60)
         sock.connect((socket.gethostname(), port))
         self.sock = sock
 
