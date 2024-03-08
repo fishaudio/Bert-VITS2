@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 
 import gradio as gr
@@ -27,8 +26,6 @@ with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     path_config: dict[str, str] = yaml.safe_load(f.read())
     # dataset_root = path_config["dataset_root"]
     assets_root = path_config["assets_root"]
-
-model_holder = ModelHolder(Path(assets_root), device)
 
 
 def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_list):
@@ -331,13 +328,17 @@ Happy, Surprise, HappySurprise
 """
 
 
-def create_merge_app():
+def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(
             f"モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
         )
-        sys.exit(1)
+        with gr.Blocks() as app:
+            gr.Markdown(
+                f"Error: モデルが見つかりませんでした。{assets_root}にモデルを置いてください。"
+            )
+        return app
     initial_id = 0
     initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
 
@@ -499,23 +500,4 @@ def create_merge_app():
             outputs=[audio_output],
         )
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--server-name",
-        type=str,
-        default=None,
-        help="Server name for Gradio app",
-    )
-    parser.add_argument(
-        "--no-autolaunch",
-        action="store_true",
-        default=False,
-        help="Do not launch app automatically",
-    )
-    parser.add_argument("--share", action="store_true", default=False)
-    args = parser.parse_args()
-
-    # app.launch(
-    #     inbrowser=not args.no_autolaunch, server_name=args.server_name, share=args.share
-    # )
     return app

@@ -4,7 +4,7 @@ import enum
 # See https://huggingface.co/spaces/gradio/theme-gallery for more themes
 GRADIO_THEME: str = "NoCrypt/miku"
 
-LATEST_VERSION: str = "2.3.1"
+LATEST_VERSION: str = "2.4"
 
 USER_DICT_DIR = "dict_data"
 

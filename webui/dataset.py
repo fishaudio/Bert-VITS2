@@ -8,12 +8,6 @@ from common.constants import GRADIO_THEME
 from common.log import logger
 from common.subprocess_utils import run_script_with_log
 
-# Get path settings
-with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    dataset_root = path_config["dataset_root"]
-    # assets_root = path_config["assets_root"]
-
 
 def do_slice(
     model_name: str,
@@ -69,13 +63,11 @@ def do_transcribe(
         ]
     )
     if not success:
-        return f"Error: {message}"
+        return f"Error: {message}. しかし何故かエラーが起きても正常に終了している場合がほとんどなので、書き起こし結果を確認して問題なければ学習に使えます。"
     return "音声の文字起こしが完了しました。"
 
 
-initial_md = """
-# 簡易学習用データセット作成ツール
-
+how_to_md = """
 Style-Bert-VITS2の学習用データセットを作成するためのツールです。以下の2つからなります。
 
 - 与えられた音声からちょうどいい長さの発話区間を切り取りスライス
@@ -107,10 +99,10 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 """
 
 
-def create_dataset_app():
-
-    with gr.Blocks(theme=GRADIO_THEME) as app:
-        gr.Markdown(initial_md)
+def create_dataset_app() -> gr.Blocks:
+    with gr.Blocks() as app:
+        with gr.Accordion("使い方", open=False):
+            gr.Markdown(how_to_md)
         model_name = gr.Textbox(
             label="モデル名を入力してください（話者名としても使われます）。"
         )
@@ -118,8 +110,8 @@ def create_dataset_app():
             with gr.Row():
                 with gr.Column():
                     input_dir = gr.Textbox(
-                        label="入力フォルダ名（デフォルトはinputs）",
-                        placeholder="inputs",
+                        label="元音声の入っているフォルダパス",
+                        value="inputs",
                         info="下記フォルダにwavファイルを入れておいてください",
                     )
                     min_sec = gr.Slider(
@@ -201,20 +193,4 @@ def create_dataset_app():
             outputs=[result2],
         )
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--server-name",
-        type=str,
-        default=None,
-        help="Server name for Gradio app",
-    )
-    parser.add_argument(
-        "--no-autolaunch",
-        action="store_true",
-        default=False,
-        help="Do not launch app automatically",
-    )
-    args = parser.parse_args()
-
-    # app.launch(inbrowser=not args.no_autolaunch, server_name=args.server_name)
     return app

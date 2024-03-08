@@ -277,9 +277,7 @@ def save_style_vectors_from_files(
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
-initial_md = f"""
-# Style Bert-VITS2 スタイルベクトルの作成
-
+how_to_md = f"""
 Style-Bert-VITS2でこまかくスタイルを指定して音声合成するには、モデルごとにスタイルベクトルのファイル`style_vectors.npy`を手動で作成する必要があります。
 
 ただし、学習の過程で自動的に平均スタイル「{DEFAULT_STYLE}」のみは作成されるので、それをそのまま使うこともできます（その場合はこのWebUIは使いません）。
@@ -326,7 +324,8 @@ https://ja.wikipedia.org/wiki/DBSCAN
 
 def create_style_vectors_app():
     with gr.Blocks(theme=GRADIO_THEME) as app:
-        gr.Markdown(initial_md)
+        with gr.Accordion("使い方", open=False):
+            gr.Markdown(how_to_md)
         with gr.Row():
             model_name = gr.Textbox(placeholder="your_model_name", label="モデル名")
             reduction_method = gr.Radio(
@@ -461,23 +460,4 @@ def create_style_vectors_app():
                     outputs=[info2],
                 )
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--server-name",
-        type=str,
-        default=None,
-        help="Server name for Gradio app",
-    )
-    parser.add_argument(
-        "--no-autolaunch",
-        action="store_true",
-        default=False,
-        help="Do not launch app automatically",
-    )
-    parser.add_argument("--share", action="store_true", default=False)
-    args = parser.parse_args()
-
-    # app.launch(
-    #     inbrowser=not args.no_autolaunch, server_name=args.server_name, share=args.share
-    # )
     return app
