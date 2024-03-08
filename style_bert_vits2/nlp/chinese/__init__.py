@@ -5,8 +5,8 @@ import cn2an
 import jieba.posseg as psg
 from pypinyin import lazy_pinyin, Style
 
-from style_bert_vits2.text_processing.chinese.tone_sandhi import ToneSandhi
-from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
+from style_bert_vits2.nlp.chinese.tone_sandhi import ToneSandhi
+from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
 
 current_file_path = os.path.dirname(__file__)
@@ -177,7 +177,7 @@ def normalize_text(text: str) -> str:
 
 
 if __name__ == "__main__":
-    from style_bert_vits2.text_processing.chinese.bert_feature import extract_bert_feature
+    from style_bert_vits2.nlp.chinese.bert_feature import extract_bert_feature
 
     text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
     text = normalize_text(text)

@@ -2,7 +2,7 @@ import socket
 from typing import Any, cast
 
 from style_bert_vits2.logging import logger
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_common import RequestType, receive_data, send_data
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import RequestType, receive_data, send_data
 
 
 class WorkerClient:

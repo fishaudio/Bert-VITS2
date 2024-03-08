@@ -4,8 +4,8 @@ import re
 from g2p_en import G2p
 
 from style_bert_vits2.constants import Languages
-from style_bert_vits2.text_processing import bert_models
-from style_bert_vits2.text_processing.symbols import PUNCTUATIONS, SYMBOLS
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.symbols import PUNCTUATIONS, SYMBOLS
 
 
 current_file_path = os.path.dirname(__file__)

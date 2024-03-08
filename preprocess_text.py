@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from config import config
 from style_bert_vits2.logging import logger
-from style_bert_vits2.text_processing import clean_text
+from style_bert_vits2.nlp import clean_text
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 preprocess_text_config = config.preprocess_text_config

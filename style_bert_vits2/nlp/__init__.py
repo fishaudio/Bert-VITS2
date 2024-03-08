@@ -2,7 +2,7 @@ import torch
 from typing import Optional
 
 from style_bert_vits2.constants import Languages
-from style_bert_vits2.text_processing.symbols import (
+from style_bert_vits2.nlp.symbols import (
     LANGUAGE_ID_MAP,
     LANGUAGE_TONE_START_MAP,
     SYMBOLS,
@@ -36,11 +36,11 @@ def extract_bert_feature(
     """
 
     if language == Languages.JP:
-        from style_bert_vits2.text_processing.japanese.bert_feature import extract_bert_feature
+        from style_bert_vits2.nlp.japanese.bert_feature import extract_bert_feature
     elif language == Languages.EN:
-        from style_bert_vits2.text_processing.english.bert_feature import extract_bert_feature
+        from style_bert_vits2.nlp.english.bert_feature import extract_bert_feature
     elif language == Languages.ZH:
-        from style_bert_vits2.text_processing.chinese.bert_feature import extract_bert_feature
+        from style_bert_vits2.nlp.chinese.bert_feature import extract_bert_feature
     else:
         raise ValueError(f"Language {language} not supported")
 
@@ -68,15 +68,15 @@ def clean_text(
 
     # Changed to import inside if condition to avoid unnecessary import
     if language == Languages.JP:
-        from style_bert_vits2.text_processing.japanese import g2p, normalize_text
+        from style_bert_vits2.nlp.japanese import g2p, normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text, use_jp_extra, raise_yomi_error)
     elif language == Languages.EN:
-        from style_bert_vits2.text_processing.english import g2p, normalize_text
+        from style_bert_vits2.nlp.english import g2p, normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     elif language == Languages.ZH:
-        from style_bert_vits2.text_processing.chinese import g2p, normalize_text
+        from style_bert_vits2.nlp.chinese import g2p, normalize_text
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     else:

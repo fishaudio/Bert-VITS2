@@ -10,7 +10,7 @@ from style_bert_vits2.models import attentions
 from style_bert_vits2.models import commons
 from style_bert_vits2.models import modules
 from style_bert_vits2.models import monotonic_alignment
-from style_bert_vits2.text_processing.symbols import SYMBOLS, NUM_TONES, NUM_LANGUAGES
+from style_bert_vits2.nlp.symbols import SYMBOLS, NUM_TONES, NUM_LANGUAGES
 
 
 class DurationDiscriminator(nn.Module):  # vits2

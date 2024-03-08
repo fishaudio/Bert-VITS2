@@ -23,7 +23,7 @@ DEFAULT_BERT_TOKENIZER_PATHS = {
 }
 
 # デフォルトのユーザー辞書ディレクトリ
-## style_bert_vits2.text_processing.japanese.user_dict モジュールのデフォルト値として利用される
+## style_bert_vits2.nlp.japanese.user_dict モジュールのデフォルト値として利用される
 ## ライブラリとしての利用などで外部のユーザー辞書を指定したい場合は、user_dict 以下の各関数の実行時、引数に辞書データファイルのパスを指定する
 DEFAULT_USER_DICT_DIR = BASE_DIR / "dict_data"
 

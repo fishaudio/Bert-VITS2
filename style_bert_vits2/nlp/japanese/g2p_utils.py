@@ -1,9 +1,9 @@
-from style_bert_vits2.text_processing.japanese.g2p import g2p
-from style_bert_vits2.text_processing.japanese.mora_list import (
+from style_bert_vits2.nlp.japanese.g2p import g2p
+from style_bert_vits2.nlp.japanese.mora_list import (
     MORA_KATA_TO_MORA_PHONEMES,
     MORA_PHONEMES_TO_MORA_KATA,
 )
-from style_bert_vits2.text_processing.symbols import PUNCTUATIONS
+from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
 
 def g2kata_tone(norm_text: str) -> list[tuple[str, int]]:

@@ -6,8 +6,8 @@ to avoid user dictionary access error
 from typing import Any, Optional
 
 from style_bert_vits2.logging import logger
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_client import WorkerClient
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_common import WORKER_PORT
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_client import WorkerClient
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import WORKER_PORT
 
 
 WORKER_CLIENT: Optional[WorkerClient] = None

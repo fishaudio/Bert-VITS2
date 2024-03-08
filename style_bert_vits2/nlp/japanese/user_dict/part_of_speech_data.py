@@ -7,7 +7,7 @@
 
 from typing import Dict
 
-from style_bert_vits2.text_processing.japanese.user_dict.word_model import (
+from style_bert_vits2.nlp.japanese.user_dict.word_model import (
     USER_DICT_MAX_PRIORITY,
     USER_DICT_MIN_PRIORITY,
     PartOfSpeechDetail,

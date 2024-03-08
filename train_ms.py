@@ -31,7 +31,7 @@ from style_bert_vits2.models.models import (
     MultiPeriodDiscriminator,
     SynthesizerTrn,
 )
-from style_bert_vits2.text_processing.symbols import SYMBOLS
+from style_bert_vits2.nlp.symbols import SYMBOLS
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True

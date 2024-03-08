@@ -11,7 +11,7 @@ from style_bert_vits2.models import commons
 from style_bert_vits2.models import modules
 from style_bert_vits2.models import monotonic_alignment
 from style_bert_vits2.models.commons import get_padding, init_weights
-from style_bert_vits2.text_processing.symbols import NUM_LANGUAGES, NUM_TONES, SYMBOLS
+from style_bert_vits2.nlp.symbols import NUM_LANGUAGES, NUM_TONES, SYMBOLS
 
 
 class DurationDiscriminator(nn.Module):  # vits2

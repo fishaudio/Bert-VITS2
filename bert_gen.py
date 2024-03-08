@@ -9,8 +9,8 @@ import utils
 from config import config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
-from style_bert_vits2.text_processing import cleaned_text_to_sequence, extract_bert_feature
-from style_bert_vits2.text_processing.japanese import pyopenjtalk_worker as pyopenjtalk
+from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 pyopenjtalk.initialize()

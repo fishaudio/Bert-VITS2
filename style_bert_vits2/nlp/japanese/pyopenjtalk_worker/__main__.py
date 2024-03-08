@@ -1,7 +1,7 @@
 import argparse
 
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_common import WORKER_PORT
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_server import WorkerServer
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import WORKER_PORT
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_server import WorkerServer
 
 
 def main() -> None:

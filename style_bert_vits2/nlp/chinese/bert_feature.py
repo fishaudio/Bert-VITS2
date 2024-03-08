@@ -5,7 +5,7 @@ import torch
 from transformers import PreTrainedModel
 
 from style_bert_vits2.constants import Languages
-from style_bert_vits2.text_processing import bert_models
+from style_bert_vits2.nlp import bert_models
 
 
 __models: dict[torch.device | str, PreTrainedModel] = {}
@@ -19,10 +19,10 @@ def extract_bert_feature(
     assist_text_weight: float = 0.7,
 ) -> torch.Tensor:
     """
-    英語のテキストから BERT の特徴量を抽出する
+    中国語のテキストから BERT の特徴量を抽出する
 
     Args:
-        text (str): 英語のテキスト
+        text (str): 中国語のテキスト
         word2ph (list[int]): 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
         device (torch.device | str): 推論に利用するデバイス
         assist_text (Optional[str], optional): 補助テキスト (デフォルト: None)
@@ -43,11 +43,11 @@ def extract_bert_feature(
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
     if device not in __models.keys():
-        __models[device] = bert_models.load_model(Languages.EN).to(device)  # type: ignore
+        __models[device] = bert_models.load_model(Languages.ZH).to(device)  # type: ignore
 
     style_res_mean = None
     with torch.no_grad():
-        tokenizer = bert_models.load_tokenizer(Languages.EN)
+        tokenizer = bert_models.load_tokenizer(Languages.ZH)
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
             inputs[i] = inputs[i].to(device)  # type: ignore
@@ -61,7 +61,7 @@ def extract_bert_feature(
             style_res = torch.cat(style_res["hidden_states"][-3:-2], -1)[0].cpu()
             style_res_mean = style_res.mean(0)
 
-    assert len(word2ph) == res.shape[0], (text, res.shape[0], len(word2ph))
+    assert len(word2ph) == len(text) + 2
     word2phone = word2ph
     phone_level_feature = []
     for i in range(len(word2phone)):
@@ -78,3 +78,62 @@ def extract_bert_feature(
     phone_level_feature = torch.cat(phone_level_feature, dim=0)
 
     return phone_level_feature.T
+
+
+if __name__ == "__main__":
+    word_level_feature = torch.rand(38, 1024)  # 12个词,每个词1024维特征
+    word2phone = [
+        1,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+    ]
+
+    # 计算总帧数
+    total_frames = sum(word2phone)
+    print(word_level_feature.shape)
+    print(word2phone)
+    phone_level_feature = []
+    for i in range(len(word2phone)):
+        print(word_level_feature[i].shape)
+
+        # 对每个词重复word2phone[i]次
+        repeat_feature = word_level_feature[i].repeat(word2phone[i], 1)
+        phone_level_feature.append(repeat_feature)
+
+    phone_level_feature = torch.cat(phone_level_feature, dim=0)
+    print(phone_level_feature.shape)  # torch.Size([36, 1024])

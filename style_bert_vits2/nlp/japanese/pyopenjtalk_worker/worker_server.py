@@ -6,7 +6,7 @@ from typing import Any, cast
 import pyopenjtalk
 
 from style_bert_vits2.logging import logger
-from style_bert_vits2.text_processing.japanese.pyopenjtalk_worker.worker_common import (
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import (
     ConnectionClosedException,
     RequestType,
     receive_data,
