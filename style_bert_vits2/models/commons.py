@@ -5,7 +5,7 @@
 
 import torch
 from torch.nn import functional as F
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 
 def init_weights(m: torch.nn.Module, mean: float = 0.0, std: float = 0.01) -> None:
@@ -180,12 +180,12 @@ def generate_path(duration: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     return path
 
 
-def clip_grad_value_(parameters: torch.Tensor | list[torch.Tensor], clip_value: Optional[float], norm_type: float = 2.0) -> float:
+def clip_grad_value_(parameters: Union[torch.Tensor, list[torch.Tensor]], clip_value: Optional[float], norm_type: float = 2.0) -> float:
     """
     勾配の値をクリップする
 
     Args:
-        parameters (torch.Tensor | list[torch.Tensor]): クリップするパラメータ
+        parameters (Union[torch.Tensor, list[torch.Tensor]]): クリップするパラメータ
         clip_value (Optional[float]): クリップする値。None の場合はクリップしない
         norm_type (float): ノルムの種類
 

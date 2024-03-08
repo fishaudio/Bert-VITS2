@@ -9,7 +9,7 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 """
 
 import gc
-from typing import cast, Optional
+from typing import cast, Optional, Union
 
 import torch
 from transformers import (
@@ -27,16 +27,16 @@ from style_bert_vits2.logging import logger
 
 
 # 各言語ごとのロード済みの BERT モデルを格納する辞書
-__loaded_models: dict[Languages, PreTrainedModel | DebertaV2Model] = {}
+__loaded_models: dict[Languages, Union[PreTrainedModel, DebertaV2Model]] = {}
 
 # 各言語ごとのロード済みの BERT トークナイザーを格納する辞書
-__loaded_tokenizers: dict[Languages, PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer] = {}
+__loaded_tokenizers: dict[Languages, Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]] = {}
 
 
 def load_model(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
-) -> PreTrainedModel | DebertaV2Model:
+) -> Union[PreTrainedModel, DebertaV2Model]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT モデルを返す。
     一度ロードされていれば、ロード済みの BERT モデルを即座に返す。
@@ -54,7 +54,7 @@ def load_model(
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
 
     Returns:
-        PreTrainedModel | DebertaV2Model: ロード済みの BERT モデル
+        Union[PreTrainedModel, DebertaV2Model]: ロード済みの BERT モデル
     """
 
     # すでにロード済みの場合はそのまま返す
@@ -82,7 +82,7 @@ def load_model(
 def load_tokenizer(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
-) -> PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer:
+) -> Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT トークナイザーを返す。
     一度ロードされていれば、ロード済みの BERT トークナイザーを即座に返す。
@@ -100,7 +100,7 @@ def load_tokenizer(
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
 
     Returns:
-        PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer: ロード済みの BERT トークナイザー
+        Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]: ロード済みの BERT トークナイザー
     """
 
     # すでにロード済みの場合はそのまま返す
