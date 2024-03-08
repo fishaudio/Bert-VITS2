@@ -26,6 +26,7 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models import utils
+from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.models.models_jp_extra import (
     DurationDiscriminator,
     MultiPeriodDiscriminator,
@@ -129,7 +130,7 @@ def run():
     local_rank = int(os.environ["LOCAL_RANK"])
     n_gpus = dist.get_world_size()
 
-    hps = utils.get_hparams_from_file(args.config)
+    hps = HyperParameters.load_from_json(args.config)
     # This is needed because we have to pass values to `train_and_evaluate()
     hps.model_dir = model_dir
     hps.speedup = args.speedup
@@ -298,7 +299,29 @@ def run():
         n_speakers=hps.data.n_speakers,
         mas_noise_scale_initial=mas_noise_scale_initial,
         noise_scale_delta=noise_scale_delta,
-        **hps.model,
+        # hps.model 以下のすべての値を引数に渡す
+        use_spk_conditioned_encoder = hps.model.use_spk_conditioned_encoder,
+        use_noise_scaled_mas = hps.model.use_noise_scaled_mas,
+        use_mel_posterior_encoder = hps.model.use_mel_posterior_encoder,
+        use_duration_discriminator = hps.model.use_duration_discriminator,
+        use_wavlm_discriminator = hps.model.use_wavlm_discriminator,
+        inter_channels = hps.model.inter_channels,
+        hidden_channels = hps.model.hidden_channels,
+        filter_channels = hps.model.filter_channels,
+        n_heads = hps.model.n_heads,
+        n_layers = hps.model.n_layers,
+        kernel_size = hps.model.kernel_size,
+        p_dropout = hps.model.p_dropout,
+        resblock = hps.model.resblock,
+        resblock_kernel_sizes = hps.model.resblock_kernel_sizes,
+        resblock_dilation_sizes = hps.model.resblock_dilation_sizes,
+        upsample_rates = hps.model.upsample_rates,
+        upsample_initial_channel = hps.model.upsample_initial_channel,
+        upsample_kernel_sizes = hps.model.upsample_kernel_sizes,
+        n_layers_q = hps.model.n_layers_q,
+        use_spectral_norm = hps.model.use_spectral_norm,
+        gin_channels = hps.model.gin_channels,
+        slm = hps.model.slm,
     ).cuda(local_rank)
     if getattr(hps.train, "freeze_JP_bert", False):
         logger.info("Freezing (JP) bert encoder !!!")

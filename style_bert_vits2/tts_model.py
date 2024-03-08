@@ -1,11 +1,12 @@
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import gradio as gr
 import numpy as np
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
+from numpy.typing import NDArray
 
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
@@ -17,15 +18,22 @@ from style_bert_vits2.constants import (
     DEFAULT_SPLIT_INTERVAL,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
+    Languages,
 )
-from style_bert_vits2.models import utils
+from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.models.infer import get_net_g, infer
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from style_bert_vits2.logging import logger
 
 
-def adjust_voice(fs, wave, pitch_scale, intonation_scale):
+def adjust_voice(
+    fs: int,
+    wave: NDArray[Any],
+    pitch_scale: float,
+    intonation_scale: float,
+) -> tuple[int, NDArray[Any]]:
+
     if pitch_scale == 1.0 and intonation_scale == 1.0:
         # 初期値の場合は、音質劣化を避けるためにそのまま返す
         return fs, wave
@@ -37,15 +45,17 @@ def adjust_voice(fs, wave, pitch_scale, intonation_scale):
             "pyworld is not installed. Please install it by `pip install pyworld`"
         )
 
-    # pyworldでf0を加工して合成
-    # pyworldよりもよいのがあるかもしれないが……
+    # pyworld で f0 を加工して合成
+    # pyworld よりもよいのがあるかもしれないが……
+    ## pyworld は Cython で書かれているが、スタブファイルがないため型補完が全く効かない…
 
     wave = wave.astype(np.double)
-    f0, t = pyworld.harvest(wave, fs)
-    # 質が高そうだしとりあえずharvestにしておく
 
-    sp = pyworld.cheaptrick(wave, f0, t, fs)
-    ap = pyworld.d4c(wave, f0, t, fs)
+    # 質が高そうだしとりあえずharvestにしておく
+    f0, t = pyworld.harvest(wave, fs)  # type: ignore
+
+    sp = pyworld.cheaptrick(wave, f0, t, fs)  # type: ignore
+    ap = pyworld.d4c(wave, f0, t, fs)  # type: ignore
 
     non_zero_f0 = [f for f in f0 if f != 0]
     f0_mean = sum(non_zero_f0) / len(non_zero_f0)
@@ -55,7 +65,7 @@ def adjust_voice(fs, wave, pitch_scale, intonation_scale):
             continue
         f0[i] = pitch_scale * f0_mean + intonation_scale * (f - f0_mean)
 
-    wave = pyworld.synthesize(f0, sp, ap, fs)
+    wave = pyworld.synthesize(f0, sp, ap, fs)  # type: ignore
     return fs, wave
 
 
@@ -67,7 +77,7 @@ class Model:
         self.config_path: Path = config_path
         self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.hps: utils.HParams = utils.get_hparams_from_file(self.config_path)
+        self.hps: HyperParameters = HyperParameters.load_from_json(self.config_path)
         self.spk2id: dict[str, int] = self.hps.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
@@ -81,7 +91,7 @@ class Model:
                 f"Number of styles ({self.num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        self.style_vectors: np.ndarray = np.load(self.style_vec_path)
+        self.style_vectors: NDArray[Any] = np.load(self.style_vec_path)
         if self.style_vectors.shape[0] != self.num_styles:
             raise ValueError(
                 f"The number of styles ({self.num_styles}) does not match the number of style vectors ({self.style_vectors.shape[0]})"
@@ -97,7 +107,7 @@ class Model:
             hps=self.hps,
         )
 
-    def get_style_vector(self, style_id: int, weight: float = 1.0) -> np.ndarray:
+    def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         mean = self.style_vectors[0]
         style_vec = self.style_vectors[style_id]
         style_vec = mean + (style_vec - mean) * weight
@@ -105,7 +115,7 @@ class Model:
 
     def get_style_vector_from_audio(
         self, audio_path: str, weight: float = 1.0
-    ) -> np.ndarray:
+    ) -> NDArray[Any]:
         from style_gen import get_style_vector
 
         xvec = get_style_vector(audio_path)
@@ -116,7 +126,7 @@ class Model:
     def infer(
         self,
         text: str,
-        language: str = "JP",
+        language: Languages = Languages.JP,
         sid: int = 0,
         reference_audio_path: Optional[str] = None,
         sdp_ratio: float = DEFAULT_SDP_RATIO,
@@ -133,7 +143,7 @@ class Model:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
-    ) -> tuple[int, np.ndarray]:
+    ) -> tuple[int, NDArray[Any]]:
         logger.info(f"Start generating audio data from text:\n{text}")
         if language != "JP" and self.hps.version.endswith("JP-Extra"):
             raise ValueError(
@@ -146,6 +156,7 @@ class Model:
 
         if self.net_g is None:
             self.load_net_g()
+        assert self.net_g is not None
         if reference_audio_path is None:
             style_id = self.style2id[style]
             style_vector = self.get_style_vector(style_id, style_weight)
@@ -246,19 +257,17 @@ class ModelHolder:
                 continue
             self.model_files_dict[model_dir.name] = model_files
             self.model_names.append(model_dir.name)
-            hps = utils.get_hparams_from_file(config_path)
+            hps = HyperParameters.load_from_json(config_path)
             style2id: dict[str, int] = hps.data.style2id
             styles = list(style2id.keys())
             spk2id: dict[str, int] = hps.data.spk2id
             speakers = list(spk2id.keys())
-            self.models_info.append(
-                {
-                    "name": model_dir.name,
-                    "files": [str(f) for f in model_files],
-                    "styles": styles,
-                    "speakers": speakers,
-                }
-            )
+            self.models_info.append({
+                "name": model_dir.name,
+                "files": [str(f) for f in model_files],
+                "styles": styles,
+                "speakers": speakers,
+            })
 
     def load_model(self, model_name: str, model_path_str: str):
         model_path = Path(model_path_str)
@@ -291,9 +300,9 @@ class ModelHolder:
             speakers = list(self.current_model.spk2id.keys())
             styles = list(self.current_model.style2id.keys())
             return (
-                gr.Dropdown(choices=styles, value=styles[0]),
+                gr.Dropdown(choices=styles, value=styles[0]),  # type: ignore
                 gr.Button(interactive=True, value="音声合成"),
-                gr.Dropdown(choices=speakers, value=speakers[0]),
+                gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
             )
         self.current_model = Model(
             model_path=model_path,
@@ -304,21 +313,21 @@ class ModelHolder:
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
         return (
-            gr.Dropdown(choices=styles, value=styles[0]),
+            gr.Dropdown(choices=styles, value=styles[0]),  # type: ignore
             gr.Button(interactive=True, value="音声合成"),
-            gr.Dropdown(choices=speakers, value=speakers[0]),
+            gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
         )
 
     def update_model_files_gr(self, model_name: str) -> gr.Dropdown:
         model_files = self.model_files_dict[model_name]
-        return gr.Dropdown(choices=model_files, value=model_files[0])
+        return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
 
     def update_model_names_gr(self) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
         self.refresh()
         initial_model_name = self.model_names[0]
         initial_model_files = self.model_files_dict[initial_model_name]
         return (
-            gr.Dropdown(choices=self.model_names, value=initial_model_name),
-            gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),
+            gr.Dropdown(choices=self.model_names, value=initial_model_name),  # type: ignore
+            gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),  # type: ignore
             gr.Button(interactive=False),  # For tts_button
         )

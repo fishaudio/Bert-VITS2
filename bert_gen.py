@@ -8,7 +8,7 @@ from tqdm import tqdm
 from config import config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
-from style_bert_vits2.models import utils
+from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     )
     args, _ = parser.parse_known_args()
     config_path = args.config
-    hps = utils.get_hparams_from_file(config_path)
+    hps = HyperParameters.load_from_json(config_path)
     lines = []
     with open(hps.data.training_files, encoding="utf-8") as f:
         lines.extend(f.readlines())

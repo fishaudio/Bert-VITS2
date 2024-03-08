@@ -1,16 +1,16 @@
 """
 Style-Bert-VITS2 モデルのハイパーパラメータを表す Pydantic モデル。
-デフォルト値は configs/configs_jp_extra.json 内の定義と同一で、
+デフォルト値は configs/configs_jp_extra.json 内の定義と概ね同一で、
 万が一ロードした config.json に存在しないキーがあった際のフェイルセーフとして適用される。
 """
 
 from pathlib import Path
 from typing import Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class __HyperParametersTrain(BaseModel):
+class HyperParametersTrain(BaseModel):
     log_interval: int = 200
     eval_interval: int = 1000
     seed: int = 42
@@ -36,7 +36,8 @@ class __HyperParametersTrain(BaseModel):
     freeze_style: bool = False
     freeze_decoder: bool = False
 
-class __HyperParametersData(BaseModel):
+
+class HyperParametersData(BaseModel):
     use_jp_extra: bool = True
     training_files: str = "Data/dummy/train.list"
     validation_files: str = "Data/dummy/val.list"
@@ -59,7 +60,8 @@ class __HyperParametersData(BaseModel):
       "Neutral": 0,
     }
 
-class __HyperParametersModel(BaseModel):
+
+class HyperParametersModel(BaseModel):
     use_spk_conditioned_encoder: bool = True
     use_noise_scaled_mas: bool = True
     use_mel_posterior_encoder: bool = False
@@ -93,12 +95,21 @@ class __HyperParametersModel(BaseModel):
         "initial_channel": 64
     }
 
+
 class HyperParameters(BaseModel):
-    version: str = "2.0-JP-Extra"
     model_name: str = 'dummy'
-    train: __HyperParametersTrain
-    data: __HyperParametersData
-    model: __HyperParametersModel
+    version: str = "2.0-JP-Extra"
+    train: HyperParametersTrain
+    data: HyperParametersData
+    model: HyperParametersModel
+
+    # 以下は学習時にのみ動的に設定されるパラメータ (通常 config.json には存在しない)
+    model_dir: Optional[str] = None
+    speedup: bool = False
+    repo_id: Optional[str] = None
+
+    # model_ 以下を Pydantic の保護対象から除外する
+    model_config = ConfigDict(protected_namespaces=())
 
 
     @staticmethod
@@ -112,5 +123,6 @@ class HyperParameters(BaseModel):
         Returns:
             HyperParameters: ハイパーパラメータ
         """
+
         with open(json_path, "r") as f:
             return HyperParameters.model_validate_json(f.read())

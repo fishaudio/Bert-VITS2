@@ -1,34 +1,81 @@
+from typing import Any, cast, Optional, Union
+
 import torch
-from typing import Optional
+from numpy.typing import NDArray
 
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models import utils
+from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from style_bert_vits2.nlp import clean_text, cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.nlp.symbols import SYMBOLS
 
 
-def get_net_g(model_path: str, version: str, device: str, hps):
+def get_net_g(model_path: str, version: str, device: str, hps: HyperParameters):
     if version.endswith("JP-Extra"):
         logger.info("Using JP-Extra model")
         net_g = SynthesizerTrnJPExtra(
-            len(SYMBOLS),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
+            n_vocab = len(SYMBOLS),
+            spec_channels = hps.data.filter_length // 2 + 1,
+            segment_size = hps.train.segment_size // hps.data.hop_length,
+            n_speakers = hps.data.n_speakers,
+            # hps.model 以下のすべての値を引数に渡す
+            use_spk_conditioned_encoder = hps.model.use_spk_conditioned_encoder,
+            use_noise_scaled_mas = hps.model.use_noise_scaled_mas,
+            use_mel_posterior_encoder = hps.model.use_mel_posterior_encoder,
+            use_duration_discriminator = hps.model.use_duration_discriminator,
+            use_wavlm_discriminator = hps.model.use_wavlm_discriminator,
+            inter_channels = hps.model.inter_channels,
+            hidden_channels = hps.model.hidden_channels,
+            filter_channels = hps.model.filter_channels,
+            n_heads = hps.model.n_heads,
+            n_layers = hps.model.n_layers,
+            kernel_size = hps.model.kernel_size,
+            p_dropout = hps.model.p_dropout,
+            resblock = hps.model.resblock,
+            resblock_kernel_sizes = hps.model.resblock_kernel_sizes,
+            resblock_dilation_sizes = hps.model.resblock_dilation_sizes,
+            upsample_rates = hps.model.upsample_rates,
+            upsample_initial_channel = hps.model.upsample_initial_channel,
+            upsample_kernel_sizes = hps.model.upsample_kernel_sizes,
+            n_layers_q = hps.model.n_layers_q,
+            use_spectral_norm = hps.model.use_spectral_norm,
+            gin_channels = hps.model.gin_channels,
+            slm = hps.model.slm,
         ).to(device)
     else:
         logger.info("Using normal model")
         net_g = SynthesizerTrn(
-            len(SYMBOLS),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
+            n_vocab = len(SYMBOLS),
+            spec_channels = hps.data.filter_length // 2 + 1,
+            segment_size = hps.train.segment_size // hps.data.hop_length,
             n_speakers=hps.data.n_speakers,
-            **hps.model,
+            # hps.model 以下のすべての値を引数に渡す
+            use_spk_conditioned_encoder = hps.model.use_spk_conditioned_encoder,
+            use_noise_scaled_mas = hps.model.use_noise_scaled_mas,
+            use_mel_posterior_encoder = hps.model.use_mel_posterior_encoder,
+            use_duration_discriminator = hps.model.use_duration_discriminator,
+            use_wavlm_discriminator = hps.model.use_wavlm_discriminator,
+            inter_channels = hps.model.inter_channels,
+            hidden_channels = hps.model.hidden_channels,
+            filter_channels = hps.model.filter_channels,
+            n_heads = hps.model.n_heads,
+            n_layers = hps.model.n_layers,
+            kernel_size = hps.model.kernel_size,
+            p_dropout = hps.model.p_dropout,
+            resblock = hps.model.resblock,
+            resblock_kernel_sizes = hps.model.resblock_kernel_sizes,
+            resblock_dilation_sizes = hps.model.resblock_dilation_sizes,
+            upsample_rates = hps.model.upsample_rates,
+            upsample_initial_channel = hps.model.upsample_initial_channel,
+            upsample_kernel_sizes = hps.model.upsample_kernel_sizes,
+            n_layers_q = hps.model.n_layers_q,
+            use_spectral_norm = hps.model.use_spectral_norm,
+            gin_channels = hps.model.gin_channels,
+            slm = hps.model.slm,
         ).to(device)
     net_g.state_dict()
     _ = net_g.eval()
@@ -44,7 +91,7 @@ def get_net_g(model_path: str, version: str, device: str, hps):
 def get_text(
     text: str,
     language_str: Languages,
-    hps,
+    hps: HyperParameters,
     device: str,
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
@@ -111,15 +158,15 @@ def get_text(
 
 def infer(
     text: str,
-    style_vec,
+    style_vec: NDArray[Any],
     sdp_ratio: float,
     noise_scale: float,
     noise_scale_w: float,
     length_scale: float,
     sid: int,  # In the original Bert-VITS2, its speaker_name: str, but here it's id
     language: Languages,
-    hps,
-    net_g,
+    hps: HyperParameters,
+    net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra],
     device: str,
     skip_start: bool = False,
     skip_end: bool = False,
@@ -159,25 +206,25 @@ def infer(
         ja_bert = ja_bert.to(device).unsqueeze(0)
         en_bert = en_bert.to(device).unsqueeze(0)
         x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
-        style_vec = torch.from_numpy(style_vec).to(device).unsqueeze(0)
+        style_vec_tensor = torch.from_numpy(style_vec).to(device).unsqueeze(0)
         del phones
         sid_tensor = torch.LongTensor([sid]).to(device)
         if is_jp_extra:
-            output = net_g.infer(
+            output = cast(SynthesizerTrnJPExtra, net_g).infer(
                 x_tst,
                 x_tst_lengths,
                 sid_tensor,
                 tones,
                 lang_ids,
                 ja_bert,
-                style_vec=style_vec,
+                style_vec=style_vec_tensor,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
                 length_scale=length_scale,
             )
         else:
-            output = net_g.infer(
+            output = cast(SynthesizerTrn, net_g).infer(
                 x_tst,
                 x_tst_lengths,
                 sid_tensor,
@@ -186,7 +233,7 @@ def infer(
                 bert,
                 ja_bert,
                 en_bert,
-                style_vec=style_vec,
+                style_vec=style_vec_tensor,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
@@ -203,111 +250,6 @@ def infer(
             ja_bert,
             en_bert,
             style_vec,
-        )  # , emo
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        return audio
-
-
-def infer_multilang(
-    text: str,
-    style_vec,
-    sdp_ratio: float,
-    noise_scale: float,
-    noise_scale_w: float,
-    length_scale: float,
-    sid: int,
-    language: Languages,
-    hps,
-    net_g,
-    device: str,
-    skip_start: bool = False,
-    skip_end: bool = False,
-):
-    bert, ja_bert, en_bert, phones, tones, lang_ids = [], [], [], [], [], []
-    # emo = get_emo_(reference_audio, emotion, sid)
-    # if isinstance(reference_audio, np.ndarray):
-    #     emo = get_clap_audio_feature(reference_audio, device)
-    # else:
-    #     emo = get_clap_text_feature(emotion, device)
-    # emo = torch.squeeze(emo, dim=1)
-    for idx, (txt, lang) in enumerate(zip(text, language)):
-        _skip_start = (idx != 0) or (skip_start and idx == 0)
-        _skip_end = (idx != len(language) - 1) or skip_end
-        (
-            temp_bert,
-            temp_ja_bert,
-            temp_en_bert,
-            temp_phones,
-            temp_tones,
-            temp_lang_ids,
-        ) = get_text(txt, lang, hps, device)  # type: ignore
-        if _skip_start:
-            temp_bert = temp_bert[:, 3:]
-            temp_ja_bert = temp_ja_bert[:, 3:]
-            temp_en_bert = temp_en_bert[:, 3:]
-            temp_phones = temp_phones[3:]
-            temp_tones = temp_tones[3:]
-            temp_lang_ids = temp_lang_ids[3:]
-        if _skip_end:
-            temp_bert = temp_bert[:, :-2]
-            temp_ja_bert = temp_ja_bert[:, :-2]
-            temp_en_bert = temp_en_bert[:, :-2]
-            temp_phones = temp_phones[:-2]
-            temp_tones = temp_tones[:-2]
-            temp_lang_ids = temp_lang_ids[:-2]
-        bert.append(temp_bert)
-        ja_bert.append(temp_ja_bert)
-        en_bert.append(temp_en_bert)
-        phones.append(temp_phones)
-        tones.append(temp_tones)
-        lang_ids.append(temp_lang_ids)
-    bert = torch.concatenate(bert, dim=1)
-    ja_bert = torch.concatenate(ja_bert, dim=1)
-    en_bert = torch.concatenate(en_bert, dim=1)
-    phones = torch.concatenate(phones, dim=0)
-    tones = torch.concatenate(tones, dim=0)
-    lang_ids = torch.concatenate(lang_ids, dim=0)
-    with torch.no_grad():
-        x_tst = phones.to(device).unsqueeze(0)
-        tones = tones.to(device).unsqueeze(0)
-        lang_ids = lang_ids.to(device).unsqueeze(0)
-        bert = bert.to(device).unsqueeze(0)
-        ja_bert = ja_bert.to(device).unsqueeze(0)
-        en_bert = en_bert.to(device).unsqueeze(0)
-        # emo = emo.to(device).unsqueeze(0)
-        x_tst_lengths = torch.LongTensor([phones.size(0)]).to(device)
-        del phones
-        speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
-        audio = (
-            net_g.infer(
-                x_tst,
-                x_tst_lengths,
-                speakers,
-                tones,
-                lang_ids,
-                bert,
-                ja_bert,
-                en_bert,
-                style_vec=style_vec,
-                sdp_ratio=sdp_ratio,
-                noise_scale=noise_scale,
-                noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
-            )[0][0, 0]
-            .data.cpu()
-            .float()
-            .numpy()
-        )
-        del (
-            x_tst,
-            tones,
-            lang_ids,
-            bert,
-            x_tst_lengths,
-            speakers,
-            ja_bert,
-            en_bert,
         )  # , emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
