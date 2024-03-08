@@ -19,12 +19,28 @@ from style_bert_vits2.constants import (
 )
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models.infer import InvalidToneError
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
 from style_bert_vits2.tts_model import ModelHolder
 
-languages = [l.value for l in Languages]
 
+# pyopenjtalk_worker を起動
+## Gradio はマルチスレッドだが、initialize() 内部で利用されている signal はマルチスレッドから設定できない
+## さらに起動には若干時間がかかるため、事前に起動しておいた方が体験が良い
+pyopenjtalk.initialize()
+
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
+bert_models.load_model(Languages.EN)
+bert_models.load_tokenizer(Languages.EN)
+bert_models.load_model(Languages.ZH)
+bert_models.load_tokenizer(Languages.ZH)
+
+languages = [l.value for l in Languages]
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
 

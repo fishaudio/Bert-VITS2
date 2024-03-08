@@ -149,9 +149,11 @@ def save_last_download(latest_release):
 # 以降はAPIの設定
 
 # 最初に pyopenjtalk の辞書を更新
+## pyopenjtalk_worker の起動も同時に行われる
 update_dict()
 
-# 単語分割に使う BERT モデル/トークナイザーを事前にロードしておく
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
 ## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
 bert_models.load_model(Languages.JP)
 bert_models.load_tokenizer(Languages.JP)
@@ -301,7 +303,7 @@ def synthesis(request: SynthesisRequest):
         )
     sr, audio = model.infer(
         text=text,
-        language=request.language.value,
+        language=request.language,
         sdp_ratio=request.sdpRatio,
         noise=request.noise,
         noisew=request.noisew,
@@ -361,7 +363,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
         tone = [t for _, t in phone_tone]
         sr, audio = model.infer(
             text=text,
-            language=req.language.value,
+            language=req.language,
             sdp_ratio=req.sdpRatio,
             noise=req.noise,
             noisew=req.noisew,

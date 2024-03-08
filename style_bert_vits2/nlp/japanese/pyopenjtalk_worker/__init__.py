@@ -105,7 +105,12 @@ def initialize(port: int = WORKER_PORT) -> None:
     def signal_handler(signum: int, frame: Any):
         terminate()
 
-    signal.signal(signal.SIGTERM, signal_handler)
+    try:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+    except ValueError:
+        # signal only works in main thread
+        pass
 
 
 # top-level declaration

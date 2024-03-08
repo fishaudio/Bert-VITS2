@@ -15,6 +15,7 @@ from webui import (
     create_train_app,
 )
 
+
 # Get path settings
 with Path("configs/paths.yml").open("r", encoding="utf-8") as f:
     path_config: dict[str, str] = yaml.safe_load(f.read())
