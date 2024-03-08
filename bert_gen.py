@@ -6,11 +6,14 @@ import torch.multiprocessing as mp
 from tqdm import tqdm
 
 import commons
+import text.pyopenjtalk_worker as pyopenjtalk
 import utils
 from common.log import logger
 from common.stdout_wrapper import SAFE_STDOUT
 from config import config
 from text import cleaned_text_to_sequence, get_bert
+
+pyopenjtalk.initialize()
 
 
 def process_line(x):
