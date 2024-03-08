@@ -16,6 +16,7 @@ import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import requests
@@ -37,7 +38,7 @@ from style_bert_vits2.constants import (
     DEFAULT_SDP_RATIO,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
-    VERSION,
+    LATEST_VERSION,
     Languages,
 )
 from style_bert_vits2.logging import logger
@@ -212,7 +213,7 @@ router = APIRouter()
 
 @router.get("/version")
 def version() -> str:
-    return VERSION
+    return LATEST_VERSION
 
 
 class MoraTone(BaseModel):
@@ -265,7 +266,7 @@ class SynthesisRequest(BaseModel):
     silenceAfter: float = 0.5
     pitchScale: float = 1.0
     intonationScale: float = 1.0
-    speaker: str | None = None
+    speaker: Optional[str] = None
 
 
 @router.post("/synthesis", response_class=AudioResponse)

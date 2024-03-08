@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.text_processing.symbols import (
@@ -16,7 +17,7 @@ def extract_bert_feature(
     word2ph: list[int],
     language: Languages,
     device: torch.device | str,
-    assist_text: str | None = None,
+    assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
 ) -> torch.Tensor:
     """
@@ -27,7 +28,7 @@ def extract_bert_feature(
         word2ph (list[int]): 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
         language (Languages): テキストの言語
         device (torch.device | str): 推論に利用するデバイス
-        assist_text (str | None, optional): 補助テキスト (デフォルト: None)
+        assist_text (Optional[str], optional): 補助テキスト (デフォルト: None)
         assist_text_weight (float, optional): 補助テキストの重み (デフォルト: 0.7)
 
     Returns:

@@ -5,7 +5,7 @@
 
 import torch
 from torch.nn import functional as F
-from typing import Any
+from typing import Any, Optional
 
 
 def init_weights(m: torch.nn.Module, mean: float = 0.0, std: float = 0.01) -> None:
@@ -85,13 +85,13 @@ def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
     return torch.gather(x, 2, gather_indices)
 
 
-def rand_slice_segments(x: torch.Tensor, x_lengths: torch.Tensor | None = None, segment_size: int = 4) -> tuple[torch.Tensor, torch.Tensor]:
+def rand_slice_segments(x: torch.Tensor, x_lengths: Optional[torch.Tensor] = None, segment_size: int = 4) -> tuple[torch.Tensor, torch.Tensor]:
     """
     ランダムなセグメントをスライスする
 
     Args:
         x (torch.Tensor): 入力テンソル
-        x_lengths (torch.Tensor, optional): 各バッチの長さ (デフォルト: None)
+        x_lengths (Optional[torch.Tensor], optional): 各バッチの長さ (デフォルト: None)
         segment_size (int, optional): スライスのサイズ (デフォルト: 4)
 
     Returns:
@@ -141,13 +141,13 @@ def fused_add_tanh_sigmoid_multiply(input_a: torch.Tensor, input_b: torch.Tensor
     return acts
 
 
-def sequence_mask(length: torch.Tensor, max_length: int | None = None) -> torch.Tensor:
+def sequence_mask(length: torch.Tensor, max_length: Optional[int] = None) -> torch.Tensor:
     """
     シーケンスマスクを生成する
 
     Args:
         length (torch.Tensor): 各シーケンスの長さ
-        max_length (int | None): 最大のシーケンス長さ。指定されていない場合は length の最大値を使用
+        max_length (Optional[int]): 最大のシーケンス長さ。指定されていない場合は length の最大値を使用
 
     Returns:
         torch.Tensor: 生成されたシーケンスマスク
@@ -180,13 +180,13 @@ def generate_path(duration: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     return path
 
 
-def clip_grad_value_(parameters: torch.Tensor | list[torch.Tensor], clip_value: float | None, norm_type: float = 2.0) -> float:
+def clip_grad_value_(parameters: torch.Tensor | list[torch.Tensor], clip_value: Optional[float], norm_type: float = 2.0) -> float:
     """
     勾配の値をクリップする
 
     Args:
         parameters (torch.Tensor | list[torch.Tensor]): クリップするパラメータ
-        clip_value (float | None): クリップする値。None の場合はクリップしない
+        clip_value (Optional[float]): クリップする値。None の場合はクリップしない
         norm_type (float): ノルムの種類
 
     Returns:

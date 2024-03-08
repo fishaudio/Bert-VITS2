@@ -9,7 +9,7 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 """
 
 import gc
-from typing import cast
+from typing import cast, Optional
 
 import torch
 from transformers import (
@@ -35,23 +35,23 @@ __loaded_tokenizers: dict[Languages, PreTrainedTokenizer | PreTrainedTokenizerFa
 
 def load_model(
     language: Languages,
-    pretrained_model_name_or_path: str | None = None,
+    pretrained_model_name_or_path: Optional[str] = None,
 ) -> PreTrainedModel | DebertaV2Model:
     """
-    指定された言語の BERT モデルをロードし、ロード済みの BERT モデルを返す
-    一度ロードされていれば、ロード済みの BERT モデルを即座に返す
-    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある
-    ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき
+    指定された言語の BERT モデルをロードし、ロード済みの BERT モデルを返す。
+    一度ロードされていれば、ロード済みの BERT モデルを即座に返す。
+    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
+    ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき。
 
-    Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている
-    これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い
+    Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている。
+    これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い。
     - 日本語: ku-nlp/deberta-v2-large-japanese-char-wwm
     - 英語: microsoft/deberta-v3-large
     - 中国語: hfl/chinese-roberta-wwm-ext-large
 
     Args:
         language (Languages): ロードする学習済みモデルの対象言語
-        pretrained_model_name_or_path (str | None): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
+        pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
 
     Returns:
         PreTrainedModel | DebertaV2Model: ロード済みの BERT モデル
@@ -81,23 +81,23 @@ def load_model(
 
 def load_tokenizer(
     language: Languages,
-    pretrained_model_name_or_path: str | None = None,
+    pretrained_model_name_or_path: Optional[str] = None,
 ) -> PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer:
     """
-    指定された言語の BERT モデルをロードし、ロード済みの BERT トークナイザーを返す
-    一度ロードされていれば、ロード済みの BERT トークナイザーを即座に返す
-    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある
-    ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき
+    指定された言語の BERT モデルをロードし、ロード済みの BERT トークナイザーを返す。
+    一度ロードされていれば、ロード済みの BERT トークナイザーを即座に返す。
+    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
+    ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき。
 
-    Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている
-    これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い
+    Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている。
+    これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い。
     - 日本語: ku-nlp/deberta-v2-large-japanese-char-wwm
     - 英語: microsoft/deberta-v3-large
     - 中国語: hfl/chinese-roberta-wwm-ext-large
 
     Args:
         language (Languages): ロードする学習済みモデルの対象言語
-        pretrained_model_name_or_path (str | None): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
+        pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
 
     Returns:
         PreTrainedTokenizer | PreTrainedTokenizerFast | DebertaV2Tokenizer: ロード済みの BERT トークナイザー
@@ -127,7 +127,7 @@ def load_tokenizer(
 
 def unload_model(language: Languages) -> None:
     """
-    指定された言語の BERT モデルをアンロードする
+    指定された言語の BERT モデルをアンロードする。
 
     Args:
         language (Languages): アンロードする BERT モデルの言語
@@ -143,7 +143,7 @@ def unload_model(language: Languages) -> None:
 
 def unload_tokenizer(language: Languages) -> None:
     """
-    指定された言語の BERT トークナイザーをアンロードする
+    指定された言語の BERT トークナイザーをアンロードする。
 
     Args:
         language (Languages): アンロードする BERT トークナイザーの言語
@@ -159,7 +159,7 @@ def unload_tokenizer(language: Languages) -> None:
 
 def unload_all_models() -> None:
     """
-    すべての BERT モデルをアンロードする
+    すべての BERT モデルをアンロードする。
     """
 
     for language in list(__loaded_models.keys()):
@@ -169,7 +169,7 @@ def unload_all_models() -> None:
 
 def unload_all_tokenizers() -> None:
     """
-    すべての BERT トークナイザーをアンロードする
+    すべての BERT トークナイザーをアンロードする。
     """
 
     for language in list(__loaded_tokenizers.keys()):

@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 
 import utils
 from style_bert_vits2.constants import Languages
@@ -45,9 +46,9 @@ def get_text(
     language_str: Languages,
     hps,
     device: str,
-    assist_text: str | None = None,
+    assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
-    given_tone: list[int] | None = None,
+    given_tone: Optional[list[int]] = None,
 ):
     use_jp_extra = hps.version.endswith("JP-Extra")
     # 推論時のみ呼び出されるので、raise_yomi_error は False に設定
@@ -122,9 +123,9 @@ def infer(
     device: str,
     skip_start: bool = False,
     skip_end: bool = False,
-    assist_text: str | None = None,
+    assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
-    given_tone: list[int] | None = None,
+    given_tone: Optional[list[int]] = None,
 ):
     is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
