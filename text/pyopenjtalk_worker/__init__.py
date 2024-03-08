@@ -5,7 +5,7 @@ to avoid user dictionary access error
 
 from typing import Optional, Any
 
-from .worker_common import WOKER_PORT
+from .worker_common import WORKER_PORT
 from .worker_client import WorkerClient
 
 from common.log import logger
@@ -49,7 +49,7 @@ def unset_user_dict():
 # initialize module when imported
 
 
-def initialize(port: int = WOKER_PORT):
+def initialize(port: int = WORKER_PORT):
     import time
     import socket
     import sys

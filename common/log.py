@@ -14,4 +14,5 @@ log_format = (
     "<g>{time:MM-DD HH:mm:ss}</g> |<lvl>{level:^8}</lvl>| {file}:{line} | {message}"
 )
 
+# logger.add(SAFE_STDOUT, format=log_format, backtrace=True, diagnose=True, level="TRACE")
 logger.add(SAFE_STDOUT, format=log_format, backtrace=True, diagnose=True)

@@ -3,7 +3,7 @@ from enum import IntEnum, auto
 import socket
 import json
 
-WOKER_PORT: Final[int] = 7861
+WORKER_PORT: Final[int] = 7861
 HEADER_SIZE: Final[int] = 4
 
 
