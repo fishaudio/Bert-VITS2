@@ -255,7 +255,7 @@ def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
 
 
 def update_two_model_names_dropdown(model_holder: ModelHolder):
-    new_names, new_files, _ = model_holder.update_model_names_gr()
+    new_names, new_files, _ = model_holder.update_model_names_for_gradio()
     return new_names, new_files, new_names, new_files
 
 
@@ -444,12 +444,12 @@ def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
         audio_output = gr.Audio(label="結果")
 
         model_name_a.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name_a],
             outputs=[model_path_a],
         )
         model_name_b.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name_b],
             outputs=[model_path_b],
         )

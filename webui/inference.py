@@ -446,7 +446,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         )
 
         model_name.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name],
             outputs=[model_path],
         )
@@ -454,12 +454,12 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         model_path.change(make_non_interactive, outputs=[tts_button])
 
         refresh_button.click(
-            model_holder.update_model_names_gr,
+            model_holder.update_model_names_for_gradio,
             outputs=[model_name, model_path, tts_button],
         )
 
         load_button.click(
-            model_holder.load_model_gr,
+            model_holder.load_model_for_gradio,
             inputs=[model_name, model_path],
             outputs=[style, tts_button, speaker],
         )

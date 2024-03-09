@@ -25,54 +25,23 @@ from style_bert_vits2.models.infer import get_net_g, infer
 from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
 from style_bert_vits2.logging import logger
-
-
-def adjust_voice(
-    fs: int,
-    wave: NDArray[Any],
-    pitch_scale: float,
-    intonation_scale: float,
-) -> tuple[int, NDArray[Any]]:
-
-    if pitch_scale == 1.0 and intonation_scale == 1.0:
-        # 初期値の場合は、音質劣化を避けるためにそのまま返す
-        return fs, wave
-
-    try:
-        import pyworld
-    except ImportError:
-        raise ImportError(
-            "pyworld is not installed. Please install it by `pip install pyworld`"
-        )
-
-    # pyworld で f0 を加工して合成
-    # pyworld よりもよいのがあるかもしれないが……
-    ## pyworld は Cython で書かれているが、スタブファイルがないため型補完が全く効かない…
-
-    wave = wave.astype(np.double)
-
-    # 質が高そうだしとりあえずharvestにしておく
-    f0, t = pyworld.harvest(wave, fs)  # type: ignore
-
-    sp = pyworld.cheaptrick(wave, f0, t, fs)  # type: ignore
-    ap = pyworld.d4c(wave, f0, t, fs)  # type: ignore
-
-    non_zero_f0 = [f for f in f0 if f != 0]
-    f0_mean = sum(non_zero_f0) / len(non_zero_f0)
-
-    for i, f in enumerate(f0):
-        if f == 0:
-            continue
-        f0[i] = pitch_scale * f0_mean + intonation_scale * (f - f0_mean)
-
-    wave = pyworld.synthesize(f0, sp, ap, fs)  # type: ignore
-    return fs, wave
+from style_bert_vits2.voice import adjust_voice
 
 
 class Model:
+    """
+    Style-Bert-Vits2 の音声合成モデルを操作するためのクラス
+    モデル/ハイパーパラメータ/スタイルベクトルのパスとデバイスを指定して初期化し、model.infer() メソッドを呼び出すと音声合成を行える
+    """
+
+
     def __init__(
-        self, model_path: Path, config_path: Path, style_vec_path: Path, device: str
-    ):
+        self,
+        model_path: Path,
+        config_path: Path,
+        style_vec_path: Path,
+        device: str,
+    ) -> None:
         self.model_path: Path = model_path
         self.config_path: Path = config_path
         self.style_vec_path: Path = style_vec_path
@@ -99,7 +68,8 @@ class Model:
 
         self.net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
-    def load_net_g(self):
+
+    def load_net_g(self) -> None:
         self.net_g = get_net_g(
             model_path=str(self.model_path),
             version=self.hps.version,
@@ -107,21 +77,22 @@ class Model:
             hps=self.hps,
         )
 
+
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         mean = self.style_vectors[0]
         style_vec = self.style_vectors[style_id]
         style_vec = mean + (style_vec - mean) * weight
         return style_vec
 
-    def get_style_vector_from_audio(
-        self, audio_path: str, weight: float = 1.0
-    ) -> NDArray[Any]:
+
+    def get_style_vector_from_audio(self, audio_path: str, weight: float = 1.0) -> NDArray[Any]:
         from style_gen import get_style_vector
 
         xvec = get_style_vector(audio_path)
         mean = self.style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
+
 
     def infer(
         self,
@@ -167,20 +138,20 @@ class Model:
         if not line_split:
             with torch.no_grad():
                 audio = infer(
-                    text=text,
-                    sdp_ratio=sdp_ratio,
-                    noise_scale=noise,
-                    noise_scale_w=noisew,
-                    length_scale=length,
-                    sid=sid,
-                    language=language,
-                    hps=self.hps,
-                    net_g=self.net_g,
-                    device=self.device,
-                    assist_text=assist_text,
-                    assist_text_weight=assist_text_weight,
-                    style_vec=style_vector,
-                    given_tone=given_tone,
+                    text = text,
+                    sdp_ratio = sdp_ratio,
+                    noise_scale = noise,
+                    noise_scale_w = noisew,
+                    length_scale = length,
+                    sid = sid,
+                    language = language,
+                    hps = self.hps,
+                    net_g = self.net_g,
+                    device = self.device,
+                    assist_text = assist_text,
+                    assist_text_weight = assist_text_weight,
+                    style_vec = style_vector,
+                    given_tone = given_tone,
                 )
         else:
             texts = text.split("\n")
@@ -190,19 +161,19 @@ class Model:
                 for i, t in enumerate(texts):
                     audios.append(
                         infer(
-                            text=t,
-                            sdp_ratio=sdp_ratio,
-                            noise_scale=noise,
-                            noise_scale_w=noisew,
-                            length_scale=length,
-                            sid=sid,
-                            language=language,
-                            hps=self.hps,
-                            net_g=self.net_g,
-                            device=self.device,
-                            assist_text=assist_text,
-                            assist_text_weight=assist_text_weight,
-                            style_vec=style_vector,
+                            text = t,
+                            sdp_ratio = sdp_ratio,
+                            noise_scale = noise,
+                            noise_scale_w = noisew,
+                            length_scale = length,
+                            sid = sid,
+                            language = language,
+                            hps = self.hps,
+                            net_g = self.net_g,
+                            device = self.device,
+                            assist_text = assist_text,
+                            assist_text_weight = assist_text_weight,
+                            style_vec = style_vector,
                         )
                     )
                     if i != len(texts) - 1:
@@ -211,10 +182,10 @@ class Model:
         logger.info("Audio data generated successfully")
         if not (pitch_scale == 1.0 and intonation_scale == 1.0):
             _, audio = adjust_voice(
-                fs=self.hps.data.sampling_rate,
-                wave=audio,
-                pitch_scale=pitch_scale,
-                intonation_scale=intonation_scale,
+                fs = self.hps.data.sampling_rate,
+                wave = audio,
+                pitch_scale = pitch_scale,
+                intonation_scale = intonation_scale,
             )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -223,8 +194,13 @@ class Model:
 
 
 class ModelHolder:
-    def __init__(self, root_dir: Path, device: str):
-        self.root_dir: Path = root_dir
+    """
+    Style-Bert-Vits2 の音声合成モデルを管理するためのクラス
+    """
+
+
+    def __init__(self, model_root_dir: Path, device: str) -> None:
+        self.root_dir: Path = model_root_dir
         self.device: str = device
         self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[Model] = None
@@ -233,7 +209,8 @@ class ModelHolder:
         self.models_info: list[dict[str, Union[str, list[str]]]] = []
         self.refresh()
 
-    def refresh(self):
+
+    def refresh(self) -> None:
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
@@ -269,7 +246,8 @@ class ModelHolder:
                 "speakers": speakers,
             })
 
-    def load_model(self, model_name: str, model_path_str: str):
+
+    def load_model(self, model_name: str, model_path_str: str) -> Model:
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
@@ -277,16 +255,15 @@ class ModelHolder:
             raise ValueError(f"Model file `{model_path}` is not found")
         if self.current_model is None or self.current_model.model_path != model_path:
             self.current_model = Model(
-                model_path=model_path,
-                config_path=self.root_dir / model_name / "config.json",
-                style_vec_path=self.root_dir / model_name / "style_vectors.npy",
-                device=self.device,
+                model_path = model_path,
+                config_path = self.root_dir / model_name / "config.json",
+                style_vec_path = self.root_dir / model_name / "style_vectors.npy",
+                device = self.device,
             )
         return self.current_model
 
-    def load_model_gr(
-        self, model_name: str, model_path_str: str
-    ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
+
+    def load_model_for_gradio(self, model_name: str, model_path_str: str) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
@@ -305,10 +282,10 @@ class ModelHolder:
                 gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
             )
         self.current_model = Model(
-            model_path=model_path,
-            config_path=self.root_dir / model_name / "config.json",
-            style_vec_path=self.root_dir / model_name / "style_vectors.npy",
-            device=self.device,
+            model_path = model_path,
+            config_path = self.root_dir / model_name / "config.json",
+            style_vec_path = self.root_dir / model_name / "style_vectors.npy",
+            device = self.device,
         )
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
@@ -318,11 +295,13 @@ class ModelHolder:
             gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
         )
 
-    def update_model_files_gr(self, model_name: str) -> gr.Dropdown:
+
+    def update_model_files_for_gradio(self, model_name: str) -> gr.Dropdown:
         model_files = self.model_files_dict[model_name]
         return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
 
-    def update_model_names_gr(self) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
+
+    def update_model_names_for_gradio(self) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
         self.refresh()
         initial_model_name = self.model_names[0]
         initial_model_files = self.model_files_dict[initial_model_name]
