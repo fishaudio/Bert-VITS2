@@ -8,7 +8,7 @@ from style_bert_vits2.nlp.symbols import (
 )
 
 # __init__.py は配下のモジュールをインポートした時点で実行される
-# Pytorch のインポートは重いので、型チェック時以外はインポートしない
+# PyTorch のインポートは重いので、型チェック時以外はインポートしない
 if TYPE_CHECKING:
     import torch
 
