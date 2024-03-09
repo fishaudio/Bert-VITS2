@@ -5,7 +5,7 @@ import gradio as gr
 import torch
 import yaml
 
-from style_bert_vits2.constants import GRADIO_THEME, LATEST_VERSION
+from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.tts_model import ModelHolder
 from webui import (
     create_dataset_app,
@@ -37,7 +37,7 @@ if device == "cuda" and not torch.cuda.is_available():
 model_holder = ModelHolder(Path(assets_root), device)
 
 with gr.Blocks(theme=GRADIO_THEME) as app:
-    gr.Markdown(f"# Style-Bert-VITS2 WebUI (version {LATEST_VERSION})")
+    gr.Markdown(f"# Style-Bert-VITS2 WebUI (version {VERSION})")
     with gr.Tabs():
         with gr.Tab("音声合成"):
             create_inference_app(model_holder=model_holder)

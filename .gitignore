@@ -3,6 +3,7 @@
 __pycache__/
 venv/
 .venv/
+dist/
 .ipynb_checkpoints/
 
 /*.yml

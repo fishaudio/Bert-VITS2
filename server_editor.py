@@ -37,7 +37,7 @@ from style_bert_vits2.constants import (
     DEFAULT_SDP_RATIO,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
-    LATEST_VERSION,
+    VERSION,
     Languages,
 )
 from style_bert_vits2.logging import logger
@@ -219,7 +219,7 @@ router = APIRouter()
 
 @router.get("/version")
 def version() -> str:
-    return LATEST_VERSION
+    return VERSION
 
 
 class MoraTone(BaseModel):

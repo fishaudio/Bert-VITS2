@@ -4,7 +4,7 @@ from style_bert_vits2.utils.strenum import StrEnum
 
 
 # Style-Bert-VITS2 のバージョン
-LATEST_VERSION = "2.4"
+VERSION = "2.4"
 
 # Style-Bert-VITS2 のベースディレクトリ
 BASE_DIR = Path(__file__).parent.parent
