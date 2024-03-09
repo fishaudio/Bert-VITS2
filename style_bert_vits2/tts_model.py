@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 import gradio as gr
 import numpy as np
+import pyannote.audio
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
 from numpy.typing import NDArray
@@ -30,8 +31,8 @@ from style_bert_vits2.voice import adjust_voice
 
 class Model:
     """
-    Style-Bert-Vits2 の音声合成モデルを操作するためのクラス
-    モデル/ハイパーパラメータ/スタイルベクトルのパスとデバイスを指定して初期化し、model.infer() メソッドを呼び出すと音声合成を行える
+    Style-Bert-Vits2 の音声合成モデルを操作するためのクラス。
+    モデル/ハイパーパラメータ/スタイルベクトルのパスとデバイスを指定して初期化し、model.infer() メソッドを呼び出すと音声合成を行える。
     """
 
 
@@ -46,50 +47,81 @@ class Model:
         self.config_path: Path = config_path
         self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.hps: HyperParameters = HyperParameters.load_from_json(self.config_path)
-        self.spk2id: dict[str, int] = self.hps.data.spk2id
+        self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(self.config_path)
+        self.spk2id: dict[str, int] = self.hyper_parameters.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
-        self.num_styles: int = self.hps.data.num_styles
-        if hasattr(self.hps.data, "style2id"):
-            self.style2id: dict[str, int] = self.hps.data.style2id
+        num_styles: int = self.hyper_parameters.data.num_styles
+        if hasattr(self.hyper_parameters.data, "style2id"):
+            self.style2id: dict[str, int] = self.hyper_parameters.data.style2id
         else:
-            self.style2id: dict[str, int] = {str(i): i for i in range(self.num_styles)}
-        if len(self.style2id) != self.num_styles:
+            self.style2id: dict[str, int] = {str(i): i for i in range(num_styles)}
+        if len(self.style2id) != num_styles:
             raise ValueError(
-                f"Number of styles ({self.num_styles}) does not match the number of style2id ({len(self.style2id)})"
+                f"Number of styles ({num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        self.style_vectors: NDArray[Any] = np.load(self.style_vec_path)
-        if self.style_vectors.shape[0] != self.num_styles:
+        self.__style_vector_inference: Optional[pyannote.audio.Inference] = None
+        self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
+        if self.__style_vectors.shape[0] != num_styles:
             raise ValueError(
-                f"The number of styles ({self.num_styles}) does not match the number of style vectors ({self.style_vectors.shape[0]})"
+                f"The number of styles ({num_styles}) does not match the number of style vectors ({self.__style_vectors.shape[0]})"
             )
 
-        self.net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
+        self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
 
     def load_net_g(self) -> None:
-        self.net_g = get_net_g(
+        """
+        net_g をロードする。
+        """
+        self.__net_g = get_net_g(
             model_path=str(self.model_path),
-            version=self.hps.version,
+            version=self.hyper_parameters.version,
             device=self.device,
-            hps=self.hps,
+            hps=self.hyper_parameters,
         )
 
 
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
-        mean = self.style_vectors[0]
-        style_vec = self.style_vectors[style_id]
+        """
+        スタイルベクトルを取得する。
+
+        Args:
+            style_id (int): スタイル ID
+            weight (float, optional): スタイルベクトルの重み. Defaults to 1.0.
+
+        Returns:
+            NDArray[Any]: スタイルベクトル
+        """
+        mean = self.__style_vectors[0]
+        style_vec = self.__style_vectors[style_id]
         style_vec = mean + (style_vec - mean) * weight
         return style_vec
 
 
     def get_style_vector_from_audio(self, audio_path: str, weight: float = 1.0) -> NDArray[Any]:
-        from style_gen import get_style_vector
+        """
+        音声からスタイルベクトルを推論する。
 
-        xvec = get_style_vector(audio_path)
-        mean = self.style_vectors[0]
+        Args:
+            audio_path (str): 音声ファイルのパス
+            weight (float, optional): スタイルベクトルの重み. Defaults to 1.0.
+        Returns:
+            NDArray[Any]: スタイルベクトル
+        """
+
+        # スタイルベクトルを取得するための推論モデルを初期化
+        if self.__style_vector_inference is None:
+            self.__style_vector_inference = pyannote.audio.Inference(
+                model = pyannote.audio.Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM"),
+                window = "whole",
+            )
+            self.__style_vector_inference.to(torch.device(self.device))
+
+        # 音声からスタイルベクトルを推論
+        xvec = self.__style_vector_inference(audio_path)
+        mean = self.__style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
 
@@ -116,7 +148,7 @@ class Model:
         intonation_scale: float = 1.0,
     ) -> tuple[int, NDArray[Any]]:
         logger.info(f"Start generating audio data from text:\n{text}")
-        if language != "JP" and self.hps.version.endswith("JP-Extra"):
+        if language != "JP" and self.hyper_parameters.version.endswith("JP-Extra"):
             raise ValueError(
                 "The model is trained with JP-Extra, but the language is not JP"
             )
@@ -125,9 +157,9 @@ class Model:
         if assist_text == "" or not use_assist_text:
             assist_text = None
 
-        if self.net_g is None:
+        if self.__net_g is None:
             self.load_net_g()
-        assert self.net_g is not None
+        assert self.__net_g is not None
         if reference_audio_path is None:
             style_id = self.style2id[style]
             style_vector = self.get_style_vector(style_id, style_weight)
@@ -145,8 +177,8 @@ class Model:
                     length_scale = length,
                     sid = sid,
                     language = language,
-                    hps = self.hps,
-                    net_g = self.net_g,
+                    hps = self.hyper_parameters,
+                    net_g = self.__net_g,
                     device = self.device,
                     assist_text = assist_text,
                     assist_text_weight = assist_text_weight,
@@ -168,8 +200,8 @@ class Model:
                             length_scale = length,
                             sid = sid,
                             language = language,
-                            hps = self.hps,
-                            net_g = self.net_g,
+                            hps = self.hyper_parameters,
+                            net_g = self.__net_g,
                             device = self.device,
                             assist_text = assist_text,
                             assist_text_weight = assist_text_weight,
@@ -182,7 +214,7 @@ class Model:
         logger.info("Audio data generated successfully")
         if not (pitch_scale == 1.0 and intonation_scale == 1.0):
             _, audio = adjust_voice(
-                fs = self.hps.data.sampling_rate,
+                fs = self.hyper_parameters.data.sampling_rate,
                 wave = audio,
                 pitch_scale = pitch_scale,
                 intonation_scale = intonation_scale,
@@ -190,12 +222,12 @@ class Model:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             audio = convert_to_16_bit_wav(audio)
-        return (self.hps.data.sampling_rate, audio)
+        return (self.hyper_parameters.data.sampling_rate, audio)
 
 
 class ModelHolder:
     """
-    Style-Bert-Vits2 の音声合成モデルを管理するためのクラス
+    Style-Bert-Vits2 の音声合成モデルを管理するためのクラス。
     """
 
 
@@ -234,10 +266,10 @@ class ModelHolder:
                 continue
             self.model_files_dict[model_dir.name] = model_files
             self.model_names.append(model_dir.name)
-            hps = HyperParameters.load_from_json(config_path)
-            style2id: dict[str, int] = hps.data.style2id
+            hyper_parameters = HyperParameters.load_from_json(config_path)
+            style2id: dict[str, int] = hyper_parameters.data.style2id
             styles = list(style2id.keys())
-            spk2id: dict[str, int] = hps.data.spk2id
+            spk2id: dict[str, int] = hyper_parameters.data.spk2id
             speakers = list(spk2id.keys())
             self.models_info.append({
                 "name": model_dir.name,

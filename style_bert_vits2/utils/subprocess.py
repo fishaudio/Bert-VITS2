@@ -8,7 +8,7 @@ from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[bool, str]:
     """
-    指定されたコマンドを実行し、そのログを記録する
+    指定されたコマンドを実行し、そのログを記録する。
 
     Args:
         cmd: 実行するコマンドのリスト
@@ -39,7 +39,7 @@ def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[b
 
 def second_elem_of(original_function: Callable[..., tuple[Any, Any]]) -> Callable[..., Any]:
     """
-    与えられた関数をラップし、その戻り値の 2 番目の要素のみを返す関数を生成する
+    与えられた関数をラップし、その戻り値の 2 番目の要素のみを返す関数を生成する。
 
     Args:
         original_function (Callable[..., tuple[Any, Any]])): ラップする元の関数

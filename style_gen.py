@@ -6,11 +6,10 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from config import config
 from style_bert_vits2.logging import logger
-from style_bert_vits2.models import utils
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
-from config import config
 
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
