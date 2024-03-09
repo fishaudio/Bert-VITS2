@@ -42,6 +42,7 @@ from style_bert_vits2.constants import (
 )
 from style_bert_vits2.logging import logger
 from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
 from style_bert_vits2.nlp.japanese.user_dict import (
@@ -148,8 +149,11 @@ def save_last_download(latest_release):
 # ---フロントエンド部分に関する処理ここまで---
 # 以降はAPIの設定
 
-# 最初に pyopenjtalk の辞書を更新
-## pyopenjtalk_worker の起動も同時に行われる
+# pyopenjtalk_worker を起動
+## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
+pyopenjtalk.initialize()
+
+# pyopenjtalk の辞書を更新
 update_dict()
 
 # 事前に BERT モデル/トークナイザーをロードしておく

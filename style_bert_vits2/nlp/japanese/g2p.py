@@ -112,10 +112,6 @@ def text_to_sep_kata(
         tuple[list[str], list[str]]: 分割された単語リストと、その読み（カタカナ or 記号1文字）のリスト
     """
 
-    # pyopenjtalk_worker を初期化
-    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
-    pyopenjtalk.initialize()
-
     # parsed: OpenJTalkの解析結果
     parsed = pyopenjtalk.run_frontend(norm_text)
     sep_text: list[str] = []
@@ -248,10 +244,6 @@ def __pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> l
         if match is None:
             return -50
         return int(match.group(1))
-
-    # pyopenjtalk_worker を初期化
-    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
-    pyopenjtalk.initialize()
 
     labels = pyopenjtalk.make_label(pyopenjtalk.run_frontend(text))
     N = len(labels)

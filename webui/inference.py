@@ -27,8 +27,7 @@ from style_bert_vits2.tts_model import ModelHolder
 
 
 # pyopenjtalk_worker を起動
-## Gradio はマルチスレッドだが、initialize() 内部で利用されている signal はマルチスレッドから設定できない
-## さらに起動には若干時間がかかるため、事前に起動しておいた方が体験が良い
+## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
 pyopenjtalk.initialize()
 
 # 事前に BERT モデル/トークナイザーをロードしておく

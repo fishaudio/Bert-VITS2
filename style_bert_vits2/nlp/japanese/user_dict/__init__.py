@@ -80,10 +80,6 @@ def update_dict(
         コンパイル済み辞書ファイルのパス
     """
 
-    # pyopenjtalk_worker を初期化
-    ## 一度 worker を起動すれば、明示的に終了するかプロセス終了まで同一の worker に接続される
-    pyopenjtalk.initialize()
-
     random_string = uuid4()
     tmp_csv_path = compiled_dict_path.with_suffix(
         f".dict_csv-{random_string}.tmp"
