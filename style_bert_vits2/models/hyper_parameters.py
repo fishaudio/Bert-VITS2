@@ -39,8 +39,8 @@ class HyperParametersTrain(BaseModel):
 
 class HyperParametersData(BaseModel):
     use_jp_extra: bool = True
-    training_files: str = "Data/dummy/train.list"
-    validation_files: str = "Data/dummy/val.list"
+    training_files: str = "Data/Dummy/train.list"
+    validation_files: str = "Data/Dummy/val.list"
     max_wav_value: float = 32768.0
     sampling_rate: int = 44100
     filter_length: int = 2048
@@ -53,13 +53,20 @@ class HyperParametersData(BaseModel):
     n_speakers: int = 512
     cleaned_text: bool = True
     spk2id: dict[str, int] = {
-      "dummy": 0
+      "Dummy": 0,
     }
     num_styles: int = 1
     style2id: dict[str, int] = {
       "Neutral": 0,
     }
 
+
+class HyperParametersModelSLM(BaseModel):
+    model: str = "./slm/wavlm-base-plus"
+    sr: int = 16000
+    hidden: int = 768
+    nlayers: int = 13
+    initial_channel: int = 64
 
 class HyperParametersModel(BaseModel):
     use_spk_conditioned_encoder: bool = True
@@ -79,7 +86,7 @@ class HyperParametersModel(BaseModel):
     resblock_dilation_sizes: list[list[int]] = [
         [1, 3, 5],
         [1, 3, 5],
-        [1, 3, 5]
+        [1, 3, 5],
     ]
     upsample_rates: list[int] = [8, 8, 2, 2, 2]
     upsample_initial_channel: int = 512
@@ -87,21 +94,15 @@ class HyperParametersModel(BaseModel):
     n_layers_q: int = 3
     use_spectral_norm: bool = False
     gin_channels: int = 512
-    slm: dict[str, Union[int, str]] = {
-        "model": "./slm/wavlm-base-plus",
-        "sr": 16000,
-        "hidden": 768,
-        "nlayers": 13,
-        "initial_channel": 64
-    }
+    slm: HyperParametersModelSLM = HyperParametersModelSLM()
 
 
 class HyperParameters(BaseModel):
-    model_name: str = 'dummy'
+    model_name: str = 'Dummy'
     version: str = "2.0-JP-Extra"
-    train: HyperParametersTrain
-    data: HyperParametersData
-    model: HyperParametersModel
+    train: HyperParametersTrain = HyperParametersTrain()
+    data: HyperParametersData = HyperParametersData()
+    model: HyperParametersModel = HyperParametersModel()
 
     # 以下は学習時にのみ動的に設定されるパラメータ (通常 config.json には存在しない)
     model_dir: Optional[str] = None
