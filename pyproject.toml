@@ -36,7 +36,7 @@ dependencies = [
     'pydantic>=2.0',
     'pyopenjtalk-dict',
     'pypinyin',
-    # 'pyworld',
+    'pyworld-prebuilt',
     'safetensors',
     'scipy',
     'torch>=2.1,<2.2',

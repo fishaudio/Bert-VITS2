@@ -19,7 +19,7 @@ pyloudnorm
 # pyopenjtalk-prebuilt  # Should be manually uninstalled
 pyopenjtalk-dict
 pypinyin
-# pyworld  # Not supported on Windows without Cython...
+pyworld-prebuilt
 PyYAML
 requests
 safetensors

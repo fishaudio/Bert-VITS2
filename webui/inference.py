@@ -294,7 +294,6 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     value=1,
                     step=0.05,
                     label="音程(1以外では音質劣化)",
-                    visible=False,  # pyworldが必要
                 )
                 intonation_scale = gr.Slider(
                     minimum=0,
@@ -302,7 +301,6 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     value=1,
                     step=0.1,
                     label="抑揚(1以外では音質劣化)",
-                    visible=False,  # pyworldが必要
                 )
 
                 line_split = gr.Checkbox(
