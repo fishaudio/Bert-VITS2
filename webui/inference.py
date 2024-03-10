@@ -28,7 +28,7 @@ from style_bert_vits2.tts_model import ModelHolder
 
 # pyopenjtalk_worker を起動
 ## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
-pyopenjtalk.initialize()
+pyopenjtalk.initialize_worker()
 
 # 事前に BERT モデル/トークナイザーをロードしておく
 ## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い

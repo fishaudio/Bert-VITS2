@@ -18,38 +18,58 @@ WORKER_CLIENT: Optional[WorkerClient] = None
 
 
 def run_frontend(text: str) -> list[dict[str, Any]]:
-    assert WORKER_CLIENT
-    ret = WORKER_CLIENT.dispatch_pyopenjtalk("run_frontend", text)
-    assert isinstance(ret, list)
-    return ret
+    if WORKER_CLIENT is not None:
+        ret = WORKER_CLIENT.dispatch_pyopenjtalk("run_frontend", text)
+        assert isinstance(ret, list)
+        return ret
+    else:
+        # without worker
+        import pyopenjtalk
+        return pyopenjtalk.run_frontend(text)
 
 
 def make_label(njd_features: Any) -> list[str]:
-    assert WORKER_CLIENT
-    ret = WORKER_CLIENT.dispatch_pyopenjtalk("make_label", njd_features)
-    assert isinstance(ret, list)
-    return ret
+    if WORKER_CLIENT is not None:
+        ret = WORKER_CLIENT.dispatch_pyopenjtalk("make_label", njd_features)
+        assert isinstance(ret, list)
+        return ret
+    else:
+        # without worker
+        import pyopenjtalk
+        return pyopenjtalk.make_label(njd_features)
 
 
-def mecab_dict_index(path: str, out_path: str, dn_mecab: Optional[str] = None):
-    assert WORKER_CLIENT
-    WORKER_CLIENT.dispatch_pyopenjtalk("mecab_dict_index", path, out_path, dn_mecab)
+def mecab_dict_index(path: str, out_path: str, dn_mecab: Optional[str] = None) -> None:
+    if WORKER_CLIENT is not None:
+        WORKER_CLIENT.dispatch_pyopenjtalk("mecab_dict_index", path, out_path, dn_mecab)
+    else:
+        # without worker
+        import pyopenjtalk
+        pyopenjtalk.mecab_dict_index(path, out_path, dn_mecab)
 
 
-def update_global_jtalk_with_user_dict(path: str):
-    assert WORKER_CLIENT
-    WORKER_CLIENT.dispatch_pyopenjtalk("update_global_jtalk_with_user_dict", path)
+def update_global_jtalk_with_user_dict(path: str) -> None:
+    if WORKER_CLIENT is not None:
+        WORKER_CLIENT.dispatch_pyopenjtalk("update_global_jtalk_with_user_dict", path)
+    else:
+        # without worker
+        import pyopenjtalk
+        pyopenjtalk.update_global_jtalk_with_user_dict(path)
 
 
-def unset_user_dict():
-    assert WORKER_CLIENT
-    WORKER_CLIENT.dispatch_pyopenjtalk("unset_user_dict")
+def unset_user_dict() -> None:
+    if WORKER_CLIENT is not None:
+        WORKER_CLIENT.dispatch_pyopenjtalk("unset_user_dict")
+    else:
+        # without worker
+        import pyopenjtalk
+        pyopenjtalk.unset_user_dict()
 
 
 # initialize module when imported
 
 
-def initialize(port: int = WORKER_PORT) -> None:
+def initialize_worker(port: int = WORKER_PORT) -> None:
     import atexit
     import signal
     import socket
@@ -99,11 +119,11 @@ def initialize(port: int = WORKER_PORT) -> None:
 
     logger.debug("pyopenjtalk worker server started")
     WORKER_CLIENT = client
-    atexit.register(terminate)
+    atexit.register(terminate_worker)
 
     # when the process is killed
     def signal_handler(signum: int, frame: Any):
-        terminate()
+        terminate_worker()
 
     try:
         signal.signal(signal.SIGTERM, signal_handler)
@@ -113,13 +133,13 @@ def initialize(port: int = WORKER_PORT) -> None:
 
 
 # top-level declaration
-def terminate() -> None:
+def terminate_worker() -> None:
     logger.debug("pyopenjtalk worker server terminated")
     global WORKER_CLIENT
     if not WORKER_CLIENT:
         return
 
-    # repare for unexpected errors
+    # prepare for unexpected errors
     try:
         if WORKER_CLIENT.status() == 1:
             WORKER_CLIENT.quit_server()

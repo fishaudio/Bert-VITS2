@@ -151,7 +151,7 @@ def save_last_download(latest_release):
 
 # pyopenjtalk_worker を起動
 ## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
-pyopenjtalk.initialize()
+pyopenjtalk.initialize_worker()
 
 # pyopenjtalk の辞書を更新
 update_dict()
