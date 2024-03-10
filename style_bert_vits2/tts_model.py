@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Any, Optional, Union, TypedDict
+from typing import Any, Optional, Union
 
 import gradio as gr
 import numpy as np
@@ -8,6 +8,7 @@ import pyannote.audio
 import torch
 from gradio.processing_utils import convert_to_16_bit_wav
 from numpy.typing import NDArray
+from pydantic import BaseModel
 
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
@@ -263,7 +264,7 @@ class TTSModel:
         return (self.hyper_parameters.data.sampling_rate, audio)
 
 
-class TTSModelInfo(TypedDict):
+class TTSModelInfo(BaseModel):
     name: str
     files: list[str]
     styles: list[str]
@@ -341,12 +342,12 @@ class TTSModelHolder:
             styles = list(style2id.keys())
             spk2id: dict[str, int] = hyper_parameters.data.spk2id
             speakers = list(spk2id.keys())
-            self.models_info.append({
-                "name": model_dir.name,
-                "files": [str(f) for f in model_files],
-                "styles": styles,
-                "speakers": speakers,
-            })
+            self.models_info.append(TTSModelInfo(
+                name = model_dir.name,
+                files = [str(f) for f in model_files],
+                styles = styles,
+                speakers = speakers,
+            ))
 
 
     def get_model(self, model_name: str, model_path_str: str) -> TTSModel:

@@ -13,12 +13,12 @@ def synthesize(device: str = 'cpu'):
 
         # jvnv-F2-jp モデルを探す
         for model_info in model_holder.models_info:
-            if model_info['name'] == 'jvnv-F2-jp':
+            if model_info.name == 'jvnv-F2-jp':
                 # すべてのスタイルに対して音声合成を実行
-                for style in model_info['styles']:
+                for style in model_info.styles:
 
                     # 音声合成を実行
-                    model = model_holder.get_model(model_info['name'], model_info['files'][0])
+                    model = model_holder.get_model(model_info.name, model_info.files[0])
                     model.load()
                     sample_rate, audio_data = model.infer(
                         "あらゆる現実を、すべて自分のほうへねじ曲げたのだ。",

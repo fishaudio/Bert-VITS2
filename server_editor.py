@@ -52,7 +52,7 @@ from style_bert_vits2.nlp.japanese.user_dict import (
     rewrite_word,
     update_dict,
 )
-from style_bert_vits2.tts_model import TTSModelHolder
+from style_bert_vits2.tts_model import TTSModelHolder, TTSModelInfo
 
 
 # ---フロントエンド部分に関する処理---
@@ -250,7 +250,7 @@ async def normalize(item: TextRequest):
     return normalize_text(item.text)
 
 
-@router.get("/models_info")
+@router.get("/models_info", response_model=list[TTSModelInfo])
 def models_info():
     return model_holder.models_info
 
