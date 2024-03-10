@@ -29,9 +29,9 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.voice import adjust_voice
 
 
-class Model:
+class TTSModel:
     """
-    Style-Bert-Vits2 の音声合成モデルを操作するためのクラス。
+    Style-Bert-Vits2 の音声合成モデルを操作するクラス。
     モデル/ハイパーパラメータ/スタイルベクトルのパスとデバイスを指定して初期化し、model.infer() メソッドを呼び出すと音声合成を行える。
     """
 
@@ -43,6 +43,17 @@ class Model:
         style_vec_path: Path,
         device: str,
     ) -> None:
+        """
+        Style-Bert-Vits2 の音声合成モデルを初期化する。
+        この時点ではモデルはロードされていない (明示的にロードしたい場合は model.load() を呼び出す)。
+
+        Args:
+            model_path (Path): モデル (.safetensors) のパス
+            config_path (Path): ハイパーパラメータ (config.json) のパス
+            style_vec_path (Path): スタイルベクトル (style_vectors.npy) のパス
+            device (str): 音声合成時に利用するデバイス (cpu, cuda, mps など)
+        """
+
         self.model_path: Path = model_path
         self.config_path: Path = config_path
         self.style_vec_path: Path = style_vec_path
@@ -71,24 +82,24 @@ class Model:
         self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
 
-    def load_net_g(self) -> None:
+    def load(self) -> None:
         """
-        net_g をロードする。
+        音声合成モデルをデバイスにロードする。
         """
         self.__net_g = get_net_g(
-            model_path=str(self.model_path),
-            version=self.hyper_parameters.version,
-            device=self.device,
-            hps=self.hyper_parameters,
+            model_path = str(self.model_path),
+            version = self.hyper_parameters.version,
+            device = self.device,
+            hps = self.hyper_parameters,
         )
 
 
-    def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
+    def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
         スタイルベクトルを取得する。
 
         Args:
-            style_id (int): スタイル ID
+            style_id (int): スタイル ID (0 から始まるインデックス)
             weight (float, optional): スタイルベクトルの重み. Defaults to 1.0.
 
         Returns:
@@ -100,7 +111,7 @@ class Model:
         return style_vec
 
 
-    def get_style_vector_from_audio(self, audio_path: str, weight: float = 1.0) -> NDArray[Any]:
+    def __get_style_vector_from_audio(self, audio_path: str, weight: float = 1.0) -> NDArray[Any]:
         """
         音声からスタイルベクトルを推論する。
 
@@ -130,11 +141,11 @@ class Model:
         self,
         text: str,
         language: Languages = Languages.JP,
-        sid: int = 0,
+        speaker_id: int = 0,
         reference_audio_path: Optional[str] = None,
         sdp_ratio: float = DEFAULT_SDP_RATIO,
         noise: float = DEFAULT_NOISE,
-        noisew: float = DEFAULT_NOISEW,
+        noise_w: float = DEFAULT_NOISEW,
         length: float = DEFAULT_LENGTH,
         line_split: bool = DEFAULT_LINE_SPLIT,
         split_interval: float = DEFAULT_SPLIT_INTERVAL,
@@ -147,6 +158,33 @@ class Model:
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
     ) -> tuple[int, NDArray[Any]]:
+        """
+        テキストから音声を合成する。
+
+        Args:
+            text (str): 読み上げるテキスト
+            language (Languages, optional): 言語. Defaults to Languages.JP.
+            speaker_id (int, optional): 話者 ID. Defaults to 0.
+            reference_audio_path (Optional[str], optional): 音声スタイルの参照元の音声ファイルのパス. Defaults to None.
+            sdp_ratio (float, optional): SDP レシオ (値を大きくするとより感情豊かになる傾向がある). Defaults to DEFAULT_SDP_RATIO.
+            noise (float, optional): ノイズの大きさ. Defaults to DEFAULT_NOISE.
+            noise_w (float, optional): ノイズの大きさの重み. Defaults to DEFAULT_NOISEW.
+            length (float, optional): 長さ. Defaults to DEFAULT_LENGTH.
+            line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか. Defaults to DEFAULT_LINE_SPLIT.
+            split_interval (float, optional): 改行ごとに分割する場合の無音 (秒). Defaults to DEFAULT_SPLIT_INTERVAL.
+            assist_text (Optional[str], optional): 感情表現の参照元の補助テキスト. Defaults to None.
+            assist_text_weight (float, optional): 感情表現の補助テキストを適用する強さ. Defaults to DEFAULT_ASSIST_TEXT_WEIGHT.
+            use_assist_text (bool, optional): 音声合成時に感情表現の補助テキストを使用するかどうか. Defaults to False.
+            style (str, optional): 音声スタイル (Neutral, Happy など). Defaults to DEFAULT_STYLE.
+            style_weight (float, optional): 音声スタイルを適用する強さ. Defaults to DEFAULT_STYLE_WEIGHT.
+            given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
+            pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
+            intonation_scale (float, optional): イントネーションの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
+
+        Returns:
+            tuple[int, NDArray[Any]]: サンプリングレートと音声データ (16bit PCM)
+        """
+
         logger.info(f"Start generating audio data from text:\n{text}")
         if language != "JP" and self.hyper_parameters.version.endswith("JP-Extra"):
             raise ValueError(
@@ -158,13 +196,13 @@ class Model:
             assist_text = None
 
         if self.__net_g is None:
-            self.load_net_g()
+            self.load()
         assert self.__net_g is not None
         if reference_audio_path is None:
             style_id = self.style2id[style]
-            style_vector = self.get_style_vector(style_id, style_weight)
+            style_vector = self.__get_style_vector(style_id, style_weight)
         else:
-            style_vector = self.get_style_vector_from_audio(
+            style_vector = self.__get_style_vector_from_audio(
                 reference_audio_path, style_weight
             )
         if not line_split:
@@ -173,9 +211,9 @@ class Model:
                     text = text,
                     sdp_ratio = sdp_ratio,
                     noise_scale = noise,
-                    noise_scale_w = noisew,
+                    noise_scale_w = noise_w,
                     length_scale = length,
-                    sid = sid,
+                    sid = speaker_id,
                     language = language,
                     hps = self.hyper_parameters,
                     net_g = self.__net_g,
@@ -196,9 +234,9 @@ class Model:
                             text = t,
                             sdp_ratio = sdp_ratio,
                             noise_scale = noise,
-                            noise_scale_w = noisew,
+                            noise_scale_w = noise_w,
                             length_scale = length,
-                            sid = sid,
+                            sid = speaker_id,
                             language = language,
                             hps = self.hyper_parameters,
                             net_g = self.__net_g,
@@ -225,24 +263,50 @@ class Model:
         return (self.hyper_parameters.data.sampling_rate, audio)
 
 
-class ModelHolder:
+class TTSModelHolder:
     """
-    Style-Bert-Vits2 の音声合成モデルを管理するためのクラス。
+    Style-Bert-Vits2 の音声合成モデルを管理するクラス。
+    model_holder.models_info から指定されたディレクトリ内にある音声合成モデルの一覧を取得できる。
     """
 
 
     def __init__(self, model_root_dir: Path, device: str) -> None:
+        """
+        Style-Bert-Vits2 の音声合成モデルを管理するクラスを初期化する。
+        音声合成モデルは下記のように配置されていることを前提とする (.safetensors のファイル名は自由) 。
+        ```
+        model_root_dir
+        ├── model-name-1
+        │   ├── config.json
+        │   ├── model-name-1_e160_s14000.safetensors
+        │   └── style_vectors.npy
+        ├── model-name-2
+        │   ├── config.json
+        │   ├── model-name-2_e160_s14000.safetensors
+        │   └── style_vectors.npy
+        └── ...
+        ```
+
+        Args:
+            model_root_dir (Path): 音声合成モデルが配置されているディレクトリのパス
+            device (str): 音声合成時に利用するデバイス (cpu, cuda, mps など)
+        """
+
         self.root_dir: Path = model_root_dir
         self.device: str = device
         self.model_files_dict: dict[str, list[Path]] = {}
-        self.current_model: Optional[Model] = None
+        self.current_model: Optional[TTSModel] = None
         self.model_names: list[str] = []
-        self.models: list[Model] = []
+        self.models: list[TTSModel] = []
         self.models_info: list[dict[str, Union[str, list[str]]]] = []
         self.refresh()
 
 
     def refresh(self) -> None:
+        """
+        音声合成モデルの一覧を更新する。
+        """
+
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
@@ -279,23 +343,36 @@ class ModelHolder:
             })
 
 
-    def load_model(self, model_name: str, model_path_str: str) -> Model:
+    def get_model(self, model_name: str, model_path_str: str) -> TTSModel:
+        """
+        指定された音声合成モデルのインスタンスを取得する。
+        この時点ではモデルはロードされていない (明示的にロードしたい場合は model.load() を呼び出す)。
+
+        Args:
+            model_name (str): 音声合成モデルの名前
+            model_path_str (str): 音声合成モデルのファイルパス (.safetensors)
+
+        Returns:
+            TTSModel: 音声合成モデルのインスタンス
+        """
+
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
         if model_path not in self.model_files_dict[model_name]:
             raise ValueError(f"Model file `{model_path}` is not found")
         if self.current_model is None or self.current_model.model_path != model_path:
-            self.current_model = Model(
+            self.current_model = TTSModel(
                 model_path = model_path,
                 config_path = self.root_dir / model_name / "config.json",
                 style_vec_path = self.root_dir / model_name / "style_vectors.npy",
                 device = self.device,
             )
+
         return self.current_model
 
 
-    def load_model_for_gradio(self, model_name: str, model_path_str: str) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
+    def get_model_for_gradio(self, model_name: str, model_path_str: str) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
@@ -313,7 +390,7 @@ class ModelHolder:
                 gr.Button(interactive=True, value="音声合成"),
                 gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
             )
-        self.current_model = Model(
+        self.current_model = TTSModel(
             model_path = model_path,
             config_path = self.root_dir / model_name / "config.json",
             style_vec_path = self.root_dir / model_name / "style_vectors.npy",

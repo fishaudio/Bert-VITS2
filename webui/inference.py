@@ -23,7 +23,7 @@ from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
-from style_bert_vits2.tts_model import ModelHolder
+from style_bert_vits2.tts_model import TTSModelHolder
 
 
 # pyopenjtalk_worker を起動
@@ -151,7 +151,7 @@ def gr_util(item):
         return (gr.update(visible=False), gr.update(visible=True))
 
 
-def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
+def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     def tts_fn(
         model_name,
         model_path,
@@ -175,7 +175,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         pitch_scale,
         intonation_scale,
     ):
-        model_holder.load_model(model_name, model_path)
+        model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
 
         wrong_tone_message = ""
@@ -218,7 +218,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                 reference_audio_path=reference_audio_path,
                 sdp_ratio=sdp_ratio,
                 noise=noise_scale,
-                noisew=noise_scale_w,
+                noise_w=noise_scale_w,
                 length=length_scale,
                 line_split=line_split,
                 split_interval=split_interval,
@@ -228,7 +228,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                 style=style,
                 style_weight=style_weight,
                 given_tone=tone,
-                sid=speaker_id,
+                speaker_id=speaker_id,
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
             )
@@ -459,7 +459,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         )
 
         load_button.click(
-            model_holder.load_model_for_gradio,
+            model_holder.get_model_for_gradio,
             inputs=[model_name, model_path],
             outputs=[style, tts_button, speaker],
         )

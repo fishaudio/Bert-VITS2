@@ -52,7 +52,7 @@ from style_bert_vits2.nlp.japanese.user_dict import (
     rewrite_word,
     update_dict,
 )
-from style_bert_vits2.tts_model import ModelHolder
+from style_bert_vits2.tts_model import TTSModelHolder
 
 
 # ---フロントエンド部分に関する処理---
@@ -198,7 +198,7 @@ if device == "cuda" and not torch.cuda.is_available():
 model_dir = Path(args.model_dir)
 port = int(args.port)
 
-model_holder = ModelHolder(model_dir, device)
+model_holder = TTSModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)
@@ -283,7 +283,7 @@ def synthesis(request: SynthesisRequest):
             detail=f"1行の文字数は{args.line_length}文字以下にしてください。",
         )
     try:
-        model = model_holder.load_model(
+        model = model_holder.get_model(
             model_name=request.model, model_path_str=request.modelFile
         )
     except Exception as e:
@@ -310,7 +310,7 @@ def synthesis(request: SynthesisRequest):
         language=request.language,
         sdp_ratio=request.sdpRatio,
         noise=request.noise,
-        noisew=request.noisew,
+        noise_w=request.noisew,
         length=1 / request.speed,
         given_tone=tone,
         style=request.style,
@@ -321,7 +321,7 @@ def synthesis(request: SynthesisRequest):
         line_split=False,
         pitch_scale=request.pitchScale,
         intonation_scale=request.intonationScale,
-        sid=sid,
+        speaker_id=sid,
     )
 
     with BytesIO() as wavContent:
@@ -350,7 +350,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
                 detail=f"1行の文字数は{args.line_length}文字以下にしてください。",
             )
         try:
-            model = model_holder.load_model(
+            model = model_holder.get_model(
                 model_name=req.model, model_path_str=req.modelFile
             )
         except Exception as e:
@@ -370,7 +370,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
             language=req.language,
             sdp_ratio=req.sdpRatio,
             noise=req.noise,
-            noisew=req.noisew,
+            noise_w=req.noisew,
             length=1 / req.speed,
             given_tone=tone,
             style=req.style,

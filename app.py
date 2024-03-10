@@ -6,7 +6,7 @@ import torch
 import yaml
 
 from style_bert_vits2.constants import GRADIO_THEME, VERSION
-from style_bert_vits2.tts_model import ModelHolder
+from style_bert_vits2.tts_model import TTSModelHolder
 from webui import (
     create_dataset_app,
     create_inference_app,
@@ -34,7 +34,7 @@ device = args.device
 if device == "cuda" and not torch.cuda.is_available():
     device = "cpu"
 
-model_holder = ModelHolder(Path(assets_root), device)
+model_holder = TTSModelHolder(Path(assets_root), device)
 
 with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(f"# Style-Bert-VITS2 WebUI (version {VERSION})")

@@ -36,7 +36,7 @@ from style_bert_vits2.constants import (
 from style_bert_vits2.logging import logger
 from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
-from style_bert_vits2.tts_model import Model, ModelHolder
+from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
 
 ln = config.server_config.language
 
@@ -67,16 +67,16 @@ class AudioResponse(Response):
     media_type = "audio/wav"
 
 
-def load_models(model_holder: ModelHolder):
+def load_models(model_holder: TTSModelHolder):
     model_holder.models = []
     for model_name, model_paths in model_holder.model_files_dict.items():
-        model = Model(
+        model = TTSModel(
             model_path=model_paths[0],
             config_path=model_holder.root_dir / model_name / "config.json",
             style_vec_path=model_holder.root_dir / model_name / "style_vectors.npy",
             device=model_holder.device,
         )
-        model.load_net_g()
+        model.load()
         model_holder.models.append(model)
 
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model_dir = Path(args.dir)
-    model_holder = ModelHolder(model_dir, device)
+    model_holder = TTSModelHolder(model_dir, device)
     if len(model_holder.model_names) == 0:
         logger.error(f"Models not found in {model_dir}.")
         sys.exit(1)
@@ -194,11 +194,11 @@ if __name__ == "__main__":
         sr, audio = model.infer(
             text=text,
             language=language,
-            sid=speaker_id,
+            speaker_id=speaker_id,
             reference_audio_path=reference_audio_path,
             sdp_ratio=sdp_ratio,
             noise=noise,
-            noisew=noisew,
+            noise_w=noisew,
             length=length,
             line_split=auto_split,
             split_interval=split_interval,
