@@ -52,24 +52,28 @@ Source = "https://github.com/litagin02/Style-Bert-VITS2"
 [tool.hatch.version]
 path = "style_bert_vits2/constants.py"
 
-[tool.hatch.envs.default]
+[tool.hatch.envs.test]
 dependencies = [
     "coverage[toml]>=6.5",
     "pytest",
 ]
-[tool.hatch.envs.default.scripts]
+[tool.hatch.envs.test.scripts]
+# Usage: `hatch run test:test`
 test = "pytest {args:tests}"
+# Usage: `hatch run test:coverage`
 test-cov = "coverage run -m pytest {args:tests}"
+# Usage: `hatch run test:cov-report`
 cov-report = [
     "- coverage combine",
     "coverage report",
 ]
+# Usage: `hatch run test:cov`
 cov = [
     "test-cov",
     "cov-report",
 ]
 
-[[tool.hatch.envs.all.matrix]]
+[[tool.hatch.envs.test.matrix]]
 python = ["3.9", "3.10", "3.11", "3.12"]
 
 [tool.coverage.run]

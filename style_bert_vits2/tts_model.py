@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TypedDict
 
 import gradio as gr
 import numpy as np
@@ -263,6 +263,13 @@ class TTSModel:
         return (self.hyper_parameters.data.sampling_rate, audio)
 
 
+class TTSModelInfo(TypedDict):
+    name: str
+    files: list[str]
+    styles: list[str]
+    speakers: list[str]
+
+
 class TTSModelHolder:
     """
     Style-Bert-Vits2 の音声合成モデルを管理するクラス。
@@ -297,8 +304,7 @@ class TTSModelHolder:
         self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[TTSModel] = None
         self.model_names: list[str] = []
-        self.models: list[TTSModel] = []
-        self.models_info: list[dict[str, Union[str, list[str]]]] = []
+        self.models_info: list[TTSModelInfo] = []
         self.refresh()
 
 
