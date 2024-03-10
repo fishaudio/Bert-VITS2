@@ -4,24 +4,27 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TYPE_CHECKING
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
 from scipy.io.wavfile import read
-from torch.utils.tensorboard import SummaryWriter
 
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models.utils import checkpoints  # type: ignore
 from style_bert_vits2.models.utils import safetensors  # type: ignore
+
+if TYPE_CHECKING:
+    # tensorboard はライブラリとしてインストールされている場合は依存関係に含まれないため、型チェック時のみインポートする
+    from torch.utils.tensorboard import SummaryWriter
 
 
 __is_matplotlib_imported = False
 
 
 def summarize(
-    writer: SummaryWriter,
+    writer: "SummaryWriter",
     global_step: int,
     scalars: dict[str, float] = {},
     histograms: dict[str, Any] = {},

@@ -19,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
@@ -37,7 +36,7 @@ dependencies = [
     'pydantic',
     'pyopenjtalk-dict',
     'pypinyin',
-    'pyworld',
+    # 'pyworld',
     'safetensors',
     'scipy',
     'torch>=2.1,<2.2',
@@ -74,7 +73,7 @@ cov = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12"]
+python = ["3.9", "3.10", "3.11"]
 
 [tool.coverage.run]
 source_pkgs = ["style_bert_vits2", "tests"]
