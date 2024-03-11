@@ -24,6 +24,7 @@
     "freeze_encoder": false
   },
   "data": {
+    "use_jp_extra": false,
     "training_files": "Data/your_model_name/filelists/train.list",
     "validation_files": "Data/your_model_name/filelists/val.list",
     "max_wav_value": 32768.0,

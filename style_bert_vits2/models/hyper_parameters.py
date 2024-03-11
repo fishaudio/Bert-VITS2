@@ -16,7 +16,7 @@ class HyperParametersTrain(BaseModel):
     seed: int = 42
     epochs: int = 1000
     learning_rate: float = 0.0001
-    betas: list[float] = [0.8, 0.99]
+    betas: tuple[float, float] = (0.8, 0.99)
     eps: float = 1e-9
     batch_size: int = 2
     bf16_run: bool = False
@@ -50,7 +50,7 @@ class HyperParametersData(BaseModel):
     mel_fmin: float = 0.0
     mel_fmax: Optional[float] = None
     add_blank: bool = True
-    n_speakers: int = 512
+    n_speakers: int = 1
     cleaned_text: bool = True
     spk2id: dict[str, int] = {
         "Dummy": 0,
