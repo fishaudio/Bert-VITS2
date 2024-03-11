@@ -9,7 +9,7 @@ from typing import Dict, List
 import torch
 import yaml
 
-from common.log import logger
+from style_bert_vits2.logging import logger
 
 # If not cuda available, set possible devices to cpu
 cuda_available = torch.cuda.is_available()

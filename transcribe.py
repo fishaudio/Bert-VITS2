@@ -7,9 +7,9 @@ import yaml
 from faster_whisper import WhisperModel
 from tqdm import tqdm
 
-from common.constants import Languages
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.constants import Languages
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
 def transcribe(wav_path: Path, initial_prompt=None, language="ja"):

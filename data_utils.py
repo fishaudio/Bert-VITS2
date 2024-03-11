@@ -7,12 +7,13 @@ import torch
 import torch.utils.data
 from tqdm import tqdm
 
-import commons
 from config import config
 from mel_processing import mel_spectrogram_torch, spectrogram_torch
-from text import cleaned_text_to_sequence
-from common.log import logger
-from utils import load_filepaths_and_text, load_wav_to_torch
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.models.hyper_parameters import HyperParametersData
+from style_bert_vits2.models.utils import load_filepaths_and_text, load_wav_to_torch
+from style_bert_vits2.nlp import cleaned_text_to_sequence
 
 """Multi speaker version"""
 
@@ -24,7 +25,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
     3) computes spectrograms from audio files.
     """
 
-    def __init__(self, audiopaths_sid_text, hparams):
+    def __init__(self, audiopaths_sid_text: str, hparams: HyperParametersData):
         self.audiopaths_sid_text = load_filepaths_and_text(audiopaths_sid_text)
         self.max_wav_value = hparams.max_wav_value
         self.sampling_rate = hparams.sampling_rate

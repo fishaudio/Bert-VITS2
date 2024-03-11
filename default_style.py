@@ -1,6 +1,6 @@
 import os
-from common.log import logger
-from common.constants import DEFAULT_STYLE
+from style_bert_vits2.constants import DEFAULT_STYLE
+from style_bert_vits2.logging import logger
 
 import numpy as np
 import json

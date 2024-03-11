@@ -1,11 +1,10 @@
-import argparse
 import datetime
 import json
 from typing import Optional
 
 import gradio as gr
 
-from common.constants import (
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
@@ -18,13 +17,29 @@ from common.constants import (
     GRADIO_THEME,
     Languages,
 )
-from common.log import logger
-from common.tts_model import ModelHolder
-from infer import InvalidToneError
-from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models.infer import InvalidToneError
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
+from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
+from style_bert_vits2.nlp.japanese.normalizer import normalize_text
+from style_bert_vits2.tts_model import TTSModelHolder
+
+
+# pyopenjtalk_worker を起動
+## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
+pyopenjtalk.initialize_worker()
+
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
+bert_models.load_model(Languages.EN)
+bert_models.load_tokenizer(Languages.EN)
+bert_models.load_model(Languages.ZH)
+bert_models.load_tokenizer(Languages.ZH)
 
 languages = [l.value for l in Languages]
-
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
 
@@ -136,7 +151,7 @@ def gr_util(item):
         return (gr.update(visible=False), gr.update(visible=True))
 
 
-def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
+def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     def tts_fn(
         model_name,
         model_path,
@@ -160,7 +175,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         pitch_scale,
         intonation_scale,
     ):
-        model_holder.load_model(model_name, model_path)
+        model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
 
         wrong_tone_message = ""
@@ -203,7 +218,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                 reference_audio_path=reference_audio_path,
                 sdp_ratio=sdp_ratio,
                 noise=noise_scale,
-                noisew=noise_scale_w,
+                noise_w=noise_scale_w,
                 length=length_scale,
                 line_split=line_split,
                 split_interval=split_interval,
@@ -213,7 +228,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                 style=style,
                 style_weight=style_weight,
                 given_tone=tone,
-                sid=speaker_id,
+                speaker_id=speaker_id,
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
             )
@@ -229,7 +244,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
 
         if tone is None and language == "JP":
             # アクセント指定に使えるようにアクセント情報を返す
-            norm_text = text_normalize(text)
+            norm_text = normalize_text(text)
             kata_tone = g2kata_tone(norm_text)
             kata_tone_json_str = json.dumps(kata_tone, ensure_ascii=False)
         elif tone is None:
@@ -279,7 +294,6 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                     value=1,
                     step=0.05,
                     label="音程(1以外では音質劣化)",
-                    visible=False,  # pyworldが必要
                 )
                 intonation_scale = gr.Slider(
                     minimum=0,
@@ -287,7 +301,6 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
                     value=1,
                     step=0.1,
                     label="抑揚(1以外では音質劣化)",
-                    visible=False,  # pyworldが必要
                 )
 
                 line_split = gr.Checkbox(
@@ -431,7 +444,7 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         )
 
         model_name.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name],
             outputs=[model_path],
         )
@@ -439,12 +452,12 @@ def create_inference_app(model_holder: ModelHolder) -> gr.Blocks:
         model_path.change(make_non_interactive, outputs=[tts_button])
 
         refresh_button.click(
-            model_holder.update_model_names_gr,
+            model_holder.update_model_names_for_gradio,
             outputs=[model_name, model_path, tts_button],
         )
 
         load_button.click(
-            model_holder.load_model_gr,
+            model_holder.get_model_for_gradio,
             inputs=[model_name, model_path],
             outputs=[style, tts_button, speaker],
         )

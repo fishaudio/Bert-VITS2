@@ -1,25 +1,20 @@
 import argparse
 import datetime
-import gc
 import os
 import platform
 
 import torch
 import torch.distributed as dist
+from huggingface_hub import HfApi
 from torch.cuda.amp import GradScaler, autocast
 from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from huggingface_hub import HfApi
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
-import commons
 import default_style
-import utils
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
 from config import config
 from data_utils import (
     DistributedBucketSampler,
@@ -28,13 +23,18 @@ from data_utils import (
 )
 from losses import WavLMLoss, discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from models_jp_extra import (
+from style_bert_vits2.logging import logger
+from style_bert_vits2.models import commons
+from style_bert_vits2.models import utils
+from style_bert_vits2.models.hyper_parameters import HyperParameters
+from style_bert_vits2.models.models_jp_extra import (
     DurationDiscriminator,
     MultiPeriodDiscriminator,
     SynthesizerTrn,
     WavLMDiscriminator,
 )
-from text.symbols import symbols
+from style_bert_vits2.nlp.symbols import SYMBOLS
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -130,7 +130,7 @@ def run():
     local_rank = int(os.environ["LOCAL_RANK"])
     n_gpus = dist.get_world_size()
 
-    hps = utils.get_hparams_from_file(args.config)
+    hps = HyperParameters.load_from_json(args.config)
     # This is needed because we have to pass values to `train_and_evaluate()
     hps.model_dir = model_dir
     hps.speedup = args.speedup
@@ -247,10 +247,7 @@ def run():
             drop_last=False,
             collate_fn=collate_fn,
         )
-    if (
-        "use_noise_scaled_mas" in hps.model.keys()
-        and hps.model.use_noise_scaled_mas is True
-    ):
+    if hps.model.use_noise_scaled_mas is True:
         logger.info("Using noise scaled MAS for VITS2")
         mas_noise_scale_initial = 0.01
         noise_scale_delta = 2e-6
@@ -258,10 +255,7 @@ def run():
         logger.info("Using normal MAS for VITS1")
         mas_noise_scale_initial = 0.0
         noise_scale_delta = 0.0
-    if (
-        "use_duration_discriminator" in hps.model.keys()
-        and hps.model.use_duration_discriminator is True
-    ):
+    if hps.model.use_duration_discriminator is True:
         logger.info("Using duration discriminator for VITS2")
         net_dur_disc = DurationDiscriminator(
             hps.model.hidden_channels,
@@ -272,19 +266,13 @@ def run():
         ).cuda(local_rank)
     else:
         net_dur_disc = None
-    if (
-        "use_wavlm_discriminator" in hps.model.keys()
-        and hps.model.use_wavlm_discriminator is True
-    ):
+    if hps.model.use_wavlm_discriminator is True:
         net_wd = WavLMDiscriminator(
             hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
         ).cuda(local_rank)
     else:
         net_wd = None
-    if (
-        "use_spk_conditioned_encoder" in hps.model.keys()
-        and hps.model.use_spk_conditioned_encoder is True
-    ):
+    if hps.model.use_spk_conditioned_encoder is True:
         if hps.data.n_speakers == 0:
             raise ValueError(
                 "n_speakers must be > 0 when using spk conditioned encoder to train multi-speaker model"
@@ -293,13 +281,35 @@ def run():
         logger.info("Using normal encoder for VITS1")
 
     net_g = SynthesizerTrn(
-        len(symbols),
+        len(SYMBOLS),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
         n_speakers=hps.data.n_speakers,
         mas_noise_scale_initial=mas_noise_scale_initial,
         noise_scale_delta=noise_scale_delta,
-        **hps.model,
+        # hps.model 以下のすべての値を引数に渡す
+        use_spk_conditioned_encoder = hps.model.use_spk_conditioned_encoder,
+        use_noise_scaled_mas = hps.model.use_noise_scaled_mas,
+        use_mel_posterior_encoder = hps.model.use_mel_posterior_encoder,
+        use_duration_discriminator = hps.model.use_duration_discriminator,
+        use_wavlm_discriminator = hps.model.use_wavlm_discriminator,
+        inter_channels = hps.model.inter_channels,
+        hidden_channels = hps.model.hidden_channels,
+        filter_channels = hps.model.filter_channels,
+        n_heads = hps.model.n_heads,
+        n_layers = hps.model.n_layers,
+        kernel_size = hps.model.kernel_size,
+        p_dropout = hps.model.p_dropout,
+        resblock = hps.model.resblock,
+        resblock_kernel_sizes = hps.model.resblock_kernel_sizes,
+        resblock_dilation_sizes = hps.model.resblock_dilation_sizes,
+        upsample_rates = hps.model.upsample_rates,
+        upsample_initial_channel = hps.model.upsample_initial_channel,
+        upsample_kernel_sizes = hps.model.upsample_kernel_sizes,
+        n_layers_q = hps.model.n_layers_q,
+        use_spectral_norm = hps.model.use_spectral_norm,
+        gin_channels = hps.model.gin_channels,
+        slm = hps.model.slm,
     ).cuda(local_rank)
     if getattr(hps.train, "freeze_JP_bert", False):
         logger.info("Freezing (JP) bert encoder !!!")
@@ -372,15 +382,11 @@ def run():
     if utils.is_resuming(model_dir):
         if net_dur_disc is not None:
             try:
-                _, _, dur_resume_lr, epoch_str = utils.load_checkpoint(
-                    utils.latest_checkpoint_path(model_dir, "DUR_*.pth"),
+                _, _, dur_resume_lr, epoch_str = utils.checkpoints.load_checkpoint(
+                    utils.checkpoints.get_latest_checkpoint_path(model_dir, "DUR_*.pth"),
                     net_dur_disc,
                     optim_dur_disc,
-                    skip_optimizer=(
-                        hps.train.skip_optimizer
-                        if "skip_optimizer" in hps.train
-                        else True
-                    ),
+                    skip_optimizer=hps.train.skip_optimizer,
                 )
                 if not optim_dur_disc.param_groups[0].get("initial_lr"):
                     optim_dur_disc.param_groups[0]["initial_lr"] = dur_resume_lr
@@ -390,15 +396,11 @@ def run():
                 print("Initialize dur_disc")
         if net_wd is not None:
             try:
-                _, optim_wd, wd_resume_lr, epoch_str = utils.load_checkpoint(
-                    utils.latest_checkpoint_path(model_dir, "WD_*.pth"),
+                _, optim_wd, wd_resume_lr, epoch_str = utils.checkpoints.load_checkpoint(
+                    utils.checkpoints.get_latest_checkpoint_path(model_dir, "WD_*.pth"),
                     net_wd,
                     optim_wd,
-                    skip_optimizer=(
-                        hps.train.skip_optimizer
-                        if "skip_optimizer" in hps.train
-                        else True
-                    ),
+                    skip_optimizer=hps.train.skip_optimizer,
                 )
                 if not optim_wd.param_groups[0].get("initial_lr"):
                     optim_wd.param_groups[0]["initial_lr"] = wd_resume_lr
@@ -408,21 +410,17 @@ def run():
                 logger.info("Initialize wavlm")
 
         try:
-            _, optim_g, g_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(model_dir, "G_*.pth"),
+            _, optim_g, g_resume_lr, epoch_str = utils.checkpoints.load_checkpoint(
+                utils.checkpoints.get_latest_checkpoint_path(model_dir, "G_*.pth"),
                 net_g,
                 optim_g,
-                skip_optimizer=(
-                    hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
-                ),
+                skip_optimizer=hps.train.skip_optimizer,
             )
-            _, optim_d, d_resume_lr, epoch_str = utils.load_checkpoint(
-                utils.latest_checkpoint_path(model_dir, "D_*.pth"),
+            _, optim_d, d_resume_lr, epoch_str = utils.checkpoints.load_checkpoint(
+                utils.checkpoints.get_latest_checkpoint_path(model_dir, "D_*.pth"),
                 net_d,
                 optim_d,
-                skip_optimizer=(
-                    hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
-                ),
+                skip_optimizer=hps.train.skip_optimizer,
             )
             if not optim_g.param_groups[0].get("initial_lr"):
                 optim_g.param_groups[0]["initial_lr"] = g_resume_lr
@@ -432,7 +430,7 @@ def run():
             epoch_str = max(epoch_str, 1)
             # global_step = (epoch_str - 1) * len(train_loader)
             global_step = int(
-                utils.get_steps(utils.latest_checkpoint_path(model_dir, "G_*.pth"))
+                utils.get_steps(utils.checkpoints.get_latest_checkpoint_path(model_dir, "G_*.pth"))
             )
             logger.info(
                 f"******************Found the model. Current epoch is {epoch_str}, gloabl step is {global_step}*********************"
@@ -446,18 +444,18 @@ def run():
             global_step = 0
     else:
         try:
-            _ = utils.load_safetensors(
+            _ = utils.safetensors.load_safetensors(
                 os.path.join(model_dir, "G_0.safetensors"), net_g
             )
-            _ = utils.load_safetensors(
+            _ = utils.safetensors.load_safetensors(
                 os.path.join(model_dir, "D_0.safetensors"), net_d
             )
             if net_dur_disc is not None:
-                _ = utils.load_safetensors(
+                _ = utils.safetensors.load_safetensors(
                     os.path.join(model_dir, "DUR_0.safetensors"), net_dur_disc
                 )
             if net_wd is not None:
-                _ = utils.load_safetensors(
+                _ = utils.safetensors.load_safetensors(
                     os.path.join(model_dir, "WD_0.safetensors"), net_wd
                 )
             logger.info("Loaded the pretrained models.")
@@ -564,14 +562,16 @@ def run():
             scheduler_wd.step()
         if epoch == hps.train.epochs:
             # Save the final models
-            utils.save_checkpoint(
+            assert optim_g is not None
+            utils.checkpoints.save_checkpoint(
                 net_g,
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
                 os.path.join(model_dir, "G_{}.pth".format(global_step)),
             )
-            utils.save_checkpoint(
+            assert optim_d is not None
+            utils.checkpoints.save_checkpoint(
                 net_d,
                 optim_d,
                 hps.train.learning_rate,
@@ -579,7 +579,8 @@ def run():
                 os.path.join(model_dir, "D_{}.pth".format(global_step)),
             )
             if net_dur_disc is not None:
-                utils.save_checkpoint(
+                assert optim_dur_disc is not None
+                utils.checkpoints.save_checkpoint(
                     net_dur_disc,
                     optim_dur_disc,
                     hps.train.learning_rate,
@@ -587,14 +588,15 @@ def run():
                     os.path.join(model_dir, "DUR_{}.pth".format(global_step)),
                 )
             if net_wd is not None:
-                utils.save_checkpoint(
+                assert optim_wd is not None
+                utils.checkpoints.save_checkpoint(
                     net_wd,
                     optim_wd,
                     hps.train.learning_rate,
                     epoch,
                     os.path.join(model_dir, "WD_{}.pth".format(global_step)),
                 )
-            utils.save_safetensors(
+            utils.safetensors.save_safetensors(
                 net_g,
                 epoch,
                 os.path.join(
@@ -927,14 +929,14 @@ def train_and_evaluate(
             ):
                 if not hps.speedup:
                     evaluate(hps, net_g, eval_loader, writer_eval)
-                utils.save_checkpoint(
+                utils.checkpoints.save_checkpoint(
                     net_g,
                     optim_g,
                     hps.train.learning_rate,
                     epoch,
                     os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
                 )
-                utils.save_checkpoint(
+                utils.checkpoints.save_checkpoint(
                     net_d,
                     optim_d,
                     hps.train.learning_rate,
@@ -942,7 +944,7 @@ def train_and_evaluate(
                     os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
                 )
                 if net_dur_disc is not None:
-                    utils.save_checkpoint(
+                    utils.checkpoints.save_checkpoint(
                         net_dur_disc,
                         optim_dur_disc,
                         hps.train.learning_rate,
@@ -950,7 +952,7 @@ def train_and_evaluate(
                         os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
                     )
                 if net_wd is not None:
-                    utils.save_checkpoint(
+                    utils.checkpoints.save_checkpoint(
                         net_wd,
                         optim_wd,
                         hps.train.learning_rate,
@@ -959,13 +961,13 @@ def train_and_evaluate(
                     )
                 keep_ckpts = config.train_ms_config.keep_ckpts
                 if keep_ckpts > 0:
-                    utils.clean_checkpoints(
-                        path_to_models=hps.model_dir,
+                    utils.checkpoints.clean_checkpoints(
+                        model_dir_path=hps.model_dir,
                         n_ckpts_to_keep=keep_ckpts,
                         sort_by_time=True,
                     )
                 # Save safetensors (for inference) to `model_assets/{model_name}`
-                utils.save_safetensors(
+                utils.safetensors.save_safetensors(
                     net_g,
                     epoch,
                     os.path.join(

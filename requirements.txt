@@ -14,11 +14,12 @@ numba
 numpy
 psutil
 pyannote.audio>=3.1.0
+pydantic>=2.0
 pyloudnorm
 # pyopenjtalk-prebuilt  # Should be manually uninstalled
 pyopenjtalk-dict
 pypinyin
-# pyworld  # Not supported on Windows without Cython...
+pyworld-prebuilt
 PyYAML
 requests
 safetensors
