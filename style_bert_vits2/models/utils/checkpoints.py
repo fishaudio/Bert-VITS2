@@ -27,7 +27,7 @@ def load_checkpoint(
         for_infer (bool): 推論用に読み込むかどうかのフラグ
 
     Returns:
-        tuple[torch.nn.Module, Optional[torch.optim.Optimizer], float, int]: 更新されたモデルとオプティマイザー、学習率、イテレーション番号
+        tuple[torch.nn.Module, Optional[torch.optim.Optimizer], float, int]: 更新されたモデルとオプティマイザー、学習率、イテレーション回数
     """
 
     assert os.path.isfile(checkpoint_path)
@@ -104,7 +104,7 @@ def save_checkpoint(
         model (torch.nn.Module): 保存するモデル
         optimizer (Union[torch.optim.Optimizer, torch.optim.AdamW]): 保存するオプティマイザー
         learning_rate (float): 学習率
-        iteration (int): イテレーション数
+        iteration (int): イテレーション回数
         checkpoint_path (Union[str, Path]): 保存先のパス
     """
     logger.info(

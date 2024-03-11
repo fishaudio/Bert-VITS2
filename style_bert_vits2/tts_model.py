@@ -28,6 +28,7 @@ from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import (
     SynthesizerTrn as SynthesizerTrnJPExtra,
 )
+
 from style_bert_vits2.logging import logger
 from style_bert_vits2.voice import adjust_voice
 
@@ -39,11 +40,7 @@ class TTSModel:
     """
 
     def __init__(
-        self,
-        model_path: Path,
-        config_path: Path,
-        style_vec_path: Path,
-        device: str,
+        self, model_path: Path, config_path: Path, style_vec_path: Path, device: str
     ) -> None:
         """
         Style-Bert-Vits2 の音声合成モデルを初期化する。
@@ -170,10 +167,10 @@ class TTSModel:
             language (Languages, optional): 言語. Defaults to Languages.JP.
             speaker_id (int, optional): 話者 ID. Defaults to 0.
             reference_audio_path (Optional[str], optional): 音声スタイルの参照元の音声ファイルのパス. Defaults to None.
-            sdp_ratio (float, optional): SDP レシオ (値を大きくするとより感情豊かになる傾向がある). Defaults to DEFAULT_SDP_RATIO.
-            noise (float, optional): ノイズの大きさ. Defaults to DEFAULT_NOISE.
-            noise_w (float, optional): ノイズの大きさの重み. Defaults to DEFAULT_NOISEW.
-            length (float, optional): 長さ. Defaults to DEFAULT_LENGTH.
+            sdp_ratio (float, optional): DP と SDP の混合比。0 で DP のみ、1で SDP のみを使用 (値を大きくするとテンポに緩急がつく). Defaults to DEFAULT_SDP_RATIO.
+            noise (float, optional): DP に与えられるノイズ. Defaults to DEFAULT_NOISE.
+            noise_w (float, optional): SDP に与えられるノイズ. Defaults to DEFAULT_NOISEW.
+            length (float, optional): 生成音声の長さ（話速）のパラメータ。大きいほど生成音声が長くゆっくり、小さいほど短く早くなる。 Defaults to DEFAULT_LENGTH.
             line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか. Defaults to DEFAULT_LINE_SPLIT.
             split_interval (float, optional): 改行ごとに分割する場合の無音 (秒). Defaults to DEFAULT_SPLIT_INTERVAL.
             assist_text (Optional[str], optional): 感情表現の参照元の補助テキスト. Defaults to None.

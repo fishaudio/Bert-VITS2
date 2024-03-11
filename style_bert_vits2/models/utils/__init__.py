@@ -215,13 +215,13 @@ def get_logger(
 
 def get_steps(model_path: Union[str, Path]) -> Optional[int]:
     """
-    モデルのパスからイテレーション番号を取得する
+    モデルのパスからイテレーション回数を取得する
 
     Args:
         model_path (Union[str, Path]): モデルのパス
 
     Returns:
-        Optional[int]: イテレーション番号
+        Optional[int]: イテレーション回数
     """
 
     matches = re.findall(r"\d+", model_path)  # type: ignore

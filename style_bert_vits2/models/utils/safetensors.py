@@ -22,7 +22,7 @@ def load_safetensors(
         for_infer (bool): 推論用に読み込むかどうかのフラグ
 
     Returns:
-        tuple[torch.nn.Module, Optional[int]]: 読み込まれたモデルとイテレーション番号（存在する場合）
+        tuple[torch.nn.Module, Optional[int]]: 読み込まれたモデルとイテレーション回数（存在する場合）
     """
 
     tensors: dict[str, Any] = {}
@@ -64,7 +64,7 @@ def save_safetensors(
 
     Args:
         model (torch.nn.Module): 保存するモデル
-        iteration (int): イテレーション番号
+        iteration (int): イテレーション回数
         checkpoint_path (Union[str, Path]): 保存先のパス
         is_half (bool): モデルを半精度で保存するかどうかのフラグ
         for_infer (bool): 推論用に保存するかどうかのフラグ

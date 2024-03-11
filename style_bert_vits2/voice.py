@@ -19,7 +19,7 @@ def adjust_voice(
         fs (int): 音声のサンプリング周波数
         wave (NDArray[Any]): 音声データ
         pitch_scale (float, optional): ピッチの高さ. Defaults to 1.0.
-        intonation_scale (float, optional): イントネーションの高さ. Defaults to 1.0.
+        intonation_scale (float, optional): イントネーションの平均からの変更比率. Defaults to 1.0.
 
     Returns:
         tuple[int, NDArray[Any]]: 調整後の音声データのサンプリング周波数と音声データ
