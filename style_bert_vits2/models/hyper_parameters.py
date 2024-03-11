@@ -53,11 +53,11 @@ class HyperParametersData(BaseModel):
     n_speakers: int = 512
     cleaned_text: bool = True
     spk2id: dict[str, int] = {
-      "Dummy": 0,
+        "Dummy": 0,
     }
     num_styles: int = 1
     style2id: dict[str, int] = {
-      "Neutral": 0,
+        "Neutral": 0,
     }
 
 
@@ -67,6 +67,7 @@ class HyperParametersModelSLM(BaseModel):
     hidden: int = 768
     nlayers: int = 13
     initial_channel: int = 64
+
 
 class HyperParametersModel(BaseModel):
     use_spk_conditioned_encoder: bool = True
@@ -98,7 +99,7 @@ class HyperParametersModel(BaseModel):
 
 
 class HyperParameters(BaseModel):
-    model_name: str = 'Dummy'
+    model_name: str = "Dummy"
     version: str = "2.0-JP-Extra"
     train: HyperParametersTrain = HyperParametersTrain()
     data: HyperParametersData = HyperParametersData()
@@ -112,7 +113,6 @@ class HyperParameters(BaseModel):
     # model_ 以下を Pydantic の保護対象から除外する
     model_config = ConfigDict(protected_namespaces=())
 
-
     @staticmethod
     def load_from_json(json_path: Union[str, Path]) -> "HyperParameters":
         """
@@ -125,5 +125,5 @@ class HyperParameters(BaseModel):
             HyperParameters: ハイパーパラメータ
         """
 
-        with open(json_path, "r") as f:
+        with open(json_path, "r", encoding="utf-8") as f:
             return HyperParameters.model_validate_json(f.read())

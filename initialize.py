@@ -9,7 +9,7 @@ from style_bert_vits2.logging import logger
 
 
 def download_bert_models():
-    with open("bert/bert_models.json", "r") as fp:
+    with open("bert/bert_models.json", "r", encoding="utf-8") as fp:
         models = json.load(fp)
     for k, v in models.items():
         local_path = Path("bert").joinpath(k)
