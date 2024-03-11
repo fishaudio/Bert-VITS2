@@ -14,6 +14,7 @@ from config import config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.tts_model import TTSModel
 
+
 warnings.filterwarnings("ignore")
 
 mos_result_dir = Path("mos_results")

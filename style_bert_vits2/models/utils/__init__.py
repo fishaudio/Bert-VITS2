@@ -4,7 +4,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import torch
@@ -14,6 +14,7 @@ from scipy.io.wavfile import read
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models.utils import checkpoints  # type: ignore
 from style_bert_vits2.models.utils import safetensors  # type: ignore
+
 
 if TYPE_CHECKING:
     # tensorboard はライブラリとしてインストールされている場合は依存関係に含まれないため、型チェック時のみインポートする

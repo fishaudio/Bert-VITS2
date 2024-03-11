@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import jieba
-from pypinyin import lazy_pinyin
-from pypinyin import Style
+from pypinyin import Style, lazy_pinyin
 
 
 class ToneSandhi:

@@ -3,10 +3,11 @@
 コードと完全に一致している保証はない。あくまで参考程度とすること。
 """
 
+from typing import Any
+
 import numba
 import torch
-from numpy import int32, float32, zeros
-from typing import Any
+from numpy import float32, int32, zeros
 
 
 def maximum_path(neg_cent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:

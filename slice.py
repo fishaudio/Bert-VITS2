@@ -11,6 +11,7 @@ from tqdm import tqdm
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
+
 vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",
     model="silero_vad",

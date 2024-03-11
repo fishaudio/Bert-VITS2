@@ -24,8 +24,7 @@ from data_utils import (
 from losses import discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from style_bert_vits2.logging import logger
-from style_bert_vits2.models import commons
-from style_bert_vits2.models import utils
+from style_bert_vits2.models import commons, utils
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.models.models import (
     DurationDiscriminator,
@@ -34,6 +33,7 @@ from style_bert_vits2.models.models import (
 )
 from style_bert_vits2.nlp.symbols import SYMBOLS
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
+
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (

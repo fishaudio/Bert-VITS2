@@ -3,9 +3,10 @@
 コードと完全に一致している保証はない。あくまで参考程度とすること。
 """
 
+from typing import Any, Optional, Union
+
 import torch
 from torch.nn import functional as F
-from typing import Any, Optional, Union
 
 
 def init_weights(m: torch.nn.Module, mean: float = 0.0, std: float = 0.01) -> None:

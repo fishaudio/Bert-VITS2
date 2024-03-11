@@ -1,9 +1,10 @@
+import json
 import os
-from style_bert_vits2.constants import DEFAULT_STYLE
-from style_bert_vits2.logging import logger
 
 import numpy as np
-import json
+
+from style_bert_vits2.constants import DEFAULT_STYLE
+from style_bert_vits2.logging import logger
 
 
 def set_style_config(json_path, output_path):

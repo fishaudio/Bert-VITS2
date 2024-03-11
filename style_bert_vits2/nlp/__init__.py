@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.nlp.symbols import (
@@ -6,6 +6,7 @@ from style_bert_vits2.nlp.symbols import (
     LANGUAGE_TONE_START_MAP,
     SYMBOLS,
 )
+
 
 # __init__.py は配下のモジュールをインポートした時点で実行される
 # PyTorch のインポートは重いので、型チェック時以外はインポートしない
@@ -99,10 +100,10 @@ def cleaned_text_to_sequence(
     cleaned_phones: list[str], tones: list[int], language: Languages
 ) -> tuple[list[int], list[int], list[int]]:
     """
-    テキスト文字列を、テキスト内の記号に対応する一連の ID に変換する
+    音素リスト・アクセントリスト・言語を、テキスト内の対応する ID に変換する
 
     Args:
-        cleaned_phones (list[str]): clean_text() でクリーニングされた音素のリスト (?)
+        cleaned_phones (list[str]): clean_text() でクリーニングされた音素のリスト
         tones (list[int]): 各音素のアクセント
         language (Languages): テキストの言語
 

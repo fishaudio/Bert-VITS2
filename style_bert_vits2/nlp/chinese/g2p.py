@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 import jieba.posseg as psg
-from pypinyin import lazy_pinyin, Style
+from pypinyin import Style, lazy_pinyin
 
 from style_bert_vits2.nlp.chinese.tone_sandhi import ToneSandhi
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS

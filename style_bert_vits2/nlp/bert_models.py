@@ -9,7 +9,7 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 """
 
 import gc
-from typing import cast, Optional, Union
+from typing import Optional, Union, cast
 
 import torch
 from transformers import (

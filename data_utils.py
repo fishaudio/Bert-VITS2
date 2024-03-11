@@ -15,6 +15,7 @@ from style_bert_vits2.models.hyper_parameters import HyperParametersData
 from style_bert_vits2.models.utils import load_filepaths_and_text, load_wav_to_torch
 from style_bert_vits2.nlp import cleaned_text_to_sequence
 
+
 """Multi speaker version"""
 
 

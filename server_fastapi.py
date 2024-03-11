@@ -38,6 +38,7 @@ from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
 
+
 ln = config.server_config.language
 
 

@@ -1,6 +1,8 @@
 import argparse
-from webui.train import preprocess_all
 from multiprocessing import cpu_count
+
+from webui.train import preprocess_all
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

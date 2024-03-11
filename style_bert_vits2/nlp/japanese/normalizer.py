@@ -1,5 +1,6 @@
 import re
 import unicodedata
+
 from num2words import num2words
 
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS

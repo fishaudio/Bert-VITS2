@@ -7,10 +7,7 @@ from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
-from style_bert_vits2.models import attentions
-from style_bert_vits2.models import commons
-from style_bert_vits2.models import modules
-from style_bert_vits2.models import monotonic_alignment
+from style_bert_vits2.models import attentions, commons, modules, monotonic_alignment
 from style_bert_vits2.nlp.symbols import NUM_LANGUAGES, NUM_TONES, SYMBOLS
 
 

@@ -1,6 +1,6 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
@@ -11,8 +11,10 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
+
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
+
 
 model = Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM")
 inference = Inference(model, window="whole")
