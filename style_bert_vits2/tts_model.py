@@ -25,7 +25,9 @@ from style_bert_vits2.constants import (
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.models.infer import get_net_g, infer
 from style_bert_vits2.models.models import SynthesizerTrn
-from style_bert_vits2.models.models_jp_extra import SynthesizerTrn as SynthesizerTrnJPExtra
+from style_bert_vits2.models.models_jp_extra import (
+    SynthesizerTrn as SynthesizerTrnJPExtra,
+)
 from style_bert_vits2.logging import logger
 from style_bert_vits2.voice import adjust_voice
 
@@ -35,7 +37,6 @@ class TTSModel:
     Style-Bert-Vits2 の音声合成モデルを操作するクラス。
     モデル/ハイパーパラメータ/スタイルベクトルのパスとデバイスを指定して初期化し、model.infer() メソッドを呼び出すと音声合成を行える。
     """
-
 
     def __init__(
         self,
@@ -59,7 +60,9 @@ class TTSModel:
         self.config_path: Path = config_path
         self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(self.config_path)
+        self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(
+            self.config_path
+        )
         self.spk2id: dict[str, int] = self.hyper_parameters.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
@@ -82,18 +85,16 @@ class TTSModel:
 
         self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
-
     def load(self) -> None:
         """
         音声合成モデルをデバイスにロードする。
         """
         self.__net_g = get_net_g(
-            model_path = str(self.model_path),
-            version = self.hyper_parameters.version,
-            device = self.device,
-            hps = self.hyper_parameters,
+            model_path=str(self.model_path),
+            version=self.hyper_parameters.version,
+            device=self.device,
+            hps=self.hyper_parameters,
         )
-
 
     def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -111,8 +112,9 @@ class TTSModel:
         style_vec = mean + (style_vec - mean) * weight
         return style_vec
 
-
-    def __get_style_vector_from_audio(self, audio_path: str, weight: float = 1.0) -> NDArray[Any]:
+    def __get_style_vector_from_audio(
+        self, audio_path: str, weight: float = 1.0
+    ) -> NDArray[Any]:
         """
         音声からスタイルベクトルを推論する。
 
@@ -126,8 +128,10 @@ class TTSModel:
         # スタイルベクトルを取得するための推論モデルを初期化
         if self.__style_vector_inference is None:
             self.__style_vector_inference = pyannote.audio.Inference(
-                model = pyannote.audio.Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM"),
-                window = "whole",
+                model=pyannote.audio.Model.from_pretrained(
+                    "pyannote/wespeaker-voxceleb-resnet34-LM"
+                ),
+                window="whole",
             )
             self.__style_vector_inference.to(torch.device(self.device))
 
@@ -136,7 +140,6 @@ class TTSModel:
         mean = self.__style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
-
 
     def infer(
         self,
@@ -209,20 +212,20 @@ class TTSModel:
         if not line_split:
             with torch.no_grad():
                 audio = infer(
-                    text = text,
-                    sdp_ratio = sdp_ratio,
-                    noise_scale = noise,
-                    noise_scale_w = noise_w,
-                    length_scale = length,
-                    sid = speaker_id,
-                    language = language,
-                    hps = self.hyper_parameters,
-                    net_g = self.__net_g,
-                    device = self.device,
-                    assist_text = assist_text,
-                    assist_text_weight = assist_text_weight,
-                    style_vec = style_vector,
-                    given_tone = given_tone,
+                    text=text,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise,
+                    noise_scale_w=noise_w,
+                    length_scale=length,
+                    sid=speaker_id,
+                    language=language,
+                    hps=self.hyper_parameters,
+                    net_g=self.__net_g,
+                    device=self.device,
+                    assist_text=assist_text,
+                    assist_text_weight=assist_text_weight,
+                    style_vec=style_vector,
+                    given_tone=given_tone,
                 )
         else:
             texts = text.split("\n")
@@ -232,19 +235,19 @@ class TTSModel:
                 for i, t in enumerate(texts):
                     audios.append(
                         infer(
-                            text = t,
-                            sdp_ratio = sdp_ratio,
-                            noise_scale = noise,
-                            noise_scale_w = noise_w,
-                            length_scale = length,
-                            sid = speaker_id,
-                            language = language,
-                            hps = self.hyper_parameters,
-                            net_g = self.__net_g,
-                            device = self.device,
-                            assist_text = assist_text,
-                            assist_text_weight = assist_text_weight,
-                            style_vec = style_vector,
+                            text=t,
+                            sdp_ratio=sdp_ratio,
+                            noise_scale=noise,
+                            noise_scale_w=noise_w,
+                            length_scale=length,
+                            sid=speaker_id,
+                            language=language,
+                            hps=self.hyper_parameters,
+                            net_g=self.__net_g,
+                            device=self.device,
+                            assist_text=assist_text,
+                            assist_text_weight=assist_text_weight,
+                            style_vec=style_vector,
                         )
                     )
                     if i != len(texts) - 1:
@@ -253,10 +256,10 @@ class TTSModel:
         logger.info("Audio data generated successfully")
         if not (pitch_scale == 1.0 and intonation_scale == 1.0):
             _, audio = adjust_voice(
-                fs = self.hyper_parameters.data.sampling_rate,
-                wave = audio,
-                pitch_scale = pitch_scale,
-                intonation_scale = intonation_scale,
+                fs=self.hyper_parameters.data.sampling_rate,
+                wave=audio,
+                pitch_scale=pitch_scale,
+                intonation_scale=intonation_scale,
             )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -276,7 +279,6 @@ class TTSModelHolder:
     Style-Bert-Vits2 の音声合成モデルを管理するクラス。
     model_holder.models_info から指定されたディレクトリ内にある音声合成モデルの一覧を取得できる。
     """
-
 
     def __init__(self, model_root_dir: Path, device: str) -> None:
         """
@@ -307,7 +309,6 @@ class TTSModelHolder:
         self.model_names: list[str] = []
         self.models_info: list[TTSModelInfo] = []
         self.refresh()
-
 
     def refresh(self) -> None:
         """
@@ -342,13 +343,14 @@ class TTSModelHolder:
             styles = list(style2id.keys())
             spk2id: dict[str, int] = hyper_parameters.data.spk2id
             speakers = list(spk2id.keys())
-            self.models_info.append(TTSModelInfo(
-                name = model_dir.name,
-                files = [str(f) for f in model_files],
-                styles = styles,
-                speakers = speakers,
-            ))
-
+            self.models_info.append(
+                TTSModelInfo(
+                    name=model_dir.name,
+                    files=[str(f) for f in model_files],
+                    styles=styles,
+                    speakers=speakers,
+                )
+            )
 
     def get_model(self, model_name: str, model_path_str: str) -> TTSModel:
         """
@@ -370,16 +372,17 @@ class TTSModelHolder:
             raise ValueError(f"Model file `{model_path}` is not found")
         if self.current_model is None or self.current_model.model_path != model_path:
             self.current_model = TTSModel(
-                model_path = model_path,
-                config_path = self.root_dir / model_name / "config.json",
-                style_vec_path = self.root_dir / model_name / "style_vectors.npy",
-                device = self.device,
+                model_path=model_path,
+                config_path=self.root_dir / model_name / "config.json",
+                style_vec_path=self.root_dir / model_name / "style_vectors.npy",
+                device=self.device,
             )
 
         return self.current_model
 
-
-    def get_model_for_gradio(self, model_name: str, model_path_str: str) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
+    def get_model_for_gradio(
+        self, model_name: str, model_path_str: str
+    ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
@@ -398,10 +401,10 @@ class TTSModelHolder:
                 gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
             )
         self.current_model = TTSModel(
-            model_path = model_path,
-            config_path = self.root_dir / model_name / "config.json",
-            style_vec_path = self.root_dir / model_name / "style_vectors.npy",
-            device = self.device,
+            model_path=model_path,
+            config_path=self.root_dir / model_name / "config.json",
+            style_vec_path=self.root_dir / model_name / "style_vectors.npy",
+            device=self.device,
         )
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
@@ -411,13 +414,13 @@ class TTSModelHolder:
             gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
         )
 
-
     def update_model_files_for_gradio(self, model_name: str) -> gr.Dropdown:
         model_files = self.model_files_dict[model_name]
         return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
 
-
-    def update_model_names_for_gradio(self) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
+    def update_model_names_for_gradio(
+        self,
+    ) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
         self.refresh()
         initial_model_name = self.model_names[0]
         initial_model_files = self.model_files_dict[initial_model_name]

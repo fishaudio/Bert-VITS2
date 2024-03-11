@@ -18,7 +18,11 @@ from fastapi import HTTPException
 from style_bert_vits2.constants import DEFAULT_USER_DICT_DIR
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.user_dict.word_model import UserDictWord, WordTypes
-from style_bert_vits2.nlp.japanese.user_dict.part_of_speech_data import MAX_PRIORITY, MIN_PRIORITY, part_of_speech_data
+from style_bert_vits2.nlp.japanese.user_dict.part_of_speech_data import (
+    MAX_PRIORITY,
+    MIN_PRIORITY,
+    part_of_speech_data,
+)
 
 # root_dir = engine_root()
 # save_dir = get_save_dir()
@@ -26,9 +30,13 @@ from style_bert_vits2.nlp.japanese.user_dict.part_of_speech_data import MAX_PRIO
 # if not save_dir.is_dir():
 #     save_dir.mkdir(parents=True)
 
-default_dict_path = DEFAULT_USER_DICT_DIR / "default.csv"  # VOICEVOXデフォルト辞書ファイルのパス
+default_dict_path = (
+    DEFAULT_USER_DICT_DIR / "default.csv"
+)  # VOICEVOXデフォルト辞書ファイルのパス
 user_dict_path = DEFAULT_USER_DICT_DIR / "user_dict.json"  # ユーザー辞書ファイルのパス
-compiled_dict_path = DEFAULT_USER_DICT_DIR / "user.dic"  # コンパイル済み辞書ファイルのパス
+compiled_dict_path = (
+    DEFAULT_USER_DICT_DIR / "user.dic"
+)  # コンパイル済み辞書ファイルのパス
 
 
 # # 同時書き込みの制御

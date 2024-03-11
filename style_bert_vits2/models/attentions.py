@@ -24,7 +24,9 @@ class LayerNorm(nn.Module):
 
 
 @torch.jit.script  # type: ignore
-def fused_add_tanh_sigmoid_multiply(input_a: torch.Tensor, input_b: torch.Tensor, n_channels: list[int]) -> torch.Tensor:
+def fused_add_tanh_sigmoid_multiply(
+    input_a: torch.Tensor, input_b: torch.Tensor, n_channels: list[int]
+) -> torch.Tensor:
     n_channels_int = n_channels[0]
     in_act = input_a + input_b
     t_act = torch.tanh(in_act[:, :n_channels_int, :])
@@ -44,7 +46,7 @@ class Encoder(nn.Module):
         p_dropout: float = 0.0,
         window_size: int = 4,
         isflow: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
@@ -99,7 +101,9 @@ class Encoder(nn.Module):
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
         x = x * x_mask
         for i in range(self.n_layers):
@@ -131,7 +135,7 @@ class Decoder(nn.Module):
         p_dropout: float = 0.0,
         proximal_bias: bool = False,
         proximal_init: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
@@ -180,7 +184,13 @@ class Decoder(nn.Module):
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, h: torch.Tensor, h_mask: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        h: torch.Tensor,
+        h_mask: torch.Tensor,
+    ) -> torch.Tensor:
         """
         x: decoder input
         h: encoder output
@@ -262,7 +272,9 @@ class MultiHeadAttention(nn.Module):
                 assert self.conv_q.bias is not None
                 self.conv_k.bias.copy_(self.conv_q.bias)
 
-    def forward(self, x: torch.Tensor, c: torch.Tensor, attn_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, c: torch.Tensor, attn_mask: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         q = self.conv_q(x)
         k = self.conv_k(c)
         v = self.conv_v(c)
@@ -329,7 +341,9 @@ class MultiHeadAttention(nn.Module):
         )  # [b, n_h, t_t, d_k] -> [b, d, t_t]
         return output, p_attn
 
-    def _matmul_with_relative_values(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def _matmul_with_relative_values(
+        self, x: torch.Tensor, y: torch.Tensor
+    ) -> torch.Tensor:
         """
         x: [b, h, l, m]
         y: [h or 1, m, d]
@@ -338,7 +352,9 @@ class MultiHeadAttention(nn.Module):
         ret = torch.matmul(x, y.unsqueeze(0))
         return ret
 
-    def _matmul_with_relative_keys(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def _matmul_with_relative_keys(
+        self, x: torch.Tensor, y: torch.Tensor
+    ) -> torch.Tensor:
         """
         x: [b, h, l, d]
         y: [h or 1, m, d]
@@ -347,7 +363,9 @@ class MultiHeadAttention(nn.Module):
         ret = torch.matmul(x, y.unsqueeze(0).transpose(-2, -1))
         return ret
 
-    def _get_relative_embeddings(self, relative_embeddings: torch.Tensor, length: int) -> torch.Tensor:
+    def _get_relative_embeddings(
+        self, relative_embeddings: torch.Tensor, length: int
+    ) -> torch.Tensor:
         assert self.window_size is not None
         2 * self.window_size + 1  # type: ignore
         # Pad first before slice to avoid using cond ops.

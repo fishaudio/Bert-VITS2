@@ -107,7 +107,9 @@ def plot_spectrogram_to_numpy(spectrogram: NDArray[Any]) -> NDArray[Any]:
     return data
 
 
-def plot_alignment_to_numpy(alignment: NDArray[Any], info: Optional[str] = None) -> NDArray[Any]:
+def plot_alignment_to_numpy(
+    alignment: NDArray[Any], info: Optional[str] = None
+) -> NDArray[Any]:
     """
     指定されたアライメントを画像データに変換する
 
@@ -163,7 +165,9 @@ def load_wav_to_torch(full_path: Union[str, Path]) -> tuple[torch.FloatTensor, i
     return torch.FloatTensor(data.astype(np.float32)), sampling_rate
 
 
-def load_filepaths_and_text(filename: Union[str, Path], split: str = "|") -> list[list[str]]:
+def load_filepaths_and_text(
+    filename: Union[str, Path], split: str = "|"
+) -> list[list[str]]:
     """
     指定されたファイルからファイルパスとテキストを読み込む
 
@@ -180,7 +184,9 @@ def load_filepaths_and_text(filename: Union[str, Path], split: str = "|") -> lis
     return filepaths_and_text
 
 
-def get_logger(model_dir_path: Union[str, Path], filename: str = "train.log") -> logging.Logger:
+def get_logger(
+    model_dir_path: Union[str, Path], filename: str = "train.log"
+) -> logging.Logger:
     """
     ロガーを取得する
 

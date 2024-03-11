@@ -95,7 +95,11 @@ def __g2p(segments: list[str]) -> tuple[list[str], list[int], list[int]]:
                         if pinyin[0] in single_rep_map.keys():
                             pinyin = single_rep_map[pinyin[0]] + pinyin[1:]
 
-                assert pinyin in __PINYIN_TO_SYMBOL_MAP.keys(), (pinyin, seg, raw_pinyin)
+                assert pinyin in __PINYIN_TO_SYMBOL_MAP.keys(), (
+                    pinyin,
+                    seg,
+                    raw_pinyin,
+                )
                 phone = __PINYIN_TO_SYMBOL_MAP[pinyin].split(" ")
                 word2ph.append(len(phone))
 
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     text = normalize_text(text)
     print(text)
     phones, tones, word2ph = g2p(text)
-    bert = extract_bert_feature(text, word2ph, 'cuda')
+    bert = extract_bert_feature(text, word2ph, "cuda")
 
     print(phones, tones, word2ph, bert.shape)
 

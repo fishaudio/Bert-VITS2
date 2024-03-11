@@ -2,12 +2,15 @@ import socket
 from typing import Any, cast
 
 from style_bert_vits2.logging import logger
-from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import RequestType, receive_data, send_data
+from style_bert_vits2.nlp.japanese.pyopenjtalk_worker.worker_common import (
+    RequestType,
+    receive_data,
+    send_data,
+)
 
 
 class WorkerClient:
-    """ pyopenjtalk worker client """
-
+    """pyopenjtalk worker client"""
 
     def __init__(self, port: int) -> None:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,18 +19,14 @@ class WorkerClient:
         sock.connect((socket.gethostname(), port))
         self.sock = sock
 
-
     def __enter__(self) -> "WorkerClient":
         return self
-
 
     def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         self.close()
 
-
     def close(self) -> None:
         self.sock.close()
-
 
     def dispatch_pyopenjtalk(self, func: str, *args: Any, **kwargs: Any) -> Any:
         data = {
@@ -43,7 +42,6 @@ class WorkerClient:
         logger.trace(f"client received response: {response}")
         return response.get("return")
 
-
     def status(self) -> int:
         data = {"request-type": RequestType.STATUS}
         logger.trace(f"client sends request: {data}")
@@ -52,7 +50,6 @@ class WorkerClient:
         response = receive_data(self.sock)
         logger.trace(f"client received response: {response}")
         return cast(int, response.get("client-count"))
-
 
     def quit_server(self) -> None:
         data = {"request-type": RequestType.QUIT_SERVER}

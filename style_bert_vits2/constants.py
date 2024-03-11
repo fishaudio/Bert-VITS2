@@ -9,12 +9,14 @@ VERSION = "2.4"
 # Style-Bert-VITS2 のベースディレクトリ
 BASE_DIR = Path(__file__).parent.parent
 
+
 # 利用可能な言語
 ## JP-Extra モデル利用時は JP 以外の言語の音声合成はできない
 class Languages(StrEnum):
     JP = "JP"
     EN = "EN"
     ZH = "ZH"
+
 
 # 言語ごとのデフォルトの BERT トークナイザーのパス
 DEFAULT_BERT_TOKENIZER_PATHS = {

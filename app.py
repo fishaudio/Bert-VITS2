@@ -51,4 +51,9 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             create_merge_app(model_holder=model_holder)
 
 
-app.launch(server_name=args.host, server_port=args.port, inbrowser=not args.no_autolaunch, share=args.share)
+app.launch(
+    server_name=args.host,
+    server_port=args.port,
+    inbrowser=not args.no_autolaunch,
+    share=args.share,
+)

@@ -39,12 +39,14 @@ def piecewise_rational_quadratic_transform(
         min_bin_width=min_bin_width,
         min_bin_height=min_bin_height,
         min_derivative=min_derivative,
-        **spline_kwargs  # type: ignore
+        **spline_kwargs,  # type: ignore
     )
     return outputs, logabsdet
 
 
-def searchsorted(bin_locations: torch.Tensor, inputs: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+def searchsorted(
+    bin_locations: torch.Tensor, inputs: torch.Tensor, eps: float = 1e-6
+) -> torch.Tensor:
     bin_locations[..., -1] += eps
     return torch.sum(inputs[..., None] >= bin_locations, dim=-1) - 1
 

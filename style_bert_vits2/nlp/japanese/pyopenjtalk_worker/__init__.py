@@ -25,6 +25,7 @@ def run_frontend(text: str) -> list[dict[str, Any]]:
     else:
         # without worker
         import pyopenjtalk
+
         return pyopenjtalk.run_frontend(text)
 
 
@@ -36,6 +37,7 @@ def make_label(njd_features: Any) -> list[str]:
     else:
         # without worker
         import pyopenjtalk
+
         return pyopenjtalk.make_label(njd_features)
 
 
@@ -45,6 +47,7 @@ def mecab_dict_index(path: str, out_path: str, dn_mecab: Optional[str] = None) -
     else:
         # without worker
         import pyopenjtalk
+
         pyopenjtalk.mecab_dict_index(path, out_path, dn_mecab)
 
 
@@ -54,6 +57,7 @@ def update_global_jtalk_with_user_dict(path: str) -> None:
     else:
         # without worker
         import pyopenjtalk
+
         pyopenjtalk.update_global_jtalk_with_user_dict(path)
 
 
@@ -63,6 +67,7 @@ def unset_user_dict() -> None:
     else:
         # without worker
         import pyopenjtalk
+
         pyopenjtalk.unset_user_dict()
 
 
@@ -102,7 +107,12 @@ def initialize_worker(port: int = WORKER_PORT) -> None:
         else:
             # align with Windows behavior
             # start_new_session is same as specifying setsid in preexec_fn
-            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            subprocess.Popen(
+                args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
 
         # wait until server listening
         count = 0

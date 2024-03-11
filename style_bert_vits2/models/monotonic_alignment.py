@@ -40,8 +40,8 @@ def maximum_path(neg_cent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         numba.int32[::1],
         numba.int32[::1],
     ),
-    nopython = True,
-    nogil = True,
+    nopython=True,
+    nogil=True,
 )  # type: ignore
 def __maximum_path_jit(paths: Any, values: Any, t_ys: Any, t_xs: Any) -> None:
     """

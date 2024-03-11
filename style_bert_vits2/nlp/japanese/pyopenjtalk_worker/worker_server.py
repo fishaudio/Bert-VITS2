@@ -26,13 +26,11 @@ PYOPENJTALK_FUNC_DICT = {
 
 
 class WorkerServer:
-    """ pyopenjtalk worker server """
-
+    """pyopenjtalk worker server"""
 
     def __init__(self) -> None:
         self.client_count: int = 0
         self.quit: bool = False
-
 
     def handle_request(self, request: dict[str, Any]) -> dict[str, Any]:
         request_type = None
@@ -69,7 +67,6 @@ class WorkerServer:
                 response = request
 
         return response
-
 
     def start_server(self, port: int, no_client_timeout: int = 30) -> None:
         logger.info("start pyopenjtalk worker server")

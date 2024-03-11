@@ -74,16 +74,19 @@ def clean_text(
     if language == Languages.JP:
         from style_bert_vits2.nlp.japanese.g2p import g2p
         from style_bert_vits2.nlp.japanese.normalizer import normalize_text
+
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text, use_jp_extra, raise_yomi_error)
     elif language == Languages.EN:
         from style_bert_vits2.nlp.english.g2p import g2p
         from style_bert_vits2.nlp.english.normalizer import normalize_text
+
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     elif language == Languages.ZH:
         from style_bert_vits2.nlp.chinese.g2p import g2p
         from style_bert_vits2.nlp.chinese.normalizer import normalize_text
+
         norm_text = normalize_text(text)
         phones, tones, word2ph = g2p(norm_text)
     else:
@@ -92,7 +95,9 @@ def clean_text(
     return norm_text, phones, tones, word2ph
 
 
-def cleaned_text_to_sequence(cleaned_phones: list[str], tones: list[int], language: Languages) -> tuple[list[int], list[int], list[int]]:
+def cleaned_text_to_sequence(
+    cleaned_phones: list[str], tones: list[int], language: Languages
+) -> tuple[list[int], list[int], list[int]]:
     """
     テキスト文字列を、テキスト内の記号に対応する一連の ID に変換する
 

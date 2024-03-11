@@ -14,7 +14,7 @@ def load_checkpoint(
     model: torch.nn.Module,
     optimizer: Optional[torch.optim.Optimizer] = None,
     skip_optimizer: bool = False,
-    for_infer: bool = False
+    for_infer: bool = False,
 ) -> tuple[torch.nn.Module, Optional[torch.optim.Optimizer], float, int]:
     """
     指定されたパスからチェックポイントを読み込み、モデルとオプティマイザーを更新する。
@@ -107,7 +107,9 @@ def save_checkpoint(
         iteration (int): イテレーション数
         checkpoint_path (Union[str, Path]): 保存先のパス
     """
-    logger.info(f"Saving model and optimizer state at iteration {iteration} to {checkpoint_path}")
+    logger.info(
+        f"Saving model and optimizer state at iteration {iteration} to {checkpoint_path}"
+    )
     if hasattr(model, "module"):
         state_dict = model.module.state_dict()
     else:
@@ -123,7 +125,11 @@ def save_checkpoint(
     )
 
 
-def clean_checkpoints(model_dir_path: Union[str, Path] = "logs/44k/", n_ckpts_to_keep: int = 2, sort_by_time: bool = True) -> None:
+def clean_checkpoints(
+    model_dir_path: Union[str, Path] = "logs/44k/",
+    n_ckpts_to_keep: int = 2,
+    sort_by_time: bool = True,
+) -> None:
     """
     指定されたディレクトリから古いチェックポイントを削除して空き容量を確保する
 
@@ -172,7 +178,9 @@ def clean_checkpoints(model_dir_path: Union[str, Path] = "logs/44k/", n_ckpts_to
     [del_routine(fn) for fn in to_del]
 
 
-def get_latest_checkpoint_path(model_dir_path: Union[str, Path], regex: str = "G_*.pth") -> str:
+def get_latest_checkpoint_path(
+    model_dir_path: Union[str, Path], regex: str = "G_*.pth"
+) -> str:
     """
     指定されたディレクトリから最新のチェックポイントのパスを取得する
 

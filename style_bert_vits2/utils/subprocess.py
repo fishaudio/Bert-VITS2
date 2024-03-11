@@ -6,7 +6,9 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
-def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[bool, str]:
+def run_script_with_log(
+    cmd: list[str], ignore_warning: bool = False
+) -> tuple[bool, str]:
     """
     指定されたコマンドを実行し、そのログを記録する。
 
@@ -21,10 +23,10 @@ def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[b
     logger.info(f"Running: {' '.join(cmd)}")
     result = subprocess.run(
         [sys.executable] + cmd,
-        stdout = SAFE_STDOUT,
-        stderr = subprocess.PIPE,
-        text = True,
-        encoding = "utf-8",
+        stdout=SAFE_STDOUT,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
     )
     if result.returncode != 0:
         logger.error(f"Error: {' '.join(cmd)}\n{result.stderr}")
@@ -37,7 +39,9 @@ def run_script_with_log(cmd: list[str], ignore_warning: bool = False) -> tuple[b
     return True, ""
 
 
-def second_elem_of(original_function: Callable[..., tuple[Any, Any]]) -> Callable[..., Any]:
+def second_elem_of(
+    original_function: Callable[..., tuple[Any, Any]]
+) -> Callable[..., Any]:
     """
     与えられた関数をラップし、その戻り値の 2 番目の要素のみを返す関数を生成する。
 

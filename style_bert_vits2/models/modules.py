@@ -88,7 +88,9 @@ class DDSConv(nn.Module):
     Dialted and Depth-Separable Convolution
     """
 
-    def __init__(self, channels: int, kernel_size: int, n_layers: int, p_dropout: float = 0.0) -> None:
+    def __init__(
+        self, channels: int, kernel_size: int, n_layers: int, p_dropout: float = 0.0
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -117,7 +119,9 @@ class DDSConv(nn.Module):
             self.norms_1.append(LayerNorm(channels))
             self.norms_2.append(LayerNorm(channels))
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         if g is not None:
             x = x + g
         for i in range(self.n_layers):
@@ -184,7 +188,13 @@ class WN(torch.nn.Module):
             res_skip_layer = torch.nn.utils.weight_norm(res_skip_layer, name="weight")
             self.res_skip_layers.append(res_skip_layer)
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None, **kwargs: Any) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
         output = torch.zeros_like(x)
         n_channels_tensor = torch.IntTensor([self.hidden_channels])
 
@@ -221,7 +231,12 @@ class WN(torch.nn.Module):
 
 
 class ResBlock1(torch.nn.Module):
-    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int, int] = (1, 3, 5)) -> None:
+    def __init__(
+        self,
+        channels: int,
+        kernel_size: int = 3,
+        dilation: tuple[int, int, int] = (1, 3, 5),
+    ) -> None:
         super(ResBlock1, self).__init__()
         self.convs1 = nn.ModuleList(
             [
@@ -295,7 +310,9 @@ class ResBlock1(torch.nn.Module):
         )
         self.convs2.apply(commons.init_weights)
 
-    def forward(self, x: torch.Tensor, x_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, x_mask: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         for c1, c2 in zip(self.convs1, self.convs2):
             xt = F.leaky_relu(x, LRELU_SLOPE)
             if x_mask is not None:
@@ -318,7 +335,9 @@ class ResBlock1(torch.nn.Module):
 
 
 class ResBlock2(torch.nn.Module):
-    def __init__(self, channels: int, kernel_size: int = 3, dilation: tuple[int, int] = (1, 3)) -> None:
+    def __init__(
+        self, channels: int, kernel_size: int = 3, dilation: tuple[int, int] = (1, 3)
+    ) -> None:
         super(ResBlock2, self).__init__()
         self.convs = nn.ModuleList(
             [
@@ -346,7 +365,9 @@ class ResBlock2(torch.nn.Module):
         )
         self.convs.apply(commons.init_weights)
 
-    def forward(self, x: torch.Tensor, x_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, x_mask: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         for c in self.convs:
             xt = F.leaky_relu(x, LRELU_SLOPE)
             if x_mask is not None:

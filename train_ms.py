@@ -281,28 +281,28 @@ def run():
         mas_noise_scale_initial=mas_noise_scale_initial,
         noise_scale_delta=noise_scale_delta,
         # hps.model 以下のすべての値を引数に渡す
-        use_spk_conditioned_encoder = hps.model.use_spk_conditioned_encoder,
-        use_noise_scaled_mas = hps.model.use_noise_scaled_mas,
-        use_mel_posterior_encoder = hps.model.use_mel_posterior_encoder,
-        use_duration_discriminator = hps.model.use_duration_discriminator,
-        use_wavlm_discriminator = hps.model.use_wavlm_discriminator,
-        inter_channels = hps.model.inter_channels,
-        hidden_channels = hps.model.hidden_channels,
-        filter_channels = hps.model.filter_channels,
-        n_heads = hps.model.n_heads,
-        n_layers = hps.model.n_layers,
-        kernel_size = hps.model.kernel_size,
-        p_dropout = hps.model.p_dropout,
-        resblock = hps.model.resblock,
-        resblock_kernel_sizes = hps.model.resblock_kernel_sizes,
-        resblock_dilation_sizes = hps.model.resblock_dilation_sizes,
-        upsample_rates = hps.model.upsample_rates,
-        upsample_initial_channel = hps.model.upsample_initial_channel,
-        upsample_kernel_sizes = hps.model.upsample_kernel_sizes,
-        n_layers_q = hps.model.n_layers_q,
-        use_spectral_norm = hps.model.use_spectral_norm,
-        gin_channels = hps.model.gin_channels,
-        slm = hps.model.slm,
+        use_spk_conditioned_encoder=hps.model.use_spk_conditioned_encoder,
+        use_noise_scaled_mas=hps.model.use_noise_scaled_mas,
+        use_mel_posterior_encoder=hps.model.use_mel_posterior_encoder,
+        use_duration_discriminator=hps.model.use_duration_discriminator,
+        use_wavlm_discriminator=hps.model.use_wavlm_discriminator,
+        inter_channels=hps.model.inter_channels,
+        hidden_channels=hps.model.hidden_channels,
+        filter_channels=hps.model.filter_channels,
+        n_heads=hps.model.n_heads,
+        n_layers=hps.model.n_layers,
+        kernel_size=hps.model.kernel_size,
+        p_dropout=hps.model.p_dropout,
+        resblock=hps.model.resblock,
+        resblock_kernel_sizes=hps.model.resblock_kernel_sizes,
+        resblock_dilation_sizes=hps.model.resblock_dilation_sizes,
+        upsample_rates=hps.model.upsample_rates,
+        upsample_initial_channel=hps.model.upsample_initial_channel,
+        upsample_kernel_sizes=hps.model.upsample_kernel_sizes,
+        n_layers_q=hps.model.n_layers_q,
+        use_spectral_norm=hps.model.use_spectral_norm,
+        gin_channels=hps.model.gin_channels,
+        slm=hps.model.slm,
     ).cuda(local_rank)
 
     if getattr(hps.train, "freeze_ZH_bert", False):
@@ -389,7 +389,9 @@ def run():
         epoch_str = max(epoch_str, 1)
         # global_step = (epoch_str - 1) * len(train_loader)
         global_step = int(
-            utils.get_steps(utils.checkpoints.get_latest_checkpoint_path(model_dir, "G_*.pth"))
+            utils.get_steps(
+                utils.checkpoints.get_latest_checkpoint_path(model_dir, "G_*.pth")
+            )
         )
         logger.info(
             f"******************Found the model. Current epoch is {epoch_str}, gloabl step is {global_step}*********************"

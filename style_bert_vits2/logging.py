@@ -9,7 +9,7 @@ logger.remove()
 # Add a new handler
 logger.add(
     SAFE_STDOUT,
-    format = "<g>{time:MM-DD HH:mm:ss}</g> |<lvl>{level:^8}</lvl>| {file}:{line} | {message}",
-    backtrace = True,
-    diagnose = True,
+    format="<g>{time:MM-DD HH:mm:ss}</g> |<lvl>{level:^8}</lvl>| {file}:{line} | {message}",
+    backtrace=True,
+    diagnose=True,
 )

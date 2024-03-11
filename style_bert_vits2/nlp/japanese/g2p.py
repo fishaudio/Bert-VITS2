@@ -10,9 +10,7 @@ from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
 
 def g2p(
-    norm_text: str,
-    use_jp_extra: bool = True,
-    raise_yomi_error: bool = False
+    norm_text: str, use_jp_extra: bool = True, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[int], list[int]]:
     """
     他で使われるメインの関数。`normalize_text()` で正規化された `norm_text` を受け取り、
@@ -93,8 +91,7 @@ def g2p(
 
 
 def text_to_sep_kata(
-    norm_text: str,
-    raise_yomi_error: bool = False
+    norm_text: str, raise_yomi_error: bool = False
 ) -> tuple[list[str], list[str]]:
     """
     `normalize_text` で正規化済みの `norm_text` を受け取り、それを単語分割し、
@@ -212,7 +209,9 @@ def __g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     return result
 
 
-def __pyopenjtalk_g2p_prosody(text: str, drop_unvoiced_vowels: bool = True) -> list[str]:
+def __pyopenjtalk_g2p_prosody(
+    text: str, drop_unvoiced_vowels: bool = True
+) -> list[str]:
     """
     ESPnet の実装から引用、変更点無し。「ん」は「N」なことに注意。
     ref: https://github.com/espnet/espnet/blob/master/espnet2/text/phoneme_tokenizer.py
@@ -414,8 +413,7 @@ def __kata_to_phoneme_list(text: str) -> list[str]:
 
 
 def __align_tones(
-    phones_with_punct: list[str],
-    phone_tone_list: list[tuple[str, int]]
+    phones_with_punct: list[str], phone_tone_list: list[tuple[str, int]]
 ) -> list[tuple[str, int]]:
     """
     例: …私は、、そう思う。

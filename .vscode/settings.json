@@ -19,4 +19,8 @@
         "reportUnusedFunction": "none",
         "reportUnusedVariable": "information",
     },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnType": true,
+    },
 }

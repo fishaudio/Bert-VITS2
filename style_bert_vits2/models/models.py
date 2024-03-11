@@ -21,7 +21,7 @@ class DurationDiscriminator(nn.Module):  # vits2
         filter_channels: int,
         kernel_size: int,
         p_dropout: float,
-        gin_channels: int = 0
+        gin_channels: int = 0,
     ) -> None:
         super().__init__()
 
@@ -330,7 +330,9 @@ class DurationPredictor(nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, in_channels, 1)
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, x_mask: torch.Tensor, g: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         x = torch.detach(x)
         if g is not None:
             g = torch.detach(g)
@@ -582,7 +584,9 @@ class Generator(torch.nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, g: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -613,7 +617,13 @@ class Generator(torch.nn.Module):
 
 
 class DiscriminatorP(torch.nn.Module):
-    def __init__(self, period: int, kernel_size: int = 5, stride: int = 3, use_spectral_norm: bool = False) -> None:
+    def __init__(
+        self,
+        period: int,
+        kernel_size: int = 5,
+        stride: int = 3,
+        use_spectral_norm: bool = False,
+    ) -> None:
         super(DiscriminatorP, self).__init__()
         self.period = period
         self.use_spectral_norm = use_spectral_norm
@@ -736,7 +746,9 @@ class MultiPeriodDiscriminator(torch.nn.Module):
         self,
         y: torch.Tensor,
         y_hat: torch.Tensor,
-    ) -> tuple[list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
+    ) -> tuple[
+        list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]
+    ]:
         y_d_rs = []
         y_d_gs = []
         fmap_rs = []
@@ -787,7 +799,9 @@ class ReferenceEncoder(nn.Module):
         )
         self.proj = nn.Linear(128, gin_channels)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         N = inputs.size(0)
         out = inputs.view(N, 1, -1, self.spec_channels)  # [N, 1, Ty, n_freqs]
         for conv in self.convs:
@@ -805,7 +819,9 @@ class ReferenceEncoder(nn.Module):
 
         return self.proj(out.squeeze(0))
 
-    def calculate_channels(self, L: int, kernel_size: int, stride: int, pad: int, n_convs: int) -> int:
+    def calculate_channels(
+        self, L: int, kernel_size: int, stride: int, pad: int, n_convs: int
+    ) -> int:
         for i in range(n_convs):
             L = (L - kernel_size + 2 * pad) // stride + 1
         return L

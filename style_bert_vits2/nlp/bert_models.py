@@ -30,7 +30,9 @@ from style_bert_vits2.logging import logger
 __loaded_models: dict[Languages, Union[PreTrainedModel, DebertaV2Model]] = {}
 
 # 各言語ごとのロード済みの BERT トークナイザーを格納する辞書
-__loaded_tokenizers: dict[Languages, Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]] = {}
+__loaded_tokenizers: dict[
+    Languages, Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]
+] = {}
 
 
 def load_model(
@@ -63,18 +65,24 @@ def load_model(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_BERT_TOKENIZER_PATHS[language].exists(), \
-            f"The default {language} BERT model does not exist on the file system. Please specify the path to the pre-trained model."
+        assert DEFAULT_BERT_TOKENIZER_PATHS[
+            language
+        ].exists(), f"The default {language} BERT model does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_BERT_TOKENIZER_PATHS[language])
 
     # BERT モデルをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Model でロードする必要がある
     if language == Languages.EN:
-        model = cast(DebertaV2Model, DebertaV2Model.from_pretrained(pretrained_model_name_or_path))
+        model = cast(
+            DebertaV2Model,
+            DebertaV2Model.from_pretrained(pretrained_model_name_or_path),
+        )
     else:
         model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path)
     __loaded_models[language] = model
-    logger.info(f"Loaded the {language} BERT model from {pretrained_model_name_or_path}")
+    logger.info(
+        f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
+    )
 
     return model
 
@@ -109,8 +117,9 @@ def load_tokenizer(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_BERT_TOKENIZER_PATHS[language].exists(), \
-            f"The default {language} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
+        assert DEFAULT_BERT_TOKENIZER_PATHS[
+            language
+        ].exists(), f"The default {language} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_BERT_TOKENIZER_PATHS[language])
 
     # BERT トークナイザーをロードし、辞書に格納して返す
@@ -120,7 +129,9 @@ def load_tokenizer(
     else:
         tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
     __loaded_tokenizers[language] = tokenizer
-    logger.info(f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}")
+    logger.info(
+        f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}"
+    )
 
     return tokenizer
 

@@ -67,7 +67,9 @@ def intersperse(lst: list[Any], item: Any) -> list[Any]:
     return result
 
 
-def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4) -> torch.Tensor:
+def slice_segments(
+    x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
+) -> torch.Tensor:
     """
     テンソルからセグメントをスライスする
 
@@ -85,7 +87,9 @@ def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
     return torch.gather(x, 2, gather_indices)
 
 
-def rand_slice_segments(x: torch.Tensor, x_lengths: Optional[torch.Tensor] = None, segment_size: int = 4) -> tuple[torch.Tensor, torch.Tensor]:
+def rand_slice_segments(
+    x: torch.Tensor, x_lengths: Optional[torch.Tensor] = None, segment_size: int = 4
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     ランダムなセグメントをスライスする
 
@@ -121,7 +125,9 @@ def subsequent_mask(length: int) -> torch.Tensor:
 
 
 @torch.jit.script  # type: ignore
-def fused_add_tanh_sigmoid_multiply(input_a: torch.Tensor, input_b: torch.Tensor, n_channels: torch.Tensor) -> torch.Tensor:
+def fused_add_tanh_sigmoid_multiply(
+    input_a: torch.Tensor, input_b: torch.Tensor, n_channels: torch.Tensor
+) -> torch.Tensor:
     """
     加算、tanh、sigmoid の活性化関数を組み合わせた演算を行う
 
@@ -141,7 +147,9 @@ def fused_add_tanh_sigmoid_multiply(input_a: torch.Tensor, input_b: torch.Tensor
     return acts
 
 
-def sequence_mask(length: torch.Tensor, max_length: Optional[int] = None) -> torch.Tensor:
+def sequence_mask(
+    length: torch.Tensor, max_length: Optional[int] = None
+) -> torch.Tensor:
     """
     シーケンスマスクを生成する
 
@@ -180,7 +188,11 @@ def generate_path(duration: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     return path
 
 
-def clip_grad_value_(parameters: Union[torch.Tensor, list[torch.Tensor]], clip_value: Optional[float], norm_type: float = 2.0) -> float:
+def clip_grad_value_(
+    parameters: Union[torch.Tensor, list[torch.Tensor]],
+    clip_value: Optional[float],
+    norm_type: float = 2.0,
+) -> float:
     """
     勾配の値をクリップする
 
