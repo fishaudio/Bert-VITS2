@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from faster_whisper import WhisperModel
@@ -12,7 +13,9 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
-def transcribe(wav_path: Path, initial_prompt=None, language="ja"):
+def transcribe(
+    wav_path: Path, initial_prompt: Optional[str] = None, language: str = "ja"
+):
     segments, _ = model.transcribe(
         str(wav_path), beam_size=5, language=language, initial_prompt=initial_prompt
     )
@@ -45,10 +48,10 @@ if __name__ == "__main__":
 
     input_dir = dataset_root / model_name / "raw"
     output_file = dataset_root / model_name / "esd.list"
-    initial_prompt = args.initial_prompt
-    language = args.language
-    device = args.device
-    compute_type = args.compute_type
+    initial_prompt: str = args.initial_prompt
+    language: str = args.language
+    device: str = args.device
+    compute_type: str = args.compute_type
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
 

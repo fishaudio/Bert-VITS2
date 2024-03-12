@@ -1,9 +1,11 @@
 import argparse
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 from tqdm import tqdm
 
 from config import config
@@ -11,10 +13,8 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
-
 warnings.filterwarnings("ignore", category=UserWarning)
 from pyannote.audio import Inference, Model
-
 
 model = Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM")
 inference = Inference(model, window="whole")
@@ -29,11 +29,11 @@ class NaNValueError(ValueError):
 
 
 # 推論時にインポートするために短いが関数を書く
-def get_style_vector(wav_path):
-    return inference(wav_path)
+def get_style_vector(wav_path: str) -> NDArray[Any]:
+    return inference(wav_path)  # type: ignore
 
 
-def save_style_vector(wav_path):
+def save_style_vector(wav_path: str):
     try:
         style_vec = get_style_vector(wav_path)
     except Exception as e:
@@ -48,18 +48,13 @@ def save_style_vector(wav_path):
     np.save(f"{wav_path}.npy", style_vec)  # `test.wav` -> `test.wav.npy`
 
 
-def process_line(line):
-    wavname = line.split("|")[0]
+def process_line(line: str):
+    wav_path = line.split("|")[0]
     try:
-        save_style_vector(wavname)
+        save_style_vector(wav_path)
         return line, None
     except NaNValueError:
         return line, "nan_error"
-
-
-def save_average_style_vector(style_vectors, filename="style_vectors.npy"):
-    average_vector = np.mean(style_vectors, axis=0)
-    np.save(filename, average_vector)
 
 
 if __name__ == "__main__":
@@ -71,14 +66,14 @@ if __name__ == "__main__":
         "--num_processes", type=int, default=config.style_gen_config.num_processes
     )
     args, _ = parser.parse_known_args()
-    config_path = args.config
-    num_processes = args.num_processes
+    config_path: str = args.config
+    num_processes: int = args.num_processes
 
     hps = HyperParameters.load_from_json(config_path)
 
     device = config.style_gen_config.device
 
-    training_lines = []
+    training_lines: list[str] = []
     with open(hps.data.training_files, encoding="utf-8") as f:
         training_lines.extend(f.readlines())
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
@@ -99,7 +94,7 @@ if __name__ == "__main__":
             f"Found NaN value in {len(nan_training_lines)} files: {nan_files}, so they will be deleted from training data."
         )
 
-    val_lines = []
+    val_lines: list[str] = []
     with open(hps.data.validation_files, encoding="utf-8") as f:
         val_lines.extend(f.readlines())
 
