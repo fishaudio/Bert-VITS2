@@ -357,7 +357,9 @@ class TextEncoder(nn.Module):
 
     def forward(self, x, x_lengths, tone, language, bert, emo, g=None):
         x_mask = torch.ones_like(x).unsqueeze(0)
-        bert_emb = self.bert_proj(self.bert_pre_proj(bert.transpose(0, 1).unsqueeze(0))).transpose(1, 2)
+        bert_emb = self.bert_proj(
+            self.bert_pre_proj(bert.transpose(0, 1).unsqueeze(0))
+        ).transpose(1, 2)
         emo_emb = self.in_feature_net(emo.transpose(0, 1))
         emo_emb, _, _ = self.emo_vq(emo_emb.unsqueeze(1))
         emo_emb = self.out_feature_net(emo_emb)
@@ -818,7 +820,7 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=6,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -1009,9 +1011,7 @@ class SynthesizerTrn(nn.Module):
             opset_version=16,
         )
 
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, emo, g
-        )
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, emo, g)
 
         zinput = (
             torch.randn(x.size(0), 2, x.size(2)).to(device=x.device, dtype=x.dtype)

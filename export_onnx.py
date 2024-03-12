@@ -7,7 +7,7 @@ if __name__ == "__main__":
     config_path = "model\\config.json"
     novq = False
     dev = False
-    Extra = "chinese"  #japanese or chinese
+    Extra = "chinese"  # japanese or chinese
     if not os.path.exists("onnx"):
         os.makedirs("onnx")
     if not os.path.exists(f"onnx/{export_path}"):

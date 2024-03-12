@@ -318,7 +318,7 @@ class TextEncoder(nn.Module):
         self.language_emb = nn.Embedding(num_languages, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        #self.bert_pre_proj = nn.Conv1d(2048, 1024, 1)
+        # self.bert_pre_proj = nn.Conv1d(2048, 1024, 1)
         self.in_feature_net = nn.Sequential(
             # input is assumed to an already normalized embedding
             nn.Linear(512, 1028, bias=False),
@@ -343,7 +343,7 @@ class TextEncoder(nn.Module):
             separate_codebook_per_head=True,
             stochastic_sample_codes=True,
             threshold_ema_dead_code=2,
-            use_cosine_sim = True,
+            use_cosine_sim=True,
         )
         self.out_feature_net = nn.Linear(512, hidden_channels)
 
@@ -351,7 +351,7 @@ class TextEncoder(nn.Module):
             hidden_channels,
             filter_channels,
             n_heads,
-            n_layers, 
+            n_layers,
             kernel_size,
             p_dropout,
             gin_channels=self.gin_channels,
@@ -821,7 +821,7 @@ class SynthesizerTrn(nn.Module):
         n_layers_trans_flow=6,
         flow_share_parameter=False,
         use_transformer_flow=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -1012,9 +1012,7 @@ class SynthesizerTrn(nn.Module):
             opset_version=16,
         )
 
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, emo, g
-        )
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, emo, g)
 
         zinput = (
             torch.randn(x.size(0), 2, x.size(2)).to(device=x.device, dtype=x.dtype)

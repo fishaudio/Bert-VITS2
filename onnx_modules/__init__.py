@@ -7,10 +7,10 @@ def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
     version = hps.version[0:3]
     enable_emo = False
     BertPaths = [
-            "chinese-roberta-wwm-ext-large",
-            "deberta-v2-large-japanese",
-            "bert-base-japanese-v3",
-        ]
+        "chinese-roberta-wwm-ext-large",
+        "deberta-v2-large-japanese",
+        "bert-base-japanese-v3",
+    ]
     if version == "2.0" or (version == "2.1" and novq):
         from .V200 import SynthesizerTrn, symbols
     elif version == "2.1" and (not novq):
@@ -23,6 +23,7 @@ def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
             from .V220 import SynthesizerTrn, symbols
     elif version == "2.3":
         from .V230 import SynthesizerTrn, symbols
+
         BertPaths[1] = "deberta-v2-large-japanese-char-wwm"
     elif version == "2.4":
         enable_emo = True
@@ -49,7 +50,11 @@ def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
     LangDict = {"ZH": [0, 0], "JP": [1, 6], "EN": [2, 8]}
     BertSize = 1024
     if version == "2.4":
-        BertPaths = (["Erlangshen-MegatronBert-1.3B-Chinese"] if Extra == "chinese" else ["deberta-v2-large-japanese-char-wwm"])
+        BertPaths = (
+            ["Erlangshen-MegatronBert-1.3B-Chinese"]
+            if Extra == "chinese"
+            else ["deberta-v2-large-japanese-char-wwm"]
+        )
         if Extra == "chinese":
             BertSize = 2048
 
@@ -66,7 +71,7 @@ def export_onnx(export_path, model_path, config_path, novq, dev, Extra):
         "Dict": "BasicDict",
         "BertPath": BertPaths,
         "Clap": ("clap-htsat-fused" if enable_emo else False),
-        "BertSize": BertSize
+        "BertSize": BertSize,
     }
 
     with open(f"onnx/{export_path}.json", "w") as MoeVsConfFile:
