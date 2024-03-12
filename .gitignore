@@ -5,6 +5,9 @@ dist/
 .coverage
 .ipynb_checkpoints/
 
+/Data/
+/model_assets/
+
 /*.yml
 !/default_config.yml
 /bert/*/*.bin
