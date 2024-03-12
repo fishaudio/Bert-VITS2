@@ -87,6 +87,9 @@ def initialize(
 
     config["train"]["bf16_run"] = False  # デフォルトでFalseのはずだが念のため
 
+    # 今はデフォルトであるが、以前は非JP-Extra版になくバグの原因になるので念のため
+    config["data"]["use_jp_extra"] = use_jp_extra
+
     model_path = os.path.join(dataset_path, "models")
     if os.path.exists(model_path):
         logger.warning(
