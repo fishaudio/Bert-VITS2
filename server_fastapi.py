@@ -8,7 +8,7 @@ import os
 import sys
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional, Any
 from urllib.parse import unquote
 
 import GPUtil
@@ -72,8 +72,12 @@ class AudioResponse(Response):
     media_type = "audio/wav"
 
 
+loaded_models: list[TTSModel] = []
+
+
 def load_models(model_holder: TTSModelHolder):
-    model_holder.models = []
+    global loaded_models
+    loaded_models = []
     for model_name, model_paths in model_holder.model_files_dict.items():
         model = TTSModel(
             model_path=model_paths[0],
@@ -81,8 +85,9 @@ def load_models(model_holder: TTSModelHolder):
             style_vec_path=model_holder.root_dir / model_name / "style_vectors.npy",
             device=model_holder.device,
         )
-        model.load()
-        model_holder.models.append(model)
+        # 起動時に全てのモデルを読み込むのは時間がかかりメモリを食うのでやめる
+        # model.load()
+        loaded_models.append(model)
 
 
 if __name__ == "__main__":
@@ -106,6 +111,7 @@ if __name__ == "__main__":
 
     logger.info("Loading models...")
     load_models(model_holder)
+
     limit = config.server_config.limit
     app = FastAPI()
     allow_origins = config.server_config.origins
@@ -120,7 +126,8 @@ if __name__ == "__main__":
             allow_methods=["*"],
             allow_headers=["*"],
         )
-    app.logger = logger
+    # app.logger = logger
+    # ↑効いていなさそう。loggerをどうやって上書きするかはよく分からなかった。
 
     @app.get("/voice", response_class=AudioResponse)
     async def voice(
@@ -165,7 +172,7 @@ if __name__ == "__main__":
         assist_text_weight: float = Query(
             DEFAULT_ASSIST_TEXT_WEIGHT, description="assist_textの強さ"
         ),
-        style: Optional[Union[int, str]] = Query(DEFAULT_STYLE, description="スタイル"),
+        style: Optional[str] = Query(DEFAULT_STYLE, description="スタイル"),
         style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="スタイルの強さ"),
         reference_audio_path: Optional[str] = Query(
             None, description="スタイルを音声ファイルで行う"
@@ -176,11 +183,11 @@ if __name__ == "__main__":
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
         if model_id >= len(
-            model_holder.models
+            model_holder.model_names
         ):  # /models/refresh があるためQuery(le)で表現不可
             raise_validation_error(f"model_id={model_id} not found", "model_id")
 
-        model = model_holder.models[model_id]
+        model = loaded_models[model_id]
         if speaker_name is None:
             if speaker_id not in model.id2spk.keys():
                 raise_validation_error(
@@ -194,6 +201,7 @@ if __name__ == "__main__":
             speaker_id = model.spk2id[speaker_name]
         if style not in model.style2id.keys():
             raise_validation_error(f"style={style} not found", "style")
+        assert style is not None
         if encoding is not None:
             text = unquote(text, encoding=encoding)
         sr, audio = model.infer(
@@ -222,8 +230,8 @@ if __name__ == "__main__":
     def get_loaded_models_info():
         """ロードされたモデル情報の取得"""
 
-        result: Dict[str, Dict] = dict()
-        for model_id, model in enumerate(model_holder.models):
+        result: dict[str, dict[str, Any]] = dict()
+        for model_id, model in enumerate(loaded_models):
             result[str(model_id)] = {
                 "config_path": model.config_path,
                 "model_path": model.model_path,
