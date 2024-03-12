@@ -400,7 +400,7 @@ def run_tensorboard(model_name):
     yield gr.Button("Tensorboardを開く")
 
 
-how_to_md = f"""
+how_to_md = """
 ## 使い方
 
 - データを準備して、モデル名を入力して、必要なら設定を調整してから、「自動前処理を実行」ボタンを押してください。進捗状況等はターミナルに表示されます。

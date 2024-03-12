@@ -39,7 +39,7 @@ bert_models.load_tokenizer(Languages.EN)
 bert_models.load_model(Languages.ZH)
 bert_models.load_tokenizer(Languages.ZH)
 
-languages = [l.value for l in Languages]
+languages = [lang.value for lang in Languages]
 
 initial_text = "こんにちは、初めまして。あなたの名前はなんていうの？"
 
@@ -100,7 +100,7 @@ examples = [
     ],
 ]
 
-initial_md = f"""
+initial_md = """
 - Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py --inbrowser`で起動できます。
 
 - 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。

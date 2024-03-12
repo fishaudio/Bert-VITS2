@@ -1,6 +1,7 @@
 import argparse
 import os
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import cpu_count
 
 import librosa
 import pyloudnorm as pyln

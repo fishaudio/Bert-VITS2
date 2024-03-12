@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import gc
 import os
 import platform
 
