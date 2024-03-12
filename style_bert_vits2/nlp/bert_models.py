@@ -39,7 +39,7 @@ def load_model(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
     cache_dir: Optional[str] = None,
-    revision: str = 'main',
+    revision: str = "main",
 ) -> Union[PreTrainedModel, DebertaV2Model]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT モデルを返す。
@@ -96,7 +96,7 @@ def load_tokenizer(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
     cache_dir: Optional[str] = None,
-    revision: str = 'main',
+    revision: str = "main",
 ) -> Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT トークナイザーを返す。

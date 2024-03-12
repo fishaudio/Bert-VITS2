@@ -8,10 +8,11 @@ from style_bert_vits2.nlp.chinese.tone_sandhi import ToneSandhi
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
 
-__PINYIN_TO_SYMBOL_MAP = {
-    line.split("\t")[0]: line.strip().split("\t")[1]
-    for line in open(Path(__file__).parent / "opencpop-strict.txt").readlines()
-}
+with open(Path(__file__).parent / "opencpop-strict.txt", "r", encoding="utf-8") as f:
+    __PINYIN_TO_SYMBOL_MAP = {
+        line.split("\t")[0]: line.strip().split("\t")[1]
+        for line in f.readlines()
+    }
 
 
 def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
