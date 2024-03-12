@@ -31,7 +31,7 @@ with Path("configs/paths.yml").open("r", encoding="utf-8") as f:
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="cuda")
 parser.add_argument("--host", type=str, default="127.0.0.1")
-parser.add_argument("--port", type=int, default=7860)
+parser.add_argument("--port", type=int, default=None)
 parser.add_argument("--no_autolaunch", action="store_true")
 parser.add_argument("--share", action="store_true")
 
