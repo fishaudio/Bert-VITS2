@@ -35,7 +35,7 @@ class StdoutWrapper(TextIO):
 
 
 try:
-    # import google.colab  # type: ignore
+    import google.colab  # type: ignore
 
     SAFE_STDOUT = StdoutWrapper()
 except ImportError:
