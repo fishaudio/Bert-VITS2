@@ -75,18 +75,18 @@ cov = [
 [tool.hatch.envs.style]
 detached = true
 dependencies = [
-  "black",
-  "isort",
+    "black",
+    "isort",
 ]
 [tool.hatch.envs.style.scripts]
 check = [
-  "black --check --diff .",
-  "isort --check-only --diff --profile black --gitignore --lai 2 .",
+    "black --check --diff .",
+    "isort --check-only --diff --profile black --gitignore --lai 2 .",
 ]
 fmt = [
-  "black .",
-  "isort --profile black --gitignore --lai 2 .",
-  "check",
+    "black .",
+    "isort --profile black --gitignore --lai 2 .",
+    "check",
 ]
 
 [[tool.hatch.envs.test.matrix]]

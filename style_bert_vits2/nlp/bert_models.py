@@ -80,10 +80,14 @@ def load_model(
     if language == Languages.EN:
         model = cast(
             DebertaV2Model,
-            DebertaV2Model.from_pretrained(pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision),
+            DebertaV2Model.from_pretrained(
+                pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+            ),
         )
     else:
-        model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision)
+        model = AutoModelForMaskedLM.from_pretrained(
+            pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+        )
     __loaded_models[language] = model
     logger.info(
         f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
@@ -135,9 +139,17 @@ def load_tokenizer(
     # BERT トークナイザーをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Tokenizer でロードする必要がある
     if language == Languages.EN:
-        tokenizer = DebertaV2Tokenizer.from_pretrained(pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision)
+        tokenizer = DebertaV2Tokenizer.from_pretrained(
+            pretrained_model_name_or_path,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
     else:
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision)
+        tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
     __loaded_tokenizers[language] = tokenizer
     logger.info(
         f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}"
