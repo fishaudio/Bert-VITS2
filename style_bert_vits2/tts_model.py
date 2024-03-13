@@ -180,7 +180,7 @@ class TTSModel:
             style_weight (float, optional): 音声スタイルを適用する強さ. Defaults to DEFAULT_STYLE_WEIGHT.
             given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
-            intonation_scale (float, optional): イントネーションの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
+            intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
 
         Returns:
             tuple[int, NDArray[Any]]: サンプリングレートと音声データ (16bit PCM)

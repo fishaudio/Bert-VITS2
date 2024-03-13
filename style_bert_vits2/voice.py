@@ -12,14 +12,14 @@ def adjust_voice(
     intonation_scale: float = 1.0,
 ) -> tuple[int, NDArray[Any]]:
     """
-    音声のピッチとイントネーションを調整する。
+    音声のピッチと抑揚を調整する。
     変更すると若干音質が劣化するので、どちらも初期値のままならそのまま返す。
 
     Args:
         fs (int): 音声のサンプリング周波数
         wave (NDArray[Any]): 音声データ
         pitch_scale (float, optional): ピッチの高さ. Defaults to 1.0.
-        intonation_scale (float, optional): イントネーションの平均からの変更比率. Defaults to 1.0.
+        intonation_scale (float, optional): 抑揚の平均からの変更比率. Defaults to 1.0.
 
     Returns:
         tuple[int, NDArray[Any]]: 調整後の音声データのサンプリング周波数と音声データ
