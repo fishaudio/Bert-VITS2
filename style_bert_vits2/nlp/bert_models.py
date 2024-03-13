@@ -38,12 +38,15 @@ __loaded_tokenizers: dict[
 def load_model(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    revision: str = "main",
 ) -> Union[PreTrainedModel, DebertaV2Model]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT モデルを返す。
     一度ロードされていれば、ロード済みの BERT モデルを即座に返す。
-    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
+    ライブラリ利用時は常に必ず pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
     ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき。
+    cache_dir と revision は pretrain_model_name_or_path がリポジトリ名の場合のみ有効。
 
     Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている。
     これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い。
@@ -54,6 +57,8 @@ def load_model(
     Args:
         language (Languages): ロードする学習済みモデルの対象言語
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
+        cache_dir (Optional[str]): モデルのキャッシュディレクトリ。指定しない場合はデフォルトのキャッシュディレクトリが利用される (デフォルト: None)
+        revision (str): モデルの Hugging Face 上の Git リビジョン。指定しない場合は最新の main ブランチの内容が利用される (デフォルト: None)
 
     Returns:
         Union[PreTrainedModel, DebertaV2Model]: ロード済みの BERT モデル
@@ -75,10 +80,14 @@ def load_model(
     if language == Languages.EN:
         model = cast(
             DebertaV2Model,
-            DebertaV2Model.from_pretrained(pretrained_model_name_or_path),
+            DebertaV2Model.from_pretrained(
+                pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+            ),
         )
     else:
-        model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path)
+        model = AutoModelForMaskedLM.from_pretrained(
+            pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+        )
     __loaded_models[language] = model
     logger.info(
         f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
@@ -90,12 +99,15 @@ def load_model(
 def load_tokenizer(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
+    cache_dir: Optional[str] = None,
+    revision: str = "main",
 ) -> Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]:
     """
     指定された言語の BERT モデルをロードし、ロード済みの BERT トークナイザーを返す。
     一度ロードされていれば、ロード済みの BERT トークナイザーを即座に返す。
-    ライブラリ利用時は常に pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
+    ライブラリ利用時は常に必ず pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
     ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき。
+    cache_dir と revision は pretrain_model_name_or_path がリポジトリ名の場合のみ有効。
 
     Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている。
     これ以外の BERT モデルを指定した場合は正常に動作しない可能性が高い。
@@ -106,6 +118,8 @@ def load_tokenizer(
     Args:
         language (Languages): ロードする学習済みモデルの対象言語
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
+        cache_dir (Optional[str]): モデルのキャッシュディレクトリ。指定しない場合はデフォルトのキャッシュディレクトリが利用される (デフォルト: None)
+        revision (str): モデルの Hugging Face 上の Git リビジョン。指定しない場合は最新の main ブランチの内容が利用される (デフォルト: None)
 
     Returns:
         Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]: ロード済みの BERT トークナイザー
@@ -125,9 +139,17 @@ def load_tokenizer(
     # BERT トークナイザーをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Tokenizer でロードする必要がある
     if language == Languages.EN:
-        tokenizer = DebertaV2Tokenizer.from_pretrained(pretrained_model_name_or_path)
+        tokenizer = DebertaV2Tokenizer.from_pretrained(
+            pretrained_model_name_or_path,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
     else:
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
+        tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path,
+            cache_dir=cache_dir,
+            revision=revision,
+        )
     __loaded_tokenizers[language] = tokenizer
     logger.info(
         f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}"

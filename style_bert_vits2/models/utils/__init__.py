@@ -180,7 +180,7 @@ def load_filepaths_and_text(
         list[list[str]]: ファイルパスとテキストのリスト
     """
 
-    with open(filename, encoding="utf-8") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         filepaths_and_text = [line.strip().split(split) for line in f]
     return filepaths_and_text
 
@@ -249,7 +249,8 @@ def check_git_hash(model_dir_path: Union[str, Path]) -> None:
 
     path = os.path.join(model_dir_path, "githash")
     if os.path.exists(path):
-        saved_hash = open(path).read()
+        with open(path, "r", encoding="utf-8") as f:
+            saved_hash = f.read()
         if saved_hash != cur_hash:
             logger.warning(
                 "git hash values are different. {}(saved) != {}(current)".format(
@@ -257,4 +258,5 @@ def check_git_hash(model_dir_path: Union[str, Path]) -> None:
                 )
             )
     else:
-        open(path, "w").write(cur_hash)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(cur_hash)

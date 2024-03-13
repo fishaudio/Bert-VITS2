@@ -51,6 +51,27 @@ Source = "https://github.com/litagin02/Style-Bert-VITS2"
 [tool.hatch.version]
 path = "style_bert_vits2/constants.py"
 
+[tool.hatch.build.targets.sdist]
+only-include = [
+    ".vscode",
+    "dict_data/default.csv",
+    "docs",
+    "style_bert_vits2",
+    "tests",
+    "LGPL_LICENSE",
+    "LICENSE",
+    "pyproject.toml",
+    "README.md",
+]
+exclude = [
+    ".git",
+    ".gitignore",
+    ".gitattributes",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["style_bert_vits2"]
+
 [tool.hatch.envs.test]
 dependencies = [
     "coverage[toml]>=6.5",
@@ -75,18 +96,18 @@ cov = [
 [tool.hatch.envs.style]
 detached = true
 dependencies = [
-  "black",
-  "isort",
+    "black",
+    "isort",
 ]
 [tool.hatch.envs.style.scripts]
 check = [
-  "black --check --diff .",
-  "isort --check-only --diff --profile black --gitignore --lai 2 .",
+    "black --check --diff .",
+    "isort --check-only --diff --profile black --gitignore --lai 2 .",
 ]
 fmt = [
-  "black .",
-  "isort --profile black --gitignore --lai 2 .",
-  "check",
+    "black .",
+    "isort --profile black --gitignore --lai 2 .",
+    "check",
 ]
 
 [[tool.hatch.envs.test.matrix]]
