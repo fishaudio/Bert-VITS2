@@ -22,7 +22,7 @@ preprocess_text:
 
 bert_gen:
   config_path: "config.json"
-  num_processes: 2
+  num_processes: 1
   device: "cuda"
   use_multi_device: false
 

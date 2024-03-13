@@ -92,7 +92,7 @@ class Bert_gen_config:
     def __init__(
         self,
         config_path: str,
-        num_processes: int = 2,
+        num_processes: int = 1,
         device: str = "cuda",
         use_multi_device: bool = False,
     ):

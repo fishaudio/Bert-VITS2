@@ -6,15 +6,19 @@ import torch.multiprocessing as mp
 from tqdm import tqdm
 
 from config import config
+from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models.hyper_parameters import HyperParameters
-from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
+from style_bert_vits2.nlp import (
+    bert_models,
+    cleaned_text_to_sequence,
+    extract_bert_feature,
+)
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
-from style_bert_vits2.nlp import bert_models
-from style_bert_vits2.constants import Languages
+
 
 bert_models.load_model(Languages.JP)
 bert_models.load_tokenizer(Languages.JP)
@@ -74,9 +78,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c", "--config", type=str, default=config.bert_gen_config.config_path
     )
-    parser.add_argument(
-        "--num_processes", type=int, default=config.bert_gen_config.num_processes
-    )
     args, _ = parser.parse_known_args()
     config_path = args.config
     hps = HyperParameters.load_from_json(config_path)
@@ -89,7 +90,8 @@ if __name__ == "__main__":
     add_blank = [hps.data.add_blank] * len(lines)
 
     if len(lines) != 0:
-        num_processes = args.num_processes
+        # pyopenjtalkの別ワーカー化により、並列処理でエラーがでる模様なので、一旦シングルスレッド強制にする
+        num_processes = 1
         with ThreadPoolExecutor(max_workers=num_processes) as executor:
             _ = list(
                 tqdm(
