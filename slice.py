@@ -1,6 +1,10 @@
 import argparse
 import shutil
+import sys
 from pathlib import Path
+from queue import Queue
+from threading import Thread
+from typing import Any, Optional
 
 import soundfile as sf
 import torch
@@ -10,20 +14,12 @@ from tqdm import tqdm
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
-
 # TODO: 並列処理による高速化
-
-vad_model, utils = torch.hub.load(
-    repo_or_dir="litagin02/silero-vad",
-    model="silero_vad",
-    onnx=True,
-    trust_repo=True,
-)
-
-(get_speech_timestamps, _, read_audio, *_) = utils
 
 
 def get_stamps(
+    vad_model: Any,
+    utils: Any,
     audio_file: Path,
     min_silence_dur_ms: int = 700,
     min_sec: float = 2,
@@ -42,6 +38,7 @@ def get_stamps(
         この秒数より大きい発話は無視する。
     """
 
+    (get_speech_timestamps, _, read_audio, *_) = utils
     sampling_rate = 16000  # 16kHzか8kHzのみ対応
 
     min_ms = int(min_sec * 1000)
@@ -60,6 +57,8 @@ def get_stamps(
 
 
 def split_wav(
+    vad_model: Any,
+    utils: Any,
     audio_file: Path,
     target_dir: Path,
     min_sec: float = 2,
@@ -69,7 +68,9 @@ def split_wav(
 ) -> tuple[float, int]:
     margin: int = 200  # ミリ秒単位で、音声の前後に余裕を持たせる
     speech_timestamps = get_stamps(
-        audio_file,
+        vad_model=vad_model,
+        utils=utils,
+        audio_file=audio_file,
         min_silence_dur_ms=min_silence_dur_ms,
         min_sec=min_sec,
         max_sec=max_sec,
@@ -139,6 +140,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Make the filename end with -start_ms-end_ms when saving wav.",
     )
+    parser.add_argument(
+        "--num_processes",
+        type=int,
+        default=3,
+        help="Number of processes to use. Default 3 seems to be the best.",
+    )
     args = parser.parse_args()
 
     with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
@@ -152,6 +159,7 @@ if __name__ == "__main__":
     max_sec: float = args.max_sec
     min_silence_dur_ms: int = args.min_silence_dur_ms
     time_suffix: bool = args.time_suffix
+    num_processes: int = args.num_processes
 
     wav_files = Path(input_dir).glob("**/*.wav")
     wav_files = list(wav_files)
@@ -160,19 +168,89 @@ if __name__ == "__main__":
         logger.warning(f"Output directory {output_dir} already exists, deleting...")
         shutil.rmtree(output_dir)
 
+    # Silero VADのモデルは、同じインスタンスで並列処理するとおかしくなるらしい
+    # ワーカーごとにモデルをロードするようにするため、Queueを使って処理する
+    def process_queue(
+        q: Queue[Optional[Path]],
+        result_queue: Queue[tuple[float, int]],
+        error_queue: Queue[tuple[Path, Exception]],
+    ):
+        # logger.debug("Worker started.")
+        vad_model, utils = torch.hub.load(
+            repo_or_dir="litagin02/silero-vad",
+            model="silero_vad",
+            onnx=True,
+            trust_repo=True,
+        )
+        while True:
+            file = q.get()
+            if file is None:  # 終了シグナルを確認
+                q.task_done()
+                break
+            try:
+                time_sec, count = split_wav(
+                    vad_model=vad_model,
+                    utils=utils,
+                    audio_file=file,
+                    target_dir=output_dir,
+                    min_sec=min_sec,
+                    max_sec=max_sec,
+                    min_silence_dur_ms=min_silence_dur_ms,
+                    time_suffix=time_suffix,
+                )
+                result_queue.put((time_sec, count))
+            except Exception as e:
+                logger.error(f"Error processing {file}: {e}")
+                error_queue.put((file, e))
+                result_queue.put((0, 0))
+            finally:
+                q.task_done()
+
+    q: Queue[Optional[Path]] = Queue()
+    result_queue: Queue[tuple[float, int]] = Queue()
+    error_queue: Queue[tuple[Path, Exception]] = Queue()
+
+    # ファイル数が少ない場合は、ワーカー数をファイル数に合わせる
+    num_processes = min(num_processes, len(wav_files))
+
+    threads = [
+        Thread(target=process_queue, args=(q, result_queue, error_queue))
+        for _ in range(num_processes)
+    ]
+    for t in threads:
+        t.start()
+
+    pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
+    for file in wav_files:
+        q.put(file)
+
+    # result_queueを監視し、要素が追加されるごとに結果を加算しプログレスバーを更新
     total_sec = 0
     total_count = 0
-    for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
-        time_sec, count = split_wav(
-            audio_file=wav_file,
-            target_dir=output_dir,
-            min_sec=min_sec,
-            max_sec=max_sec,
-            min_silence_dur_ms=min_silence_dur_ms,
-            time_suffix=time_suffix,
-        )
-        total_sec += time_sec
+    for _ in range(len(wav_files)):
+        time, count = result_queue.get()
+        total_sec += time
         total_count += count
+        pbar.update(1)
+
+    # 全ての処理が終わるまで待つ
+    q.join()
+
+    # 終了シグナル None を送る
+    for _ in range(num_processes):
+        q.put(None)
+
+    for t in threads:
+        t.join()
+
+    pbar.close()
+
+    if not error_queue.empty():
+        error_str = "Error slicing some files:"
+        while not error_queue.empty():
+            file, e = error_queue.get()
+            error_str += f"\n{file}: {e}"
+        raise RuntimeError(error_str)
 
     logger.info(
         f"Slice done! Total time: {total_sec / 60:.2f} min, {total_count} files."
