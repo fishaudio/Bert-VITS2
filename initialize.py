@@ -16,12 +16,7 @@ def download_bert_models():
         for file in v["files"]:
             if not Path(local_path).joinpath(file).exists():
                 logger.info(f"Downloading {k} {file}")
-                hf_hub_download(
-                    v["repo_id"],
-                    file,
-                    local_dir=local_path,
-                    local_dir_use_symlinks=False,
-                )
+                hf_hub_download(v["repo_id"], file, local_dir=local_path)
 
 
 def download_slm_model():
@@ -29,12 +24,7 @@ def download_slm_model():
     file = "pytorch_model.bin"
     if not Path(local_path).joinpath(file).exists():
         logger.info(f"Downloading wavlm-base-plus {file}")
-        hf_hub_download(
-            "microsoft/wavlm-base-plus",
-            file,
-            local_dir=local_path,
-            local_dir_use_symlinks=False,
-        )
+        hf_hub_download("microsoft/wavlm-base-plus", file, local_dir=local_path)
 
 
 def download_pretrained_models():
@@ -44,10 +34,7 @@ def download_pretrained_models():
         if not Path(local_path).joinpath(file).exists():
             logger.info(f"Downloading pretrained {file}")
             hf_hub_download(
-                "litagin/Style-Bert-VITS2-1.0-base",
-                file,
-                local_dir=local_path,
-                local_dir_use_symlinks=False,
+                "litagin/Style-Bert-VITS2-1.0-base", file, local_dir=local_path
             )
 
 
@@ -58,10 +45,7 @@ def download_jp_extra_pretrained_models():
         if not Path(local_path).joinpath(file).exists():
             logger.info(f"Downloading JP-Extra pretrained {file}")
             hf_hub_download(
-                "litagin/Style-Bert-VITS2-2.0-base-JP-Extra",
-                file,
-                local_dir=local_path,
-                local_dir_use_symlinks=False,
+                "litagin/Style-Bert-VITS2-2.0-base-JP-Extra", file, local_dir=local_path
             )
 
 
