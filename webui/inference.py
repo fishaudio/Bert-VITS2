@@ -288,7 +288,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     maximum=1.5,
                     value=1,
                     step=0.05,
-                    label="音程(1以外では音質劣化)",
+                    label="音高(1以外では音質劣化)",
                 )
                 intonation_scale = gr.Slider(
                     minimum=0,
