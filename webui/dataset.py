@@ -9,6 +9,7 @@ def do_slice(
     min_sec: float,
     max_sec: float,
     min_silence_dur_ms: int,
+    time_suffix: bool,
     input_dir: str,
 ):
     if model_name == "":
@@ -25,6 +26,8 @@ def do_slice(
         "--min_silence_dur_ms",
         str(min_silence_dur_ms),
     ]
+    if time_suffix:
+        cmd.append("--time_suffix")
     if input_dir != "":
         cmd += ["--input_dir", input_dir]
     # onnxの警告が出るので無視する
@@ -130,6 +133,10 @@ def create_dataset_app() -> gr.Blocks:
                         step=100,
                         label="無音とみなして区切る最小の無音の長さ（ms）",
                     )
+                    time_suffix = gr.Checkbox(
+                        value=False,
+                        label="WAVファイル名の末尾に元ファイルの時間範囲を付与する",
+                    )
                     slice_button = gr.Button("スライスを実行")
                 result1 = gr.Textbox(label="結果")
         with gr.Row():
@@ -172,7 +179,14 @@ def create_dataset_app() -> gr.Blocks:
             result2 = gr.Textbox(label="結果")
         slice_button.click(
             do_slice,
-            inputs=[model_name, min_sec, max_sec, min_silence_dur_ms, input_dir],
+            inputs=[
+                model_name,
+                min_sec,
+                max_sec,
+                min_silence_dur_ms,
+                time_suffix,
+                input_dir,
+            ],
             outputs=[result1],
         )
         transcribe_button.click(
