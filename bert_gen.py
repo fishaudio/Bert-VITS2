@@ -13,7 +13,15 @@ from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.constants import Languages
 
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
+bert_models.load_model(Languages.EN)
+bert_models.load_tokenizer(Languages.EN)
+bert_models.load_model(Languages.ZH)
+bert_models.load_tokenizer(Languages.ZH)
 
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
 pyopenjtalk_worker.initialize_worker()
@@ -22,7 +30,7 @@ pyopenjtalk_worker.initialize_worker()
 update_dict()
 
 
-def process_line(x):
+def process_line(x: tuple[str, bool]):
     line, add_blank = x
     device = config.bert_gen_config.device
     if config.bert_gen_config.use_multi_device:
@@ -30,9 +38,9 @@ def process_line(x):
         rank = rank[0] if len(rank) > 0 else 0
         if torch.cuda.is_available():
             gpu_id = rank % torch.cuda.device_count()
-            device = torch.device(f"cuda:{gpu_id}")
+            device = f"cuda:{gpu_id}"
         else:
-            device = torch.device("cpu")
+            device = "cpu"
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")
     phone = phones.split(" ")
     tone = [int(i) for i in tone.split(" ")]
@@ -72,7 +80,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
     config_path = args.config
     hps = HyperParameters.load_from_json(config_path)
-    lines = []
+    lines: list[str] = []
     with open(hps.data.training_files, "r", encoding="utf-8") as f:
         lines.extend(f.readlines())
 
