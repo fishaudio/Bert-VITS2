@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # app.logger = logger
     # ↑効いていなさそう。loggerをどうやって上書きするかはよく分からなかった。
 
-    @app.post("/voice", response_class=AudioResponse)
+    @app.api_route("/voice", methods=["GET", "POST"], response_class=AudioResponse)
     async def voice(
         request: Request,
         text: str = Query(..., min_length=1, max_length=limit, description="セリフ"),
@@ -182,6 +182,10 @@ if __name__ == "__main__":
         logger.info(
             f"{request.client.host}:{request.client.port}/voice  { unquote(str(request.query_params) )}"
         )
+        if request.method == "GET":
+            logger.warning(
+                "The GET method is not recommended for this endpoint due to various restrictions. Please use the POST method."
+            )
         if model_id >= len(
             model_holder.model_names
         ):  # /models/refresh があるためQuery(le)で表現不可
