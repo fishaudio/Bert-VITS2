@@ -65,6 +65,7 @@ def split_wav(
     min_sec: float = 2,
     max_sec: float = 12,
     min_silence_dur_ms: int = 700,
+    time_suffix: bool = False,
 ) -> tuple[float, int]:
     margin: int = 200  # ミリ秒単位で、音声の前後に余裕を持たせる
     speech_timestamps = get_stamps(
@@ -93,7 +94,11 @@ def split_wav(
         end_sample = int(end_ms / 1000 * sr)
         segment = data[start_sample:end_sample]
 
-        sf.write(str(target_dir / f"{file_name}-{i}.wav"), segment, sr)
+        if time_suffix:
+            file = f"{file_name}-{int(start_ms)}-{int(end_ms)}.wav"
+        else:
+            file = f"{file_name}-{i}.wav"
+        sf.write(str(target_dir / file), segment, sr)
         total_time_ms += end_ms - start_ms
         count += 1
 
@@ -128,6 +133,12 @@ if __name__ == "__main__":
         default=700,
         help="Silence above this duration (ms) is considered as a split point.",
     )
+    parser.add_argument(
+        "--time_suffix",
+        "-t",
+        action="store_true",
+        help="Make the filename end with -start_ms-end_ms when saving wav.",
+    )
     args = parser.parse_args()
 
     with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
@@ -140,6 +151,7 @@ if __name__ == "__main__":
     min_sec: float = args.min_sec
     max_sec: float = args.max_sec
     min_silence_dur_ms: int = args.min_silence_dur_ms
+    time_suffix: bool = args.time_suffix
 
     wav_files = Path(input_dir).glob("**/*.wav")
     wav_files = list(wav_files)
@@ -157,6 +169,7 @@ if __name__ == "__main__":
             min_sec=min_sec,
             max_sec=max_sec,
             min_silence_dur_ms=min_silence_dur_ms,
+            time_suffix=time_suffix,
         )
         total_sec += time_sec
         total_count += count
