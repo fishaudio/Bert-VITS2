@@ -50,7 +50,9 @@ def process_line(x: tuple[str, bool]):
     tone = [int(i) for i in tone.split(" ")]
     word2ph = [int(i) for i in word2ph.split(" ")]
     word2ph = [i for i in word2ph]
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+    phone, tone, language = cleaned_text_to_sequence(
+        phone, tone, Languages[language_str]
+    )
 
     if add_blank:
         phone = commons.intersperse(phone, 0)
