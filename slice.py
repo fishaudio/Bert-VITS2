@@ -14,7 +14,7 @@ from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 # TODO: 並列処理による高速化
 
 vad_model, utils = torch.hub.load(
-    repo_or_dir="snakers4/silero-vad",
+    repo_or_dir="litagin02/silero-vad",
     model="silero_vad",
     onnx=True,
     trust_repo=True,
