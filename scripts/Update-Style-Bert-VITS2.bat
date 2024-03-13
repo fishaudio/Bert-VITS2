@@ -10,12 +10,12 @@ if not exist %CURL_CMD% (
 	pause & popd & exit /b 1
 )
 
-@REM Style-Bert-VITS2.zip をGitHubのmasterの最新のものをダウンロード
+@REM Style-Bert-VITS2.zip をGitHubのdev-refactorの最新のものをダウンロード
 %CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
+	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/dev-refactor.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-masterになる）
+@REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-dev-refactorになる）
 %PS_CMD% Expand-Archive -Path Style-Bert-VITS2.zip -DestinationPath . -Force
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
@@ -23,9 +23,9 @@ if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
-rmdir /s /q Style-Bert-VITS2-master
+@REM Bert-VITS2-dev-refactorの中身をStyle-Bert-VITS2に上書き移動
+xcopy /QSY .\Style-Bert-VITS2-dev-refactor\ .\Style-Bert-VITS2\
+rmdir /s /q Style-Bert-VITS2-dev-refactor
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM 仮想環境のpip requirements.txtを更新
@@ -39,9 +39,14 @@ if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 echo Update completed. Running Style-Bert-VITS2 Editor...
 
+@REM Style-Bert-VITS2フォルダに移動
+pushd Style-Bert-VITS2
+
 @REM Style-Bert-VITS2 Editorを起動
 python server_editor.py --inbrowser
 
 pause
+
+popd
 
 popd
