@@ -1,7 +1,9 @@
+import argparse
 import os
 import shutil
+
 import yaml
-import argparse
+
 
 parser = argparse.ArgumentParser(
     description="config.ymlの生成。あらかじめ前準備をしたデータをバッチファイルなどで連続で学習する時にtrain_ms.pyより前に使用する。"

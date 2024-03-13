@@ -10,9 +10,10 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from common.log import logger
-from common.tts_model import Model
 from config import config
+from style_bert_vits2.logging import logger
+from style_bert_vits2.tts_model import TTSModel
+
 
 warnings.filterwarnings("ignore")
 
@@ -54,7 +55,7 @@ safetensors_files = model_path.glob("*.safetensors")
 
 
 def get_model(model_file: Path):
-    return Model(
+    return TTSModel(
         model_path=str(model_file),
         config_path=str(model_file.parent / "config.json"),
         style_vec_path=str(model_file.parent / "style_vectors.npy"),

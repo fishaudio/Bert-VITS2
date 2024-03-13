@@ -1,5 +1,4 @@
 import argparse
-import os
 import shutil
 from pathlib import Path
 
@@ -8,8 +7,11 @@ import torch
 import yaml
 from tqdm import tqdm
 
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
+
+
+# TODO: 並列処理による高速化
 
 vad_model, utils = torch.hub.load(
     repo_or_dir="snakers4/silero-vad",
@@ -22,7 +24,10 @@ vad_model, utils = torch.hub.load(
 
 
 def get_stamps(
-    audio_file, min_silence_dur_ms: int = 700, min_sec: float = 2, max_sec: float = 12
+    audio_file: Path,
+    min_silence_dur_ms: int = 700,
+    min_sec: float = 2,
+    max_sec: float = 12,
 ):
     """
     min_silence_dur_ms: int (ミリ秒):
@@ -41,7 +46,7 @@ def get_stamps(
 
     min_ms = int(min_sec * 1000)
 
-    wav = read_audio(audio_file, sampling_rate=sampling_rate)
+    wav = read_audio(str(audio_file), sampling_rate=sampling_rate)
     speech_timestamps = get_speech_timestamps(
         wav,
         vad_model,
@@ -55,13 +60,13 @@ def get_stamps(
 
 
 def split_wav(
-    audio_file,
-    target_dir="raw",
-    min_sec=2,
-    max_sec=12,
-    min_silence_dur_ms=700,
-):
-    margin = 200  # ミリ秒単位で、音声の前後に余裕を持たせる
+    audio_file: Path,
+    target_dir: Path,
+    min_sec: float = 2,
+    max_sec: float = 12,
+    min_silence_dur_ms: int = 700,
+) -> tuple[float, int]:
+    margin: int = 200  # ミリ秒単位で、音声の前後に余裕を持たせる
     speech_timestamps = get_stamps(
         audio_file,
         min_silence_dur_ms=min_silence_dur_ms,
@@ -73,10 +78,10 @@ def split_wav(
 
     total_ms = len(data) / sr * 1000
 
-    file_name = os.path.basename(audio_file).split(".")[0]
-    os.makedirs(target_dir, exist_ok=True)
+    file_name = audio_file.stem
+    target_dir.mkdir(parents=True, exist_ok=True)
 
-    total_time_ms = 0
+    total_time_ms: float = 0
     count = 0
 
     # タイムスタンプに従って分割し、ファイルに保存
@@ -88,7 +93,7 @@ def split_wav(
         end_sample = int(end_ms / 1000 * sr)
         segment = data[start_sample:end_sample]
 
-        sf.write(os.path.join(target_dir, f"{file_name}-{i}.wav"), segment, sr)
+        sf.write(str(target_dir / f"{file_name}-{i}.wav"), segment, sr)
         total_time_ms += end_ms - start_ms
         count += 1
 
@@ -125,20 +130,21 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
         path_config: dict[str, str] = yaml.safe_load(f.read())
         dataset_root = path_config["dataset_root"]
 
-    input_dir = args.input_dir
-    output_dir = os.path.join(dataset_root, args.model_name, "raw")
-    min_sec = args.min_sec
-    max_sec = args.max_sec
-    min_silence_dur_ms = args.min_silence_dur_ms
+    model_name = str(args.model_name)
+    input_dir = Path(args.input_dir)
+    output_dir = Path(dataset_root) / model_name / "raw"
+    min_sec: float = args.min_sec
+    max_sec: float = args.max_sec
+    min_silence_dur_ms: int = args.min_silence_dur_ms
 
     wav_files = Path(input_dir).glob("**/*.wav")
     wav_files = list(wav_files)
     logger.info(f"Found {len(wav_files)} wav files.")
-    if os.path.exists(output_dir):
+    if output_dir.exists():
         logger.warning(f"Output directory {output_dir} already exists, deleting...")
         shutil.rmtree(output_dir)
 
@@ -146,7 +152,7 @@ if __name__ == "__main__":
     total_count = 0
     for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
         time_sec, count = split_wav(
-            audio_file=str(wav_file),
+            audio_file=wav_file,
             target_dir=output_dir,
             min_sec=min_sec,
             max_sec=max_sec,

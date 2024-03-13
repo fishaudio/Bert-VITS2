@@ -7,10 +7,19 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
 from config import config
-from text.cleaner import clean_text
+from style_bert_vits2.logging import logger
+from style_bert_vits2.nlp import clean_text
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
+from style_bert_vits2.nlp.japanese.user_dict import update_dict
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
+
+
+# このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
+pyopenjtalk_worker.initialize_worker()
+
+# dict_data/ 以下の辞書データを pyopenjtalk に適用
+update_dict()
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -72,7 +81,7 @@ def preprocess(
                         utt, spk, language, text = line.strip().split("|")
                         norm_text, phones, tones, word2ph = clean_text(
                             text=text,
-                            language=language,
+                            language=language,  # type: ignore
                             use_jp_extra=use_jp_extra,
                             raise_yomi_error=(yomi_error != "use"),
                         )

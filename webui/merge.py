@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 from pathlib import Path
@@ -10,9 +9,10 @@ import yaml
 from safetensors import safe_open
 from safetensors.torch import save_file
 
-from common.constants import DEFAULT_STYLE, GRADIO_THEME
-from common.log import logger
-from common.tts_model import Model, ModelHolder
+from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
+from style_bert_vits2.logging import logger
+from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
+
 
 voice_keys = ["dec"]
 voice_pitch_keys = ["flow"]
@@ -47,11 +47,11 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         os.path.join(assets_root, model_name_b, "style_vectors.npy")
     )  # (style_num_b, 256)
     with open(
-        os.path.join(assets_root, model_name_a, "config.json"), encoding="utf-8"
+        os.path.join(assets_root, model_name_a, "config.json"), "r", encoding="utf-8"
     ) as f:
         config_a = json.load(f)
     with open(
-        os.path.join(assets_root, model_name_b, "config.json"), encoding="utf-8"
+        os.path.join(assets_root, model_name_b, "config.json"), "r", encoding="utf-8"
     ) as f:
         config_b = json.load(f)
     style2id_a = config_a["data"]["style2id"]
@@ -88,7 +88,7 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     # recipe.jsonを読み込んで、style_triple_listを追記
     info_path = os.path.join(assets_root, output_name, "recipe.json")
     if os.path.exists(info_path):
-        with open(info_path, encoding="utf-8") as f:
+        with open(info_path, "r", encoding="utf-8") as f:
             info = json.load(f)
     else:
         info = {}
@@ -250,23 +250,23 @@ def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
     config_path = os.path.join(assets_root, model_name, "config.json")
     style_vec_path = os.path.join(assets_root, model_name, "style_vectors.npy")
 
-    model = Model(Path(model_path), Path(config_path), Path(style_vec_path), device)
+    model = TTSModel(Path(model_path), Path(config_path), Path(style_vec_path), device)
     return model.infer(text, style=style, style_weight=style_weight)
 
 
-def update_two_model_names_dropdown(model_holder: ModelHolder):
-    new_names, new_files, _ = model_holder.update_model_names_gr()
+def update_two_model_names_dropdown(model_holder: TTSModelHolder):
+    new_names, new_files, _ = model_holder.update_model_names_for_gradio()
     return new_names, new_files, new_names, new_files
 
 
 def load_styles_gr(model_name_a, model_name_b):
     config_path_a = os.path.join(assets_root, model_name_a, "config.json")
-    with open(config_path_a, encoding="utf-8") as f:
+    with open(config_path_a, "r", encoding="utf-8") as f:
         config_a = json.load(f)
     styles_a = list(config_a["data"]["style2id"].keys())
 
     config_path_b = os.path.join(assets_root, model_name_b, "config.json")
-    with open(config_path_b, encoding="utf-8") as f:
+    with open(config_path_b, "r", encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
 
@@ -328,7 +328,7 @@ Happy, Surprise, HappySurprise
 """
 
 
-def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
+def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(
@@ -444,12 +444,12 @@ def create_merge_app(model_holder: ModelHolder) -> gr.Blocks:
         audio_output = gr.Audio(label="結果")
 
         model_name_a.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name_a],
             outputs=[model_path_a],
         )
         model_name_b.change(
-            model_holder.update_model_files_gr,
+            model_holder.update_model_files_for_gradio,
             inputs=[model_name_b],
             outputs=[model_path_b],
         )

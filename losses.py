@@ -2,8 +2,6 @@ import torch
 import torchaudio
 from transformers import AutoModel
 
-from common.log import logger
-
 
 def feature_loss(fmap_r, fmap_g):
     loss = 0
