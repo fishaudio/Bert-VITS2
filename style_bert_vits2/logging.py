@@ -12,4 +12,5 @@ logger.add(
     format="<g>{time:MM-DD HH:mm:ss}</g> |<lvl>{level:^8}</lvl>| {file}:{line} | {message}",
     backtrace=True,
     diagnose=True,
+    level="TRACE",
 )
