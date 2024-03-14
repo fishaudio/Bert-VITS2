@@ -25,6 +25,6 @@ requests
 safetensors
 scipy
 tensorboard
-torch>=2.1,<2.2
+torch
 transformers
 umap-learn
