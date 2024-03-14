@@ -84,10 +84,6 @@ def transcribe_files_with_hf_whisper(
 
     results: list[str] = []
     for whisper_result in pipe(dataset):
-        logger.debug(whisper_result)
-        for result in enumerate(whisper_result):
-            logger.debug(result)
-            logger.debug(f"Transcribed: {result['text']}")
         text: str = whisper_result["text"]
         # なぜかテキストの最初に" {initial_prompt}"が入るので、文字の最初からこれを削除する
         # cf. https://github.com/huggingface/transformers/issues/27594
