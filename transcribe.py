@@ -20,12 +20,14 @@ def transcribe_with_faster_whisper(
     initial_prompt: Optional[str] = None,
     language: str = "ja",
     num_beams: int = 1,
+    no_repeat_ngram_size: int = 10,
 ):
     segments, _ = model.transcribe(
         str(audio_file),
         beam_size=num_beams,
         language=language,
         initial_prompt=initial_prompt,
+        no_repeat_ngram_size=no_repeat_ngram_size,
     )
     texts = [segment.text for segment in segments]
     return "".join(texts)
@@ -51,6 +53,7 @@ def transcribe_files_with_hf_whisper(
     language: str = "ja",
     batch_size: int = 16,
     num_beams: int = 1,
+    no_repeat_ngram_size: int = 10,
     device: str = "cuda",
     pbar: Optional[tqdm] = None,
 ) -> list[str]:
@@ -62,7 +65,10 @@ def transcribe_files_with_hf_whisper(
         "language": language,
         "do_sample": False,
         "num_beams": num_beams,
+        "no_repeat_ngram_size": no_repeat_ngram_size,
     }
+    logger.info(f"generate_kwargs: {generate_kwargs}")
+
     if initial_prompt is not None:
         prompt_ids: torch.Tensor = processor.get_prompt_ids(
             initial_prompt, return_tensors="pt"
@@ -70,7 +76,6 @@ def transcribe_files_with_hf_whisper(
         prompt_ids = prompt_ids.to(device)
         generate_kwargs["prompt_ids"] = prompt_ids
 
-    logger.info(f"generate_kwargs: {generate_kwargs}")
     pipe = pipeline(
         model=model_id,
         max_new_tokens=128,
@@ -116,7 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_hf_whisper", action="store_true")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_beams", type=int, default=1)
-
+    parser.add_argument("--no_repeat_ngram_size", type=int, default=10)
     args = parser.parse_args()
 
     with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
@@ -134,6 +139,7 @@ if __name__ == "__main__":
     compute_type: str = args.compute_type
     batch_size: int = args.batch_size
     num_beams: int = args.num_beams
+    no_repeat_ngram_size: int = args.no_repeat_ngram_size
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -175,6 +181,7 @@ if __name__ == "__main__":
                 initial_prompt=initial_prompt,
                 language=language,
                 num_beams=num_beams,
+                no_repeat_ngram_size=no_repeat_ngram_size,
             )
             with open(output_file, "a", encoding="utf-8") as f:
                 f.write(f"{wav_file.name}|{model_name}|{language_id}|{text}\n")
@@ -189,6 +196,7 @@ if __name__ == "__main__":
             language=language,
             batch_size=batch_size,
             num_beams=num_beams,
+            no_repeat_ngram_size=no_repeat_ngram_size,
             device=device,
             pbar=pbar,
         )

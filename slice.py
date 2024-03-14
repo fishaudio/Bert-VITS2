@@ -165,6 +165,14 @@ if __name__ == "__main__":
         logger.warning(f"Output directory {output_dir} already exists, deleting...")
         shutil.rmtree(output_dir)
 
+    # モデルをダウンロードしておく
+    _ = torch.hub.load(
+        repo_or_dir="litagin02/silero-vad",
+        model="silero_vad",
+        onnx=True,
+        trust_repo=True,
+    )
+
     # Silero VADのモデルは、同じインスタンスで並列処理するとおかしくなるらしい
     # ワーカーごとにモデルをロードするようにするため、Queueを使って処理する
     def process_queue(
