@@ -167,7 +167,7 @@ if __name__ == "__main__":
         from faster_whisper import WhisperModel
 
         logger.info(
-            f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
+            f"Loading faster-whisper model ({args.model}) with compute_type={compute_type}"
         )
         try:
             model = WhisperModel(args.model, device=device, compute_type=compute_type)
