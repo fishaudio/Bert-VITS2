@@ -1,6 +1,5 @@
 import argparse
 import shutil
-import sys
 from pathlib import Path
 from queue import Queue
 from threading import Thread
@@ -13,8 +12,6 @@ from tqdm import tqdm
 
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
-
-# TODO: 並列処理による高速化
 
 
 def get_stamps(

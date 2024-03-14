@@ -41,28 +41,40 @@ def do_slice(
 
 
 def do_transcribe(
-    model_name, whisper_model, compute_type, language, initial_prompt, device
+    model_name,
+    whisper_model,
+    compute_type,
+    language,
+    initial_prompt,
+    device,
+    use_hf_whisper,
+    batch_size,
+    num_beams,
 ):
     if model_name == "":
         return "Error: モデル名を入力してください。"
 
-    success, message = run_script_with_log(
-        [
-            "transcribe.py",
-            "--model_name",
-            model_name,
-            "--model",
-            whisper_model,
-            "--compute_type",
-            compute_type,
-            "--device",
-            device,
-            "--language",
-            language,
-            "--initial_prompt",
-            f'"{initial_prompt}"',
-        ]
-    )
+    cmd = [
+        "transcribe.py",
+        "--model_name",
+        model_name,
+        "--model",
+        whisper_model,
+        "--compute_type",
+        compute_type,
+        "--device",
+        device,
+        "--language",
+        language,
+        "--initial_prompt",
+        f'"{initial_prompt}"',
+        "--num_beams",
+        str(num_beams),
+    ]
+    if use_hf_whisper:
+        cmd.append("--use_hf_whisper")
+        cmd.extend(["--batch_size", str(batch_size)])
+    success, message = run_script_with_log(cmd)
     if not success:
         return f"Error: {message}. しかし何故かエラーが起きても正常に終了している場合がほとんどなので、書き起こし結果を確認して問題なければ学習に使えます。"
     return "音声の文字起こしが完了しました。"
@@ -165,6 +177,9 @@ def create_dataset_app() -> gr.Blocks:
                     label="Whisperモデル",
                     value="large-v3",
                 )
+                use_hf_whisper = gr.Checkbox(
+                    label="HuggingFaceのWhisperを使う（使うと速度が速いがVRAMを多く使う）",
+                )
                 compute_type = gr.Dropdown(
                     [
                         "int8",
@@ -185,6 +200,23 @@ def create_dataset_app() -> gr.Blocks:
                     label="初期プロンプト",
                     value="こんにちは。元気、ですかー？ふふっ、私は……ちゃんと元気だよ！",
                     info="このように書き起こしてほしいという例文（句読点の入れ方・笑い方・固有名詞等）",
+                )
+                num_beams = gr.Slider(
+                    minimum=1,
+                    maximum=10,
+                    value=5,
+                    step=1,
+                    label="ビームサーチのビーム数",
+                    info="小さいほど速度が上がり（以前は5）、精度は少し落ちるかもしれないがほぼ変わらない体感",
+                )
+                batch_size = gr.Slider(
+                    minimum=1,
+                    maximum=128,
+                    value=32,
+                    step=1,
+                    label="バッチサイズ",
+                    info="大きくすると速度が速くなるがVRAMを多く使う",
+                    visible=False,
                 )
             transcribe_button = gr.Button("音声の文字起こし")
             result2 = gr.Textbox(label="結果")
@@ -210,8 +242,16 @@ def create_dataset_app() -> gr.Blocks:
                 language,
                 initial_prompt,
                 device,
+                use_hf_whisper,
+                batch_size,
+                num_beams,
             ],
             outputs=[result2],
+        )
+        use_hf_whisper.change(
+            lambda x: gr.update(visible=x),
+            inputs=[use_hf_whisper],
+            outputs=[batch_size],
         )
 
     return app
