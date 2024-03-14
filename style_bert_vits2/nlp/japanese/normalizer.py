@@ -36,9 +36,10 @@ def normalize_text(text: str) -> str:
 
     res = unicodedata.normalize("NFKC", text)  # ここでアルファベットは半角になる
     res = __convert_numbers_to_words(res)  # 「100円」→「百円」等
-    # 「～」と「~」も長音記号として扱う
+    # 「～」と「〜」とと「~」も長音記号として扱う
     res = res.replace("~", "ー")
     res = res.replace("～", "ー")
+    res = res.replace("〜", "ー")
 
     res = replace_punctuation(res)  # 句読点等正規化、読めない文字を削除
 
