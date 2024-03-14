@@ -178,7 +178,7 @@ def create_dataset_app() -> gr.Blocks:
                     value="large-v3",
                 )
                 use_hf_whisper = gr.Checkbox(
-                    label="HuggingFaceのWhisperを使う（使うと速度が速いがVRAMを多く使う）",
+                    label="HuggingFaceのWhisperを使う（速度が速いがVRAMを多く使う）",
                 )
                 compute_type = gr.Dropdown(
                     [
@@ -204,10 +204,10 @@ def create_dataset_app() -> gr.Blocks:
                 num_beams = gr.Slider(
                     minimum=1,
                     maximum=10,
-                    value=5,
+                    value=1,
                     step=1,
                     label="ビームサーチのビーム数",
-                    info="小さいほど速度が上がり（以前は5）、精度は少し落ちるかもしれないがほぼ変わらない体感",
+                    info="小さいほど速度が上がる（以前は5）",
                 )
                 batch_size = gr.Slider(
                     minimum=1,
