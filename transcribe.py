@@ -61,9 +61,7 @@ def transcribe_files_with_hf_whisper(
     generate_kwargs: dict[str, Any] = {
         "language": language,
         "do_sample": False,
-        "num_beams": 5,
-        "early_stopping": True,
-        "num_return_sequences": 5,
+        "num_beams": num_beams,
     }
     if initial_prompt is not None:
         prompt_ids: torch.Tensor = processor.get_prompt_ids(
@@ -72,6 +70,7 @@ def transcribe_files_with_hf_whisper(
         prompt_ids = prompt_ids.to(device)
         generate_kwargs["prompt_ids"] = prompt_ids
 
+    logger.info(f"generate_kwargs: {generate_kwargs}")
     pipe = pipeline(
         model=model_id,
         max_new_tokens=128,
@@ -162,12 +161,12 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"{language} is not supported.")
 
-    logger.info(
-        f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
-    )
     if not args.use_hf_whisper:
         from faster_whisper import WhisperModel
 
+        logger.info(
+            f"Loading Whisper model ({args.model}) with compute_type={compute_type}"
+        )
         try:
             model = WhisperModel(args.model, device=device, compute_type=compute_type)
         except ValueError as e:
@@ -185,6 +184,7 @@ if __name__ == "__main__":
                 f.write(f"{wav_file.name}|{model_name}|{language_id}|{text}\n")
     else:
         model_id = f"openai/whisper-{args.model}"
+        logger.info(f"Loading HF Whisper model ({model_id})")
         pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
         results = transcribe_files_with_hf_whisper(
             audio_files=wav_files,

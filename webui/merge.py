@@ -286,10 +286,6 @@ def load_styles_gr(model_name_a, model_name_b):
 
 
 initial_md = """
-# Style-Bert-VITS2 モデルマージツール
-
-2つのStyle-Bert-VITS2モデルから、声質・話し方・話す速さを取り替えたり混ぜたりできます。
-
 ## 使い方
 
 1. マージしたい2つのモデルを選択してください（`model_assets`フォルダの中から選ばれます）。
@@ -343,7 +339,9 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
     initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
-        gr.Markdown(initial_md)
+        gr.Markdown(
+            "2つのStyle-Bert-VITS2モデルから、声質・話し方・話す速さを取り替えたり混ぜたりできます。"
+        )
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(initial_md)
         with gr.Row():
