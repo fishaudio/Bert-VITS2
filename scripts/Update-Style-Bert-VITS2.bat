@@ -10,12 +10,12 @@ if not exist %CURL_CMD% (
 	pause & popd & exit /b 1
 )
 
-@REM Style-Bert-VITS2.zip をGitHubのdevの最新のものをダウンロード
+@REM Style-Bert-VITS2.zip をGitHubのmasterの最新のものをダウンロード
 %CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/dev.zip
+	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-devになる）
+@REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-masterになる）
 %PS_CMD% Expand-Archive -Path Style-Bert-VITS2.zip -DestinationPath . -Force
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
@@ -23,9 +23,9 @@ if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 del Style-Bert-VITS2.zip
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Bert-VITS2-devの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-dev\ .\Style-Bert-VITS2\
-rmdir /s /q Style-Bert-VITS2-dev
+@REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
+xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
+rmdir /s /q Style-Bert-VITS2-master
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 @REM 仮想環境のpip requirements.txtを更新
