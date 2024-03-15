@@ -38,7 +38,7 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         sorted_list = sorted(style_triple_list, key=lambda x: x[2] != DEFAULT_STYLE)
     else:
         # 存在しない場合、エラーを発生
-        raise ValueError("No element with {DEFAULT_STYLE} output style name found.")
+        raise ValueError(f"No element with {DEFAULT_STYLE} output style name found.")
 
     style_vectors_a = np.load(
         os.path.join(assets_root, model_name_a, "style_vectors.npy")

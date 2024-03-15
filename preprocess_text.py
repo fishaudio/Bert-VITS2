@@ -227,7 +227,6 @@ if __name__ == "__main__":
     parser.add_argument("--correct_path", action="store_true")
 
     args = parser.parse_args()
-    logger.debug(f"args: {args}")
 
     transcription_path = Path(args.transcription_path)
     cleaned_path = Path(args.cleaned_path) if args.cleaned_path else None

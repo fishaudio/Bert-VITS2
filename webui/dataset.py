@@ -73,8 +73,7 @@ def do_transcribe(
         cmd.extend(["--batch_size", str(batch_size)])
     success, message = run_script_with_log(cmd)
     if not success:
-        return f"Error: {message}. しかし何故かエラーが起きても正常に終了している場合がほとんどなので、書き起こし結果を確認して問題なければ学習に使えます。"
-    return "音声の文字起こしが完了しました。"
+        return f"Error: {message}. エラーメッセージが空の場合、何も問題がない可能性があるので、書き起こしファイルをチェックして問題なければ無視してください。"
 
 
 how_to_md = """

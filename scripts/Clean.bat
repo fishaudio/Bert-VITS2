@@ -28,7 +28,7 @@ echo Style-Bert-VITS2\webui_style_vectors.py
 echo Style-Bert-VITS2\webui_train.py
 echo Style-Bert-VITS2\webui.py
 echo.
-set /p delConfirm=削除しますか？ (y/n): 
+set /p delConfirm=以上のフォルダファイルを削除しますか？ (y/n): 
 if /I "%delConfirm%"=="Y" goto proceed
 if /I "%delConfirm%"=="y" goto proceed
 if "%delConfirm%"=="" goto proceed
