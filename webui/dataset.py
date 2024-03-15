@@ -11,7 +11,6 @@ def do_slice(
     min_silence_dur_ms: int,
     time_suffix: bool,
     input_dir: str,
-    num_processes: int = 3,
 ):
     if model_name == "":
         return "Error: モデル名を入力してください。"
@@ -26,8 +25,6 @@ def do_slice(
         str(max_sec),
         "--min_silence_dur_ms",
         str(min_silence_dur_ms),
-        "--num_processes",
-        str(num_processes),
     ]
     if time_suffix:
         cmd.append("--time_suffix")
@@ -152,14 +149,6 @@ def create_dataset_app() -> gr.Blocks:
                         value=False,
                         label="WAVファイル名の末尾に元ファイルの時間範囲を付与する",
                     )
-                    num_processes = gr.Slider(
-                        minimum=1,
-                        maximum=10,
-                        value=3,
-                        step=1,
-                        label="並列処理数（速度向上のため）",
-                        info="3で十分高速、多くしてもCPU負荷が増すだけでそこまで速度は変わらない",
-                    )
                     slice_button = gr.Button("スライスを実行")
                 result1 = gr.Textbox(label="結果")
         with gr.Row():
@@ -229,7 +218,6 @@ def create_dataset_app() -> gr.Blocks:
                 min_silence_dur_ms,
                 time_suffix,
                 input_dir,
-                num_processes,
             ],
             outputs=[result1],
         )
