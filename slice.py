@@ -14,6 +14,11 @@ from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
+def is_audio_file(file: Path) -> bool:
+    supported_extensions = [".wav", ".flac", ".mp3", ".ogg", ".opus"]
+    return file.suffix.lower() in supported_extensions
+
+
 def get_stamps(
     vad_model: Any,
     utils: Any,
@@ -158,9 +163,9 @@ if __name__ == "__main__":
     time_suffix: bool = args.time_suffix
     num_processes: int = args.num_processes
 
-    wav_files = Path(input_dir).glob("**/*.wav")
-    wav_files = list(wav_files)
-    logger.info(f"Found {len(wav_files)} wav files.")
+    audio_files = [file for file in input_dir.rglob("*") if is_audio_file(file)]
+
+    logger.info(f"Found {len(audio_files)} audio files.")
     if output_dir.exists():
         logger.warning(f"Output directory {output_dir} already exists, deleting...")
         shutil.rmtree(output_dir)
@@ -216,7 +221,7 @@ if __name__ == "__main__":
     error_queue: Queue[tuple[Path, Exception]] = Queue()
 
     # ファイル数が少ない場合は、ワーカー数をファイル数に合わせる
-    num_processes = min(num_processes, len(wav_files))
+    num_processes = min(num_processes, len(audio_files))
 
     threads = [
         Thread(target=process_queue, args=(q, result_queue, error_queue))
@@ -225,14 +230,14 @@ if __name__ == "__main__":
     for t in threads:
         t.start()
 
-    pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
-    for file in wav_files:
+    pbar = tqdm(total=len(audio_files), file=SAFE_STDOUT)
+    for file in audio_files:
         q.put(file)
 
     # result_queueを監視し、要素が追加されるごとに結果を加算しプログレスバーを更新
     total_sec = 0
     total_count = 0
-    for _ in range(len(wav_files)):
+    for _ in range(len(audio_files)):
         time, count = result_queue.get()
         total_sec += time
         total_count += count
