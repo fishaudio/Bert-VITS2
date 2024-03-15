@@ -236,7 +236,11 @@ def create_dataset_app() -> gr.Blocks:
             outputs=[result2],
         )
         use_hf_whisper.change(
-            lambda x: (gr.update(visible=x), gr.update(visible=not x), gr.update(visible=not x)),
+            lambda x: (
+                gr.update(visible=x),
+                gr.update(visible=not x),
+                gr.update(visible=not x),
+            ),
             inputs=[use_hf_whisper],
             outputs=[batch_size, compute_type, device],
         )

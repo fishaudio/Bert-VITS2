@@ -39,7 +39,7 @@ dependencies = [
     'pyworld-prebuilt',
     'safetensors',
     'scipy',
-    'torch>=2.1,<2.2',
+    'torch>=2.1',
     'transformers',
 ]
 
@@ -102,11 +102,11 @@ dependencies = [
 [tool.hatch.envs.style.scripts]
 check = [
     "black --check --diff .",
-    "isort --check-only --diff --profile black --gitignore --lai 2 .",
+    "isort --check-only --diff --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
 ]
 fmt = [
     "black .",
-    "isort --profile black --gitignore --lai 2 .",
+    "isort --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
     "check",
 ]
 

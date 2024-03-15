@@ -6,12 +6,12 @@ import gradio as gr
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-from config import config
 from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.manifold import TSNE
 from umap import UMAP
 
+from config import config
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
 
