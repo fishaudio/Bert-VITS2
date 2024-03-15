@@ -14,6 +14,7 @@ from config import config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
+
 DEFAULT_BLOCK_SIZE: float = 0.400  # seconds
 
 
@@ -33,6 +34,9 @@ def normalize_audio(data: NDArray[Any], sr: int):
 
 
 def resample(file: Path, output_dir: Path, target_sr: int, normalize: bool, trim: bool):
+    """
+    fileを読み込んで、target_srなwavファイルに変換してoutput_dir直下に保存する
+    """
     try:
         # librosaが読めるファイルかチェック
         # wav以外にもmp3やoggやflacなども読める
