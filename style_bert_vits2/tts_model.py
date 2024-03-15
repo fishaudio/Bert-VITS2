@@ -380,12 +380,6 @@ class TTSModelHolder:
     def get_model_for_gradio(
         self, model_name: str, model_path_str: str
     ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
-        bert_models.load_model(Languages.JP)
-        bert_models.load_tokenizer(Languages.JP)
-        bert_models.load_model(Languages.EN)
-        bert_models.load_tokenizer(Languages.EN)
-        bert_models.load_model(Languages.ZH)
-        bert_models.load_tokenizer(Languages.ZH)
 
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
