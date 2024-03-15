@@ -129,14 +129,14 @@ def initialize(
 def resample(model_name, normalize, trim, num_processes):
     logger.info("Step 2: start resampling...")
     dataset_path, _, _, _, _ = get_path(model_name)
-    in_dir = os.path.join(dataset_path, "raw")
-    out_dir = os.path.join(dataset_path, "wavs")
+    input_dir = os.path.join(dataset_path, "raw")
+    output_dir = os.path.join(dataset_path, "wavs")
     cmd = [
         "resample.py",
-        "--in_dir",
-        in_dir,
-        "--out_dir",
-        out_dir,
+        "-i",
+        input_dir,
+        "-o",
+        output_dir,
         "--num_processes",
         str(num_processes),
         "--sr",
