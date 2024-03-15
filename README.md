@@ -4,6 +4,8 @@ Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-4202-a1dd-56ded3c562a0
 
+You can install via `pip install style-bert-vits2` (inference only), see [library.ipynb](/library.ipynb) for example usage.
+
 - **解説チュートリアル動画** [YouTube](https://youtu.be/aTUSzgDl1iY)　[ニコニコ動画](https://www.nicovideo.jp/watch/sm43391524)
 - [English README](docs/README_en.md)
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
@@ -12,6 +14,7 @@ https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-420
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
 
+  - 2024-03-15: ver 2.4.0 (大規模リファクタリングや種々の改良、ライブラリ化)
   - 2024-02-26: ver 2.3 (辞書機能とエディター機能)
   - 2024-02-09: ver 2.2
   - 2024-02-07: ver 2.1
@@ -42,6 +45,8 @@ CLIでの使い方は[こちら](/docs/CLI.md)を参照してください。
 
 ### インストール
 
+Pythonライブラリとしてのpipでのインストールや使用例は[library.ipynb](/library.ipynb)を参照してください。
+
 #### GitやPythonに馴染みが無い方
 
 Windowsを前提としています。
@@ -62,8 +67,7 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-# PyTorch 2.2.x系は今のところは学習エラーが出るので前のバージョンを使う
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
@@ -107,8 +111,8 @@ model_assets
 
 #### データセット作り
 
-- `Dataset.bat`をダブルクリックか`python webui_dataset.py`すると、音声ファイルからデータセットを作るためのWebUIが起動します（音声ファイルを適切な長さにスライスし、その後に文字の書き起こしを自動で行います）。
-- 指示に従った後、閉じて下の「学習WebUI」でそのまま学習を行うことができます。
+- `App.bat`をダブルクリックか`python app.py`したところの「データセット作成」タブから、音声ファイルを適切な長さにスライスし、その後に文字の書き起こしを自動で行えます。
+- 指示に従った後、下の「学習」タブでそのまま学習を行うことができます。
 
 注意: データセットの手動修正やノイズ除去等、細かい修正を行いたい場合は[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うといいかもしれません。ですがファイル数が多い場合などは、このツールで簡易的に切り出してデータセットを作るだけでも十分という気もしています。
 
@@ -116,12 +120,12 @@ model_assets
 
 #### 学習WebUI
 
-- `Train.bat`をダブルクリックか`python webui_train.py`するとWebUIが起動するので指示に従ってください。
+- `App.bat`をダブルクリックか`python app.py`して開くWebUIの「学習」タブから指示に従ってください。
 
 ### スタイルの生成
 
 - デフォルトスタイル「Neutral」以外のスタイルを使いたい人向けです。
-- `Style.bat`をダブルクリックか`python webui_style_vectors.py`するとWebUIが起動します。
+- `App.bat`をダブルクリックか`python app.py`して開くWebUIの「スタイル作成」タブから、音声ファイルを使ってスタイルを生成できます。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます（前処理は終わらせている必要があります）。
 - スタイルについての仕様の詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
@@ -140,7 +144,7 @@ API仕様は起動後に`/docs`にて確認ください。
 ### マージ
 
 2つのモデルを、「声質」「声の高さ」「感情表現」「テンポ」の4点で混ぜ合わせて、新しいモデルを作ることが出来ます。
-`Merge.bat`をダブルクリックか`python webui_merge.py`するとWebUIが起動します。
+`App.bat`をダブルクリックか`python app.py`して開くWebUIの「マージ」タブから、2つのモデルを選択してマージすることができます。
 
 ### 自然性評価
 
@@ -165,13 +169,6 @@ python speech_mos.py -m <model_name>
 - safetensors形式のサポート、デフォルトでsafetensorsを使用するように
 - その他軽微なbugfixやリファクタリング
 
-## TODO
-- [x] デフォルトのJVNVモデルにJP-Extra版のものを追加
-- [x] LinuxやWSL等、Windowsの通常環境以外でのサポート ← おそらく問題ないとの報告あり
-- [x] 複数話者学習での音声合成対応（学習は現在でも可能）
-- [x] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
-- [x] モデルのマージで声音と感情表現を混ぜる機能の実装
-- [ ] 英語等多言語対応？
 
 ## References
 In addition to the original reference (written below), I used the following repositories:

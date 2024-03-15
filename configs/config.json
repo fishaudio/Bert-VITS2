@@ -1,5 +1,5 @@
 {
-  "model_name": "your_model_name",
+  "model_name": "Dummy",
   "train": {
     "log_interval": 200,
     "eval_interval": 1000,
@@ -24,8 +24,9 @@
     "freeze_encoder": false
   },
   "data": {
-    "training_files": "Data/your_model_name/filelists/train.list",
-    "validation_files": "Data/your_model_name/filelists/val.list",
+    "use_jp_extra": false,
+    "training_files": "Data/Dummy/train.list",
+    "validation_files": "Data/Dummy/val.list",
     "max_wav_value": 32768.0,
     "sampling_rate": 44100,
     "filter_length": 2048,
@@ -68,5 +69,5 @@
     "use_spectral_norm": false,
     "gin_channels": 256
   },
-  "version": "2.3.1"
+  "version": "2.4.0"
 }

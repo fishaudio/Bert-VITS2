@@ -16,13 +16,13 @@ import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-import yaml
+from typing import Optional
 
 import numpy as np
-import pyopenjtalk
 import requests
 import torch
 import uvicorn
+import yaml
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -30,20 +30,29 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
 
-from common.constants import (
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
     DEFAULT_NOISEW,
     DEFAULT_SDP_RATIO,
     DEFAULT_STYLE,
     DEFAULT_STYLE_WEIGHT,
-    LATEST_VERSION,
+    VERSION,
     Languages,
 )
-from common.log import logger
-from common.tts_model import ModelHolder
-from text.japanese import g2kata_tone, kata_tone2phone_tone, text_normalize
-from text.user_dict import apply_word, update_dict, read_dict, rewrite_word, delete_word
+from style_bert_vits2.logging import logger
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
+from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
+from style_bert_vits2.nlp.japanese.normalizer import normalize_text
+from style_bert_vits2.nlp.japanese.user_dict import (
+    apply_word,
+    delete_word,
+    read_dict,
+    rewrite_word,
+    update_dict,
+)
+from style_bert_vits2.tts_model import TTSModelHolder, TTSModelInfo
 
 
 # ---フロントエンド部分に関する処理---
@@ -140,6 +149,19 @@ def save_last_download(latest_release):
 # ---フロントエンド部分に関する処理ここまで---
 # 以降はAPIの設定
 
+# pyopenjtalk_worker を起動
+## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
+pyopenjtalk.initialize_worker()
+
+# pyopenjtalk の辞書を更新
+update_dict()
+
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
+
 
 class AudioResponse(Response):
     media_type = "audio/wav"
@@ -176,7 +198,7 @@ if device == "cuda" and not torch.cuda.is_available():
 model_dir = Path(args.model_dir)
 port = int(args.port)
 
-model_holder = ModelHolder(model_dir, device)
+model_holder = TTSModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)
@@ -197,7 +219,7 @@ router = APIRouter()
 
 @router.get("/version")
 def version() -> str:
-    return LATEST_VERSION
+    return VERSION
 
 
 class MoraTone(BaseModel):
@@ -213,7 +235,7 @@ class TextRequest(BaseModel):
 async def read_item(item: TextRequest):
     try:
         # 最初に正規化しないと整合性がとれない
-        text = text_normalize(item.text)
+        text = normalize_text(item.text)
         kata_tone_list = g2kata_tone(text)
     except Exception as e:
         raise HTTPException(
@@ -224,13 +246,13 @@ async def read_item(item: TextRequest):
 
 
 @router.post("/normalize")
-async def normalize_text(item: TextRequest):
-    return text_normalize(item.text)
+async def normalize(item: TextRequest):
+    return normalize_text(item.text)
 
 
-@router.get("/models_info")
+@router.get("/models_info", response_model=list[TTSModelInfo])
 def models_info():
-    return model_holder.models_info()
+    return model_holder.models_info
 
 
 class SynthesisRequest(BaseModel):
@@ -250,6 +272,7 @@ class SynthesisRequest(BaseModel):
     silenceAfter: float = 0.5
     pitchScale: float = 1.0
     intonationScale: float = 1.0
+    speaker: Optional[str] = None
 
 
 @router.post("/synthesis", response_class=AudioResponse)
@@ -260,7 +283,7 @@ def synthesis(request: SynthesisRequest):
             detail=f"1行の文字数は{args.line_length}文字以下にしてください。",
         )
     try:
-        model = model_holder.load_model(
+        model = model_holder.get_model(
             model_name=request.model, model_path_str=request.modelFile
         )
     except Exception as e:
@@ -275,12 +298,19 @@ def synthesis(request: SynthesisRequest):
     ]
     phone_tone = kata_tone2phone_tone(kata_tone_list)
     tone = [t for _, t in phone_tone]
+    try:
+        sid = 0 if request.speaker is None else model.spk2id[request.speaker]
+    except KeyError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Speaker {request.speaker} not found in {model.spk2id}",
+        )
     sr, audio = model.infer(
         text=text,
-        language=request.language.value,
+        language=request.language,
         sdp_ratio=request.sdpRatio,
         noise=request.noise,
-        noisew=request.noisew,
+        noise_w=request.noisew,
         length=1 / request.speed,
         given_tone=tone,
         style=request.style,
@@ -291,6 +321,7 @@ def synthesis(request: SynthesisRequest):
         line_split=False,
         pitch_scale=request.pitchScale,
         intonation_scale=request.intonationScale,
+        speaker_id=sid,
     )
 
     with BytesIO() as wavContent:
@@ -311,6 +342,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
             detail=f"行数は{args.line_count}行以下にしてください。",
         )
     audios = []
+    sr = None
     for i, req in enumerate(lines):
         if args.line_length is not None and len(req.text) > args.line_length:
             raise HTTPException(
@@ -318,7 +350,7 @@ def multi_synthesis(request: MultiSynthesisRequest):
                 detail=f"1行の文字数は{args.line_length}文字以下にしてください。",
             )
         try:
-            model = model_holder.load_model(
+            model = model_holder.get_model(
                 model_name=req.model, model_path_str=req.modelFile
             )
         except Exception as e:
@@ -335,10 +367,10 @@ def multi_synthesis(request: MultiSynthesisRequest):
         tone = [t for _, t in phone_tone]
         sr, audio = model.infer(
             text=text,
-            language=req.language.value,
+            language=req.language,
             sdp_ratio=req.sdpRatio,
             noise=req.noise,
-            noisew=req.noisew,
+            noise_w=req.noisew,
             length=1 / req.speed,
             given_tone=tone,
             style=req.style,

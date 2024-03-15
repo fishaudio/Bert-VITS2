@@ -1,0 +1,133 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "style-bert-vits2"
+dynamic = ["version"]
+description = 'Style-Bert-VITS2: Bert-VITS2 with more controllable voice styles.'
+readme = "README.md"
+requires-python = ">=3.9"
+license = "AGPL-3.0"
+keywords = []
+authors = [
+    { name = "litagin02", email = "139731664+litagin02@users.noreply.github.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+    'cmudict',
+    'cn2an',
+    'g2p_en',
+    'gradio',
+    'jieba',
+    'librosa==0.9.2',
+    'loguru',
+    'num2words',
+    'numba',
+    'numpy',
+    'pyannote.audio>=3.1.0',
+    'pydantic>=2.0',
+    'pyopenjtalk-dict',
+    'pypinyin',
+    'pyworld-prebuilt',
+    'safetensors',
+    'scipy',
+    'torch>=2.1',
+    'transformers',
+]
+
+[project.urls]
+Documentation = "https://github.com/litagin02/Style-Bert-VITS2#readme"
+Issues = "https://github.com/litagin02/Style-Bert-VITS2/issues"
+Source = "https://github.com/litagin02/Style-Bert-VITS2"
+
+[tool.hatch.version]
+path = "style_bert_vits2/constants.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    ".vscode",
+    "dict_data/default.csv",
+    "docs",
+    "style_bert_vits2",
+    "tests",
+    "LGPL_LICENSE",
+    "LICENSE",
+    "pyproject.toml",
+    "README.md",
+]
+exclude = [
+    ".git",
+    ".gitignore",
+    ".gitattributes",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["style_bert_vits2"]
+
+[tool.hatch.envs.test]
+dependencies = [
+    "coverage[toml]>=6.5",
+    "pytest",
+]
+[tool.hatch.envs.test.scripts]
+# Usage: `hatch run test:test`
+test = "pytest {args:tests}"
+# Usage: `hatch run test:coverage`
+test-cov = "coverage run -m pytest {args:tests}"
+# Usage: `hatch run test:cov-report`
+cov-report = [
+    "- coverage combine",
+    "coverage report",
+]
+# Usage: `hatch run test:cov`
+cov = [
+    "test-cov",
+    "cov-report",
+]
+
+[tool.hatch.envs.style]
+detached = true
+dependencies = [
+    "black",
+    "isort",
+]
+[tool.hatch.envs.style.scripts]
+check = [
+    "black --check --diff .",
+    "isort --check-only --diff --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
+]
+fmt = [
+    "black .",
+    "isort --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
+    "check",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11"]
+
+[tool.coverage.run]
+source_pkgs = ["style_bert_vits2", "tests"]
+branch = true
+parallel = true
+omit = [
+    "style_bert_vits2/constants.py",
+]
+
+[tool.coverage.paths]
+style_bert_vits2 = ["style_bert_vits2", "*/style-bert-vits2/style_bert_vits2"]
+tests = ["tests", "*/style-bert-vits2/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

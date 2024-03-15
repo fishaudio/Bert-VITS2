@@ -37,11 +37,18 @@ if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 pip install -U -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+echo ----------------------------------------
 echo Update completed. Running Style-Bert-VITS2 Editor...
+echo ----------------------------------------
+
+@REM Style-Bert-VITS2フォルダに移動
+pushd Style-Bert-VITS2
 
 @REM Style-Bert-VITS2 Editorを起動
 python server_editor.py --inbrowser
 
 pause
+
+popd
 
 popd

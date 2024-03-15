@@ -1,15 +1,19 @@
 import argparse
-import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from multiprocessing import cpu_count
+from pathlib import Path
+from typing import Any
 
 import librosa
 import pyloudnorm as pyln
 import soundfile
+from numpy.typing import NDArray
 from tqdm import tqdm
 
-from common.log import logger
-from common.stdout_wrapper import SAFE_STDOUT
 from config import config
+from style_bert_vits2.logging import logger
+from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
+
 
 DEFAULT_BLOCK_SIZE: float = 0.400  # seconds
 
@@ -18,32 +22,40 @@ class BlockSizeException(Exception):
     pass
 
 
-def normalize_audio(data, sr):
+def normalize_audio(data: NDArray[Any], sr: int):
     meter = pyln.Meter(sr, block_size=DEFAULT_BLOCK_SIZE)  # create BS.1770 meter
     try:
         loudness = meter.integrated_loudness(data)
     except ValueError as e:
         raise BlockSizeException(e)
-    # logger.info(f"loudness: {loudness}")
+
     data = pyln.normalize.loudness(data, loudness, -23.0)
     return data
 
 
-def process(item):
-    spkdir, wav_name, args = item
-    wav_path = os.path.join(args.in_dir, spkdir, wav_name)
-    if os.path.exists(wav_path) and wav_path.lower().endswith(".wav"):
-        wav, sr = librosa.load(wav_path, sr=args.sr)
-        if args.normalize:
+def resample(file: Path, output_dir: Path, target_sr: int, normalize: bool, trim: bool):
+    """
+    fileを読み込んで、target_srなwavファイルに変換してoutput_dir直下に保存する
+    """
+    try:
+        # librosaが読めるファイルかチェック
+        # wav以外にもmp3やoggやflacなども読める
+        wav: NDArray[Any]
+        sr: int
+        wav, sr = librosa.load(file, sr=target_sr)
+        if normalize:
             try:
                 wav = normalize_audio(wav, sr)
             except BlockSizeException:
+                print("")
                 logger.info(
-                    f"Skip normalize due to less than {DEFAULT_BLOCK_SIZE} second audio: {wav_path}"
+                    f"Skip normalize due to less than {DEFAULT_BLOCK_SIZE} second audio: {file}"
                 )
-        if args.trim:
+        if trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
-        soundfile.write(os.path.join(args.out_dir, spkdir, wav_name), wav, sr)
+        soundfile.write(output_dir / file.with_suffix(".wav").name, wav, sr)
+    except Exception as e:
+        logger.warning(f"Cannot load file, so skipping: {file}, {e}")
 
 
 if __name__ == "__main__":
@@ -55,14 +67,14 @@ if __name__ == "__main__":
         help="sampling rate",
     )
     parser.add_argument(
-        "--in_dir",
+        "--input_dir",
         "-i",
         type=str,
         default=config.resample_config.in_dir,
         help="path to source dir",
     )
     parser.add_argument(
-        "--out_dir",
+        "--output_dir",
         "-o",
         type=str,
         default=config.resample_config.out_dir,
@@ -86,46 +98,36 @@ if __name__ == "__main__":
         default=False,
         help="trim silence (start and end only)",
     )
-    args, _ = parser.parse_known_args()
-    # autodl 无卡模式会识别出46个cpu
+    args = parser.parse_args()
+
     if args.num_processes == 0:
         processes = cpu_count() - 2 if cpu_count() > 4 else 1
     else:
-        processes = args.num_processes
+        processes: int = args.num_processes
 
-    tasks = []
+    input_dir = Path(args.input_dir)
+    output_dir = Path(args.output_dir)
+    sr = int(args.sr)
+    normalize: bool = args.normalize
+    trim: bool = args.trim
 
-    for dirpath, _, filenames in os.walk(args.in_dir):
-        # 子级目录
-        spk_dir = os.path.relpath(dirpath, args.in_dir)
-        spk_dir_out = os.path.join(args.out_dir, spk_dir)
-        if not os.path.isdir(spk_dir_out):
-            os.makedirs(spk_dir_out, exist_ok=True)
-        for filename in filenames:
-            if filename.lower().endswith(".wav"):
-                twople = (spk_dir, filename, args)
-                tasks.append(twople)
+    # 後でlibrosaに読ませて有効な音声ファイルかチェックするので、全てのファイルを取得
+    original_files = [f for f in input_dir.rglob("*") if f.is_file()]
 
-    if len(tasks) == 0:
-        logger.error(f"No wav files found in {args.in_dir}")
-        raise ValueError(f"No wav files found in {args.in_dir}")
+    if len(original_files) == 0:
+        logger.error(f"No files found in {input_dir}")
+        raise ValueError(f"No files found in {input_dir}")
 
-    # pool = Pool(processes=processes)
-    # for _ in tqdm(
-    #     pool.imap_unordered(process, tasks), file=SAFE_STDOUT, total=len(tasks)
-    # ):
-    #     pass
-
-    # pool.close()
-    # pool.join()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     with ThreadPoolExecutor(max_workers=processes) as executor:
-        _ = list(
-            tqdm(
-                executor.map(process, tasks),
-                total=len(tasks),
-                file=SAFE_STDOUT,
-            )
-        )
+        futures = [
+            executor.submit(resample, file, output_dir, sr, normalize, trim)
+            for file in original_files
+        ]
+        for future in tqdm(
+            as_completed(futures), total=len(original_files), file=SAFE_STDOUT
+        ):
+            pass
 
     logger.info("Resampling Done!")

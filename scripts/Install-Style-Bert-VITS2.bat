@@ -41,7 +41,8 @@ call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
 if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
 
 @REM 依存関係インストール
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 pip install -r Style-Bert-VITS2\requirements.txt

@@ -8,7 +8,7 @@ import os
 import sys
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any, Optional
 from urllib.parse import unquote
 
 import GPUtil
@@ -20,7 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from scipy.io import wavfile
 
-from common.constants import (
+from config import config
+from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
     DEFAULT_LINE_SPLIT,
@@ -32,11 +33,31 @@ from common.constants import (
     DEFAULT_STYLE_WEIGHT,
     Languages,
 )
-from common.log import logger
-from common.tts_model import Model, ModelHolder
-from config import config
+from style_bert_vits2.logging import logger
+from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
+from style_bert_vits2.nlp.japanese.user_dict import update_dict
+from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
+
 
 ln = config.server_config.language
+
+
+# pyopenjtalk_worker を起動
+## pyopenjtalk_worker は TCP ソケットサーバーのため、ここで起動する
+pyopenjtalk.initialize_worker()
+
+# dict_data/ 以下の辞書データを pyopenjtalk に適用
+update_dict()
+
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+bert_models.load_model(Languages.JP)
+bert_models.load_tokenizer(Languages.JP)
+bert_models.load_model(Languages.EN)
+bert_models.load_tokenizer(Languages.EN)
+bert_models.load_model(Languages.ZH)
+bert_models.load_tokenizer(Languages.ZH)
 
 
 def raise_validation_error(msg: str, param: str):
@@ -51,17 +72,22 @@ class AudioResponse(Response):
     media_type = "audio/wav"
 
 
-def load_models(model_holder: ModelHolder):
-    model_holder.models = []
+loaded_models: list[TTSModel] = []
+
+
+def load_models(model_holder: TTSModelHolder):
+    global loaded_models
+    loaded_models = []
     for model_name, model_paths in model_holder.model_files_dict.items():
-        model = Model(
+        model = TTSModel(
             model_path=model_paths[0],
             config_path=model_holder.root_dir / model_name / "config.json",
             style_vec_path=model_holder.root_dir / model_name / "style_vectors.npy",
             device=model_holder.device,
         )
-        model.load_net_g()
-        model_holder.models.append(model)
+        # 起動時に全てのモデルを読み込むのは時間がかかりメモリを食うのでやめる
+        # model.load()
+        loaded_models.append(model)
 
 
 if __name__ == "__main__":
@@ -78,13 +104,14 @@ if __name__ == "__main__":
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model_dir = Path(args.dir)
-    model_holder = ModelHolder(model_dir, device)
+    model_holder = TTSModelHolder(model_dir, device)
     if len(model_holder.model_names) == 0:
         logger.error(f"Models not found in {model_dir}.")
         sys.exit(1)
 
     logger.info("Loading models...")
     load_models(model_holder)
+
     limit = config.server_config.limit
     app = FastAPI()
     allow_origins = config.server_config.origins
@@ -99,12 +126,13 @@ if __name__ == "__main__":
             allow_methods=["*"],
             allow_headers=["*"],
         )
-    app.logger = logger
+    # app.logger = logger
+    # ↑効いていなさそう。loggerをどうやって上書きするかはよく分からなかった。
 
     @app.api_route("/voice", methods=["GET", "POST"], response_class=AudioResponse)
     async def voice(
         request: Request,
-        text: str = Query(..., min_length=1, max_length=limit, description=f"セリフ"),
+        text: str = Query(..., min_length=1, max_length=limit, description="セリフ"),
         encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
         model_id: int = Query(
             0, description="モデルID。`GET /models/info`のkeyの値を指定ください"
@@ -132,7 +160,7 @@ if __name__ == "__main__":
             DEFAULT_LENGTH,
             description="話速。基準は1で大きくするほど音声は長くなり読み上げが遅まる",
         ),
-        language: Languages = Query(ln, description=f"textの言語"),
+        language: Languages = Query(ln, description="textの言語"),
         auto_split: bool = Query(DEFAULT_LINE_SPLIT, description="改行で分けて生成"),
         split_interval: float = Query(
             DEFAULT_SPLIT_INTERVAL, description="分けた場合に挟む無音の長さ（秒）"
@@ -144,7 +172,7 @@ if __name__ == "__main__":
         assist_text_weight: float = Query(
             DEFAULT_ASSIST_TEXT_WEIGHT, description="assist_textの強さ"
         ),
-        style: Optional[Union[int, str]] = Query(DEFAULT_STYLE, description="スタイル"),
+        style: Optional[str] = Query(DEFAULT_STYLE, description="スタイル"),
         style_weight: float = Query(DEFAULT_STYLE_WEIGHT, description="スタイルの強さ"),
         reference_audio_path: Optional[str] = Query(
             None, description="スタイルを音声ファイルで行う"
@@ -159,11 +187,11 @@ if __name__ == "__main__":
                 "The GET method is not recommended for this endpoint due to various restrictions. Please use the POST method."
             )
         if model_id >= len(
-            model_holder.models
+            model_holder.model_names
         ):  # /models/refresh があるためQuery(le)で表現不可
             raise_validation_error(f"model_id={model_id} not found", "model_id")
 
-        model = model_holder.models[model_id]
+        model = loaded_models[model_id]
         if speaker_name is None:
             if speaker_id not in model.id2spk.keys():
                 raise_validation_error(
@@ -177,16 +205,17 @@ if __name__ == "__main__":
             speaker_id = model.spk2id[speaker_name]
         if style not in model.style2id.keys():
             raise_validation_error(f"style={style} not found", "style")
+        assert style is not None
         if encoding is not None:
             text = unquote(text, encoding=encoding)
         sr, audio = model.infer(
             text=text,
             language=language,
-            sid=speaker_id,
+            speaker_id=speaker_id,
             reference_audio_path=reference_audio_path,
             sdp_ratio=sdp_ratio,
             noise=noise,
-            noisew=noisew,
+            noise_w=noisew,
             length=length,
             line_split=auto_split,
             split_interval=split_interval,
@@ -205,8 +234,8 @@ if __name__ == "__main__":
     def get_loaded_models_info():
         """ロードされたモデル情報の取得"""
 
-        result: Dict[str, Dict] = dict()
-        for model_id, model in enumerate(model_holder.models):
+        result: dict[str, dict[str, Any]] = dict()
+        for model_id, model in enumerate(loaded_models):
             result[str(model_id)] = {
                 "config_path": model.config_path,
                 "model_path": model.model_path,

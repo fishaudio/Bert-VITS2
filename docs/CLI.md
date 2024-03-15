@@ -7,7 +7,7 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 ```
 
@@ -24,9 +24,11 @@ Optional:
 
 ## 1. Dataset preparation
 
-### 1.1. Slice wavs
+### 1.1. Slice audio files
+
+The following audio formats are supported: ".wav", ".flac", ".mp3", ".ogg", ".opus".
 ```bash
-python slice.py --model_name <model_name> [-i <input_dir>] [-m <min_sec>] [-M <max_sec>]
+python slice.py --model_name <model_name> [-i <input_dir>] [-m <min_sec>] [-M <max_sec>] [--time_suffix]
 ```
 
 Required:
@@ -36,8 +38,9 @@ Optional:
 - `input_dir`: Path to the directory containing the audio files to slice (default: `inputs`)
 - `min_sec`: Minimum duration of the sliced audio files in seconds (default: 2).
 - `max_sec`: Maximum duration of the sliced audio files in seconds (default: 12).
+- `--time_suffix`: Make the filename end with -start_ms-end_ms when saving wav.
 
-### 1.2. Transcribe wavs
+### 1.2. Transcribe audio files
 
 ```bash
 python transcribe.py --model_name <model_name>
@@ -50,7 +53,11 @@ Optional
 - `--device`: `cuda` or `cpu` (default: `cuda`).
 - `--language`: `jp`, `en`, or `en` (default: `jp`).
 - `--model`: Whisper model, default: `large-v3`
-- `--compute_type`: default: `bfloat16`
+- `--compute_type`: default: `bfloat16`. Only used if not `--use_hf_whisper`.
+- `--use_hf_whisper`: Use Hugging Face's whisper model instead of default faster-whisper (HF whisper is faster but requires more VRAM).
+- `--batch_size`: Batch size (default: 16). Only used if `--use_hf_whisper`.
+- `--num_beams`: Beam size (default: 1).
+- `--no_repeat_ngram_size`: N-gram size for no repeat (default: 10).
 
 ## 2. Preprocess
 

@@ -1,7 +1,9 @@
+import warnings
+
 import torch
 import torch.utils.data
 from librosa.filters import mel as librosa_mel_fn
-import warnings
+
 
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings(action="ignore")
