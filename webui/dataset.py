@@ -194,6 +194,15 @@ def create_dataset_app() -> gr.Blocks:
                     label="計算精度",
                     value="bfloat16",
                 )
+                batch_size = gr.Slider(
+                    minimum=1,
+                    maximum=128,
+                    value=16,
+                    step=1,
+                    label="バッチサイズ",
+                    info="大きくすると速度が速くなるがVRAMを多く使う",
+                    visible=False,
+                )
                 device = gr.Radio(["cuda", "cpu"], label="デバイス", value="cuda")
                 language = gr.Dropdown(["ja", "en", "zh"], value="ja", label="言語")
                 initial_prompt = gr.Textbox(
@@ -208,15 +217,6 @@ def create_dataset_app() -> gr.Blocks:
                     step=1,
                     label="ビームサーチのビーム数",
                     info="小さいほど速度が上がる（以前は5）",
-                )
-                batch_size = gr.Slider(
-                    minimum=1,
-                    maximum=128,
-                    value=32,
-                    step=1,
-                    label="バッチサイズ",
-                    info="大きくすると速度が速くなるがVRAMを多く使う",
-                    visible=False,
                 )
             transcribe_button = gr.Button("音声の文字起こし")
             result2 = gr.Textbox(label="結果")
@@ -249,9 +249,9 @@ def create_dataset_app() -> gr.Blocks:
             outputs=[result2],
         )
         use_hf_whisper.change(
-            lambda x: (gr.update(visible=x), gr.update(visible=not x)),
+            lambda x: (gr.update(visible=x), gr.update(visible=not x), gr.update(visible=not x)),
             inputs=[use_hf_whisper],
-            outputs=[batch_size, compute_type],
+            outputs=[batch_size, compute_type, device],
         )
 
     return app
