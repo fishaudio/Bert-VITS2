@@ -5,15 +5,15 @@ import gradio as gr
 import torch
 import yaml
 
+from gradio_tabs.dataset import create_dataset_app
+from gradio_tabs.inference import create_inference_app
+from gradio_tabs.merge import create_merge_app
+from gradio_tabs.style_vectors import create_style_vectors_app
+from gradio_tabs.train import create_train_app
 from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModelHolder
-from webui.dataset import create_dataset_app
-from webui.inference import create_inference_app
-from webui.merge import create_merge_app
-from webui.style_vectors import create_style_vectors_app
-from webui.train import create_train_app
 
 
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
