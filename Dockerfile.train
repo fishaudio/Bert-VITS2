@@ -90,7 +90,7 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 # Based on https://pytorch.org/get-started/locally/
 
-RUN $PIP_INSTALL torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+RUN $PIP_INSTALL torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 
 RUN $PIP_INSTALL jupyterlab
