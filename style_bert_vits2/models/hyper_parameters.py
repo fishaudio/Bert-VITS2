@@ -1,6 +1,6 @@
 """
 Style-Bert-VITS2 モデルのハイパーパラメータを表す Pydantic モデル。
-デフォルト値は configs/configs_jp_extra.json 内の定義と概ね同一で、
+デフォルト値は configs/config_jp_extra.json 内の定義と概ね同一で、
 万が一ロードした config.json に存在しないキーがあった際のフェイルセーフとして適用される。
 """
 

@@ -65,7 +65,7 @@ def initialize(
     )
 
     default_config_path = (
-        "configs/config.json" if not use_jp_extra else "configs/configs_jp_extra.json"
+        "configs/config.json" if not use_jp_extra else "configs/config_jp_extra.json"
     )
 
     with open(default_config_path, "r", encoding="utf-8") as f:
