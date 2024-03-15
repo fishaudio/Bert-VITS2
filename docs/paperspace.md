@@ -28,7 +28,7 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 環境構築（デフォルトはPyTorch 1.x系、Python 3.9の模様）
 ```bash
 cd /storage/sbv2/Style-Bert-VITS2
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118 && pip install -r requirements.txt
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 && pip install -r requirements.txt
 ```
 事前学習済みモデル等のダウンロード、またパスを`/notebooks/`以下のものに設定
 ```bash
@@ -57,7 +57,7 @@ mkdir inputs
 unzip Foo.zip -d inputs
 cd /storage/sbv2/Style-Bert-VITS2
 python slice.py --model_name Foo -i /notebooks/inputs
-python transcribe.py --model_name Foo
+python transcribe.py --model_name Foo --use_hf_whisper
 ```
 
 それが終わったら、以下のコマンドで一括前処理を行う（パラメータは各自お好み、バッチサイズ5か6でVRAM 16GBギリくらい）。

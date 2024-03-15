@@ -67,8 +67,7 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-# PyTorch 2.2.x系は今のところは学習エラーが出るので前のバージョンを使う
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
@@ -170,13 +169,6 @@ python speech_mos.py -m <model_name>
 - safetensors形式のサポート、デフォルトでsafetensorsを使用するように
 - その他軽微なbugfixやリファクタリング
 
-## TODO
-- [x] デフォルトのJVNVモデルにJP-Extra版のものを追加
-- [x] LinuxやWSL等、Windowsの通常環境以外でのサポート ← おそらく問題ないとの報告あり
-- [x] 複数話者学習での音声合成対応（学習は現在でも可能）
-- [x] `server_fastapi.py`の対応、とくにAPIで使えるようになると嬉しい人が増えるのかもしれない
-- [x] モデルのマージで声音と感情表現を混ぜる機能の実装
-- [ ] 英語等多言語対応？
 
 ## References
 In addition to the original reference (written below), I used the following repositories:

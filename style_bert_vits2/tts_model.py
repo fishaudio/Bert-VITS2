@@ -380,7 +380,6 @@ class TTSModelHolder:
     def get_model_for_gradio(
         self, model_name: str, model_path_str: str
     ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
-
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
