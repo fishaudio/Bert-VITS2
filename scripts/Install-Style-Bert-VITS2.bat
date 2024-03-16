@@ -1,50 +1,66 @@
 chcp 65001 > NUL
 @echo off
+setlocal
 
-@REM https://github.com/Zuntan03/EasyBertVits2 より引用・改変
+set PS_CMD=PowerShell -NoProfile -NoLogo -ExecutionPolicy Bypass
 
+set DL_URL=https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/MinGit-2.44.0-64-bit.zip
+set DL_DST=MinGit-2.44.0-64-bit.zip
+
+set REPO_URL=https://github.com/litagin02/Style-Bert-VITS2
+
+@REM カレントディレクトリをbatファイルのディレクトリに変更
 pushd %~dp0
-set PS_CMD=PowerShell -Version 5.1 -ExecutionPolicy Bypass
-
-set CURL_CMD=C:\Windows\System32\curl.exe
-if not exist %CURL_CMD% (
-	echo [ERROR] %CURL_CMD% が見つかりません。
-	pause & popd & exit /b 1
-)
 
 @REM lib フォルダがなければ作成
 if not exist lib\ ( mkdir lib )
 
-@REM Style-Bert-VITS2.zip をGitHubのmasterの最新のものをダウンロード
-%CURL_CMD% -Lo Style-Bert-VITS2.zip^
-	https://github.com/litagin02/Style-Bert-VITS2/archive/refs/heads/master.zip
+echo --------------------------------------------------
+echo Downloading MinGit...
+echo --------------------------------------------------
+curl -L %DL_URL% -o "%DL_DST%"
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Style-Bert-VITS2.zip を解凍（フォルダ名前がBert-VITS2-masterになる）
-%PS_CMD% Expand-Archive -Path Style-Bert-VITS2.zip -DestinationPath . -Force
+@REM lib\MinGitフォルダに解凍
+echo --------------------------------------------------
+echo Extracting MinGit...
+echo --------------------------------------------------
+%PS_CMD% "Expand-Archive -LiteralPath %DL_DST% -DestinationPath .\lib\MinGit -Force"
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM 元のzipを削除
-del Style-Bert-VITS2.zip
+del %DL_DST%
+
+@REM Gitコマンドのパスを設定
+set PATH=%~dp0lib\MinGit\cmd;%PATH%
+
+echo --------------------------------------------------
+echo Checking Git Installation...
+echo --------------------------------------------------
+git --version
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-@REM Bert-VITS2-masterの中身をStyle-Bert-VITS2に上書き移動
-xcopy /QSY .\Style-Bert-VITS2-master\ .\Style-Bert-VITS2\
-rmdir /s /q Style-Bert-VITS2-master
+echo --------------------------------------------------
+echo Cloning repository...
+echo --------------------------------------------------
+git clone %REPO_URL%
+if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
-echo ----------------------------------------
-echo Setup Python and Virtual Environment
-echo ----------------------------------------
+echo --------------------------------------------------
+echo Setting up Python environment...
+echo --------------------------------------------------
 
-@REM Pythonと仮想環境のセットアップを呼び出す（仮想環境が有効化されて戻ってくる）
 call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
 if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
 
-@REM 依存関係インストール
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
+echo --------------------------------------------------
+echo Installing PyTorch...
+echo --------------------------------------------------
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+echo --------------------------------------------------
+echo Installing other dependencies...
+echo --------------------------------------------------
 pip install -r Style-Bert-VITS2\requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
@@ -64,10 +80,10 @@ echo ----------------------------------------
 
 @REM エディターの起動
 python server_editor.py --inbrowser
-
 pause
 
 popd
 
 popd
 
+endlocal
