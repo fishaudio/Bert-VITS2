@@ -98,6 +98,14 @@ if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 pushd Style-Bert-VITS2
 
 echo --------------------------------------------------
+echo Activating the virtual environment...
+echo --------------------------------------------------
+echo Executing: call ".\venv\Scripts\activate.bat"
+pause
+call ".\venv\Scripts\activate.bat"
+if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
 echo Installing dependencies...
 echo --------------------------------------------------
 echo Executing: pip install -r requirements.txt

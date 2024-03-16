@@ -85,7 +85,7 @@ pause
 git clone %REPO_URL%
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
-@REM Pythonのセットアップ、仮想環境が有効化されて戻って来る
+@REM Pythonのセットアップ
 echo --------------------------------------------------
 echo Setting up Python environment...
 echo --------------------------------------------------
@@ -96,6 +96,14 @@ if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 @REM Style-Bert-VITS2フォルダに移動
 pushd Style-Bert-VITS2
+
+echo --------------------------------------------------
+echo Activating the virtual environment...
+echo --------------------------------------------------
+echo Executing: call ".\venv\Scripts\activate.bat"
+pause
+call ".\venv\Scripts\activate.bat"
+if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
 echo Installing PyTorch...

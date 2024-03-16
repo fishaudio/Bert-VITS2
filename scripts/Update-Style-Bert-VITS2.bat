@@ -43,13 +43,17 @@ if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 @REM 仮想環境のpip requirements.txtを更新
 
 echo --------------------------------------------------
-echo Updating dependencies...
+echo Activating virtual environment...
 echo --------------------------------------------------
-
-@REM 仮想環境を有効化
-call .\venv\Scripts\activate.bat
+echo Executing: call ".\venv\Scripts\activate.bat"
+pause
+call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
+echo --------------------------------------------------
+echo Updating dependencies...
+echo --------------------------------------------------
+echo Executing: pip install -U -r requirements.txt
 pip install -U -r requirements.txt
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 

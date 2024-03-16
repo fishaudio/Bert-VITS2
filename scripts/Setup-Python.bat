@@ -106,7 +106,7 @@ if not exist %VENV_DIR%\ (
 )
 
 echo --------------------------------------------------
-echo Actibating virtual environment...
+echo Activating virtual environment...
 echo --------------------------------------------------
 echo Executing: call "%VENV_DIR%\Scripts\activate.bat"
 pause
