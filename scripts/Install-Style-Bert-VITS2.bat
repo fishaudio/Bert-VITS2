@@ -2,11 +2,14 @@ chcp 65001 > NUL
 @echo off
 setlocal
 
+@REM PowerShellのコマンド
 set PS_CMD=PowerShell -NoProfile -NoLogo -ExecutionPolicy Bypass
 
-set DL_URL=https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/MinGit-2.44.0-64-bit.zip
-set DL_DST=MinGit-2.44.0-64-bit.zip
+@REM PortableGitのURLと保存先
+set DL_URL=https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/PortableGit-2.44.0-64-bit.7z.exe
+set DL_DST=%~dp0lib\PortableGit-2.44.0-64-bit.7z.exe
 
+@REM Style-Bert-VITS2のリポジトリURL
 set REPO_URL=https://github.com/litagin02/Style-Bert-VITS2
 
 @REM カレントディレクトリをbatファイルのディレクトリに変更
@@ -16,69 +19,108 @@ pushd %~dp0
 if not exist lib\ ( mkdir lib )
 
 echo --------------------------------------------------
-echo Downloading MinGit...
+echo PS_CMD: %PS_CMD%
+echo DL_URL: %DL_URL%
+echo DL_DST: %DL_DST%
+echo REPO_URL: %REPO_URL%
 echo --------------------------------------------------
-curl -L %DL_URL% -o "%DL_DST%"
-if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
-
-@REM lib\MinGitフォルダに解凍
-echo --------------------------------------------------
-echo Extracting MinGit...
-echo --------------------------------------------------
-%PS_CMD% "Expand-Archive -LiteralPath %DL_DST% -DestinationPath .\lib\MinGit -Force"
-if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
-
-del %DL_DST%
-
-@REM Gitコマンドのパスを設定
-set PATH=%~dp0lib\MinGit\cmd;%PATH%
-
+echo.
 echo --------------------------------------------------
 echo Checking Git Installation...
 echo --------------------------------------------------
+echo Executing: git --version
+pause
 git --version
-if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+if %errorlevel% neq 0 (
+	echo --------------------------------------------------
+	echo Git is not installed, so download and use PortableGit.
+	echo Downloading PortableGit...
+	echo --------------------------------------------------
+	echo Executing: curl -L %DL_URL% -o "%DL_DST%"
+	pause
+	curl -L %DL_URL% -o "%DL_DST%"
+	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+	echo --------------------------------------------------
+	echo Extracting PortableGit...
+	echo --------------------------------------------------
+	echo Executing: "%DL_DST%" -y
+	pause
+	"%DL_DST%" -y
+	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+	echo --------------------------------------------------
+	echo Removing %DL_DST%...
+	echo --------------------------------------------------
+	echo Executing: del "%DL_DST%"
+	pause
+	del "%DL_DST%"
+	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+	@REM Gitコマンドのパスを設定
+	echo --------------------------------------------------
+	echo Setting up PATH...
+	echo --------------------------------------------------
+	echo Executing: set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
+	pause
+	set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
+	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+
+	echo --------------------------------------------------
+	echo Checking Git Installation...
+	echo --------------------------------------------------
+	echo Executing: git --version
+	pause
+	git --version
+	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+)
 
 echo --------------------------------------------------
 echo Cloning repository...
 echo --------------------------------------------------
+echo Executing: git clone %REPO_URL%
+pause
 git clone %REPO_URL%
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
+@REM Pythonのセットアップ、仮想環境が有効化されて戻って来る
 echo --------------------------------------------------
 echo Setting up Python environment...
 echo --------------------------------------------------
-
-call Style-Bert-VITS2\scripts\Setup-Python.bat ..\..\lib\python ..\venv
+echo Executing: call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
+pause
+call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
 if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
+
+@REM Style-Bert-VITS2フォルダに移動
+pushd Style-Bert-VITS2
 
 echo --------------------------------------------------
 echo Installing PyTorch...
 echo --------------------------------------------------
+echo Executing: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pause
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 echo --------------------------------------------------
 echo Installing other dependencies...
 echo --------------------------------------------------
-pip install -r Style-Bert-VITS2\requirements.txt
+echo Executing: pip install -r requirements.txt
+pause
+pip install -r requirements.txt
 if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
 
 echo ----------------------------------------
 echo Environment setup is complete. Start downloading the model.
 echo ----------------------------------------
-
-@REM Style-Bert-VITS2フォルダに移動
-pushd Style-Bert-VITS2
-
-@REM 初期化（必要なモデルのダウンロード）
+echo Executing: python initialize.py
 python initialize.py
 
 echo ----------------------------------------
 echo Model download is complete. Start Style-Bert-VITS2 Editor.
 echo ----------------------------------------
-
-@REM エディターの起動
+echo Executing: python server_editor.py --inbrowser
 python server_editor.py --inbrowser
 pause
 

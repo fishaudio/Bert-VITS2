@@ -78,6 +78,7 @@ def download_jvnv_models():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip_jvnv", action="store_true")
+    parser.add_argument("--only_infer", action="store_true")
     parser.add_argument(
         "--dataset_root",
         type=str,
@@ -94,14 +95,12 @@ def main():
 
     download_bert_models()
 
-    download_slm_model()
-
-    download_pretrained_models()
-
-    download_jp_extra_pretrained_models()
-
     if not args.skip_jvnv:
         download_jvnv_models()
+    if not args.only_infer:
+        download_slm_model()
+        download_pretrained_models()
+        download_jp_extra_pretrained_models()
 
     if args.dataset_root is None and args.assets_root is None:
         return
