@@ -31,6 +31,7 @@ echo --------------------------------------------------
 echo Checking Git Installation...
 echo --------------------------------------------------
 echo Executing: git --version
+pause
 git --version
 if !errorlevel! neq 0 (
 	echo --------------------------------------------------
@@ -78,7 +79,7 @@ echo Executing: git clone %REPO_URL%
 git clone %REPO_URL%
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
-@REM Pythonのセットアップ
+@REM Pythonのセットアップ、仮想環境が有効化されて戻って来る
 echo --------------------------------------------------
 echo Setting up Python environment...
 echo --------------------------------------------------
@@ -97,14 +98,7 @@ call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
-echo Installing PyTorch...
-echo --------------------------------------------------
-echo Executing: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
-
-echo --------------------------------------------------
-echo Installing other dependencies...
+echo Installing dependencies...
 echo --------------------------------------------------
 echo Executing: pip install -r requirements.txt
 pip install -r requirements.txt
@@ -114,7 +108,7 @@ echo ----------------------------------------
 echo Environment setup is complete. Start downloading the model.
 echo ----------------------------------------
 echo Executing: python initialize.py
-python initialize.py
+python initialize.py --only_infer
 
 echo ----------------------------------------
 echo Model download is complete. Start Style-Bert-VITS2 Editor.

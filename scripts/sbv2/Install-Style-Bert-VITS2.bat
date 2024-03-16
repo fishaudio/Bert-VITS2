@@ -31,6 +31,7 @@ echo --------------------------------------------------
 echo Checking Git Installation...
 echo --------------------------------------------------
 echo Executing: git --version
+pause
 git --version
 if !errorlevel! neq 0 (
 	echo --------------------------------------------------

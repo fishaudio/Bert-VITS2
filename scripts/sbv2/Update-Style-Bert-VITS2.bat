@@ -30,6 +30,8 @@ if !errorlevel! neq 0 (
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 )
 
+pause
+
 echo --------------------------------------------------
 echo Git pull...
 echo --------------------------------------------------
