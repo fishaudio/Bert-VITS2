@@ -14,6 +14,7 @@ You can install via `pip install style-bert-vits2` (inference only), see [librar
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
 
+  - 2024-03-16: ver 2.4.1 (**batファイルによるインストール方法の変更**)
   - 2024-03-15: ver 2.4.0 (大規模リファクタリングや種々の改良、ライブラリ化)
   - 2024-02-26: ver 2.3 (辞書機能とエディター機能)
   - 2024-02-09: ver 2.2
@@ -51,15 +52,15 @@ Pythonライブラリとしてのpipでのインストールや使用例は[libr
 
 Windowsを前提としています。
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.4.0/Style-Bert-VITS2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.4.1/sbv2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。CPU版では学習はできませんが、音声合成とマージは可能です。
 2. 待つと自動で必要な環境がインストールされます。
 3. その後、自動的に音声合成するためのエディターが起動したらインストール成功です。デフォルトのモデルがダウンロードされるているので、そのまま遊ぶことができます。
 
-またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。ただし以下の場合は、専用のアップデートbatファイルを`Style-Bert-VITS2`フォルダがあるフォルダ（`Update-Style-Bert-VITS2.bat`等があるフォルダ）へ保存してからダブルクリックしてください。
-- **2.3以前**（辞書・エディター無し）から最新版へアップデート: [Update-to-Dict-Editor.bat](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.4.0/Update-to-Dict-Editor.bat)
-- 2.4以前から最新版へアップデートした際の不要なファイルの削除: [Clean.bat](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.4.0/Clean.bat)
+またアップデートをしたい場合は、`Update-Style-Bert-VITS2.bat`をダブルクリックしてください。
+
+ただし2024-03-16の**2.4.1**バージョン未満からのアップデートの場合は、全てを削除してから再びインストールする必要があります。申し訳ありません。移行方法は[CHANGELOG.md](/docs/CHANGELOG.md)を参照してください。
 
 #### GitやPython使える人
 
