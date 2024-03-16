@@ -25,6 +25,7 @@ dist/
 /scripts/test/
 /scripts/lib/
 /scripts/Style-Bert-VITS2/
+/scripts/sbv2/
 *.zip
 *.csv
 *.bak
