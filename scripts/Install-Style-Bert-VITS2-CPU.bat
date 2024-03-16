@@ -39,7 +39,6 @@ if !errorlevel! neq 0 (
 	echo Downloading PortableGit...
 	echo --------------------------------------------------
 	echo Executing: curl -L %DL_URL% -o "%DL_DST%"
-	pause
 	curl -L %DL_URL% -o "%DL_DST%"
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -47,7 +46,6 @@ if !errorlevel! neq 0 (
 	echo Extracting PortableGit...
 	echo --------------------------------------------------
 	echo Executing: "%DL_DST%" -y
-	pause
 	"%DL_DST%" -y
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -55,7 +53,6 @@ if !errorlevel! neq 0 (
 	echo Removing %DL_DST%...
 	echo --------------------------------------------------
 	echo Executing: del "%DL_DST%"
-	pause
 	del "%DL_DST%"
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -64,7 +61,6 @@ if !errorlevel! neq 0 (
 	echo Setting up PATH...
 	echo --------------------------------------------------
 	echo Executing: set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
-	pause
 	set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -72,7 +68,6 @@ if !errorlevel! neq 0 (
 	echo Checking Git Installation...
 	echo --------------------------------------------------
 	echo Executing: git --version
-	pause
 	git --version
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 )
@@ -81,7 +76,6 @@ echo --------------------------------------------------
 echo Cloning repository...
 echo --------------------------------------------------
 echo Executing: git clone %REPO_URL%
-pause
 git clone %REPO_URL%
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -90,7 +84,6 @@ echo --------------------------------------------------
 echo Setting up Python environment...
 echo --------------------------------------------------
 echo Executing: call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
-pause
 call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
 if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
@@ -101,7 +94,6 @@ echo --------------------------------------------------
 echo Activating the virtual environment...
 echo --------------------------------------------------
 echo Executing: call ".\venv\Scripts\activate.bat"
-pause
 call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
@@ -109,7 +101,6 @@ echo --------------------------------------------------
 echo Installing dependencies...
 echo --------------------------------------------------
 echo Executing: pip install -r requirements.txt
-pause
 pip install -r requirements.txt
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 

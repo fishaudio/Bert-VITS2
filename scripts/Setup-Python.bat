@@ -34,15 +34,13 @@ echo PYTHON_CMD: %PYTHON_CMD%
 echo PYTHON_DIR: %PYTHON_DIR%
 echo VENV_DIR: %VENV_DIR%
 echo --------------------------------------------------
-
-pause
+echo.
 
 if not exist "%PYTHON_DIR%"\ (
 	echo --------------------------------------------------
 	echo Downloading Python...
 	echo --------------------------------------------------
 	echo Executing: %CURL_CMD% -o python.zip https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip
-	pause
 	%CURL_CMD% -o python.zip https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -50,7 +48,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Extracting zip...
 	echo --------------------------------------------------
 	echo Executing: %PS_CMD% Expand-Archive -Path python.zip -DestinationPath \"%PYTHON_DIR%\"
-	pause
 	%PS_CMD% Expand-Archive -Path python.zip -DestinationPath \"%PYTHON_DIR%\"
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -58,7 +55,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Removing python.zip...
 	echo --------------------------------------------------
 	echo Executing: del python.zip
-	pause
 	del python.zip
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -66,7 +62,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Enabling 'site' module in the embedded Python environment...
 	echo --------------------------------------------------
 	echo Executing: %PS_CMD% "&{(Get-Content '%PYTHON_DIR%/python310._pth') -creplace '#import site', 'import site' | Set-Content '%PYTHON_DIR%/python310._pth' }"
-	pause
 	%PS_CMD% "&{(Get-Content '%PYTHON_DIR%/python310._pth') -creplace '#import site', 'import site' | Set-Content '%PYTHON_DIR%/python310._pth' }"
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -74,7 +69,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Installing pip and virtualenv...
 	echo --------------------------------------------------
 	echo Executing: %CURL_CMD% -o "%PYTHON_DIR%\get-pip.py" https://bootstrap.pypa.io/get-pip.py
-	pause
 	%CURL_CMD% -o "%PYTHON_DIR%\get-pip.py" https://bootstrap.pypa.io/get-pip.py
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -82,7 +76,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Installing pip...
 	echo --------------------------------------------------
 	echo Executing: "%PYTHON_CMD%" "%PYTHON_DIR%\get-pip.py" --no-warn-script-location
-	pause
 	"%PYTHON_CMD%" "%PYTHON_DIR%\get-pip.py" --no-warn-script-location
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -90,7 +83,6 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Installing virtualenv...
 	echo --------------------------------------------------
 	echo Executing: "%PYTHON_CMD%" -m pip install virtualenv --no-warn-script-location
-	pause
 	"%PYTHON_CMD%" -m pip install virtualenv --no-warn-script-location
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 )
@@ -100,7 +92,6 @@ if not exist %VENV_DIR%\ (
 	echo Creating virtual environment...
 	echo --------------------------------------------------
 	echo Executing: "%PYTHON_CMD%" -m virtualenv --copies "%VENV_DIR%"
-	pause
 	"%PYTHON_CMD%" -m virtualenv --copies "%VENV_DIR%"
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 )
@@ -109,7 +100,6 @@ echo --------------------------------------------------
 echo Activating virtual environment...
 echo --------------------------------------------------
 echo Executing: call "%VENV_DIR%\Scripts\activate.bat"
-pause
 call "%VENV_DIR%\Scripts\activate.bat"
 if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
@@ -117,7 +107,6 @@ echo --------------------------------------------------
 echo Upgrading pip...
 echo --------------------------------------------------
 echo Executing: python -m pip install --upgrade pip
-pause
 python -m pip install --upgrade pip
 if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 

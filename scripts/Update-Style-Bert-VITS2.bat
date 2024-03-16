@@ -19,7 +19,6 @@ if !errorlevel! neq 0 (
 	echo Setting up PATH...
 	echo --------------------------------------------------
 	echo Executing: set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
-	pause
 	set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
@@ -27,7 +26,6 @@ if !errorlevel! neq 0 (
 	echo Checking Git Installation...
 	echo --------------------------------------------------
 	echo Executing: git --version
-	pause
 	git --version
 	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 )
@@ -46,7 +44,6 @@ echo --------------------------------------------------
 echo Activating virtual environment...
 echo --------------------------------------------------
 echo Executing: call ".\venv\Scripts\activate.bat"
-pause
 call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
