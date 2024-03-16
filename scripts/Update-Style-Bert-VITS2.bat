@@ -20,7 +20,6 @@ if !errorlevel! neq 0 (
 	echo --------------------------------------------------
 	echo Executing: set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
 	set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
-	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 	echo --------------------------------------------------
 	echo Checking Git Installation...

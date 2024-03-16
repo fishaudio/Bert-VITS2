@@ -23,6 +23,8 @@ dist/
 /slm/*/*.bin
 
 /scripts/test/
+/scripts/lib/
+/scripts/Style-Bert-VITS2/
 *.zip
 *.csv
 *.bak
