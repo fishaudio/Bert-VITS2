@@ -1,6 +1,8 @@
 chcp 65001 > NUL
 @echo off
-setlocal
+
+@REM エラーコードを遅延評価するために設定
+setlocal enabledelayedexpansion
 
 @REM PowerShellのコマンド
 set PS_CMD=PowerShell -NoProfile -NoLogo -ExecutionPolicy Bypass
@@ -31,7 +33,7 @@ echo --------------------------------------------------
 echo Executing: git --version
 pause
 git --version
-if %errorlevel% neq 0 (
+if !errorlevel! neq 0 (
 	echo --------------------------------------------------
 	echo Git is not installed, so download and use PortableGit.
 	echo Downloading PortableGit...
@@ -39,7 +41,7 @@ if %errorlevel% neq 0 (
 	echo Executing: curl -L %DL_URL% -o "%DL_DST%"
 	pause
 	curl -L %DL_URL% -o "%DL_DST%"
-	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 	echo --------------------------------------------------
 	echo Extracting PortableGit...
@@ -47,7 +49,7 @@ if %errorlevel% neq 0 (
 	echo Executing: "%DL_DST%" -y
 	pause
 	"%DL_DST%" -y
-	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 	echo --------------------------------------------------
 	echo Removing %DL_DST%...
@@ -55,7 +57,7 @@ if %errorlevel% neq 0 (
 	echo Executing: del "%DL_DST%"
 	pause
 	del "%DL_DST%"
-	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 	@REM Gitコマンドのパスを設定
 	echo --------------------------------------------------
@@ -64,7 +66,7 @@ if %errorlevel% neq 0 (
 	echo Executing: set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
 	pause
 	set "PATH=%~dp0lib\PortableGit\bin;%PATH%"
-	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 	echo --------------------------------------------------
 	echo Checking Git Installation...
@@ -72,7 +74,7 @@ if %errorlevel% neq 0 (
 	echo Executing: git --version
 	pause
 	git --version
-	if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+	if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 )
 
 echo --------------------------------------------------
@@ -81,7 +83,7 @@ echo --------------------------------------------------
 echo Executing: git clone %REPO_URL%
 pause
 git clone %REPO_URL%
-if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 @REM Pythonのセットアップ、仮想環境が有効化されて戻って来る
 echo --------------------------------------------------
@@ -90,7 +92,7 @@ echo --------------------------------------------------
 echo Executing: call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
 pause
 call Setup-Python.bat ".\lib\python" ".\Style-Bert-VITS2\venv"
-if %errorlevel% neq 0 ( popd & exit /b %errorlevel% )
+if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 @REM Style-Bert-VITS2フォルダに移動
 pushd Style-Bert-VITS2
@@ -101,7 +103,7 @@ echo --------------------------------------------------
 echo Executing: pip install -r requirements.txt
 pause
 pip install -r requirements.txt
-if %errorlevel% neq 0 ( pause & popd & exit /b %errorlevel% )
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo ----------------------------------------
 echo Environment setup is complete. Start downloading the model.
