@@ -113,5 +113,3 @@ if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 echo --------------------------------------------------
 echo Completed.
 echo --------------------------------------------------
-
-pause
