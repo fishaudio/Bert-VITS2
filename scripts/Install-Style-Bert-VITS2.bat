@@ -5,7 +5,7 @@ chcp 65001 > NUL
 setlocal enabledelayedexpansion
 
 @REM PowerShellのコマンド
-set PS_CMD=PowerShell -NoProfile -NoLogo -ExecutionPolicy Bypass
+set PS_CMD=PowerShell -Version 5.1 -ExecutionPolicy Bypass
 
 @REM PortableGitのURLと保存先
 set DL_URL=https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/PortableGit-2.44.0-64-bit.7z.exe
