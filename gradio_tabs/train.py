@@ -433,6 +433,8 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 ...
 ```
 日本語話者の単一話者データセットでも構いません。
+
+- 音声ファイルはrawフォルダの直下でなくてもサブフォルダに入れても構いません。その場合は、`esd.list`の最初には`raw`からの相対パスを記述してください。
 """
 
 
