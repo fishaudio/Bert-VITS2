@@ -33,9 +33,17 @@ def normalize_audio(data: NDArray[Any], sr: int):
     return data
 
 
-def resample(file: Path, output_dir: Path, target_sr: int, normalize: bool, trim: bool):
+def resample(
+    file: Path,
+    input_dir: Path,
+    output_dir: Path,
+    target_sr: int,
+    normalize: bool,
+    trim: bool,
+):
     """
-    fileを読み込んで、target_srなwavファイルに変換してoutput_dir直下に保存する
+    fileを読み込んで、target_srなwavファイルに変換して、
+    output_dirの中に、input_dirからの相対パスを保つように保存する
     """
     try:
         # librosaが読めるファイルかチェック
@@ -53,7 +61,10 @@ def resample(file: Path, output_dir: Path, target_sr: int, normalize: bool, trim
                 )
         if trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
-        soundfile.write(output_dir / file.with_suffix(".wav").name, wav, sr)
+        relative_path = file.relative_to(input_dir)
+        output_path = output_dir / relative_path.with_suffix(".wav")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        soundfile.write(output_path, wav, sr)
     except Exception as e:
         logger.warning(f"Cannot load file, so skipping: {file}, {e}")
 
@@ -107,6 +118,7 @@ if __name__ == "__main__":
 
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
+    logger.info(f"Resampling {input_dir} to {output_dir}")
     sr = int(args.sr)
     normalize: bool = args.normalize
     trim: bool = args.trim
@@ -122,7 +134,7 @@ if __name__ == "__main__":
 
     with ThreadPoolExecutor(max_workers=processes) as executor:
         futures = [
-            executor.submit(resample, file, output_dir, sr, normalize, trim)
+            executor.submit(resample, file, input_dir, output_dir, sr, normalize, trim)
             for file in original_files
         ]
         for future in tqdm(
