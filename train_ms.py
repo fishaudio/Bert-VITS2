@@ -196,7 +196,7 @@ def run():
         default_style.set_style_config(
             args.config, os.path.join(config.out_dir, "config.json")
         )
-        default_style.save_mean_vector(
+        default_style.save_neutral_vector(
             os.path.join(args.model, "wavs"),
             os.path.join(config.out_dir, "style_vectors.npy"),
         )
