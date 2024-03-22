@@ -24,7 +24,7 @@ def save_neutral_vector(wav_dir: Union[Path, str], output_path: Union[Path, str]
     output_path = Path(output_path)
     embs = []
     for file in wav_dir.rglob("*.npy"):
-        xvec = np.load(os.path.join(wav_dir, file))
+        xvec = np.load(file)
         embs.append(np.expand_dims(xvec, axis=0))
 
     x = np.concatenate(embs, axis=0)  # (N, 256)
