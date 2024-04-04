@@ -6,7 +6,7 @@ Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/b907c1b8-43aa-46e6-b03f-f6362f5a5a1e
 
-[Zenn Commentary Article (translated)](docs/Style-Bert-VITS2_en.md) ([original](https://zenn.dev/litagin/articles/034819a5256ff4))
+[Zenn Commentary Article (translated)](Style-Bert-VITS2_en.md) ([original](https://zenn.dev/litagin/articles/034819a5256ff4))
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
 
