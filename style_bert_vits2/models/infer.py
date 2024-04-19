@@ -126,6 +126,7 @@ def get_text(
             # 他の言語は word2ph の調整方法が思いつかないのでエラー
             if language_str == Languages.JP:
                 from style_bert_vits2.nlp.japanese.g2p import adjust_word2ph
+
                 word2ph = adjust_word2ph(word2ph, phone, given_phone)
                 # 上記処理により word2ph の合計が given_phone の長さと一致するはず
                 # それでも一致しない場合、大半は読み上げテキストと given_phone が著しく乖離していて調整し切れなかったことを意味する
@@ -301,6 +302,7 @@ def infer(
 
 class InvalidPhoneError(ValueError):
     pass
+
 
 class InvalidToneError(ValueError):
     pass
