@@ -29,7 +29,6 @@ from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import (
     SynthesizerTrn as SynthesizerTrnJPExtra,
 )
-from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.voice import adjust_voice
 
 
@@ -155,6 +154,7 @@ class TTSModel:
         use_assist_text: bool = False,
         style: str = DEFAULT_STYLE,
         style_weight: float = DEFAULT_STYLE_WEIGHT,
+        given_phone: Optional[list[str]] = None,
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
@@ -171,13 +171,14 @@ class TTSModel:
             noise (float, optional): DP に与えられるノイズ. Defaults to DEFAULT_NOISE.
             noise_w (float, optional): SDP に与えられるノイズ. Defaults to DEFAULT_NOISEW.
             length (float, optional): 生成音声の長さ（話速）のパラメータ。大きいほど生成音声が長くゆっくり、小さいほど短く早くなる。 Defaults to DEFAULT_LENGTH.
-            line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか. Defaults to DEFAULT_LINE_SPLIT.
+            line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか (True の場合 given_phone/given_tone は無視される). Defaults to DEFAULT_LINE_SPLIT.
             split_interval (float, optional): 改行ごとに分割する場合の無音 (秒). Defaults to DEFAULT_SPLIT_INTERVAL.
             assist_text (Optional[str], optional): 感情表現の参照元の補助テキスト. Defaults to None.
             assist_text_weight (float, optional): 感情表現の補助テキストを適用する強さ. Defaults to DEFAULT_ASSIST_TEXT_WEIGHT.
             use_assist_text (bool, optional): 音声合成時に感情表現の補助テキストを使用するかどうか. Defaults to False.
             style (str, optional): 音声スタイル (Neutral, Happy など). Defaults to DEFAULT_STYLE.
             style_weight (float, optional): 音声スタイルを適用する強さ. Defaults to DEFAULT_STYLE_WEIGHT.
+            given_phone (Optional[list[int]], optional): 読み上げテキストの読みを表す音素列。指定する場合は given_tone も別途指定が必要. Defaults to None.
             given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
@@ -222,6 +223,7 @@ class TTSModel:
                     assist_text=assist_text,
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
+                    given_phone=given_phone,
                     given_tone=given_tone,
                 )
         else:
