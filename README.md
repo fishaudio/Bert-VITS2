@@ -181,7 +181,7 @@ In addition to the original reference (written below), I used the following repo
 
 
 In addition, [text/user_dict/](text/user_dict) module is based on the following repositories:
-- [voicevox_engine](https://github.com/VOICEVOX/voicevox_engine)]
+- [voicevox_engine](https://github.com/VOICEVOX/voicevox_engine)
 and the license of this module is LGPL v3.
 
 ## LICENSE
