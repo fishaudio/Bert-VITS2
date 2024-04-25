@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
-import pyannote.audio
 import torch
 from numpy.typing import NDArray
 from pydantic import BaseModel
@@ -76,7 +75,7 @@ class TTSModel:
                 f"Number of styles ({num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        self.__style_vector_inference: Optional[pyannote.audio.Inference] = None
+        self.__style_vector_inference: Optional[Any] = None
         self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
         if self.__style_vectors.shape[0] != num_styles:
             raise ValueError(
@@ -125,8 +124,18 @@ class TTSModel:
             NDArray[Any]: スタイルベクトル
         """
 
-        # スタイルベクトルを取得するための推論モデルを初期化
         if self.__style_vector_inference is None:
+
+            # pyannote.audio は scikit-learn などの大量の重量級ライブラリに依存しているため、
+            # TTSModel.infer() に reference_audio_path を指定し音声からスタイルベクトルを推論する場合のみ遅延 import する
+            try:
+                import pyannote.audio
+            except ImportError:
+                raise ImportError(
+                    "pyannote.audio is required to infer style vector from audio"
+                )
+
+            # スタイルベクトルを取得するための推論モデルを初期化
             self.__style_vector_inference = pyannote.audio.Inference(
                 model=pyannote.audio.Model.from_pretrained(
                     "pyannote/wespeaker-voxceleb-resnet34-LM"
