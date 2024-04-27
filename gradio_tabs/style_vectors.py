@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from pathlib import Path
 
 import gradio as gr
 import matplotlib.pyplot as plt
@@ -15,11 +16,10 @@ from config import config
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
 
-
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     path_config: dict[str, str] = yaml.safe_load(f.read())
-    dataset_root = path_config["dataset_root"]
+    dataset_root = Path(path_config["dataset_root"])
     # assets_root = path_config["assets_root"]
 
 MAX_CLUSTER_NUM = 10
@@ -28,7 +28,7 @@ MAX_AUDIO_NUM = 10
 tsne = TSNE(n_components=2, random_state=42, metric="cosine")
 umap = UMAP(n_components=2, random_state=42, metric="cosine", n_jobs=1, min_dist=0.0)
 
-wav_files = []
+wav_files: list[Path] = []
 x = np.array([])
 x_reduced = None
 y_pred = np.array([])
@@ -36,13 +36,17 @@ mean = np.array([])
 centroids = []
 
 
-def load(model_name, reduction_method):
+def load(model_name: str, reduction_method: str):
     global wav_files, x, x_reduced, mean
-    wavs_dir = os.path.join(dataset_root, model_name, "wavs")
-    style_vector_files = [
-        os.path.join(wavs_dir, f) for f in os.listdir(wavs_dir) if f.endswith(".npy")
-    ]
-    wav_files = [f.replace(".npy", "") for f in style_vector_files]
+    # wavs_dir = os.path.join(dataset_root, model_name, "wavs")
+    wavs_dir = dataset_root / model_name / "wavs"
+    # style_vector_files = [
+    #     os.path.join(wavs_dir, f) for f in os.listdir(wavs_dir) if f.endswith(".npy")
+    # ]
+    style_vector_files = [f for f in wavs_dir.rglob("*.npy") if f.is_file()]
+    # foo.wav.npy -> foo.wav
+    wav_files = [f.with_suffix("") for f in style_vector_files]
+    logger.info(f"Found {len(style_vector_files)} style vectors in {wavs_dir}")
     style_vectors = [np.load(f) for f in style_vector_files]
     x = np.array(style_vectors)
     mean = np.mean(x, axis=0)
@@ -201,6 +205,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
         logger.info(f"Backup {style_vector_path} to {style_vector_path}.bak")
         shutil.copy(style_vector_path, f"{style_vector_path}.bak")
     np.save(style_vector_path, style_vectors)
+    logger.success(f"Saved style vectors to {style_vector_path}")
 
     # config.jsonの更新
     config_path = os.path.join(result_dir, "config.json")
@@ -222,6 +227,7 @@ def save_style_vectors_from_clustering(model_name, style_names_str: str):
     json_dict["data"]["style2id"] = style_dict
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(json_dict, f, indent=2, ensure_ascii=False)
+    logger.success(f"Updated {config_path}")
     return f"成功!\n{style_vector_path}に保存し{config_path}を更新しました。"
 
 
