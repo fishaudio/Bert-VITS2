@@ -183,8 +183,9 @@ if __name__ == "__main__":
                 num_beams=num_beams,
                 no_repeat_ngram_size=no_repeat_ngram_size,
             )
+            wav_rel_path = wav_file.relative_to(input_dir)
             with open(output_file, "a", encoding="utf-8") as f:
-                f.write(f"{wav_file.name}|{model_name}|{language_id}|{text}\n")
+                f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
     else:
         model_id = f"openai/whisper-{args.model}"
         logger.info(f"Loading HF Whisper model ({model_id})")
@@ -202,6 +203,7 @@ if __name__ == "__main__":
         )
         with open(output_file, "w", encoding="utf-8") as f:
             for wav_file, text in zip(wav_files, results):
-                f.write(f"{wav_file.name}|{model_name}|{language_id}|{text}\n")
+                wav_rel_path = wav_file.relative_to(input_dir)
+                f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
 
     sys.exit(0)
