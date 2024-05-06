@@ -42,7 +42,11 @@ class TTSModel:
     """
 
     def __init__(
-        self, model_path: Path, config_path: Path, style_vec_path: Path, device: str
+        self,
+        model_path: Path,
+        config_path: Union[Path, HyperParameters],
+        style_vec_path: Union[Path, NDArray[Any]],
+        device: str,
     ) -> None:
         """
         Style-Bert-Vits2 の音声合成モデルを初期化する。
@@ -50,18 +54,33 @@ class TTSModel:
 
         Args:
             model_path (Path): モデル (.safetensors) のパス
-            config_path (Path): ハイパーパラメータ (config.json) のパス
-            style_vec_path (Path): スタイルベクトル (style_vectors.npy) のパス
+            config_path (Union[Path, HyperParameters]): ハイパーパラメータ (config.json) のパス (直接 HyperParameters を指定することも可能)
+            style_vec_path (Union[Path, NDArray[Any]]): スタイルベクトル (style_vectors.npy) のパス (直接 NDArray を指定することも可能)
             device (str): 音声合成時に利用するデバイス (cpu, cuda, mps など)
         """
 
         self.model_path: Path = model_path
-        self.config_path: Path = config_path
-        self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(
-            self.config_path
-        )
+
+        # ハイパーパラメータの Pydantic モデルが直接指定された
+        if isinstance(config_path, HyperParameters):
+            self.config_path: Path = Path("")  # 互換性のため空の Path を設定
+            self.hyper_parameters: HyperParameters = config_path
+        # ハイパーパラメータのパスが指定された
+        else:
+            self.config_path: Path = config_path
+            self.hyper_parameters: HyperParameters = \
+                HyperParameters.load_from_json(self.config_path)
+
+        # スタイルベクトルの NDArray が直接指定された
+        if isinstance(style_vec_path, np.ndarray):
+            self.style_vec_path: Path = Path("")  # 互換性のため空の Path を設定
+            self.__style_vectors: NDArray[Any] = style_vec_path
+        # スタイルベクトルのパスが指定された
+        else:
+            self.style_vec_path: Path = style_vec_path
+            self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
+
         self.spk2id: dict[str, int] = self.hyper_parameters.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
@@ -75,12 +94,11 @@ class TTSModel:
                 f"Number of styles ({num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        self.__style_vector_inference: Optional[Any] = None
-        self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
         if self.__style_vectors.shape[0] != num_styles:
             raise ValueError(
                 f"The number of styles ({num_styles}) does not match the number of style vectors ({self.__style_vectors.shape[0]})"
             )
+        self.__style_vector_inference: Optional[Any] = None
 
         self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
