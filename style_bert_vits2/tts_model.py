@@ -69,8 +69,9 @@ class TTSModel:
         # ハイパーパラメータのパスが指定された
         else:
             self.config_path: Path = config_path
-            self.hyper_parameters: HyperParameters = \
-                HyperParameters.load_from_json(self.config_path)
+            self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(
+                self.config_path
+            )
 
         # スタイルベクトルの NDArray が直接指定された
         if isinstance(style_vec_path, np.ndarray):

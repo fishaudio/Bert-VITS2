@@ -14,6 +14,8 @@ dist/
 /bert/*/*.safetensors
 /bert/*/*.msgpack
 
+/configs/paths.yml
+
 /pretrained/*.safetensors
 /pretrained/*.pth
 

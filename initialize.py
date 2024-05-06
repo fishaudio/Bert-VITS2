@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 import yaml
@@ -102,11 +103,16 @@ def main():
         download_pretrained_models()
         download_jp_extra_pretrained_models()
 
+    # If configs/paths.yml not exists, create it
+    default_paths_yml = Path("configs/default_paths.yml")
+    paths_yml = Path("configs/paths.yml")
+    if not paths_yml.exists():
+        shutil.copy(default_paths_yml, paths_yml)
+
     if args.dataset_root is None and args.assets_root is None:
         return
 
     # Change default paths if necessary
-    paths_yml = Path("configs/paths.yml")
     with open(paths_yml, "r", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     if args.assets_root is not None:
