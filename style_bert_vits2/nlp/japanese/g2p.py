@@ -24,7 +24,7 @@ def g2p(
     Args:
         norm_text (str): 正規化されたテキスト
         use_jp_extra (bool, optional): False の場合、「ん」の音素を「N」ではなく「n」とする。Defaults to True.
-        raise_yomi_error (bool, optional): False の場合、読めない文字が「ん」として発音される。Defaults to False.
+        raise_yomi_error (bool, optional): False の場合、読めない文字が「'」として発音される。Defaults to False.
 
     Returns:
         tuple[list[str], list[int], list[int]]: 音素のリスト、アクセントのリスト、word2ph のリスト
@@ -40,7 +40,7 @@ def g2p(
     phone_tone_list_wo_punct = __g2phone_tone_wo_punct(norm_text)
 
     # sep_text: 単語単位の単語のリスト
-    # sep_kata: 単語単位の単語のカタカナ読みのリスト、読めない文字は raise_yomi_error=True なら例外、False なら読めない文字を「ン」として返ってくる
+    # sep_kata: 単語単位の単語のカタカナ読みのリスト、読めない文字は raise_yomi_error=True なら例外、False なら読めない文字を「'」として返ってくる
     sep_text, sep_kata = text_to_sep_kata(norm_text, raise_yomi_error=raise_yomi_error)
 
     # sep_phonemes: 各単語ごとの音素のリストのリスト
@@ -104,7 +104,7 @@ def text_to_sep_kata(
 
     Args:
         norm_text (str): 正規化されたテキスト
-        raise_yomi_error (bool, optional): False の場合、読めない文字が「ん」として発音される。Defaults to False.
+        raise_yomi_error (bool, optional): False の場合、読めない文字が「'」として発音される。Defaults to False.
 
     Returns:
         tuple[list[str], list[str]]: 分割された単語リストと、その読み（カタカナ or 記号1文字）のリスト
@@ -142,12 +142,12 @@ def text_to_sep_kata(
                 if raise_yomi_error:
                     raise YomiError(f"Cannot read: {word} in:\n{norm_text}")
                 ## 例外を送出しない場合
-                ## 読めない文字は「ん」として扱う
+                ## 読めない文字は「'」として扱う
                 logger.warning(
-                    f"Cannot read: {word} in:\n{norm_text}, replaced with 'ん'"
+                    f"Cannot read: {word} in:\n{norm_text}, replaced with \"'\""
                 )
-                # word の文字数分「ん」を追加
-                yomi = "ン" * len(word)
+                # word の文字数分「'」を追加
+                yomi = "'" * len(word)
             else:
                 # yomi は元の記号のままに変更
                 yomi = word
@@ -664,10 +664,6 @@ def __align_tones(
             tone_index += 1
         elif phone in PUNCTUATIONS:
             # phone が punctuation の場合 → (phone, 0) を追加
-            result.append((phone, 0))
-        elif phone == "N" or phone == "n":
-            # ここに到達するのは raise_yomi_error=False 時に読めない文字を「ん」に代替した場合のみ
-            # この際、phone_tone_list には「ん」の音素は含まれていないので、(phone, 0) を追加
             result.append((phone, 0))
         else:
             logger.debug(f"phones: {phones_with_punct}")
