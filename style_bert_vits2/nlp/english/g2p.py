@@ -17,7 +17,6 @@ ARPA = {
 }
 _g2p = G2p()
 eng_dict = get_dict()
-tokenizer = bert_models.load_tokenizer(Languages.EN)
 
 def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     phones = []
@@ -115,6 +114,7 @@ def __distribute_phone(n_phone: int, n_word: int) -> list[int]:
 
 
 def __text_to_words(text: str) -> list[list[str]]:
+    tokenizer = bert_models.load_tokenizer(Languages.EN)
     tokens = tokenizer.tokenize(text)
     words = []
     for idx, t in enumerate(tokens):
