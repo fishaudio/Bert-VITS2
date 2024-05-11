@@ -1,5 +1,6 @@
 from style_bert_vits2.nlp.japanese.g2p import g2p
 from style_bert_vits2.nlp.japanese.mora_list import (
+    CONSONANTS,
     MORA_KATA_TO_MORA_PHONEMES,
     MORA_PHONEMES_TO_MORA_KATA,
 )
@@ -32,15 +33,6 @@ def phone_tone2kata_tone(phone_tone: list[tuple[str, int]]) -> list[tuple[str, i
     Returns:
         カタカナと音高のリスト。
     """
-
-    # 子音の集合
-    CONSONANTS = set(
-        [
-            consonant
-            for consonant, _ in MORA_KATA_TO_MORA_PHONEMES.values()
-            if consonant is not None
-        ]
-    )
 
     phone_tone = phone_tone[1:]  # 最初の("_", 0)を無視
     phones = [phone for phone, _ in phone_tone]

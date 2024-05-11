@@ -234,3 +234,15 @@ MORA_KATA_TO_MORA_PHONEMES: dict[str, tuple[Optional[str], str]] = {
     kana: (consonant, vowel)
     for [kana, consonant, vowel] in __MORA_LIST_MINIMUM + __MORA_LIST_ADDITIONAL
 }
+
+# 子音の集合
+CONSONANTS = set(
+    [
+        consonant
+        for consonant, _ in MORA_KATA_TO_MORA_PHONEMES.values()
+        if consonant is not None
+    ]
+)
+
+# 母音の集合 (便宜上「ん」を含める)
+VOWELS = {"a", "i", "u", "e", "o", "N"}

@@ -5,7 +5,7 @@ from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
-from style_bert_vits2.nlp.japanese.mora_list import MORA_KATA_TO_MORA_PHONEMES
+from style_bert_vits2.nlp.japanese.mora_list import MORA_KATA_TO_MORA_PHONEMES, VOWELS
 from style_bert_vits2.nlp.japanese.normalizer import replace_punctuation
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
@@ -144,7 +144,7 @@ def text_to_sep_kata(
                 ## 例外を送出しない場合
                 ## 読めない文字は「'」として扱う
                 logger.warning(
-                    f"Cannot read: {word} in:\n{norm_text}, replaced with \"'\""
+                    f'Cannot read: {word} in:\n{norm_text}, replaced with "\'"'
                 )
                 # word の文字数分「'」を追加
                 yomi = "'" * len(word)
@@ -428,15 +428,23 @@ def __g2phone_tone_wo_punct(text: str) -> list[tuple[str, int]]:
     return result
 
 
+__PYOPENJTALK_G2P_PROSODY_A1_PATTERN = re.compile(r"/A:([0-9\-]+)\+")
+__PYOPENJTALK_G2P_PROSODY_A2_PATTERN = re.compile(r"\+(\d+)\+")
+__PYOPENJTALK_G2P_PROSODY_A3_PATTERN = re.compile(r"\+(\d+)/")
+__PYOPENJTALK_G2P_PROSODY_E3_PATTERN = re.compile(r"!(\d+)_")
+__PYOPENJTALK_G2P_PROSODY_F1_PATTERN = re.compile(r"/F:(\d+)_")
+__PYOPENJTALK_G2P_PROSODY_P3_PATTERN = re.compile(r"\-(.*?)\+")
+
+
 def __pyopenjtalk_g2p_prosody(
     text: str, drop_unvoiced_vowels: bool = True
 ) -> list[str]:
     """
-    ESPnet の実装から引用、変更点無し。「ん」は「N」なことに注意。
+    ESPnet の実装から引用、概ね変更点無し。「ん」は「N」なことに注意。
     ref: https://github.com/espnet/espnet/blob/master/espnet2/text/phoneme_tokenizer.py
     ------------------------------------------------------------------------------------------
 
-    Extract phoneme + prosoody symbol sequence from input full-context labels.
+    Extract phoneme + prosody symbol sequence from input full-context labels.
 
     The algorithm is based on `Prosodic features control by symbols as input of
     sequence-to-sequence acoustic modeling for neural TTS`_ with some r9y9's tweaks.
@@ -457,8 +465,8 @@ def __pyopenjtalk_g2p_prosody(
         modeling for neural TTS`: https://doi.org/10.1587/transinf.2020EDP7104
     """
 
-    def _numeric_feature_by_regex(regex: str, s: str) -> int:
-        match = re.search(regex, s)
+    def _numeric_feature_by_regex(pattern: re.Pattern[str], s: str) -> int:
+        match = pattern.search(s)
         if match is None:
             return -50
         return int(match.group(1))
@@ -471,7 +479,7 @@ def __pyopenjtalk_g2p_prosody(
         lab_curr = labels[n]
 
         # current phoneme
-        p3 = re.search(r"\-(.*?)\+", lab_curr).group(1)  # type: ignore
+        p3 = __PYOPENJTALK_G2P_PROSODY_P3_PATTERN.search(lab_curr).group(1)  # type: ignore
         # deal unvoiced vowels as normal vowels
         if drop_unvoiced_vowels and p3 in "AEIOU":
             p3 = p3.lower()
@@ -483,7 +491,9 @@ def __pyopenjtalk_g2p_prosody(
                 phones.append("^")
             elif n == N - 1:
                 # check question form or not
-                e3 = _numeric_feature_by_regex(r"!(\d+)_", lab_curr)
+                e3 = _numeric_feature_by_regex(
+                    __PYOPENJTALK_G2P_PROSODY_E3_PATTERN, lab_curr
+                )
                 if e3 == 0:
                     phones.append("$")
                 elif e3 == 1:
@@ -496,14 +506,16 @@ def __pyopenjtalk_g2p_prosody(
             phones.append(p3)
 
         # accent type and position info (forward or backward)
-        a1 = _numeric_feature_by_regex(r"/A:([0-9\-]+)\+", lab_curr)
-        a2 = _numeric_feature_by_regex(r"\+(\d+)\+", lab_curr)
-        a3 = _numeric_feature_by_regex(r"\+(\d+)/", lab_curr)
+        a1 = _numeric_feature_by_regex(__PYOPENJTALK_G2P_PROSODY_A1_PATTERN, lab_curr)
+        a2 = _numeric_feature_by_regex(__PYOPENJTALK_G2P_PROSODY_A2_PATTERN, lab_curr)
+        a3 = _numeric_feature_by_regex(__PYOPENJTALK_G2P_PROSODY_A3_PATTERN, lab_curr)
 
         # number of mora in accent phrase
-        f1 = _numeric_feature_by_regex(r"/F:(\d+)_", lab_curr)
+        f1 = _numeric_feature_by_regex(__PYOPENJTALK_G2P_PROSODY_F1_PATTERN, lab_curr)
 
-        a2_next = _numeric_feature_by_regex(r"\+(\d+)\+", labels[n + 1])
+        a2_next = _numeric_feature_by_regex(
+            __PYOPENJTALK_G2P_PROSODY_A2_PATTERN, labels[n + 1]
+        )
         # accent phrase border
         if a3 == 1 and a2_next == 1 and p3 in "aeiouAEIOUNcl":
             phones.append("#")
@@ -560,9 +572,6 @@ def __handle_long(sep_phonemes: list[list[str]]) -> list[list[str]]:
         list[list[str]]: 長音記号を処理した音素のリストのリスト
     """
 
-    # 母音の集合 (便宜上「ん」を含める)
-    VOWELS = {"a", "i", "u", "e", "o", "N"}
-
     for i in range(len(sep_phonemes)):
         if len(sep_phonemes[i]) == 0:
             # 空白文字等でリストが空の場合
@@ -588,6 +597,15 @@ def __handle_long(sep_phonemes: list[list[str]]) -> list[list[str]]:
     return sep_phonemes
 
 
+__KATAKANA_PATTERN = re.compile(r"[\u30A0-\u30FF]+")
+__MORA_PATTERN = re.compile(
+    "|".join(
+        map(re.escape, sorted(MORA_KATA_TO_MORA_PHONEMES.keys(), key=len, reverse=True))
+    )
+)
+__LONG_PATTERN = re.compile(r"(\w)(ー*)")
+
+
 def __kata_to_phoneme_list(text: str) -> list[str]:
     """
     原則カタカナの `text` を受け取り、それをそのままいじらずに音素記号のリストに変換。
@@ -610,23 +628,20 @@ def __kata_to_phoneme_list(text: str) -> list[str]:
     if set(text).issubset(set(PUNCTUATIONS)):
         return list(text)
     # `text` がカタカナ（`ー`含む）のみからなるかどうかをチェック
-    if re.fullmatch(r"[\u30A0-\u30FF]+", text) is None:
+    if __KATAKANA_PATTERN.fullmatch(text) is None:
         raise ValueError(f"Input must be katakana only: {text}")
-    sorted_keys = sorted(MORA_KATA_TO_MORA_PHONEMES.keys(), key=len, reverse=True)
-    pattern = "|".join(map(re.escape, sorted_keys))
 
     def mora2phonemes(mora: str) -> str:
-        cosonant, vowel = MORA_KATA_TO_MORA_PHONEMES[mora]
-        if cosonant is None:
+        consonant, vowel = MORA_KATA_TO_MORA_PHONEMES[mora]
+        if consonant is None:
             return f" {vowel}"
-        return f" {cosonant} {vowel}"
+        return f" {consonant} {vowel}"
 
-    spaced_phonemes = re.sub(pattern, lambda m: mora2phonemes(m.group()), text)
+    spaced_phonemes = __MORA_PATTERN.sub(lambda m: mora2phonemes(m.group()), text)
 
     # 長音記号「ー」の処理
-    long_pattern = r"(\w)(ー*)"
     long_replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))  # type: ignore
-    spaced_phonemes = re.sub(long_pattern, long_replacement, spaced_phonemes)
+    spaced_phonemes = __LONG_PATTERN.sub(long_replacement, spaced_phonemes)
 
     return spaced_phonemes.strip().split(" ")
 
