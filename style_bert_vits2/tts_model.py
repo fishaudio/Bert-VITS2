@@ -1,12 +1,8 @@
-import warnings
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-import gradio as gr
 import numpy as np
-import pyannote.audio
 import torch
-from gradio.processing_utils import convert_to_16_bit_wav
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
@@ -29,8 +25,14 @@ from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import (
     SynthesizerTrn as SynthesizerTrnJPExtra,
 )
-from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.voice import adjust_voice
+
+
+# Gradio の import は重いため、ここでは型チェック時のみ import する
+# ライブラリとしての利用を考慮し、TTSModelHolder の _for_gradio() 系メソッド以外では Gradio に依存しないようにする
+# _for_gradio() 系メソッドの戻り値の型アノテーションを文字列としているのは、Gradio なしで実行できるようにするため
+if TYPE_CHECKING:
+    import gradio as gr
 
 
 class TTSModel:
@@ -40,7 +42,11 @@ class TTSModel:
     """
 
     def __init__(
-        self, model_path: Path, config_path: Path, style_vec_path: Path, device: str
+        self,
+        model_path: Path,
+        config_path: Union[Path, HyperParameters],
+        style_vec_path: Union[Path, NDArray[Any]],
+        device: str,
     ) -> None:
         """
         Style-Bert-Vits2 の音声合成モデルを初期化する。
@@ -48,18 +54,34 @@ class TTSModel:
 
         Args:
             model_path (Path): モデル (.safetensors) のパス
-            config_path (Path): ハイパーパラメータ (config.json) のパス
-            style_vec_path (Path): スタイルベクトル (style_vectors.npy) のパス
+            config_path (Union[Path, HyperParameters]): ハイパーパラメータ (config.json) のパス (直接 HyperParameters を指定することも可能)
+            style_vec_path (Union[Path, NDArray[Any]]): スタイルベクトル (style_vectors.npy) のパス (直接 NDArray を指定することも可能)
             device (str): 音声合成時に利用するデバイス (cpu, cuda, mps など)
         """
 
         self.model_path: Path = model_path
-        self.config_path: Path = config_path
-        self.style_vec_path: Path = style_vec_path
         self.device: str = device
-        self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(
-            self.config_path
-        )
+
+        # ハイパーパラメータの Pydantic モデルが直接指定された
+        if isinstance(config_path, HyperParameters):
+            self.config_path: Path = Path("")  # 互換性のため空の Path を設定
+            self.hyper_parameters: HyperParameters = config_path
+        # ハイパーパラメータのパスが指定された
+        else:
+            self.config_path: Path = config_path
+            self.hyper_parameters: HyperParameters = HyperParameters.load_from_json(
+                self.config_path
+            )
+
+        # スタイルベクトルの NDArray が直接指定された
+        if isinstance(style_vec_path, np.ndarray):
+            self.style_vec_path: Path = Path("")  # 互換性のため空の Path を設定
+            self.__style_vectors: NDArray[Any] = style_vec_path
+        # スタイルベクトルのパスが指定された
+        else:
+            self.style_vec_path: Path = style_vec_path
+            self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
+
         self.spk2id: dict[str, int] = self.hyper_parameters.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
 
@@ -73,12 +95,11 @@ class TTSModel:
                 f"Number of styles ({num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        self.__style_vector_inference: Optional[pyannote.audio.Inference] = None
-        self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
         if self.__style_vectors.shape[0] != num_styles:
             raise ValueError(
                 f"The number of styles ({num_styles}) does not match the number of style vectors ({self.__style_vectors.shape[0]})"
             )
+        self.__style_vector_inference: Optional[Any] = None
 
         self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
@@ -122,8 +143,18 @@ class TTSModel:
             NDArray[Any]: スタイルベクトル
         """
 
-        # スタイルベクトルを取得するための推論モデルを初期化
         if self.__style_vector_inference is None:
+
+            # pyannote.audio は scikit-learn などの大量の重量級ライブラリに依存しているため、
+            # TTSModel.infer() に reference_audio_path を指定し音声からスタイルベクトルを推論する場合のみ遅延 import する
+            try:
+                import pyannote.audio
+            except ImportError:
+                raise ImportError(
+                    "pyannote.audio is required to infer style vector from audio"
+                )
+
+            # スタイルベクトルを取得するための推論モデルを初期化
             self.__style_vector_inference = pyannote.audio.Inference(
                 model=pyannote.audio.Model.from_pretrained(
                     "pyannote/wespeaker-voxceleb-resnet34-LM"
@@ -137,6 +168,43 @@ class TTSModel:
         mean = self.__style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
+
+    def __convert_to_16_bit_wav(self, data: NDArray[Any]) -> NDArray[Any]:
+        """
+        音声データを 16-bit int 形式に変換する。
+        gradio.processing_utils.convert_to_16_bit_wav() を移植したもの。
+
+        Args:
+            data (NDArray[Any]): 音声データ
+
+        Returns:
+            NDArray[Any]: 16-bit int 形式の音声データ
+        """
+        # Based on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html
+        if data.dtype in [np.float64, np.float32, np.float16]:  # type: ignore
+            data = data / np.abs(data).max()
+            data = data * 32767
+            data = data.astype(np.int16)
+        elif data.dtype == np.int32:
+            data = data / 65536
+            data = data.astype(np.int16)
+        elif data.dtype == np.int16:
+            pass
+        elif data.dtype == np.uint16:
+            data = data - 32768
+            data = data.astype(np.int16)
+        elif data.dtype == np.uint8:
+            data = data * 257 - 32768
+            data = data.astype(np.int16)
+        elif data.dtype == np.int8:
+            data = data * 256
+            data = data.astype(np.int16)
+        else:
+            raise ValueError(
+                "Audio data cannot be converted automatically from "
+                f"{data.dtype} to 16-bit int format."
+            )
+        return data
 
     def infer(
         self,
@@ -155,6 +223,7 @@ class TTSModel:
         use_assist_text: bool = False,
         style: str = DEFAULT_STYLE,
         style_weight: float = DEFAULT_STYLE_WEIGHT,
+        given_phone: Optional[list[str]] = None,
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
@@ -171,13 +240,14 @@ class TTSModel:
             noise (float, optional): DP に与えられるノイズ. Defaults to DEFAULT_NOISE.
             noise_w (float, optional): SDP に与えられるノイズ. Defaults to DEFAULT_NOISEW.
             length (float, optional): 生成音声の長さ（話速）のパラメータ。大きいほど生成音声が長くゆっくり、小さいほど短く早くなる。 Defaults to DEFAULT_LENGTH.
-            line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか. Defaults to DEFAULT_LINE_SPLIT.
+            line_split (bool, optional): テキストを改行ごとに分割して生成するかどうか (True の場合 given_phone/given_tone は無視される). Defaults to DEFAULT_LINE_SPLIT.
             split_interval (float, optional): 改行ごとに分割する場合の無音 (秒). Defaults to DEFAULT_SPLIT_INTERVAL.
             assist_text (Optional[str], optional): 感情表現の参照元の補助テキスト. Defaults to None.
             assist_text_weight (float, optional): 感情表現の補助テキストを適用する強さ. Defaults to DEFAULT_ASSIST_TEXT_WEIGHT.
             use_assist_text (bool, optional): 音声合成時に感情表現の補助テキストを使用するかどうか. Defaults to False.
             style (str, optional): 音声スタイル (Neutral, Happy など). Defaults to DEFAULT_STYLE.
             style_weight (float, optional): 音声スタイルを適用する強さ. Defaults to DEFAULT_STYLE_WEIGHT.
+            given_phone (Optional[list[int]], optional): 読み上げテキストの読みを表す音素列。指定する場合は given_tone も別途指定が必要. Defaults to None.
             given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
@@ -222,6 +292,7 @@ class TTSModel:
                     assist_text=assist_text,
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
+                    given_phone=given_phone,
                     given_tone=given_tone,
                 )
         else:
@@ -258,9 +329,7 @@ class TTSModel:
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
             )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            audio = convert_to_16_bit_wav(audio)
+        audio = self.__convert_to_16_bit_wav(audio)
         return (self.hyper_parameters.data.sampling_rate, audio)
 
 
@@ -379,7 +448,9 @@ class TTSModelHolder:
 
     def get_model_for_gradio(
         self, model_name: str, model_path_str: str
-    ) -> tuple[gr.Dropdown, gr.Button, gr.Dropdown]:
+    ) -> tuple["gr.Dropdown", "gr.Button", "gr.Dropdown"]:
+        import gradio as gr
+
         model_path = Path(model_path_str)
         if model_name not in self.model_files_dict:
             raise ValueError(f"Model `{model_name}` is not found")
@@ -411,13 +482,17 @@ class TTSModelHolder:
             gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
         )
 
-    def update_model_files_for_gradio(self, model_name: str) -> gr.Dropdown:
+    def update_model_files_for_gradio(self, model_name: str) -> "gr.Dropdown":
+        import gradio as gr
+
         model_files = self.model_files_dict[model_name]
         return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
 
     def update_model_names_for_gradio(
         self,
-    ) -> tuple[gr.Dropdown, gr.Dropdown, gr.Button]:
+    ) -> tuple["gr.Dropdown", "gr.Dropdown", "gr.Button"]:
+        import gradio as gr
+
         self.refresh()
         initial_model_name = self.model_names[0]
         initial_model_files = self.model_files_dict[initial_model_name]

@@ -16,6 +16,7 @@ from config import config
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
 
+
 # Get path settings
 with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
     path_config: dict[str, str] = yaml.safe_load(f.read())

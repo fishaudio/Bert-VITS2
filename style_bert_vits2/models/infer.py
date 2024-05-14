@@ -102,6 +102,7 @@ def get_text(
     device: str,
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
+    given_phone: Optional[list[str]] = None,
     given_tone: Optional[list[int]] = None,
 ):
     use_jp_extra = hps.version.endswith("JP-Extra")
@@ -112,10 +113,44 @@ def get_text(
         use_jp_extra=use_jp_extra,
         raise_yomi_error=False,
     )
-    if given_tone is not None:
-        if len(given_tone) != len(phone):
+    # phone と tone の両方が与えられた場合はそれを使う
+    if given_phone is not None and given_tone is not None:
+        # 指定された phone と指定された tone 両方の長さが一致していなければならない
+        if len(given_phone) != len(given_tone):
+            raise InvalidPhoneError(
+                f"Length of given_phone ({len(given_phone)}) != length of given_tone ({len(given_tone)})"
+            )
+        # 与えられた音素数と pyopenjtalk で生成した読みの音素数が一致しない
+        if len(given_phone) != sum(word2ph):
+            # 日本語の場合、len(given_phone) と sum(word2ph) が一致するように word2ph を適切に調整する
+            # 他の言語は word2ph の調整方法が思いつかないのでエラー
+            if language_str == Languages.JP:
+                from style_bert_vits2.nlp.japanese.g2p import adjust_word2ph
+
+                word2ph = adjust_word2ph(word2ph, phone, given_phone)
+                # 上記処理により word2ph の合計が given_phone の長さと一致するはず
+                # それでも一致しない場合、大半は読み上げテキストと given_phone が著しく乖離していて調整し切れなかったことを意味する
+                if len(given_phone) != sum(word2ph):
+                    raise InvalidPhoneError(
+                        f"Length of given_phone ({len(given_phone)}) != sum of word2ph ({sum(word2ph)})"
+                    )
+            else:
+                raise InvalidPhoneError(
+                    f"Length of given_phone ({len(given_phone)}) != sum of word2ph ({sum(word2ph)})"
+                )
+        phone = given_phone
+        # 生成あるいは指定された phone と指定された tone 両方の長さが一致していなければならない
+        if len(phone) != len(given_tone):
             raise InvalidToneError(
-                f"Length of given_tone ({len(given_tone)}) != length of phone ({len(phone)})"
+                f"Length of phone ({len(phone)}) != length of given_tone ({len(given_tone)})"
+            )
+        tone = given_tone
+    # tone だけが与えられた場合は clean_text() で生成した phone と合わせて使う
+    elif given_tone is not None:
+        # 生成した phone と指定された tone 両方の長さが一致していなければならない
+        if len(phone) != len(given_tone):
+            raise InvalidToneError(
+                f"Length of phone ({len(phone)}) != length of given_tone ({len(given_tone)})"
             )
         tone = given_tone
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
@@ -179,6 +214,7 @@ def infer(
     skip_end: bool = False,
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
+    given_phone: Optional[list[str]] = None,
     given_tone: Optional[list[int]] = None,
 ):
     is_jp_extra = hps.version.endswith("JP-Extra")
@@ -189,6 +225,7 @@ def infer(
         device,
         assist_text=assist_text,
         assist_text_weight=assist_text_weight,
+        given_phone=given_phone,
         given_tone=given_tone,
     )
     if skip_start:
@@ -261,6 +298,10 @@ def infer(
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio
+
+
+class InvalidPhoneError(ValueError):
+    pass
 
 
 class InvalidToneError(ValueError):

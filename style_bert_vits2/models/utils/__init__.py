@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from scipy.io.wavfile import read
 
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models.utils import checkpoints  # type: ignore
@@ -161,6 +160,13 @@ def load_wav_to_torch(full_path: Union[str, Path]) -> tuple[torch.FloatTensor, i
     Returns:
         tuple[torch.FloatTensor, int]: 音声データのテンソルとサンプリングレート
     """
+
+    # この関数は学習時以外使われないため、ライブラリとしての style_bert_vits2 が
+    # 重たい scipy に依存しないように遅延 import する
+    try:
+        from scipy.io.wavfile import read
+    except ImportError:
+        raise ImportError("scipy is required to load wav file")
 
     sampling_rate, data = read(full_path)
     return torch.FloatTensor(data.astype(np.float32)), sampling_rate
