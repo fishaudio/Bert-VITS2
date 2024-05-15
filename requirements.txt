@@ -3,7 +3,7 @@ cn2an
 faster-whisper==0.10.1
 g2p_en
 GPUtil
-gradio==4.23.0
+gradio
 jieba
 langid
 librosa==0.9.2
