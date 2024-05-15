@@ -31,8 +31,8 @@ from style_bert_vits2.voice import adjust_voice
 # Gradio の import は重いため、ここでは型チェック時のみ import する
 # ライブラリとしての利用を考慮し、TTSModelHolder の _for_gradio() 系メソッド以外では Gradio に依存しないようにする
 # _for_gradio() 系メソッドの戻り値の型アノテーションを文字列としているのは、Gradio なしで実行できるようにするため
-if TYPE_CHECKING:
-    import gradio as gr
+# if TYPE_CHECKING:
+#     import gradio as gr
 
 
 class TTSModel:
@@ -446,9 +446,7 @@ class TTSModelHolder:
 
         return self.current_model
 
-    def get_model_for_gradio(
-        self, model_name: str, model_path_str: str
-    ) -> tuple["gr.Dropdown", "gr.Button", "gr.Dropdown"]:
+    def get_model_for_gradio(self, model_name: str, model_path_str: str):
         import gradio as gr
 
         model_path = Path(model_path_str)
@@ -482,7 +480,7 @@ class TTSModelHolder:
             gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
         )
 
-    def update_model_files_for_gradio(self, model_name: str) -> "gr.Dropdown":
+    def update_model_files_for_gradio(self, model_name: str):
         import gradio as gr
 
         model_files = self.model_files_dict[model_name]
@@ -490,7 +488,7 @@ class TTSModelHolder:
 
     def update_model_names_for_gradio(
         self,
-    ) -> tuple["gr.Dropdown", "gr.Dropdown", "gr.Button"]:
+    ):
         import gradio as gr
 
         self.refresh()
