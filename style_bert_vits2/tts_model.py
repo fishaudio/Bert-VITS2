@@ -483,7 +483,7 @@ class TTSModelHolder:
     def update_model_files_for_gradio(self, model_name: str):
         import gradio as gr
 
-        model_files = self.model_files_dict[model_name]
+        model_files = [str(f) for f in self.model_files_dict[model_name]]
         return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
 
     def update_model_names_for_gradio(
@@ -493,7 +493,9 @@ class TTSModelHolder:
 
         self.refresh()
         initial_model_name = self.model_names[0]
-        initial_model_files = self.model_files_dict[initial_model_name]
+        initial_model_files = [
+            str(f) for f in self.model_files_dict[initial_model_name]
+        ]
         return (
             gr.Dropdown(choices=self.model_names, value=initial_model_name),  # type: ignore
             gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),  # type: ignore

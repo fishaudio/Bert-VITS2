@@ -260,7 +260,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
             )
         return app
     initial_id = 0
-    initial_pth_files = model_holder.model_files_dict[model_names[initial_id]]
+    initial_pth_files = [
+        str(f) for f in model_holder.model_files_dict[model_names[initial_id]]
+    ]
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
