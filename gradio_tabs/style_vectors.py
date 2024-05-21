@@ -170,7 +170,7 @@ def representative_wav_files_gradio(cluster_id, num_files=1):
     closest_indices = representative_wav_files(cluster_id, num_files)
     actual_num_files = len(closest_indices)  # ファイル数が少ないときのため
     return [
-        gr.Audio(wav_files[i], visible=True, label=wav_files[i])
+        gr.Audio(wav_files[i], visible=True, label=str(wav_files[i]))
         for i in closest_indices
     ] + [gr.update(visible=False)] * (MAX_AUDIO_NUM - actual_num_files)
 
