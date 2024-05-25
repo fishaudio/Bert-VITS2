@@ -197,11 +197,12 @@ if __name__ == "__main__":
                 q.task_done()
                 break
             try:
+                rel_path = file.relative_to(input_dir)
                 time_sec, count = split_wav(
                     vad_model=vad_model,
                     utils=utils,
                     audio_file=file,
-                    target_dir=output_dir,
+                    target_dir=output_dir / rel_path.parent,
                     min_sec=min_sec,
                     max_sec=max_sec,
                     min_silence_dur_ms=min_silence_dur_ms,
