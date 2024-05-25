@@ -210,28 +210,45 @@ def run():
         writer = SummaryWriter(log_dir=model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(model_dir, "eval"))
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
-    train_sampler = DistributedBucketSampler(
-        train_dataset,
-        hps.train.batch_size,
-        [32, 300, 400, 500, 600, 700, 800, 900, 1000],
-        num_replicas=n_gpus,
-        rank=rank,
-        shuffle=True,
-    )
     collate_fn = TextAudioSpeakerCollate()
-    train_loader = DataLoader(
-        train_dataset,
-        # メモリ消費量を減らそうとnum_workersを1にしてみる
-        # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
-        num_workers=1,
-        shuffle=False,
-        pin_memory=True,
-        collate_fn=collate_fn,
-        batch_sampler=train_sampler,
-        persistent_workers=True,
-        # これもメモリ消費量を減らそうとしてコメントアウト
-        # prefetch_factor=4,
-    )  # DataLoader config could be adjusted.
+    if args.use_custom_batch_sampler:
+        train_sampler = DistributedBucketSampler(
+            train_dataset,
+            hps.train.batch_size,
+            [32, 300, 400, 500, 600, 700, 800, 900, 1000],
+            num_replicas=n_gpus,
+            rank=rank,
+            shuffle=True,
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            # メモリ消費量を減らそうとnum_workersを1にしてみる
+            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            num_workers=1,
+            shuffle=False,
+            pin_memory=True,
+            collate_fn=collate_fn,
+            batch_sampler=train_sampler,
+            # batch_size=hps.train.batch_size,
+            persistent_workers=True,
+            # これもメモリ消費量を減らそうとしてコメントアウト
+            # prefetch_factor=6,
+        )
+    else:
+        train_loader = DataLoader(
+            train_dataset,
+            # メモリ消費量を減らそうとnum_workersを1にしてみる
+            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            num_workers=1,
+            shuffle=True,
+            pin_memory=True,
+            collate_fn=collate_fn,
+            # batch_sampler=train_sampler,
+            batch_size=hps.train.batch_size,
+            persistent_workers=True,
+            # これもメモリ消費量を減らそうとしてコメントアウト
+            # prefetch_factor=6,
+        )
     eval_dataset = None
     eval_loader = None
     if rank == 0 and not args.speedup:
@@ -760,21 +777,21 @@ def train_and_evaluate(
                 scalar_dict.update(
                     {f"loss/d_g/{i}": v for i, v in enumerate(losses_disc_g)}
                 )
-
-                image_dict = {
-                    "slice/mel_org": utils.plot_spectrogram_to_numpy(
-                        y_mel[0].data.cpu().numpy()
-                    ),
-                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(
-                        y_hat_mel[0].data.cpu().numpy()
-                    ),
-                    "all/mel": utils.plot_spectrogram_to_numpy(
-                        mel[0].data.cpu().numpy()
-                    ),
-                    "all/attn": utils.plot_alignment_to_numpy(
-                        attn[0, 0].data.cpu().numpy()
-                    ),
-                }
+                # 以降のログは計算が重い気がするし誰も見てない気がするのでコメントアウト
+                # image_dict = {
+                #     "slice/mel_org": utils.plot_spectrogram_to_numpy(
+                #         y_mel[0].data.cpu().numpy()
+                #     ),
+                #     "slice/mel_gen": utils.plot_spectrogram_to_numpy(
+                #         y_hat_mel[0].data.cpu().numpy()
+                #     ),
+                #     "all/mel": utils.plot_spectrogram_to_numpy(
+                #         mel[0].data.cpu().numpy()
+                #     ),
+                #     "all/attn": utils.plot_alignment_to_numpy(
+                #         attn[0, 0].data.cpu().numpy()
+                #     ),
+                # }
                 utils.summarize(
                     writer=writer,
                     global_step=global_step,
@@ -906,44 +923,44 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     sdp_ratio=0.0 if not use_sdp else 1.0,
                 )
                 y_hat_lengths = mask.sum([1, 2]).long() * hps.data.hop_length
-
-                mel = spec_to_mel_torch(
-                    spec,
-                    hps.data.filter_length,
-                    hps.data.n_mel_channels,
-                    hps.data.sampling_rate,
-                    hps.data.mel_fmin,
-                    hps.data.mel_fmax,
-                )
-                y_hat_mel = mel_spectrogram_torch(
-                    y_hat.squeeze(1).float(),
-                    hps.data.filter_length,
-                    hps.data.n_mel_channels,
-                    hps.data.sampling_rate,
-                    hps.data.hop_length,
-                    hps.data.win_length,
-                    hps.data.mel_fmin,
-                    hps.data.mel_fmax,
-                )
-                image_dict.update(
-                    {
-                        f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
-                            y_hat_mel[0].cpu().numpy()
-                        )
-                    }
-                )
+                # 以降のログは計算が重い気がするし誰も見てない気がするのでコメントアウト
+                # mel = spec_to_mel_torch(
+                #     spec,
+                #     hps.data.filter_length,
+                #     hps.data.n_mel_channels,
+                #     hps.data.sampling_rate,
+                #     hps.data.mel_fmin,
+                #     hps.data.mel_fmax,
+                # )
+                # y_hat_mel = mel_spectrogram_torch(
+                #     y_hat.squeeze(1).float(),
+                #     hps.data.filter_length,
+                #     hps.data.n_mel_channels,
+                #     hps.data.sampling_rate,
+                #     hps.data.hop_length,
+                #     hps.data.win_length,
+                #     hps.data.mel_fmin,
+                #     hps.data.mel_fmax,
+                # )
+                # image_dict.update(
+                #     {
+                #         f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
+                #             y_hat_mel[0].cpu().numpy()
+                #         )
+                #     }
+                # )
+                # image_dict.update(
+                #     {
+                #         f"gt/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
+                #             mel[0].cpu().numpy()
+                #         )
+                #     }
+                # )
                 audio_dict.update(
                     {
                         f"gen/audio_{batch_idx}_{use_sdp}": y_hat[
                             0, :, : y_hat_lengths[0]
                         ]
-                    }
-                )
-                image_dict.update(
-                    {
-                        f"gt/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
-                            mel[0].cpu().numpy()
-                        )
                     }
                 )
                 audio_dict.update({f"gt/audio_{batch_idx}": y[0, :, : y_lengths[0]]})

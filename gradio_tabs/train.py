@@ -329,6 +329,7 @@ def train(
     skip_style: bool = False,
     use_jp_extra: bool = True,
     speedup: bool = False,
+    use_custom_batch_sampler: bool = False,
 ):
     paths = get_path(model_name)
     # 学習再開の場合を考えて念のためconfig.ymlの名前等を更新
@@ -351,6 +352,8 @@ def train(
         cmd.append("--skip_default_style")
     if speedup:
         cmd.append("--speedup")
+    if use_custom_batch_sampler:
+        cmd.append("--use_custom_batch_sampler")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         logger.error("Train failed.")
@@ -694,6 +697,11 @@ def create_train_app():
                 label="JP-Extra版を使う",
                 value=True,
             )
+            use_custom_batch_sampler = gr.Checkbox(
+                label="カスタムバッチサンプラーを使う",
+                info="Ver 2.5以降にうまく学習できなかったりVRAMが足りない場合に試してみてください",
+                value=False,
+            )
             speedup = gr.Checkbox(
                 label="ログ等をスキップして学習を高速化する",
                 value=False,
@@ -781,7 +789,13 @@ def create_train_app():
         # Train
         train_btn.click(
             second_elem_of(train),
-            inputs=[model_name, skip_style, use_jp_extra_train, speedup],
+            inputs=[
+                model_name,
+                skip_style,
+                use_jp_extra_train,
+                speedup,
+                use_custom_batch_sampler,
+            ],
             outputs=[info_train],
         )
         tensorboard_btn.click(
