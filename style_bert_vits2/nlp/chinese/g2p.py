@@ -8,7 +8,7 @@ from style_bert_vits2.nlp.chinese.tone_sandhi import ToneSandhi
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS
 
 
-with open(Path(__file__).parent / "opencpop-strict.txt", "r", encoding="utf-8") as f:
+with open(Path(__file__).parent / "opencpop-strict.txt", encoding="utf-8") as f:
     __PINYIN_TO_SYMBOL_MAP = {
         line.split("\t")[0]: line.strip().split("\t")[1] for line in f.readlines()
     }
@@ -73,7 +73,7 @@ def __g2p(segments: list[str]) -> tuple[list[str], list[int], list[int]]:
                         "iou": "iu",
                         "uen": "un",
                     }
-                    if v_without_tone in v_rep_map.keys():
+                    if v_without_tone in v_rep_map:
                         pinyin = c + v_rep_map[v_without_tone]
                 else:
                     # 单音节
@@ -83,7 +83,7 @@ def __g2p(segments: list[str]) -> tuple[list[str], list[int], list[int]]:
                         "in": "yin",
                         "u": "wu",
                     }
-                    if pinyin in pinyin_rep_map.keys():
+                    if pinyin in pinyin_rep_map:
                         pinyin = pinyin_rep_map[pinyin]
                     else:
                         single_rep_map = {
@@ -92,10 +92,10 @@ def __g2p(segments: list[str]) -> tuple[list[str], list[int], list[int]]:
                             "i": "y",
                             "u": "w",
                         }
-                        if pinyin[0] in single_rep_map.keys():
+                        if pinyin[0] in single_rep_map:
                             pinyin = single_rep_map[pinyin[0]] + pinyin[1:]
 
-                assert pinyin in __PINYIN_TO_SYMBOL_MAP.keys(), (
+                assert pinyin in __PINYIN_TO_SYMBOL_MAP, (
                     pinyin,
                     seg,
                     raw_pinyin,

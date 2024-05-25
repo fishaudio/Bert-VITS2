@@ -22,7 +22,7 @@ args = parser.parse_args()
 def gen_yaml(model_name, dataset_path):
     if not os.path.exists("config.yml"):
         shutil.copy(src="default_config.yml", dst="config.yml")
-    with open("config.yml", "r", encoding="utf-8") as f:
+    with open("config.yml", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
     yml_data["dataset_path"] = dataset_path

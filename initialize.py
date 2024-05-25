@@ -10,7 +10,7 @@ from style_bert_vits2.logging import logger
 
 
 def download_bert_models():
-    with open("bert/bert_models.json", "r", encoding="utf-8") as fp:
+    with open("bert/bert_models.json", encoding="utf-8") as fp:
         models = json.load(fp)
     for k, v in models.items():
         local_path = Path("bert").joinpath(k)
@@ -113,7 +113,7 @@ def main():
         return
 
     # Change default paths if necessary
-    with open(paths_yml, "r", encoding="utf-8") as f:
+    with open(paths_yml, encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     if args.assets_root is not None:
         yml_data["assets_root"] = args.assets_root

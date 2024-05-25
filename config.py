@@ -56,8 +56,13 @@ class Preprocess_text_config:
         clean: bool = True,
     ):
         self.transcription_path = Path(transcription_path)
-        self.cleaned_path = Path(cleaned_path)
         self.train_path = Path(train_path)
+        if cleaned_path == "" or cleaned_path is None:
+            self.cleaned_path = self.transcription_path.with_name(
+                self.transcription_path.name + ".cleaned"
+            )
+        else:
+            self.cleaned_path = Path(cleaned_path)
         self.val_path = Path(val_path)
         self.config_path = Path(config_path)
         self.val_per_lang = val_per_lang
@@ -70,7 +75,7 @@ class Preprocess_text_config:
 
         data["transcription_path"] = dataset_path / data["transcription_path"]
         if data["cleaned_path"] == "" or data["cleaned_path"] is None:
-            data["cleaned_path"] = None
+            data["cleaned_path"] = ""
         else:
             data["cleaned_path"] = dataset_path / data["cleaned_path"]
         data["train_path"] = dataset_path / data["train_path"]
@@ -232,7 +237,7 @@ class Config:
                 "Please do not modify default_config.yml. Instead, modify config.yml."
             )
             # sys.exit(0)
-        with open(config_path, "r", encoding="utf-8") as file:
+        with open(config_path, encoding="utf-8") as file:
             yaml_config: dict[str, Any] = yaml.safe_load(file.read())
             model_name: str = yaml_config["model_name"]
             self.model_name: str = model_name
@@ -241,6 +246,7 @@ class Config:
             else:
                 dataset_path = path_config.dataset_root / model_name
             self.dataset_path = dataset_path
+            self.dataset_root = path_config.dataset_root
             self.assets_root = path_config.assets_root
             self.out_dir = self.assets_root / model_name
             self.resample_config: Resample_config = Resample_config.from_dict(
@@ -284,7 +290,7 @@ def get_path_config() -> PathConfig:
         logger.info(
             "Please do not modify configs/default_paths.yml. Instead, modify configs/paths.yml."
         )
-    with open(path_config_path, "r", encoding="utf-8") as file:
+    with open(path_config_path, encoding="utf-8") as file:
         path_config_dict: dict[str, str] = yaml.safe_load(file.read())
     return PathConfig(**path_config_dict)
 

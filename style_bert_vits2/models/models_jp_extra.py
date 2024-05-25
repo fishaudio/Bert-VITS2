@@ -844,7 +844,7 @@ class ReferenceEncoder(nn.Module):
             for i in range(K)
         ]
         self.convs = nn.ModuleList(convs)
-        # self.wns = nn.ModuleList([weight_norm(num_features=ref_enc_filters[i]) for i in range(K)]) # noqa: E501
+        # self.wns = nn.ModuleList([weight_norm(num_features=ref_enc_filters[i]) for i in range(K)])
 
         out_channels = self.calculate_channels(spec_channels, 3, 2, 1, K)
         self.gru = nn.GRU(

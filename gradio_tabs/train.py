@@ -5,13 +5,14 @@ import subprocess
 import sys
 import time
 import webbrowser
+from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import gradio as gr
 import yaml
-from dataclasses import dataclass
+
 from config import get_path_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
@@ -75,7 +76,7 @@ def initialize(
         "configs/config.json" if not use_jp_extra else "configs/config_jp_extra.json"
     )
 
-    with open(default_config_path, "r", encoding="utf-8") as f:
+    with open(default_config_path, encoding="utf-8") as f:
         config = json.load(f)
     config["model_name"] = model_name
     config["data"]["training_files"] = str(paths.train_path)
@@ -121,7 +122,7 @@ def initialize(
         json.dump(config, f, indent=2, ensure_ascii=False)
     if not Path("config.yml").exists():
         shutil.copy(src="default_config.yml", dst="config.yml")
-    with open("config.yml", "r", encoding="utf-8") as f:
+    with open("config.yml", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
     yml_data["dataset_path"] = str(paths.dataset_path)
@@ -331,7 +332,7 @@ def train(
 ):
     paths = get_path(model_name)
     # 学習再開の場合を考えて念のためconfig.ymlの名前等を更新
-    with open("config.yml", "r", encoding="utf-8") as f:
+    with open("config.yml", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
     yml_data["dataset_path"] = str(paths.dataset_path)

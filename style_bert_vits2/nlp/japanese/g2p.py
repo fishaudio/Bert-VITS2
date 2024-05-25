@@ -719,5 +719,3 @@ class YomiError(Exception):
     基本的に「学習の前処理のテキスト処理時」には発生させ、そうでない場合は、
     ignore_yomi_error=True にしておいて、この例外を発生させないようにする。
     """
-
-    pass

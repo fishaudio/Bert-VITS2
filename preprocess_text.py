@@ -145,7 +145,7 @@ def preprocess(
             spk_utt_map[spk].append(line)
 
             # 新しい話者が出てきたら話者IDを割り当て、current_sidを1増やす
-            if spk not in spk_id_map.keys():
+            if spk not in spk_id_map:
                 spk_id_map[spk] = current_sid
                 current_sid += 1
         if count_same > 0 or count_not_found > 0:

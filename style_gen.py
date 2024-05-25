@@ -26,7 +26,6 @@ class NaNValueError(ValueError):
     """カスタム例外クラス。NaN値が見つかった場合に使用されます。"""
 
 
-
 # 推論時にインポートするために短いが関数を書く
 def get_style_vector(wav_path: str) -> NDArray[Any]:
     return inference(wav_path)  # type: ignore

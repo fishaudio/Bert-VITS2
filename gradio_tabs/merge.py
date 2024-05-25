@@ -47,9 +47,9 @@ def merge_style(
     style_vectors_b = np.load(
         assets_root / model_name_b / "style_vectors.npy"
     )  # (style_num_b, 256)
-    with open(assets_root / model_name_a / "config.json", "r", encoding="utf-8") as f:
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
         config_a = json.load(f)
-    with open(assets_root / model_name_b / "config.json", "r", encoding="utf-8") as f:
+    with open(assets_root / model_name_b / "config.json", encoding="utf-8") as f:
         config_b = json.load(f)
     style2id_a = config_a["data"]["style2id"]
     style2id_b = config_b["data"]["style2id"]
@@ -83,7 +83,7 @@ def merge_style(
     # recipe.jsonを読み込んで、style_triple_listを追記
     info_path = assets_root / output_name / "recipe.json"
     if info_path.exists():
-        with open(info_path, "r", encoding="utf-8") as f:
+        with open(info_path, encoding="utf-8") as f:
             info = json.load(f)
     else:
         info = {}
@@ -143,7 +143,7 @@ def merge_models(
 
     merged_model_weight = model_a_weight.copy()
 
-    for key in model_a_weight.keys():
+    for key in model_a_weight:
         if any([key.startswith(prefix) for prefix in voice_keys]):
             weight = voice_weight
         elif any([key.startswith(prefix) for prefix in voice_pitch_keys]):
@@ -256,12 +256,12 @@ def update_two_model_names_dropdown(model_holder: TTSModelHolder):
 
 def load_styles_gr(model_name_a: str, model_name_b: str):
     config_path_a = assets_root / model_name_a / "config.json"
-    with open(config_path_a, "r", encoding="utf-8") as f:
+    with open(config_path_a, encoding="utf-8") as f:
         config_a = json.load(f)
     styles_a = list(config_a["data"]["style2id"].keys())
 
     config_path_b = assets_root / model_name_b / "config.json"
-    with open(config_path_b, "r", encoding="utf-8") as f:
+    with open(config_path_b, encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
 

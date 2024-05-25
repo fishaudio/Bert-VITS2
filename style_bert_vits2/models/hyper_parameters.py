@@ -125,5 +125,5 @@ class HyperParameters(BaseModel):
             HyperParameters: ハイパーパラメータ
         """
 
-        with open(json_path, "r", encoding="utf-8") as f:
+        with open(json_path, encoding="utf-8") as f:
             return HyperParameters.model_validate_json(f.read())

@@ -51,7 +51,7 @@ def normalize_text(text: str) -> str:
 def replace_punctuation(text: str) -> str:
 
     text = text.replace("嗯", "恩").replace("呣", "母")
-    pattern = re.compile("|".join(re.escape(p) for p in __REPLACE_MAP.keys()))
+    pattern = re.compile("|".join(re.escape(p) for p in __REPLACE_MAP))
 
     replaced_text = pattern.sub(lambda x: __REPLACE_MAP[x.group()], text)
 

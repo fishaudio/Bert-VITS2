@@ -33,7 +33,7 @@ def save_neutral_vector(wav_dir: Union[Path, str], output_path: Union[Path, str]
     np.save(output_path, only_mean)
     logger.info(f"Saved mean style vector to {output_path}")
 
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open(json_path, encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = 1
     json_dict["data"]["style2id"] = {DEFAULT_STYLE: 0}
@@ -50,7 +50,7 @@ def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str])
 
     subdirs = [d for d in wav_dir.iterdir() if d.is_dir()]
     subdirs.sort()
-    if len(subdirs) in (0, 1):
+    if not subdirs:
         logger.warning("No style directories found. Saving only neutral style.")
         save_neutral_vector(wav_dir, output_dir)
 
@@ -85,7 +85,7 @@ def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str])
 
     # Save style2id config to json
     style2id = {name: i for i, name in enumerate(names)}
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open(json_path, encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = len(names)
     json_dict["data"]["style2id"] = style2id

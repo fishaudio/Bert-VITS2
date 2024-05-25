@@ -186,7 +186,7 @@ def load_filepaths_and_text(
         list[list[str]]: ファイルパスとテキストのリスト
     """
 
-    with open(filename, "r", encoding="utf-8") as f:
+    with open(filename, encoding="utf-8") as f:
         filepaths_and_text = [line.strip().split(split) for line in f]
     return filepaths_and_text
 
@@ -245,9 +245,7 @@ def check_git_hash(model_dir_path: Union[str, Path]) -> None:
     source_dir = os.path.dirname(os.path.realpath(__file__))
     if not os.path.exists(os.path.join(source_dir, ".git")):
         logger.warning(
-            "{} is not a git repository, therefore hash value comparison will be ignored.".format(
-                source_dir
-            )
+            f"{source_dir} is not a git repository, therefore hash value comparison will be ignored."
         )
         return
 
@@ -255,13 +253,11 @@ def check_git_hash(model_dir_path: Union[str, Path]) -> None:
 
     path = os.path.join(model_dir_path, "githash")
     if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             saved_hash = f.read()
         if saved_hash != cur_hash:
             logger.warning(
-                "git hash values are different. {}(saved) != {}(current)".format(
-                    saved_hash[:8], cur_hash[:8]
-                )
+                f"git hash values are different. {saved_hash[:8]}(saved) != {cur_hash[:8]}(current)"
             )
     else:
         with open(path, "w", encoding="utf-8") as f:

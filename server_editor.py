@@ -127,7 +127,7 @@ def download_and_extract(url, extract_to: Path):
 
 def new_release_available(latest_release):
     if LAST_DOWNLOAD_FILE.exists():
-        with open(LAST_DOWNLOAD_FILE, "r") as file:
+        with open(LAST_DOWNLOAD_FILE) as file:
             last_download_str = file.read().strip()
             # 'Z'を除去して日時オブジェクトに変換
             last_download_str = last_download_str.replace("Z", "+00:00")

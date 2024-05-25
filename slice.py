@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 import soundfile as sf
 import torch
-import yaml
 from tqdm import tqdm
 
 from config import get_path_config

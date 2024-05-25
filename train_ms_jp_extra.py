@@ -17,11 +17,7 @@ from tqdm import tqdm
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import default_style
 from config import get_config
-from data_utils import (
-    DistributedBucketSampler,
-    TextAudioSpeakerCollate,
-    TextAudioSpeakerLoader,
-)
+from data_utils import TextAudioSpeakerCollate, TextAudioSpeakerLoader
 from losses import WavLMLoss, discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from style_bert_vits2.logging import logger

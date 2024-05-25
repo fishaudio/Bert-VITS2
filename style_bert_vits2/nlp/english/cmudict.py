@@ -20,7 +20,7 @@ def get_dict() -> dict[str, list[list[str]]]:
 def read_dict() -> dict[str, list[list[str]]]:
     g2p_dict = {}
     start_line = 49
-    with open(CMU_DICT_PATH, "r", encoding="utf-8") as f:
+    with open(CMU_DICT_PATH, encoding="utf-8") as f:
         line = f.readline()
         line_index = 1
         while line:

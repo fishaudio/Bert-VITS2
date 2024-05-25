@@ -1,22 +1,90 @@
 import re
+
 from g2p_en import G2p
+
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.nlp import bert_models
 from style_bert_vits2.nlp.english.cmudict import get_dict
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS, SYMBOLS
 
+
 # Initialize global variables once
 ARPA = {
-    "AH0", "S", "AH1", "EY2", "AE2", "EH0", "OW2", "UH0", "NG", "B", "G", "AY0",
-    "M", "AA0", "F", "AO0", "ER2", "UH1", "IY1", "AH2", "DH", "IY0", "EY1",
-    "IH0", "K", "N", "W", "IY2", "T", "AA1", "ER1", "EH2", "OY0", "UH2", "UW1",
-    "Z", "AW2", "AW1", "V", "UW2", "AA2", "ER", "AW0", "UW0", "R", "OW1", "EH1",
-    "ZH", "AE0", "IH2", "IH", "Y", "JH", "P", "AY1", "EY0", "OY2", "TH", "HH",
-    "D", "ER0", "CH", "AO1", "AE1", "AO2", "OY1", "AY2", "IH1", "OW0", "L",
-    "SH"
+    "AH0",
+    "S",
+    "AH1",
+    "EY2",
+    "AE2",
+    "EH0",
+    "OW2",
+    "UH0",
+    "NG",
+    "B",
+    "G",
+    "AY0",
+    "M",
+    "AA0",
+    "F",
+    "AO0",
+    "ER2",
+    "UH1",
+    "IY1",
+    "AH2",
+    "DH",
+    "IY0",
+    "EY1",
+    "IH0",
+    "K",
+    "N",
+    "W",
+    "IY2",
+    "T",
+    "AA1",
+    "ER1",
+    "EH2",
+    "OY0",
+    "UH2",
+    "UW1",
+    "Z",
+    "AW2",
+    "AW1",
+    "V",
+    "UW2",
+    "AA2",
+    "ER",
+    "AW0",
+    "UW0",
+    "R",
+    "OW1",
+    "EH1",
+    "ZH",
+    "AE0",
+    "IH2",
+    "IH",
+    "Y",
+    "JH",
+    "P",
+    "AY1",
+    "EY0",
+    "OY2",
+    "TH",
+    "HH",
+    "D",
+    "ER0",
+    "CH",
+    "AO1",
+    "AE1",
+    "AO2",
+    "OY1",
+    "AY2",
+    "IH1",
+    "OW0",
+    "L",
+    "SH",
 }
 _g2p = G2p()
 eng_dict = get_dict()
+
 
 def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     phones = []
@@ -51,7 +119,7 @@ def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
                         tns.append(0)
                 temp_phones += [__post_replace_ph(i) for i in phns]
                 temp_tones += tns
-                
+
         phones += temp_phones
         tones += temp_tones
         phone_len.append(len(temp_phones))
@@ -72,9 +140,19 @@ def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
 
 def __post_replace_ph(ph: str) -> str:
     REPLACE_MAP = {
-        "：": ",", "；": ",", "，": ",", "。": ".", "！": "!", "？": "?",
-        "\n": ".", "·": ",", "、": ",", "…": "...", "···": "...",
-        "・・・": "...", "v": "V"
+        "：": ",",
+        "；": ",",
+        "，": ",",
+        "。": ".",
+        "！": "!",
+        "？": "?",
+        "\n": ".",
+        "·": ",",
+        "、": ",",
+        "…": "...",
+        "···": "...",
+        "・・・": "...",
+        "v": "V",
     }
     if ph in REPLACE_MAP:
         ph = REPLACE_MAP[ph]
@@ -120,21 +198,22 @@ def __text_to_words(text: str) -> list[list[str]]:
     for idx, t in enumerate(tokens):
         if t.startswith("▁"):
             words.append([t[1:]])
-        else:
-            if t in PUNCTUATIONS:
-                if idx == len(tokens) - 1:
-                    words.append([f"{t}"])
-                else:
-                    if not tokens[idx + 1].startswith("▁") and tokens[idx + 1] not in PUNCTUATIONS:
-                        if idx == 0:
-                            words.append([])
-                        words[-1].append(f"{t}")
-                    else:
-                        words.append([f"{t}"])
-            else:
+        elif t in PUNCTUATIONS:
+            if idx == len(tokens) - 1:
+                words.append([f"{t}"])
+            elif (
+                not tokens[idx + 1].startswith("▁")
+                and tokens[idx + 1] not in PUNCTUATIONS
+            ):
                 if idx == 0:
                     words.append([])
                 words[-1].append(f"{t}")
+            else:
+                words.append([f"{t}"])
+        else:
+            if idx == 0:
+                words.append([])
+            words[-1].append(f"{t}")
     return words
 
 
@@ -149,4 +228,3 @@ if __name__ == "__main__":
     #         for ph in group:
     #             all_phones.add(ph)
     # print(all_phones)
-
