@@ -25,7 +25,6 @@ inference.to(device)
 class NaNValueError(ValueError):
     """カスタム例外クラス。NaN値が見つかった場合に使用されます。"""
 
-    pass
 
 
 # 推論時にインポートするために短いが関数を書く
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     device = config.style_gen_config.device
 
     training_lines: list[str] = []
-    with open(hps.data.training_files, "r", encoding="utf-8") as f:
+    with open(hps.data.training_files, encoding="utf-8") as f:
         training_lines.extend(f.readlines())
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
         training_results = list(
@@ -95,7 +94,7 @@ if __name__ == "__main__":
         )
 
     val_lines: list[str] = []
-    with open(hps.data.validation_files, "r", encoding="utf-8") as f:
+    with open(hps.data.validation_files, encoding="utf-8") as f:
         val_lines.extend(f.readlines())
 
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
