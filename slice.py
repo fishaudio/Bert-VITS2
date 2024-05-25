@@ -15,7 +15,7 @@ from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
 def is_audio_file(file: Path) -> bool:
-    supported_extensions = [".wav", ".flac", ".mp3", ".ogg", ".opus"]
+    supported_extensions = [".wav", ".flac", ".mp3", ".ogg", ".opus", ".m4a"]
     return file.suffix.lower() in supported_extensions
 
 

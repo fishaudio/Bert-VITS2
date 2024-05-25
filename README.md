@@ -14,6 +14,7 @@ You can install via `pip install style-bert-vits2` (inference only), see [librar
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
 
+  - 2024-05-26: Ver 2.5.0 (フォルダ分けからのスタイル生成、長い音声も学習可能に)
   - 2024-03-16: ver 2.4.1 (**batファイルによるインストール方法の変更**)
   - 2024-03-15: ver 2.4.0 (大規模リファクタリングや種々の改良、ライブラリ化)
   - 2024-02-26: ver 2.3 (辞書機能とエディター機能)

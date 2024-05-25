@@ -78,7 +78,7 @@ cov = ["test-cov", "cov-report"]
 
 [tool.hatch.envs.style]
 detached = true
-dependencies = ["black", "isort"]
+dependencies = ["black[jupyter]", "isort"]
 [tool.hatch.envs.style.scripts]
 check = [
     "black --check --diff .",
