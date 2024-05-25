@@ -10,6 +10,7 @@ import torch
 import yaml
 from tqdm import tqdm
 
+from config import get_path_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
@@ -150,13 +151,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
-        path_config: dict[str, str] = yaml.safe_load(f.read())
-        dataset_root = path_config["dataset_root"]
+    path_config = get_path_config()
+    dataset_root = path_config.dataset_root
 
     model_name = str(args.model_name)
     input_dir = Path(args.input_dir)
-    output_dir = Path(dataset_root) / model_name / "raw"
+    output_dir = dataset_root / model_name / "raw"
     min_sec: float = args.min_sec
     max_sec: float = args.max_sec
     min_silence_dur_ms: int = args.min_silence_dur_ms

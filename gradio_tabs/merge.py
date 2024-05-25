@@ -1,14 +1,13 @@
 import json
-import os
 from pathlib import Path
 
 import gradio as gr
 import numpy as np
 import torch
-import yaml
 from safetensors import safe_open
 from safetensors.torch import save_file
 
+from config import get_path_config
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
@@ -20,15 +19,17 @@ speech_style_keys = ["enc_p"]
 tempo_keys = ["sdp", "dp"]
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
-# Get path settings
-with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    # dataset_root = path_config["dataset_root"]
-    assets_root = path_config["assets_root"]
+path_config = get_path_config()
+assets_root = path_config.assets_root
 
 
-def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_list):
+def merge_style(
+    model_name_a: str,
+    model_name_b: str,
+    weight: float,
+    output_name: str,
+    style_triple_list: list[tuple[str, str, str]],
+) -> tuple[Path, list[str]]:
     """
     style_triple_list: list[(model_aでのスタイル名, model_bでのスタイル名, 出力するスタイル名)]
     """
@@ -41,18 +42,14 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         raise ValueError(f"No element with {DEFAULT_STYLE} output style name found.")
 
     style_vectors_a = np.load(
-        os.path.join(assets_root, model_name_a, "style_vectors.npy")
+        assets_root / model_name_a / "style_vectors.npy"
     )  # (style_num_a, 256)
     style_vectors_b = np.load(
-        os.path.join(assets_root, model_name_b, "style_vectors.npy")
+        assets_root / model_name_b / "style_vectors.npy"
     )  # (style_num_b, 256)
-    with open(
-        os.path.join(assets_root, model_name_a, "config.json"), "r", encoding="utf-8"
-    ) as f:
+    with open(assets_root / model_name_a / "config.json", "r", encoding="utf-8") as f:
         config_a = json.load(f)
-    with open(
-        os.path.join(assets_root, model_name_b, "config.json"), "r", encoding="utf-8"
-    ) as f:
+    with open(assets_root / model_name_b / "config.json", "r", encoding="utf-8") as f:
         config_b = json.load(f)
     style2id_a = config_a["data"]["style2id"]
     style2id_b = config_b["data"]["style2id"]
@@ -73,21 +70,19 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
         new_style2id[style_out] = len(new_style_vecs) - 1
     new_style_vecs = np.array(new_style_vecs)
 
-    output_style_path = os.path.join(assets_root, output_name, "style_vectors.npy")
+    output_style_path = assets_root / output_name / "style_vectors.npy"
     np.save(output_style_path, new_style_vecs)
 
     new_config = config_a.copy()
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     new_config["model_name"] = output_name
-    with open(
-        os.path.join(assets_root, output_name, "config.json"), "w", encoding="utf-8"
-    ) as f:
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
         json.dump(new_config, f, indent=2, ensure_ascii=False)
 
     # recipe.jsonを読み込んで、style_triple_listを追記
-    info_path = os.path.join(assets_root, output_name, "recipe.json")
-    if os.path.exists(info_path):
+    info_path = assets_root / output_name / "recipe.json"
+    if info_path.exists():
         with open(info_path, "r", encoding="utf-8") as f:
             info = json.load(f)
     else:
@@ -99,11 +94,13 @@ def merge_style(model_name_a, model_name_b, weight, output_name, style_triple_li
     return output_style_path, list(new_style2id.keys())
 
 
-def lerp_tensors(t, v0, v1):
+def lerp_tensors(t: float, v0: torch.Tensor, v1: torch.Tensor):
     return v0 * (1 - t) + v1 * t
 
 
-def slerp_tensors(t, v0, v1, dot_thres=0.998):
+def slerp_tensors(
+    t: float, v0: torch.Tensor, v1: torch.Tensor, dot_thres: float = 0.998
+):
     device = v0.device
     v0c = v0.cpu().numpy()
     v1c = v1.cpu().numpy()
@@ -123,23 +120,23 @@ def slerp_tensors(t, v0, v1, dot_thres=0.998):
 
 
 def merge_models(
-    model_path_a,
-    model_path_b,
-    voice_weight,
-    voice_pitch_weight,
-    speech_style_weight,
-    tempo_weight,
-    output_name,
-    use_slerp_instead_of_lerp,
+    model_path_a: str,
+    model_path_b: str,
+    voice_weight: float,
+    voice_pitch_weight: float,
+    speech_style_weight: float,
+    tempo_weight: float,
+    output_name: str,
+    use_slerp_instead_of_lerp: bool,
 ):
     """model Aを起点に、model Bの各要素を重み付けしてマージする。
     safetensors形式を前提とする。"""
-    model_a_weight = {}
+    model_a_weight: dict[str, torch.Tensor] = {}
     with safe_open(model_path_a, framework="pt", device="cpu") as f:
         for k in f.keys():
             model_a_weight[k] = f.get_tensor(k)
 
-    model_b_weight = {}
+    model_b_weight: dict[str, torch.Tensor] = {}
     with safe_open(model_path_b, framework="pt", device="cpu") as f:
         for k in f.keys():
             model_b_weight[k] = f.get_tensor(k)
@@ -161,10 +158,8 @@ def merge_models(
             slerp_tensors if use_slerp_instead_of_lerp else lerp_tensors
         )(weight, model_a_weight[key], model_b_weight[key])
 
-    merged_model_path = os.path.join(
-        assets_root, output_name, f"{output_name}.safetensors"
-    )
-    os.makedirs(os.path.dirname(merged_model_path), exist_ok=True)
+    merged_model_path = assets_root / output_name / f"{output_name}.safetensors"
+    merged_model_path.parent.mkdir(parents=True, exist_ok=True)
     save_file(merged_model_weight, merged_model_path)
 
     info = {
@@ -175,24 +170,22 @@ def merge_models(
         "speech_style_weight": speech_style_weight,
         "tempo_weight": tempo_weight,
     }
-    with open(
-        os.path.join(assets_root, output_name, "recipe.json"), "w", encoding="utf-8"
-    ) as f:
+    with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
     return merged_model_path
 
 
 def merge_models_gr(
-    model_name_a,
-    model_path_a,
-    model_name_b,
-    model_path_b,
-    output_name,
-    voice_weight,
-    voice_pitch_weight,
-    speech_style_weight,
-    tempo_weight,
-    use_slerp_instead_of_lerp,
+    model_name_a: str,
+    model_path_a: str,
+    model_name_b: str,
+    model_path_b: str,
+    output_name: str,
+    voice_weight: float,
+    voice_pitch_weight: float,
+    speech_style_weight: float,
+    tempo_weight: float,
+    use_slerp_instead_of_lerp: bool,
 ):
     if output_name == "":
         return "Error: 新しいモデル名を入力してください。"
@@ -210,10 +203,10 @@ def merge_models_gr(
 
 
 def merge_style_gr(
-    model_name_a,
-    model_name_b,
-    weight,
-    output_name,
+    model_name_a: str,
+    model_name_b: str,
+    weight: float,
+    output_name: str,
     style_triple_list_str: str,
 ):
     if output_name == "":
@@ -245,12 +238,14 @@ def merge_style_gr(
     )
 
 
-def simple_tts(model_name, text, style=DEFAULT_STYLE, style_weight=1.0):
-    model_path = os.path.join(assets_root, model_name, f"{model_name}.safetensors")
-    config_path = os.path.join(assets_root, model_name, "config.json")
-    style_vec_path = os.path.join(assets_root, model_name, "style_vectors.npy")
+def simple_tts(
+    model_name: str, text: str, style: str = DEFAULT_STYLE, style_weight: float = 1.0
+):
+    model_path = assets_root / model_name / f"{model_name}.safetensors"
+    config_path = assets_root / model_name / "config.json"
+    style_vec_path = assets_root / model_name / "style_vectors.npy"
 
-    model = TTSModel(Path(model_path), Path(config_path), Path(style_vec_path), device)
+    model = TTSModel(model_path, config_path, style_vec_path, device)
     return model.infer(text, style=style, style_weight=style_weight)
 
 
@@ -259,13 +254,13 @@ def update_two_model_names_dropdown(model_holder: TTSModelHolder):
     return new_names, new_files, new_names, new_files
 
 
-def load_styles_gr(model_name_a, model_name_b):
-    config_path_a = os.path.join(assets_root, model_name_a, "config.json")
+def load_styles_gr(model_name_a: str, model_name_b: str):
+    config_path_a = assets_root / model_name_a / "config.json"
     with open(config_path_a, "r", encoding="utf-8") as f:
         config_a = json.load(f)
     styles_a = list(config_a["data"]["style2id"].keys())
 
-    config_path_b = os.path.join(assets_root, model_name_b, "config.json")
+    config_path_b = assets_root / model_name_b / "config.json"
     with open(config_path_b, "r", encoding="utf-8") as f:
         config_b = json.load(f)
     styles_b = list(config_b["data"]["style2id"].keys())
@@ -336,7 +331,10 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
             )
         return app
     initial_id = 0
-    initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
+    # initial_model_files = model_holder.model_files_dict[model_names[initial_id]]
+    initial_model_files = [
+        str(f) for f in model_holder.model_files_dict[model_names[initial_id]]
+    ]
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(

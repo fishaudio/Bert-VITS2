@@ -10,7 +10,7 @@ import soundfile
 from numpy.typing import NDArray
 from tqdm import tqdm
 
-from config import config
+from config import get_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
@@ -70,6 +70,7 @@ def resample(
 
 
 if __name__ == "__main__":
+    config = get_config()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sr",

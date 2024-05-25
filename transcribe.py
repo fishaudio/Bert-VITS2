@@ -8,6 +8,7 @@ import yaml
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from config import get_path_config
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
@@ -124,9 +125,8 @@ if __name__ == "__main__":
     parser.add_argument("--no_repeat_ngram_size", type=int, default=10)
     args = parser.parse_args()
 
-    with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
-        path_config: dict[str, str] = yaml.safe_load(f.read())
-        dataset_root = Path(path_config["dataset_root"])
+    path_config = get_path_config()
+    dataset_root = path_config.dataset_root
 
     model_name = str(args.model_name)
 

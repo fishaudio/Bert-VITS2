@@ -3,7 +3,6 @@ from pathlib import Path
 
 import gradio as gr
 import torch
-import yaml
 
 from gradio_tabs.dataset import create_dataset_app
 from gradio_tabs.inference import create_inference_app
@@ -14,6 +13,7 @@ from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModelHolder
+from config import get_path_config
 
 
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
@@ -22,11 +22,6 @@ pyopenjtalk_worker.initialize_worker()
 # dict_data/ 以下の辞書データを pyopenjtalk に適用
 update_dict()
 
-# Get path settings
-with Path("configs/paths.yml").open("r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    # dataset_root = path_config["dataset_root"]
-    assets_root = path_config["assets_root"]
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", type=str, default="cuda")
@@ -40,7 +35,8 @@ device = args.device
 if device == "cuda" and not torch.cuda.is_available():
     device = "cpu"
 
-model_holder = TTSModelHolder(Path(assets_root), device)
+path_config = get_path_config()
+model_holder = TTSModelHolder(Path(path_config.assets_root), device)
 
 with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(f"# Style-Bert-VITS2 WebUI (version {VERSION})")

@@ -12,6 +12,7 @@ matplotlib
 num2words
 numba
 numpy
+protobuf==4.25
 psutil
 pyannote.audio>=3.1.0
 pydantic>=2.0

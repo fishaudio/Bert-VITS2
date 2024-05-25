@@ -7,7 +7,7 @@ from typing import Optional
 
 from tqdm import tqdm
 
-from config import Preprocess_text_config, config
+from config import get_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.nlp import clean_text
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
@@ -22,7 +22,7 @@ pyopenjtalk_worker.initialize_worker()
 update_dict()
 
 
-preprocess_text_config: Preprocess_text_config = config.preprocess_text_config
+preprocess_text_config = get_config().preprocess_text_config
 
 
 # Count lines for tqdm

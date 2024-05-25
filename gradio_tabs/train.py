@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 import socket
 import subprocess
@@ -12,7 +11,8 @@ from pathlib import Path
 
 import gradio as gr
 import yaml
-
+from dataclasses import dataclass
+from config import get_path_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_of
@@ -21,20 +21,27 @@ from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_o
 logger_handler = None
 tensorboard_executed = False
 
-# Get path settings
-with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    dataset_root = Path(path_config["dataset_root"])
+path_config = get_path_config()
+dataset_root = path_config.dataset_root
 
 
-def get_path(model_name: str) -> tuple[Path, Path, Path, Path, Path]:
+@dataclass
+class PathsForPreprocess:
+    dataset_path: Path
+    esd_path: Path
+    train_path: Path
+    val_path: Path
+    config_path: Path
+
+
+def get_path(model_name: str) -> PathsForPreprocess:
     assert model_name != "", "モデル名は空にできません"
     dataset_path = dataset_root / model_name
-    lbl_path = dataset_path / "esd.list"
+    esd_path = dataset_path / "esd.list"
     train_path = dataset_path / "train.list"
     val_path = dataset_path / "val.list"
     config_path = dataset_path / "config.json"
-    return dataset_path, lbl_path, train_path, val_path, config_path
+    return PathsForPreprocess(dataset_path, esd_path, train_path, val_path, config_path)
 
 
 def initialize(
@@ -51,14 +58,14 @@ def initialize(
     log_interval: int,
 ):
     global logger_handler
-    dataset_path, _, train_path, val_path, config_path = get_path(model_name)
+    paths = get_path(model_name)
 
     # 前処理のログをファイルに保存する
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_name = f"preprocess_{timestamp}.log"
     if logger_handler is not None:
         logger.remove(logger_handler)
-    logger_handler = logger.add(os.path.join(dataset_path, file_name))
+    logger_handler = logger.add(paths.dataset_path / file_name)
 
     logger.info(
         f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, freeze_decoder: {freeze_decoder}, use_jp_extra: {use_jp_extra}"
@@ -71,8 +78,8 @@ def initialize(
     with open(default_config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
     config["model_name"] = model_name
-    config["data"]["training_files"] = str(train_path)
-    config["data"]["validation_files"] = str(val_path)
+    config["data"]["training_files"] = str(paths.train_path)
+    config["data"]["validation_files"] = str(paths.val_path)
     config["train"]["batch_size"] = batch_size
     config["train"]["epochs"] = epochs
     config["train"]["eval_interval"] = save_every_steps
@@ -89,14 +96,14 @@ def initialize(
     # 今はデフォルトであるが、以前は非JP-Extra版になくバグの原因になるので念のため
     config["data"]["use_jp_extra"] = use_jp_extra
 
-    model_path = dataset_path / "models"
+    model_path = paths.dataset_path / "models"
     if model_path.exists():
         logger.warning(
             f"Step 1: {model_path} already exists, so copy it to backup to {model_path}_backup"
         )
         shutil.copytree(
             src=model_path,
-            dst=dataset_path / "models_backup",
+            dst=paths.dataset_path / "models_backup",
             dirs_exist_ok=True,
         )
         shutil.rmtree(model_path)
@@ -110,14 +117,14 @@ def initialize(
         logger.error(f"Step 1: {pretrained_dir} folder not found.")
         return False, f"Step 1, Error: {pretrained_dir}フォルダが見つかりません。"
 
-    with open(config_path, "w", encoding="utf-8") as f:
+    with open(paths.config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
     if not Path("config.yml").exists():
         shutil.copy(src="default_config.yml", dst="config.yml")
     with open("config.yml", "r", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
-    yml_data["dataset_path"] = str(dataset_path)
+    yml_data["dataset_path"] = str(paths.dataset_path)
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
     logger.success("Step 1: initialization finished.")
@@ -126,7 +133,7 @@ def initialize(
 
 def resample(model_name: str, normalize: bool, trim: bool, num_processes: int):
     logger.info("Step 2: start resampling...")
-    dataset_path, _, _, _, _ = get_path(model_name)
+    dataset_path = get_path(model_name).dataset_path
     input_dir = dataset_path / "raw"
     output_dir = dataset_path / "wavs"
     cmd = [
@@ -159,21 +166,24 @@ def preprocess_text(
     model_name: str, use_jp_extra: bool, val_per_lang: int, yomi_error: str
 ):
     logger.info("Step 3: start preprocessing text...")
-    _, lbl_path, train_path, val_path, config_path = get_path(model_name)
-    if not lbl_path.exists():
-        logger.error(f"Step 3: {lbl_path} not found.")
-        return False, f"Step 3, Error: 書き起こしファイル {lbl_path} が見つかりません。"
+    paths = get_path(model_name)
+    if not paths.esd_path.exists():
+        logger.error(f"Step 3: {paths.esd_path} not found.")
+        return (
+            False,
+            f"Step 3, Error: 書き起こしファイル {paths.esd_path} が見つかりません。",
+        )
 
     cmd = [
         "preprocess_text.py",
         "--config-path",
-        str(config_path),
+        str(paths.config_path),
         "--transcription-path",
-        str(lbl_path),
+        str(paths.esd_path),
         "--train-path",
-        str(train_path),
+        str(paths.train_path),
         "--val-path",
-        str(val_path),
+        str(paths.val_path),
         "--val-per-lang",
         str(val_per_lang),
         "--yomi_error",
@@ -201,7 +211,7 @@ def preprocess_text(
 
 def bert_gen(model_name: str):
     logger.info("Step 4: start bert_gen...")
-    _, _, _, _, config_path = get_path(model_name)
+    config_path = get_path(model_name).config_path
     success, message = run_script_with_log(
         ["bert_gen.py", "--config", str(config_path)]
     )
@@ -220,7 +230,7 @@ def bert_gen(model_name: str):
 
 def style_gen(model_name: str, num_processes: int):
     logger.info("Step 5: start style_gen...")
-    _, _, _, _, config_path = get_path(model_name)
+    config_path = get_path(model_name).config_path
     success, message = run_script_with_log(
         [
             "style_gen.py",
@@ -319,17 +329,23 @@ def train(
     use_jp_extra: bool = True,
     speedup: bool = False,
 ):
-    dataset_path, _, _, _, config_path = get_path(model_name)
+    paths = get_path(model_name)
     # 学習再開の場合を考えて念のためconfig.ymlの名前等を更新
     with open("config.yml", "r", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
-    yml_data["dataset_path"] = str(dataset_path)
+    yml_data["dataset_path"] = str(paths.dataset_path)
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
 
     train_py = "train_ms.py" if not use_jp_extra else "train_ms_jp_extra.py"
-    cmd = [train_py, "--config", str(config_path), "--model", str(dataset_path)]
+    cmd = [
+        train_py,
+        "--config",
+        str(paths.config_path),
+        "--model",
+        str(paths.dataset_path),
+    ]
     if skip_style:
         cmd.append("--skip_default_style")
     if speedup:

@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from scipy.io import wavfile
 
-from config import config
+from config import get_config
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -40,6 +40,7 @@ from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
 
 
+config = get_config()
 ln = config.server_config.language
 
 
@@ -113,6 +114,9 @@ if __name__ == "__main__":
     load_models(model_holder)
 
     limit = config.server_config.limit
+    logger.info(
+        f"The maximum length of the text is {limit}. If you want to change it, modify config.yml"
+    )
     app = FastAPI()
     allow_origins = config.server_config.origins
     if allow_origins:

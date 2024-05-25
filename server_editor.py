@@ -22,7 +22,6 @@ import numpy as np
 import requests
 import torch
 import uvicorn
-import yaml
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -30,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
 
+from config import get_path_config
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
@@ -174,22 +174,14 @@ origins = [
     "http://127.0.0.1:8000",
 ]
 
-# Get path settings
-with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    # dataset_root = path_config["dataset_root"]
-    assets_root = path_config["assets_root"]
-
+path_config = get_path_config()
 parser = argparse.ArgumentParser()
-parser.add_argument("--model_dir", type=str, default="model_assets/")
+parser.add_argument("--model_dir", type=str, default=path_config.assets_root)
 parser.add_argument("--device", type=str, default="cuda")
 parser.add_argument("--port", type=int, default=8000)
 parser.add_argument("--inbrowser", action="store_true")
 parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
-parser.add_argument(
-    "--dir", "-d", type=str, help="Model directory", default=assets_root
-)
 
 args = parser.parse_args()
 device = args.device

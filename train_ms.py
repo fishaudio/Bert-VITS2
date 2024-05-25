@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import default_style
-from config import config
+from config import get_config
 from data_utils import (
     DistributedBucketSampler,
     TextAudioSpeakerCollate,
@@ -48,7 +48,7 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 )  # Not available if torch version is lower than 2.0
 torch.backends.cuda.enable_math_sdp(True)
 
-
+config = get_config()
 global_step = 0
 
 api = HfApi()
