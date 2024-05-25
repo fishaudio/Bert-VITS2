@@ -943,7 +943,7 @@ def train_and_evaluate(
                 utils.summarize(
                     writer=writer,
                     global_step=global_step,
-                    images=image_dict,
+                    # images=image_dict,
                     scalars=scalar_dict,
                 )
 
