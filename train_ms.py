@@ -195,6 +195,8 @@ def run():
         default_style.save_styles_by_dirs(
             os.path.join(args.model, "wavs"),
             config.out_dir,
+            config_path=args.config,
+            config_output_path=os.path.join(config.out_dir, "config.json"),
         )
 
     torch.manual_seed(hps.train.seed)

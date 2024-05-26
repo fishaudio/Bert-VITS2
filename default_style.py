@@ -42,11 +42,17 @@ def save_neutral_vector(wav_dir: Union[Path, str], output_path: Union[Path, str]
     logger.info(f"Saved style config to {json_path}")
 
 
-def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str]):
+def save_styles_by_dirs(
+    wav_dir: Union[Path, str],
+    output_dir: Union[Path, str],
+    config_path: Union[Path, str],
+    config_output_path: Union[Path, str],
+):
     wav_dir = Path(wav_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = output_dir / "config.json"
+    config_path = Path(config_path)
+    config_output_path = Path(config_output_path)
 
     subdirs = [d for d in wav_dir.iterdir() if d.is_dir()]
     subdirs.sort()
@@ -55,6 +61,7 @@ def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str])
             f"At least 2 subdirectories are required for generating style vectors with respect to them, found {len(subdirs)}."
         )
         logger.info("Generating only neutral style vector instead.")
+        set_style_config(config_path, config_output_path)
         save_neutral_vector(wav_dir, output_dir)
 
     # First get mean of all for Neutral
@@ -88,10 +95,10 @@ def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str])
 
     # Save style2id config to json
     style2id = {name: i for i, name in enumerate(names)}
-    with open(json_path, encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         json_dict = json.load(f)
     json_dict["data"]["num_styles"] = len(names)
     json_dict["data"]["style2id"] = style2id
-    with open(json_path, "w", encoding="utf-8") as f:
+    with open(config_output_path, "w", encoding="utf-8") as f:
         json.dump(json_dict, f, indent=2, ensure_ascii=False)
-    logger.info(f"Saved style config to {json_path}")
+    logger.info(f"Saved style config to {config_output_path}")
