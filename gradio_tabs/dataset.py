@@ -47,6 +47,7 @@ def do_transcribe(
     use_hf_whisper,
     batch_size,
     num_beams,
+    hf_repo_id,
 ):
     if model_name == "":
         return "Error: モデル名を入力してください。"
@@ -71,9 +72,12 @@ def do_transcribe(
     if use_hf_whisper:
         cmd.append("--use_hf_whisper")
         cmd.extend(["--batch_size", str(batch_size)])
-    success, message = run_script_with_log(cmd)
+        if hf_repo_id != "openai/whisper":
+            cmd.extend(["--hf_repo_id", hf_repo_id])
+    success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         return f"Error: {message}. エラーメッセージが空の場合、何も問題がない可能性があるので、書き起こしファイルをチェックして問題なければ無視してください。"
+    return "音声の文字起こしが完了しました。"
 
 
 how_to_md = """
@@ -170,6 +174,12 @@ def create_dataset_app() -> gr.Blocks:
                 use_hf_whisper = gr.Checkbox(
                     label="HuggingFaceのWhisperを使う（速度が速いがVRAMを多く使う）",
                 )
+                hf_repo_id = gr.Dropdown(
+                    ["openai/whisper", "kotoba-tech/kotoba-whisper-v1.1"],
+                    label="HuggingFaceのWhisperモデル",
+                    value="openai/whisper",
+                    visible=False,
+                )
                 compute_type = gr.Dropdown(
                     [
                         "int8",
@@ -234,17 +244,19 @@ def create_dataset_app() -> gr.Blocks:
                 use_hf_whisper,
                 batch_size,
                 num_beams,
+                hf_repo_id,
             ],
             outputs=[result2],
         )
         use_hf_whisper.change(
             lambda x: (
                 gr.update(visible=x),
+                gr.update(visible=x),
                 gr.update(visible=not x),
                 gr.update(visible=not x),
             ),
             inputs=[use_hf_whisper],
-            outputs=[batch_size, compute_type, device],
+            outputs=[hf_repo_id, batch_size, compute_type, device],
         )
 
     return app

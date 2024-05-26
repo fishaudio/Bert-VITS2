@@ -71,16 +71,16 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             self.audiopaths_sid_text, file=sys.stdout
         ):
             audiopath = f"{_id}"
-            if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
-                phones = phones.split(" ")
-                tone = [int(i) for i in tone.split(" ")]
-                word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append(
-                    [audiopath, spk, language, text, phones, tone, word2ph]
-                )
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
-            else:
-                skipped += 1
+            # if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:
+            phones = phones.split(" ")
+            tone = [int(i) for i in tone.split(" ")]
+            word2ph = [int(i) for i in word2ph.split(" ")]
+            audiopaths_sid_text_new.append(
+                [audiopath, spk, language, text, phones, tone, word2ph]
+            )
+            lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+            # else:
+            #     skipped += 1
         logger.info(
             "skipped: "
             + str(skipped)

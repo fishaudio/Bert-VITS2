@@ -11,11 +11,13 @@ loguru
 num2words
 protobuf==4.25
 psutil
+punctuators
 pyannote.audio>=3.1.0
 pyloudnorm
 pyopenjtalk-dict
 pypinyin
 pyworld-prebuilt
+stable_ts
 tensorboard
 transformers
 umap-learn

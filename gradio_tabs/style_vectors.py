@@ -278,7 +278,11 @@ def save_style_vectors_from_files(
 
 
 def save_style_vectors_by_dirs(model_name: str, audio_dir_str: str):
-    import sys
+    if model_name == "":
+        return "モデル名を入力してください。"
+    if audio_dir_str == "":
+        return "音声ファイルが入っているディレクトリを入力してください。"
+
     from concurrent.futures import ThreadPoolExecutor
     from multiprocessing import cpu_count
 
@@ -349,7 +353,7 @@ method0 = """
 
 **注意**
 
-- Ver 2.5.0以降では、raw/フォルダにサブディレクトリに分けて音声ファイルを入れるだけで、スタイルベクトルが自動で作成されるので、この手順は不要です。
+- Ver 2.5.0以降では、`inputs/`フォルダや`raw/`フォルダにサブディレクトリに分けて音声ファイルを入れるだけで、スタイルベクトルが自動で作成されるので、この手順は不要です。
 - それ未満のバージョンで学習したモデルに新しくスタイルベクトルをつけたい場合や、学習に使ったのとは別の音声でスタイルベクトルを作成したい場合に使います。
 - 学習との整合性のため、もし**現在学習中や、今後学習する予定がある場合は**、音声ファイルは、`Data/{モデル名}/wavs`フォルダではなく**新しい別のディレクトリに保存してください**。
 

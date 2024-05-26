@@ -76,6 +76,7 @@ def transcribe_files_with_hf_whisper(
         batch_size=batch_size,
         torch_dtype=torch.float16,
         device="cuda",
+        trust_remote_code=True,
         # generate_kwargs=generate_kwargs,
     )
     if initial_prompt is not None:
