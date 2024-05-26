@@ -48,6 +48,7 @@ class StrListDataset(Dataset[str]):
 def transcribe_files_with_hf_whisper(
     audio_files: list[Path],
     model_id: str,
+    output_file: Path,
     initial_prompt: Optional[str] = None,
     language: str = "ja",
     batch_size: int = 16,
@@ -68,13 +69,6 @@ def transcribe_files_with_hf_whisper(
     }
     logger.info(f"generate_kwargs: {generate_kwargs}")
 
-    if initial_prompt is not None:
-        prompt_ids: torch.Tensor = processor.get_prompt_ids(
-            initial_prompt, return_tensors="pt"
-        )
-        prompt_ids = prompt_ids.to(device)
-        generate_kwargs["prompt_ids"] = prompt_ids
-
     pipe = pipeline(
         model=model_id,
         max_new_tokens=128,
@@ -82,17 +76,32 @@ def transcribe_files_with_hf_whisper(
         batch_size=batch_size,
         torch_dtype=torch.float16,
         device="cuda",
-        generate_kwargs=generate_kwargs,
+        # generate_kwargs=generate_kwargs,
     )
+    if initial_prompt is not None:
+        prompt_ids: torch.Tensor = pipe.tokenizer.get_prompt_ids(
+            initial_prompt, return_tensors="pt"
+        ).to(device)
+        generate_kwargs["prompt_ids"] = prompt_ids
+
     dataset = StrListDataset([str(f) for f in audio_files])
 
     results: list[str] = []
-    for whisper_result in pipe(dataset):
+    for whisper_result, file in zip(
+        pipe(dataset, generate_kwargs=generate_kwargs), audio_files
+    ):
         text: str = whisper_result["text"]
         # なぜかテキストの最初に" {initial_prompt}"が入るので、文字の最初からこれを削除する
         # cf. https://github.com/huggingface/transformers/issues/27594
         if text.startswith(f" {initial_prompt}"):
             text = text[len(f" {initial_prompt}") :]
+        # with open(output_file, "w", encoding="utf-8") as f:
+        #     for wav_file, text in zip(wav_files, results):
+        #         wav_rel_path = wav_file.relative_to(input_dir)
+        #         f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
+        with open(output_file, "a", encoding="utf-8") as f:
+            wav_rel_path = file.relative_to(input_dir)
+            f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
         results.append(text)
         if pbar is not None:
             pbar.update(1)
@@ -118,6 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--compute_type", type=str, default="bfloat16")
     parser.add_argument("--use_hf_whisper", action="store_true")
+    parser.add_argument("--hf_repo_id", type=str, default="")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_beams", type=int, default=1)
     parser.add_argument("--no_repeat_ngram_size", type=int, default=10)
@@ -185,7 +195,10 @@ if __name__ == "__main__":
             with open(output_file, "a", encoding="utf-8") as f:
                 f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
     else:
-        model_id = f"openai/whisper-{args.model}"
+        if args.hf_repo_id == "":
+            model_id = f"openai/whisper-{args.model}"
+        else:
+            model_id = args.hf_repo_id
         logger.info(f"Loading HF Whisper model ({model_id})")
         pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
         results = transcribe_files_with_hf_whisper(
@@ -198,10 +211,11 @@ if __name__ == "__main__":
             no_repeat_ngram_size=no_repeat_ngram_size,
             device=device,
             pbar=pbar,
+            output_file=output_file,
         )
-        with open(output_file, "w", encoding="utf-8") as f:
-            for wav_file, text in zip(wav_files, results):
-                wav_rel_path = wav_file.relative_to(input_dir)
-                f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
+        # with open(output_file, "w", encoding="utf-8") as f:
+        #     for wav_file, text in zip(wav_files, results):
+        #         wav_rel_path = wav_file.relative_to(input_dir)
+        #         f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
 
     sys.exit(0)
