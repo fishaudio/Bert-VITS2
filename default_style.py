@@ -50,8 +50,11 @@ def save_styles_by_dirs(wav_dir: Union[Path, str], output_dir: Union[Path, str])
 
     subdirs = [d for d in wav_dir.iterdir() if d.is_dir()]
     subdirs.sort()
-    if not subdirs:
-        logger.warning("No style directories found. Saving only neutral style.")
+    if len(subdirs) in (0, 1):
+        logger.info(
+            f"At least 2 subdirectories are required for generating style vectors with respect to them, found {len(subdirs)}."
+        )
+        logger.info("Generating only neutral style vector instead.")
         save_neutral_vector(wav_dir, output_dir)
 
     # First get mean of all for Neutral
