@@ -309,6 +309,9 @@ if __name__ == "__main__":
 
     logger.info(f"server listen: http://127.0.0.1:{config.server_config.port}")
     logger.info(f"API docs: http://127.0.0.1:{config.server_config.port}/docs")
+    logger.info(
+        f"Input text length limit: {limit}. You can change it in server.limit in config.yml"
+    )
     uvicorn.run(
         app, port=config.server_config.port, host="0.0.0.0", log_level="warning"
     )
