@@ -1,5 +1,7 @@
 # Style-Bert-VITS2
 
+**利用の際は必ず[利用規約](/docs/TERM_OF_USE.md)をお読みください。**
+
 Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-4202-a1dd-56ded3c562a0
@@ -14,7 +16,7 @@ You can install via `pip install style-bert-vits2` (inference only), see [librar
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
 
-  - 2024-05-26: Ver 2.5.0 (フォルダ分けからのスタイル生成、長い音声も学習可能に)
+  - 2024-05-26: Ver 2.5.0 (**[利用規約](/docs/TERM_OF_USE.md)の追加**、フォルダ分けからのスタイル生成、小春音アミモデルの追加)
   - 2024-03-16: ver 2.4.1 (**batファイルによるインストール方法の変更**)
   - 2024-03-15: ver 2.4.0 (大規模リファクタリングや種々の改良、ライブラリ化)
   - 2024-02-26: ver 2.3 (辞書機能とエディター機能)
