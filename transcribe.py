@@ -152,7 +152,7 @@ if __name__ == "__main__":
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     wav_files = [f for f in input_dir.rglob("*.wav") if f.is_file()]
-    wav_files = sorted(wav_files, key=lambda x: x.name)
+    wav_files = sorted(wav_files, key=lambda x: str(x))
 
     if output_file.exists():
         logger.warning(f"{output_file} exists, backing up to {output_file}.bak")
