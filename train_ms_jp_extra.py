@@ -18,9 +18,9 @@ from tqdm import tqdm
 import default_style
 from config import get_config
 from data_utils import (
+    DistributedBucketSampler,
     TextAudioSpeakerCollate,
     TextAudioSpeakerLoader,
-    DistributedBucketSampler,
 )
 from losses import WavLMLoss, discriminator_loss, feature_loss, generator_loss, kl_loss
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch

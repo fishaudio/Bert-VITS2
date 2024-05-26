@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import torch
 import torch.utils.data
+from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from config import get_config

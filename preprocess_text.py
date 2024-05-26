@@ -2,7 +2,7 @@ import argparse
 import json
 from collections import defaultdict
 from pathlib import Path
-from random import shuffle, sample
+from random import sample, shuffle
 from typing import Optional
 
 from tqdm import tqdm

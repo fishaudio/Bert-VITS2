@@ -96,9 +96,28 @@ examples = [
 ]
 
 initial_md = """
-- Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py --inbrowser`で起動できます。
+- Ver 2.5で追加されたデフォルトの[「`koharune-ami`（小春音アミ）」モデル](https://huggingface.co/litagin/sbv2_koharune_ami)は、[あみたろの声素材工房](https://amitaro.net/)で公開されているコーパス音源を利用して学習したモデルです。下記の**利用規約を必ず読んで**からご利用ください。特に**クレジット表記必須**で**エログロ等センシティブな発言に使用できません**。
 
-- 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
+- Ver 2.3で追加された**エディター版**のほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py --inbrowser`で起動できます。
+"""
+
+terms_of_use_md = """
+## 利用規約
+
+### JVNVコーパス (jvnv-F1-jp, jvnv-F2-jp, jvnv-M1-jp, jvnv-M2-jp)
+
+- [JVNVコーパス](https://huggingface.co/litagin/style_bert_vits2_jvnv) のライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)ですので、これを継承します。
+
+### 小春音アミ (koharune-ami) 
+
+- [小春音アミ（あみたろの声素材工房）の規約](https://amitaro.net/voice/voice_rule/)を全て継承します、特に、
+  - エロ・グロ、政治・宗教・ヘイト・人をだます目的などには使えません、つまりセンシティブな作品や発言には使用できません
+  - 使用する際は（配信やXの動画等でも）必ず分かりやすい場所にクレジット表記を記載してください（クレジット表記例: `SBV2モデル：小春音アミ、あみたろの声素材工房（https://amitaro.net/）`）
+  - 規約を守れば商用非商用問わず利用できます
+- 追加で、以下の事項を守ってください
+  - モデルマージに関しては、[あみたろの声素材工房のよくある質問への回答](https://amitaro.net/voice/faq/#index_id17)を遵守してください：
+    - 本モデルを別モデルとマージできるのは、その別モデル作成の際に学習に使われた声の権利者が許諾している場合に限る
+    - あみたろの声の特徴が残っている場合（マージの割合が25%以上の場合）は、その利用は[小春音アミ（あみたろの声素材工房）の規約](https://amitaro.net/voice/voice_rule/)の範囲内に限定され、そのモデルに関してもこの規約が適応される
 """
 
 how_to_md = """
@@ -266,6 +285,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
+        gr.Markdown(terms_of_use_md)
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(how_to_md)
         with gr.Row():
@@ -394,10 +414,10 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 )
                 style_weight = gr.Slider(
                     minimum=0,
-                    maximum=50,
+                    maximum=20,
                     value=DEFAULT_STYLE_WEIGHT,
                     step=0.1,
-                    label="スタイルの強さ",
+                    label="スタイルの強さ（声が崩壊したら小さくしてください）",
                 )
                 ref_audio_path = gr.Audio(
                     label="参照音声", type="filepath", visible=False

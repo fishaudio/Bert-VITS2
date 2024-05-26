@@ -50,7 +50,7 @@ def download_jp_extra_pretrained_models():
             )
 
 
-def download_jvnv_models():
+def download_default_models():
     files = [
         "jvnv-F1-jp/config.json",
         "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors",
@@ -74,11 +74,28 @@ def download_jvnv_models():
                 local_dir="model_assets",
                 local_dir_use_symlinks=False,
             )
+    additional_files = {
+        "litagin/sbv2_koharune_ami": [
+            "koharune-ami/config.json",
+            "koharune-ami/style_vectors.npy",
+            "koharune-ami/koharune-ami.safetensors",
+        ]
+    }
+    for repo_id, files in additional_files.items():
+        for file in files:
+            if not Path(f"model_assets/{file}").exists():
+                logger.info(f"Downloading {file}")
+                hf_hub_download(
+                    repo_id,
+                    file,
+                    local_dir="model_assets",
+                    local_dir_use_symlinks=False,
+                )
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip_jvnv", action="store_true")
+    parser.add_argument("--skip_default_models", action="store_true")
     parser.add_argument("--only_infer", action="store_true")
     parser.add_argument(
         "--dataset_root",
@@ -97,7 +114,7 @@ def main():
     download_bert_models()
 
     if not args.skip_jvnv:
-        download_jvnv_models()
+        download_default_models()
     if not args.only_infer:
         download_slm_model()
         download_pretrained_models()

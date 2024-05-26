@@ -30,6 +30,7 @@ from pydantic import BaseModel
 from scipy.io import wavfile
 
 from config import get_path_config
+from initialize import download_default_models
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
@@ -182,18 +183,21 @@ parser.add_argument("--port", type=int, default=8000)
 parser.add_argument("--inbrowser", action="store_true")
 parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
-
+parser.add_argument("--skip_default_models", action="store_true")
 args = parser.parse_args()
 device = args.device
 if device == "cuda" and not torch.cuda.is_available():
     device = "cpu"
 model_dir = Path(args.model_dir)
 port = int(args.port)
+if not args.skip_default_models:
+    download_default_models()
 
 model_holder = TTSModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)
+
 
 app = FastAPI()
 
