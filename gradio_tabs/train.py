@@ -352,8 +352,8 @@ def train(
         cmd.append("--skip_default_style")
     if speedup:
         cmd.append("--speedup")
-    if not not_use_custom_batch_sampler:
-        cmd.append("--use_custom_batch_sampler")
+    if not_use_custom_batch_sampler:
+        cmd.append("--not_use_custom_batch_sampler")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         logger.error("Train failed.")
@@ -409,9 +409,9 @@ change_log_md = """
 **Ver 2.5以降の変更点**
 
 - `raw/`フォルダの中で音声をサブディレクトリに分けて配置することで、自動的にスタイルが作成されるようになりました。詳細は下の「使い方/データの前準備」を参照してください。
-- これまでは1ファイルあたり14秒程度を超えた音声ファイルは学習には用いられていませんでしたが、Ver 2.5以降ではその制限がなくなりました。ただし:
+- これまでは1ファイルあたり14秒程度を超えた音声ファイルは学習には用いられていませんでしたが、Ver 2.5以降では「カスタムバッチサンプラーを使わない」にチェックを入れることでその制限が無しに学習できるようになりました（デフォルトはオフ）。ただし:
     - 音声ファイルが長い場合の学習効率は悪いかもしれず、挙動も確認していません
-    - この変更で要求VRAMが増えるので、学習に失敗したりVRAM不足になる場合は、バッチサイズを小さくするか、学習ボタンの横の「カスタムバッチサンプラーを使う」を試してみてください（この場合は以前と同じ挙動となります）。
+    - この変更で要求VRAMがかなり増えるので、学習に失敗したりVRAM不足になる場合は、バッチサイズを小さくするか、チェックを外してください
 """
 
 how_to_md = """

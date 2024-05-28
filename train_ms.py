@@ -97,6 +97,11 @@ def run():
         help="Huggingface model repo id to backup the model.",
         default=None,
     )
+    parser.add_argument(
+        "--not_use_custom_batch_sampler",
+        help="Don't use custom batch sampler for training, which was used in the version < 2.5",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     # Set log file
@@ -213,7 +218,7 @@ def run():
         writer_eval = SummaryWriter(log_dir=os.path.join(model_dir, "eval"))
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
     collate_fn = TextAudioSpeakerCollate()
-    if args.use_custom_batch_sampler:
+    if not args.not_use_custom_batch_sampler:
         train_sampler = DistributedBucketSampler(
             train_dataset,
             hps.train.batch_size,
