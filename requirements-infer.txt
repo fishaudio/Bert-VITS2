@@ -18,5 +18,6 @@ pypinyin
 pyworld-prebuilt
 # stable_ts
 # tensorboard
+torch
 transformers
 # umap-learn
