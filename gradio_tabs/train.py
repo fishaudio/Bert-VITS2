@@ -329,7 +329,7 @@ def train(
     skip_style: bool = False,
     use_jp_extra: bool = True,
     speedup: bool = False,
-    use_custom_batch_sampler: bool = False,
+    not_use_custom_batch_sampler: bool = False,
 ):
     paths = get_path(model_name)
     # 学習再開の場合を考えて念のためconfig.ymlの名前等を更新
@@ -352,7 +352,7 @@ def train(
         cmd.append("--skip_default_style")
     if speedup:
         cmd.append("--speedup")
-    if use_custom_batch_sampler:
+    if not not_use_custom_batch_sampler:
         cmd.append("--use_custom_batch_sampler")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
@@ -723,9 +723,9 @@ def create_train_app():
                 label="JP-Extra版を使う",
                 value=True,
             )
-            use_custom_batch_sampler = gr.Checkbox(
-                label="カスタムバッチサンプラーを使う",
-                info="Ver 2.5以降にうまく学習できなかったりVRAMが足りない場合に試してみてください",
+            not_use_custom_batch_sampler = gr.Checkbox(
+                label="カスタムバッチサンプラーを使わない",
+                info="VRAMに余裕がある場合にチェックすると、長い音声ファイルも学習に使われるようになります",
                 value=False,
             )
             speedup = gr.Checkbox(
@@ -820,7 +820,7 @@ def create_train_app():
                 skip_style,
                 use_jp_extra_train,
                 speedup,
-                use_custom_batch_sampler,
+                not_use_custom_batch_sampler,
             ],
             outputs=[info_train],
         )

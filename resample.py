@@ -62,6 +62,7 @@ def resample(
         if trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
         relative_path = file.relative_to(input_dir)
+        # ここで拡張子が.wav以外でも.wavに置き換えられる
         output_path = output_dir / relative_path.with_suffix(".wav")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         soundfile.write(output_path, wav, sr)

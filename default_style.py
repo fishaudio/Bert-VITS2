@@ -15,7 +15,7 @@ def set_style_config(json_path: Path, output_path: Path):
     json_dict["data"]["style2id"] = {DEFAULT_STYLE: 0}
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(json_dict, f, indent=2, ensure_ascii=False)
-    logger.info(f"Save style config (only {DEFAULT_STYLE}) to {output_path}")
+    logger.info(f"Saving style config (only {DEFAULT_STYLE}) to {output_path}...")
 
 
 def save_neutral_vector(wav_dir: Union[Path, str], output_path: Union[Path, str]):
