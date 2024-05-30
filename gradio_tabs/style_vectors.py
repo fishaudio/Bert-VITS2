@@ -136,7 +136,7 @@ def do_dbscan_gradio(eps=2.5, min_samples=15):
     )
     plt.legend()
 
-    n_clusters = max(y_pred) + 1
+    n_clusters = int(max(y_pred) + 1)
 
     if n_clusters > MAX_CLUSTER_NUM:
         # raise ValueError(f"The number of clusters is too large: {n_clusters}")
