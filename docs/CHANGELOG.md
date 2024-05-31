@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.5.0 (2024-05-26)
+## v2.5.0 (2024-05-31)
 
 このバージョンから[利用規約](/docs/TERMS_OF_USE.md)が追加されました。ご利用の際は必ずお読みください。
 
@@ -9,7 +9,6 @@
 - デフォルトモデルに [あみたろの声素材工房](https://amitaro.net/) のあみたろ様が公開しているコーパスを利用して学習した**小春音アミ**モデルを追加（あみたろ様には事前に連絡して許諾を得ています）
     - アプデの場合は新たに`App.bat`や`Editor.bat`を起動した際に自動でダウンロードされます
 - 英語の音声合成の速度向上（[gordon0414](https://github.com/gordon0414)さんによる[PR](https://github.com/litagin02/Style-Bert-VITS2/pull/124)です、ありがとうございます！）
-- Hugging Face 🤗 に投稿されているモデルをダウンロードして音声合成に利用できるタブをWebUIに追加
 - エディターの各種機能改善（多くが[kamexy](https://github.com/kamexy)様による[エディターリポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)へのプルリク群です、ありがとうございます！）
     - 選択した行の下に新規の行を作成できるように
     - 日本語変換のエンターで音声合成が走るバグの修正
@@ -33,7 +32,7 @@
 
 ### バグ修正
 
-- Gradioのアップデートにより、モデル選択時等に`TypeError: Type is not JSON serializable: WindowsPath`のようなエラーが出る問題を修正
+- Gradioのアップデートにより、モデル選択時やスタイルのDBSCAN作成時等に`TypeError: Type is not JSON serializable: WindowsPath`のようなエラーが出る問題を修正
 - TensorboardをWebUIから立ち上げた際にエラーが出る問題の修正 ([#129](https://github.com/litagin02/Style-Bert-VITS2/issues/129))
 
 

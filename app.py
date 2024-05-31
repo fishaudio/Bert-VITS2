@@ -6,7 +6,6 @@ import torch
 
 from config import get_path_config
 from gradio_tabs.dataset import create_dataset_app
-from gradio_tabs.download_tab import create_download_app
 from gradio_tabs.inference import create_inference_app
 from gradio_tabs.merge import create_merge_app
 from gradio_tabs.style_vectors import create_style_vectors_app
@@ -57,8 +56,6 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             create_style_vectors_app()
         with gr.Tab("マージ"):
             create_merge_app(model_holder=model_holder)
-        with gr.Tab("モデルダウンロード"):
-            create_download_app()
 
 app.launch(
     server_name=args.host,
