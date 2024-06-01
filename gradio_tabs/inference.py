@@ -104,7 +104,7 @@ initial_md = """
 terms_of_use_md = """
 ## 利用規約
 
-最新の利用規約は [こちら](https://github.com/litagin02/Style-Bert-VITS2/blob/master/docs/TERM_OF_USE.md) を参照してください。常に最新のものが適用されます。
+最新の利用規約は [こちら](https://github.com/litagin02/Style-Bert-VITS2/blob/master/docs/TERMS_OF_USE.md) を参照してください。常に最新のものが適用されます。
 
 Style-Bert-VITS2を用いる際は、以下の利用規約を遵守してください。
 
