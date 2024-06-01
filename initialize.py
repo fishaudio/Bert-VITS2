@@ -72,7 +72,6 @@ def download_default_models():
                 "litagin/style_bert_vits2_jvnv",
                 file,
                 local_dir="model_assets",
-                local_dir_use_symlinks=False,
             )
     additional_files = {
         "litagin/sbv2_koharune_ami": [
@@ -89,7 +88,6 @@ def download_default_models():
                     repo_id,
                     file,
                     local_dir="model_assets",
-                    local_dir_use_symlinks=False,
                 )
 
 

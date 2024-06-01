@@ -13,7 +13,7 @@
     - `inputs`からスライスして使う場合は`inputs`直下に作りたいスタイルだけサブフォルダを作りそこに音声ファイルを配置
     - `Data/モデル名/raw`から使う場合も`raw`直下に同様に配置
     - サブフォルダの個数が0または1の場合は、今まで通りのNeutralスタイルのみが作成されます
-- batファイルでのインストールの高速化（Pythonのライブラリインストールに[uv](https://github.com/astral-sh/uv)を使用）
+- batファイルでのインストールの大幅な高速化（Pythonのライブラリインストールに[uv](https://github.com/astral-sh/uv)を使用）
 - 英語の音声合成の速度向上（[gordon0414](https://github.com/gordon0414)さんによる[PR](https://github.com/litagin02/Style-Bert-VITS2/pull/124)です、ありがとうございます！）
 - エディターの各種機能改善（多くが[kamexy](https://github.com/kamexy)様による[エディターリポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)へのプルリク群です、ありがとうございます！）
     - 選択した行の下に新規の行を作成できるように
