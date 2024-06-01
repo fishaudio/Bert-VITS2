@@ -13,6 +13,7 @@
     - `Data/モデル名/raw`から使う場合も`raw`直下に同様に配置
     - サブフォルダの個数が0または1の場合は、今まで通りのNeutralスタイルのみが作成されます
 - batファイルでのインストールの大幅な高速化（Pythonのライブラリインストールに[uv](https://github.com/astral-sh/uv)を使用）
+- 学習時に「カスタムバッチサンプラーを無効化」オプションを追加。これにより、長い音声ファイルも学習に使われるようになりますが、使用VRAMがかなり増えたり学習が不安定になる可能性があります。
 - [よくある質問](/docs/FAQ.md)を追加
 - 英語の音声合成の速度向上（[gordon0414](https://github.com/gordon0414)さんによる[PR](https://github.com/litagin02/Style-Bert-VITS2/pull/124)です、ありがとうございます！）
 - エディターの各種機能改善（多くが[kamexy](https://github.com/kamexy)様による[エディターリポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)へのプルリク群です、ありがとうございます！）
