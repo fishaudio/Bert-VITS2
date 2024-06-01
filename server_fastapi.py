@@ -114,9 +114,12 @@ if __name__ == "__main__":
     load_models(model_holder)
 
     limit = config.server_config.limit
-    logger.info(
-        f"The maximum length of the text is {limit}. If you want to change it, modify config.yml"
-    )
+    if limit < 1:
+        limit = None
+    else:
+        logger.info(
+            f"The maximum length of the text is {limit}. If you want to change it, modify config.yml. Set limit to -1 to remove the limit."
+        )
     app = FastAPI()
     allow_origins = config.server_config.origins
     if allow_origins:
