@@ -43,7 +43,6 @@ def do_transcribe(
     compute_type,
     language,
     initial_prompt,
-    device,
     use_hf_whisper,
     batch_size,
     num_beams,
@@ -60,8 +59,6 @@ def do_transcribe(
         whisper_model,
         "--compute_type",
         compute_type,
-        "--device",
-        device,
         "--language",
         language,
         "--initial_prompt",
@@ -113,6 +110,9 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 
 def create_dataset_app() -> gr.Blocks:
     with gr.Blocks() as app:
+        gr.Markdown(
+            "**既に1ファイル2-12秒程度の音声ファイル集とその書き起こしデータがある場合は、このタブは使用せずに学習できます。**"
+        )
         with gr.Accordion("使い方", open=False):
             gr.Markdown(how_to_md)
         model_name = gr.Textbox(
@@ -173,12 +173,12 @@ def create_dataset_app() -> gr.Blocks:
                 )
                 use_hf_whisper = gr.Checkbox(
                     label="HuggingFaceのWhisperを使う（速度が速いがVRAMを多く使う）",
+                    value=True,
                 )
                 hf_repo_id = gr.Dropdown(
                     ["openai/whisper", "kotoba-tech/kotoba-whisper-v1.1"],
                     label="HuggingFaceのWhisperモデル",
                     value="openai/whisper",
-                    visible=False,
                 )
                 compute_type = gr.Dropdown(
                     [
@@ -193,6 +193,7 @@ def create_dataset_app() -> gr.Blocks:
                     ],
                     label="計算精度",
                     value="bfloat16",
+                    visible=False,
                 )
                 batch_size = gr.Slider(
                     minimum=1,
@@ -201,9 +202,7 @@ def create_dataset_app() -> gr.Blocks:
                     step=1,
                     label="バッチサイズ",
                     info="大きくすると速度が速くなるがVRAMを多く使う",
-                    visible=False,
                 )
-                device = gr.Radio(["cuda", "cpu"], label="デバイス", value="cuda")
                 language = gr.Dropdown(["ja", "en", "zh"], value="ja", label="言語")
                 initial_prompt = gr.Textbox(
                     label="初期プロンプト",
@@ -240,7 +239,6 @@ def create_dataset_app() -> gr.Blocks:
                 compute_type,
                 language,
                 initial_prompt,
-                device,
                 use_hf_whisper,
                 batch_size,
                 num_beams,
@@ -253,10 +251,9 @@ def create_dataset_app() -> gr.Blocks:
                 gr.update(visible=x),
                 gr.update(visible=x),
                 gr.update(visible=not x),
-                gr.update(visible=not x),
             ),
             inputs=[use_hf_whisper],
-            outputs=[hf_repo_id, batch_size, compute_type, device],
+            outputs=[hf_repo_id, batch_size, compute_type],
         )
 
     return app
