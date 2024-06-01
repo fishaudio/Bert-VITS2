@@ -537,7 +537,7 @@ def create_train_app():
                         ("読めないファイルは使わず続行", "skip"),
                         ("読めないファイルも無理やり読んで学習に使う", "use"),
                     ],
-                    value="raise",
+                    value="skip",
                 )
                 with gr.Accordion("詳細設定", open=False):
                     num_processes = gr.Slider(
