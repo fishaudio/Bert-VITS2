@@ -78,7 +78,12 @@ def download_default_models():
             "koharune-ami/config.json",
             "koharune-ami/style_vectors.npy",
             "koharune-ami/koharune-ami.safetensors",
-        ]
+        ],
+        "litagin/sbv2_amitaro": [
+            "amitaro/config.json",
+            "amitaro/style_vectors.npy",
+            "amitaro/amitaro.safetensors",
+        ],
     }
     for repo_id, files in additional_files.items():
         for file in files:
