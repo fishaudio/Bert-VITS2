@@ -90,7 +90,7 @@ if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 pushd Style-Bert-VITS2
 
 @REM 後で消す！！！！！！！！！！
-git checkout dev
+@REM git checkout dev
 @REM 後で消す！！！！！！！！！！
 
 echo --------------------------------------------------
