@@ -17,7 +17,7 @@
 - 英語の音声合成の速度向上（[gordon0414](https://github.com/gordon0414)さんによる[PR](https://github.com/litagin02/Style-Bert-VITS2/pull/124)です、ありがとうございます！）
 - エディターの各種機能改善（多くが[kamexy](https://github.com/kamexy)様による[エディターリポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)へのプルリク群です、ありがとうございます！）
     - 選択した行の下に新規の行を作成できるように
-    - 日本語変換のエンターで音声合成が走るバグの修正
+    - Mac使用時に日本語変換のエンターで音声合成が走るバグの修正
     - ペースト時に改行を含まない場合は通常のペーストの振る舞いになるように修正
 
 

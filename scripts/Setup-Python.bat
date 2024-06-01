@@ -78,30 +78,23 @@ if not exist "%PYTHON_DIR%"\ (
 	echo Executing: "%PYTHON_CMD%" "%PYTHON_DIR%\get-pip.py" --no-warn-script-location
 	"%PYTHON_CMD%" "%PYTHON_DIR%\get-pip.py" --no-warn-script-location
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
-
-	echo --------------------------------------------------
-	echo Installing virtualenv...
-	echo --------------------------------------------------
-	echo Executing: "%PYTHON_CMD%" -m pip install virtualenv --no-warn-script-location
-	"%PYTHON_CMD%" -m pip install virtualenv --no-warn-script-location
-	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 )
 
 if not exist %VENV_DIR%\ (
 	echo --------------------------------------------------
+	echo Installing uv...
+	echo --------------------------------------------------
+	echo Executing: "%PYTHON_CMD%" -m pip install uv
+	"%PYTHON_CMD%" -m pip install uv
+	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
+
+	echo --------------------------------------------------
 	echo Creating virtual environment...
 	echo --------------------------------------------------
-	echo Executing: "%PYTHON_CMD%" -m virtualenv --copies "%VENV_DIR%"
-	"%PYTHON_CMD%" -m virtualenv --copies "%VENV_DIR%"
+	echo Executing: "%PYTHON_CMD%" -m uv venv "%VENV_DIR%"
+	"%PYTHON_CMD%" -m uv venv "%VENV_DIR%"
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 )
-
-echo --------------------------------------------------
-echo Activating virtual environment...
-echo --------------------------------------------------
-echo Executing: call "%VENV_DIR%\Scripts\activate.bat"
-call "%VENV_DIR%\Scripts\activate.bat"
-if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
 echo --------------------------------------------------
 echo Completed.
