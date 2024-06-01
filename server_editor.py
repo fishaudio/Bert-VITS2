@@ -184,6 +184,7 @@ parser.add_argument("--inbrowser", action="store_true")
 parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
 parser.add_argument("--skip_default_models", action="store_true")
+parser.add_argument("--skip_static_files", action="store_true")
 args = parser.parse_args()
 device = args.device
 if device == "cuda" and not torch.cuda.is_available():
@@ -192,6 +193,7 @@ model_dir = Path(args.model_dir)
 port = int(args.port)
 if not args.skip_default_models:
     download_default_models()
+skip_static_files = bool(args.skip_static_files)
 
 model_holder = TTSModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
@@ -440,7 +442,8 @@ def delete_user_dict_word(uuid: str):
 app.include_router(router, prefix="/api")
 
 if __name__ == "__main__":
-    download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
+    if not skip_static_files:
+        download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     if args.inbrowser:
         webbrowser.open(f"http://localhost:{port}")

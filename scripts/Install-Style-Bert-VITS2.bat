@@ -108,6 +108,13 @@ pip install uv
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
+echo Installing pip for compatibility...
+echo --------------------------------------------------
+echo Executing: uv pip install pip
+uv pip install pip
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
 echo Installing PyTorch...
 echo --------------------------------------------------
 echo Executing: uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
