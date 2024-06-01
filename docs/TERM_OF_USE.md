@@ -20,15 +20,15 @@ Style-Bert-VITS2を用いる際は、以下の利用規約を遵守してくだ�
 
 以下はデフォルトで付随しているモデルのライセンスです。
 
-### JVNVコーパス (jvnv-F1-jp, jvnv-F2-jp, jvnv-M1-jp, jvnv-M2-jp)
+## JVNVコーパス (jvnv-F1-jp, jvnv-F2-jp, jvnv-M1-jp, jvnv-M2-jp)
 
 - [JVNVコーパス](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus) のライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)ですので、これを継承します。
 
-### 小春音アミ (koharune-ami) / あみたろ (amitaro)
+## 小春音アミ (koharune-ami) / あみたろ (amitaro)
 
 [あみたろの声素材工房様の規約](https://amitaro.net/voice/voice_rule/) と [あみたろのライブ配信音声・利用規約](https://amitaro.net/voice/livevoice/#index_id6) を全て守らなければなりません。特に、以下の事項を遵守してください（規約を守れば商用非商用問わず利用できます）：
 
-#### 禁止事項
+### 禁止事項
 
 - 年齢制限のある作品・用途への使用
 - 新興宗教・政治・マルチ購などに深く関係する作品・用途
@@ -36,15 +36,15 @@ Style-Bert-VITS2を用いる際は、以下の利用規約を遵守してくだ�
 - 生成された音声を、あみたろ本人の声として扱うこと
 - 生成された音声を、あみたろ以外の人の声として扱うこと
 
-#### クレジット表記
+### クレジット表記
 
-生成音声を公開する際は（媒体は問わない）、必ず分かりやすい場所に `あみたろの声素材工房 (https://amitaro.net/)` を含むクレジット表記を記載してください。
+生成音声を公開する際は（媒体は問わない）、必ず分かりやすい場所に `あみたろの声素材工房 (https://amitaro.net/)` の声を元にした音声モデルを使用していることが分かるようなクレジット表記を記載してください。
 
 クレジット表記例:
 - `Style-BertVITS2モデル: 小春音アミ、あみたろの声素材工房 (https://amitaro.net/)`
 - `Style-BertVITS2モデル: あみたろ、あみたろの声素材工房 (https://amitaro.net/)`
 
-#### モデルマージ
+### モデルマージ
 
 モデルマージに関しては、[あみたろの声素材工房のよくある質問への回答](https://amitaro.net/voice/faq/#index_id17)を遵守してください：
 - 本モデルを別モデルとマージできるのは、その別モデル作成の際に学習に使われた声の権利者が許諾している場合に限る
