@@ -1,11 +1,11 @@
 import json
-import os
 import shutil
 import socket
 import subprocess
 import sys
 import time
 import webbrowser
+from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -13,6 +13,7 @@ from pathlib import Path
 import gradio as gr
 import yaml
 
+from config import get_path_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_of
@@ -21,20 +22,27 @@ from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_o
 logger_handler = None
 tensorboard_executed = False
 
-# Get path settings
-with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    dataset_root = Path(path_config["dataset_root"])
+path_config = get_path_config()
+dataset_root = path_config.dataset_root
 
 
-def get_path(model_name: str) -> tuple[Path, Path, Path, Path, Path]:
+@dataclass
+class PathsForPreprocess:
+    dataset_path: Path
+    esd_path: Path
+    train_path: Path
+    val_path: Path
+    config_path: Path
+
+
+def get_path(model_name: str) -> PathsForPreprocess:
     assert model_name != "", "モデル名は空にできません"
     dataset_path = dataset_root / model_name
-    lbl_path = dataset_path / "esd.list"
+    esd_path = dataset_path / "esd.list"
     train_path = dataset_path / "train.list"
     val_path = dataset_path / "val.list"
     config_path = dataset_path / "config.json"
-    return dataset_path, lbl_path, train_path, val_path, config_path
+    return PathsForPreprocess(dataset_path, esd_path, train_path, val_path, config_path)
 
 
 def initialize(
@@ -51,14 +59,14 @@ def initialize(
     log_interval: int,
 ):
     global logger_handler
-    dataset_path, _, train_path, val_path, config_path = get_path(model_name)
+    paths = get_path(model_name)
 
     # 前処理のログをファイルに保存する
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_name = f"preprocess_{timestamp}.log"
     if logger_handler is not None:
         logger.remove(logger_handler)
-    logger_handler = logger.add(os.path.join(dataset_path, file_name))
+    logger_handler = logger.add(paths.dataset_path / file_name)
 
     logger.info(
         f"Step 1: start initialization...\nmodel_name: {model_name}, batch_size: {batch_size}, epochs: {epochs}, save_every_steps: {save_every_steps}, freeze_ZH_bert: {freeze_ZH_bert}, freeze_JP_bert: {freeze_JP_bert}, freeze_EN_bert: {freeze_EN_bert}, freeze_style: {freeze_style}, freeze_decoder: {freeze_decoder}, use_jp_extra: {use_jp_extra}"
@@ -68,11 +76,11 @@ def initialize(
         "configs/config.json" if not use_jp_extra else "configs/config_jp_extra.json"
     )
 
-    with open(default_config_path, "r", encoding="utf-8") as f:
+    with open(default_config_path, encoding="utf-8") as f:
         config = json.load(f)
     config["model_name"] = model_name
-    config["data"]["training_files"] = str(train_path)
-    config["data"]["validation_files"] = str(val_path)
+    config["data"]["training_files"] = str(paths.train_path)
+    config["data"]["validation_files"] = str(paths.val_path)
     config["train"]["batch_size"] = batch_size
     config["train"]["epochs"] = epochs
     config["train"]["eval_interval"] = save_every_steps
@@ -89,14 +97,14 @@ def initialize(
     # 今はデフォルトであるが、以前は非JP-Extra版になくバグの原因になるので念のため
     config["data"]["use_jp_extra"] = use_jp_extra
 
-    model_path = dataset_path / "models"
+    model_path = paths.dataset_path / "models"
     if model_path.exists():
         logger.warning(
             f"Step 1: {model_path} already exists, so copy it to backup to {model_path}_backup"
         )
         shutil.copytree(
             src=model_path,
-            dst=dataset_path / "models_backup",
+            dst=paths.dataset_path / "models_backup",
             dirs_exist_ok=True,
         )
         shutil.rmtree(model_path)
@@ -110,14 +118,14 @@ def initialize(
         logger.error(f"Step 1: {pretrained_dir} folder not found.")
         return False, f"Step 1, Error: {pretrained_dir}フォルダが見つかりません。"
 
-    with open(config_path, "w", encoding="utf-8") as f:
+    with open(paths.config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
     if not Path("config.yml").exists():
         shutil.copy(src="default_config.yml", dst="config.yml")
-    with open("config.yml", "r", encoding="utf-8") as f:
+    with open("config.yml", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
-    yml_data["dataset_path"] = str(dataset_path)
+    yml_data["dataset_path"] = str(paths.dataset_path)
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
     logger.success("Step 1: initialization finished.")
@@ -126,7 +134,7 @@ def initialize(
 
 def resample(model_name: str, normalize: bool, trim: bool, num_processes: int):
     logger.info("Step 2: start resampling...")
-    dataset_path, _, _, _, _ = get_path(model_name)
+    dataset_path = get_path(model_name).dataset_path
     input_dir = dataset_path / "raw"
     output_dir = dataset_path / "wavs"
     cmd = [
@@ -159,21 +167,24 @@ def preprocess_text(
     model_name: str, use_jp_extra: bool, val_per_lang: int, yomi_error: str
 ):
     logger.info("Step 3: start preprocessing text...")
-    _, lbl_path, train_path, val_path, config_path = get_path(model_name)
-    if not lbl_path.exists():
-        logger.error(f"Step 3: {lbl_path} not found.")
-        return False, f"Step 3, Error: 書き起こしファイル {lbl_path} が見つかりません。"
+    paths = get_path(model_name)
+    if not paths.esd_path.exists():
+        logger.error(f"Step 3: {paths.esd_path} not found.")
+        return (
+            False,
+            f"Step 3, Error: 書き起こしファイル {paths.esd_path} が見つかりません。",
+        )
 
     cmd = [
         "preprocess_text.py",
         "--config-path",
-        str(config_path),
+        str(paths.config_path),
         "--transcription-path",
-        str(lbl_path),
+        str(paths.esd_path),
         "--train-path",
-        str(train_path),
+        str(paths.train_path),
         "--val-path",
-        str(val_path),
+        str(paths.val_path),
         "--val-per-lang",
         str(val_per_lang),
         "--yomi_error",
@@ -201,7 +212,7 @@ def preprocess_text(
 
 def bert_gen(model_name: str):
     logger.info("Step 4: start bert_gen...")
-    _, _, _, _, config_path = get_path(model_name)
+    config_path = get_path(model_name).config_path
     success, message = run_script_with_log(
         ["bert_gen.py", "--config", str(config_path)]
     )
@@ -220,7 +231,7 @@ def bert_gen(model_name: str):
 
 def style_gen(model_name: str, num_processes: int):
     logger.info("Step 5: start style_gen...")
-    _, _, _, _, config_path = get_path(model_name)
+    config_path = get_path(model_name).config_path
     success, message = run_script_with_log(
         [
             "style_gen.py",
@@ -318,22 +329,31 @@ def train(
     skip_style: bool = False,
     use_jp_extra: bool = True,
     speedup: bool = False,
+    not_use_custom_batch_sampler: bool = False,
 ):
-    dataset_path, _, _, _, config_path = get_path(model_name)
+    paths = get_path(model_name)
     # 学習再開の場合を考えて念のためconfig.ymlの名前等を更新
-    with open("config.yml", "r", encoding="utf-8") as f:
+    with open("config.yml", encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     yml_data["model_name"] = model_name
-    yml_data["dataset_path"] = str(dataset_path)
+    yml_data["dataset_path"] = str(paths.dataset_path)
     with open("config.yml", "w", encoding="utf-8") as f:
         yaml.dump(yml_data, f, allow_unicode=True)
 
     train_py = "train_ms.py" if not use_jp_extra else "train_ms_jp_extra.py"
-    cmd = [train_py, "--config", str(config_path), "--model", str(dataset_path)]
+    cmd = [
+        train_py,
+        "--config",
+        str(paths.config_path),
+        "--model",
+        str(paths.dataset_path),
+    ]
     if skip_style:
         cmd.append("--skip_default_style")
     if speedup:
         cmd.append("--speedup")
+    if not_use_custom_batch_sampler:
+        cmd.append("--not_use_custom_batch_sampler")
     success, message = run_script_with_log(cmd, ignore_warning=True)
     if not success:
         logger.error("Train failed.")
@@ -385,6 +405,15 @@ def run_tensorboard(model_name: str):
     yield gr.Button("Tensorboardを開く")
 
 
+change_log_md = """
+**Ver 2.5以降の変更点**
+
+- `raw/`フォルダの中で音声をサブディレクトリに分けて配置することで、自動的にスタイルが作成されるようになりました。詳細は下の「使い方/データの前準備」を参照してください。
+- これまでは1ファイルあたり14秒程度を超えた音声ファイルは学習には用いられていませんでしたが、Ver 2.5以降では「カスタムバッチサンプラーを使わない」にチェックを入れることでその制限が無しに学習できるようになりました（デフォルトはオフ）。ただし:
+    - 音声ファイルが長い場合の学習効率は悪いかもしれず、挙動も確認していません
+    - チェックを入れると要求VRAMがかなり増えるようので、学習に失敗したりVRAM不足になる場合は、バッチサイズを小さくするか、チェックを外してください
+"""
+
 how_to_md = """
 ## 使い方
 
@@ -396,9 +425,6 @@ how_to_md = """
 
 - 途中から学習を再開する場合は、モデル名を入力してから「学習を開始する」を押せばよいです。
 
-注意: 標準スタイル以外のスタイルを音声合成で使うには、スタイルベクトルファイル`style_vectors.npy`を作る必要があります。これは、`Style.bat`を実行してそこで作成してください。
-動作は軽いはずなので、学習中でも実行でき、何度でも繰り返して試せます。
-
 ## JP-Extra版について
 
 元とするモデル構造として [Bert-VITS2 Japanese-Extra](https://github.com/fishaudio/Bert-VITS2/releases/tag/JP-Exta) を使うことができます。
@@ -406,40 +432,60 @@ how_to_md = """
 """
 
 prepare_md = """
-まず音声データ（wavファイルで1ファイルが2-12秒程度の、長すぎず短すぎない発話のものをいくつか）と、書き起こしテキストを用意してください。
+まず音声データと、書き起こしテキストを用意してください。
 
 それを次のように配置します。
 ```
-├── Data
+├── Data/
 │   ├── {モデルの名前}
 │   │   ├── esd.list
-│   │   ├── raw
-│   │   │   ├── ****.wav
-│   │   │   ├── ****.wav
-│   │   │   ├── ...
+│   │   ├── raw/
+│   │   │   ├── foo.wav
+│   │   │   ├── bar.mp3
+│   │   │   ├── style1/
+│   │   │   │   ├── baz.wav
+│   │   │   │   ├── qux.wav
+│   │   │   ├── style2/
+│   │   │   │   ├── corge.wav
+│   │   │   │   ├── grault.wav
+...
 ```
 
-wavファイル名やモデルの名前は空白を含まない半角で、wavファイルの拡張子は小文字`.wav`である必要があります。
-`raw` フォルダにはすべてのwavファイルを入れ、`esd.list` ファイルには、以下のフォーマットで各wavファイルの情報を記述してください。
+### 配置の仕方
+- 上のように配置すると、`style1/`と`style2/`フォルダの内部（直下以外も含む）に入っている音声ファイルたちから、自動的にデフォルトスタイルに加えて`style1`と`style2`というスタイルが作成されます
+- 特にスタイルを作る必要がない場合や、スタイル分類機能等でスタイルを作る場合は、`raw/`フォルダ直下に全てを配置してください。このように`raw/`のサブディレクトリの個数が0または1の場合は、スタイルはデフォルトスタイルのみが作成されます。
+- 音声ファイルのフォーマットはwav形式以外にもmp3等の多くの音声ファイルに対応しています
+
+### 書き起こしファイル`esd.list`
+
+`Data/{モデルの名前}/esd.list` ファイルには、以下のフォーマットで各音声ファイルの情報を記述してください。
+
+
 ```
-****.wav|{話者名}|{言語ID、ZHかJPかEN}|{書き起こしテキスト}
+path/to/audio.wav(wavファイル以外でもこう書く)|{話者名}|{言語ID、ZHかJPかEN}|{書き起こしテキスト}
 ```
+
+- ここで、最初の`path/to/audio.wav`は、`raw/`からの相対パスです。つまり、`raw/foo.wav`の場合は`foo.wav`、`raw/style1/bar.wav`の場合は`style1/bar.wav`となります。
+- 拡張子がwavでない場合でも、`esd.list`には`wav`と書いてください、つまり、`raw/bar.mp3`の場合でも`bar.wav`と書いてください。
+
 
 例：
 ```
-wav_number1.wav|hanako|JP|こんにちは、聞こえて、いますか？
-wav_next.wav|taro|JP|はい、聞こえています……。
+foo.wav|hanako|JP|こんにちは、元気ですか？
+bar.wav|taro|JP|はい、聞こえています……。何か用ですか？
+style1/baz.wav|hanako|JP|今日はいい天気ですね。
+style1/qux.wav|taro|JP|はい、そうですね。
+...
 english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 ...
 ```
-日本語話者の単一話者データセットでも構いません。
-
-- 音声ファイルはrawフォルダの直下でなくてもサブフォルダに入れても構いません。その場合は、`esd.list`の最初には`raw`からの相対パスを記述してください。
+もちろん日本語話者の単一話者データセットでも構いません。
 """
 
 
 def create_train_app():
     with gr.Blocks().queue() as app:
+        gr.Markdown(change_log_md)
         with gr.Accordion("使い方", open=False):
             gr.Markdown(how_to_md)
             with gr.Accordion(label="データの前準備", open=False):
@@ -491,7 +537,7 @@ def create_train_app():
                         ("読めないファイルは使わず続行", "skip"),
                         ("読めないファイルも無理やり読んで学習に使う", "use"),
                     ],
-                    value="raise",
+                    value="skip",
                 )
                 with gr.Accordion("詳細設定", open=False):
                     num_processes = gr.Slider(
@@ -677,6 +723,11 @@ def create_train_app():
                 label="JP-Extra版を使う",
                 value=True,
             )
+            not_use_custom_batch_sampler = gr.Checkbox(
+                label="カスタムバッチサンプラーを使わない",
+                info="VRAMに余裕がある場合にチェックすると、長い音声ファイルも学習に使われるようになります",
+                value=False,
+            )
             speedup = gr.Checkbox(
                 label="ログ等をスキップして学習を高速化する",
                 value=False,
@@ -764,7 +815,13 @@ def create_train_app():
         # Train
         train_btn.click(
             second_elem_of(train),
-            inputs=[model_name, skip_style, use_jp_extra_train, speedup],
+            inputs=[
+                model_name,
+                skip_style,
+                use_jp_extra_train,
+                speedup,
+                not_use_custom_batch_sampler,
+            ],
             outputs=[info_train],
         )
         tensorboard_btn.click(

@@ -10,7 +10,7 @@ from style_bert_vits2.logging import logger
 
 
 def download_bert_models():
-    with open("bert/bert_models.json", "r", encoding="utf-8") as fp:
+    with open("bert/bert_models.json", encoding="utf-8") as fp:
         models = json.load(fp)
     for k, v in models.items():
         local_path = Path("bert").joinpath(k)
@@ -50,7 +50,7 @@ def download_jp_extra_pretrained_models():
             )
 
 
-def download_jvnv_models():
+def download_default_models():
     files = [
         "jvnv-F1-jp/config.json",
         "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors",
@@ -72,13 +72,33 @@ def download_jvnv_models():
                 "litagin/style_bert_vits2_jvnv",
                 file,
                 local_dir="model_assets",
-                local_dir_use_symlinks=False,
             )
+    additional_files = {
+        "litagin/sbv2_koharune_ami": [
+            "koharune-ami/config.json",
+            "koharune-ami/style_vectors.npy",
+            "koharune-ami/koharune-ami.safetensors",
+        ],
+        "litagin/sbv2_amitaro": [
+            "amitaro/config.json",
+            "amitaro/style_vectors.npy",
+            "amitaro/amitaro.safetensors",
+        ],
+    }
+    for repo_id, files in additional_files.items():
+        for file in files:
+            if not Path(f"model_assets/{file}").exists():
+                logger.info(f"Downloading {file}")
+                hf_hub_download(
+                    repo_id,
+                    file,
+                    local_dir="model_assets",
+                )
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip_jvnv", action="store_true")
+    parser.add_argument("--skip_default_models", action="store_true")
     parser.add_argument("--only_infer", action="store_true")
     parser.add_argument(
         "--dataset_root",
@@ -96,8 +116,8 @@ def main():
 
     download_bert_models()
 
-    if not args.skip_jvnv:
-        download_jvnv_models()
+    if not args.skip_default_models:
+        download_default_models()
     if not args.only_infer:
         download_slm_model()
         download_pretrained_models()
@@ -113,7 +133,7 @@ def main():
         return
 
     # Change default paths if necessary
-    with open(paths_yml, "r", encoding="utf-8") as f:
+    with open(paths_yml, encoding="utf-8") as f:
         yml_data = yaml.safe_load(f)
     if args.assets_root is not None:
         yml_data["assets_root"] = args.assets_root

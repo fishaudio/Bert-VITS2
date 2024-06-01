@@ -7,17 +7,17 @@ git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 python -m venv venv
 venv\Scripts\activate
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
 ```
 
 Then download the necessary models and the default TTS model, and set the global paths.
 ```bash
-python initialize.py [--skip_jvnv] [--dataset_root <path>] [--assets_root <path>]
+python initialize.py [--skip_default_models] [--dataset_root <path>] [--assets_root <path>]
 ```
 
 Optional:
-- `--skip_jvnv`: Skip downloading the default JVNV voice models (use this if you only have to train your own models).
+- `--skip_default_models`: Skip downloading the default voice models (use this if you only have to train your own models).
 - `--dataset_root`: Default: `Data`. Root directory of the training dataset. The training dataset of `{model_name}` should be placed in `{dataset_root}/{model_name}`.
 - `--assets_root`: Default: `model_assets`. Root directory of the model assets (for inference). In training, the model assets will be saved to `{assets_root}/{model_name}`, and in inference, we load all the models from `{assets_root}`.
 
@@ -26,7 +26,7 @@ Optional:
 
 ### 1.1. Slice audio files
 
-The following audio formats are supported: ".wav", ".flac", ".mp3", ".ogg", ".opus".
+The following audio formats are supported: ".wav", ".flac", ".mp3", ".ogg", ".opus", ".m4a".
 ```bash
 python slice.py --model_name <model_name> [-i <input_dir>] [-m <min_sec>] [-M <max_sec>] [--time_suffix]
 ```
@@ -101,4 +101,4 @@ python train_ms_jp_extra.py [--repo_id <username>/<repo_name>] [--skip_default_s
 
 Optional:
 - `--repo_id`: Hugging Face repository ID to upload the trained model to. You should have logged in using `huggingface-cli login` before running this command.
-- `--skip_default_style`: Skip making the default style vector. Use this if you want to resume training (since the default style vector is already made).
+- `--skip_default_style`: Skip making the default style vector. Use this if you want to resume training (since the default style vector has been already made).

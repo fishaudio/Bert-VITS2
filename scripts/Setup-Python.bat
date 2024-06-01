@@ -66,7 +66,7 @@ if not exist "%PYTHON_DIR%"\ (
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
 	echo --------------------------------------------------
-	echo Installing pip and virtualenv...
+	echo Downloading get-pip.py...
 	echo --------------------------------------------------
 	echo Executing: %CURL_CMD% -o "%PYTHON_DIR%\get-pip.py" https://bootstrap.pypa.io/get-pip.py
 	%CURL_CMD% -o "%PYTHON_DIR%\get-pip.py" https://bootstrap.pypa.io/get-pip.py
@@ -95,20 +95,6 @@ if not exist %VENV_DIR%\ (
 	"%PYTHON_CMD%" -m virtualenv --copies "%VENV_DIR%"
 	if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 )
-
-echo --------------------------------------------------
-echo Activating virtual environment...
-echo --------------------------------------------------
-echo Executing: call "%VENV_DIR%\Scripts\activate.bat"
-call "%VENV_DIR%\Scripts\activate.bat"
-if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
-
-echo --------------------------------------------------
-echo Upgrading pip...
-echo --------------------------------------------------
-echo Executing: python -m pip install --upgrade pip
-python -m pip install --upgrade pip
-if !errorlevel! neq 0 ( pause & exit /b !errorlevel! )
 
 echo --------------------------------------------------
 echo Completed.

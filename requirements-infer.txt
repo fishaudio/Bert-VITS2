@@ -1,24 +1,23 @@
 cmudict
 cn2an
-faster-whisper==0.10.1
+# faster-whisper==0.10.1
 g2p_en
 GPUtil
 gradio
 jieba
-librosa==0.9.2
+# librosa==0.9.2
 loguru
 num2words
-protobuf==4.25
+# protobuf==4.25
 psutil
-punctuators
+# punctuators
 pyannote.audio>=3.1.0
-pyloudnorm
+# pyloudnorm
 pyopenjtalk-dict
 pypinyin
 pyworld-prebuilt
-stable_ts
-tensorboard
+# stable_ts
+# tensorboard
 torch
-torchaudio
 transformers
 umap-learn

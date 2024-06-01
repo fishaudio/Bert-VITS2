@@ -6,12 +6,13 @@
 !/style_bert_vits2/
 
 !/bert/deberta-v2-large-japanese-char-wwm/
-!/common/
 !/configs/
 !/dict_data/default.csv
 !/model_assets/
+!/static/
 
 !/config.py
 !/default_config.yml
+!/initialize.py
 !/requirements.txt
 !/server_editor.py

@@ -88,7 +88,7 @@ def initialize_worker(port: int = WORKER_PORT) -> None:
     client = None
     try:
         client = WorkerClient(port)
-    except (socket.timeout, socket.error):
+    except (OSError, socket.timeout):
         logger.debug("try starting pyopenjtalk worker server")
         import os
         import subprocess
@@ -120,7 +120,7 @@ def initialize_worker(port: int = WORKER_PORT) -> None:
             try:
                 client = WorkerClient(port)
                 break
-            except socket.error:
+            except OSError:
                 time.sleep(0.5)
                 count += 1
                 # 20: max number of retries

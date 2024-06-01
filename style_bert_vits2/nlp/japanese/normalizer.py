@@ -60,7 +60,7 @@ __REPLACE_MAP = {
     "」": "'",
 }
 # 記号類の正規化パターン
-__REPLACE_PATTERN = re.compile("|".join(re.escape(p) for p in __REPLACE_MAP.keys()))
+__REPLACE_PATTERN = re.compile("|".join(re.escape(p) for p in __REPLACE_MAP))
 # 句読点等の正規化パターン
 __PUNCTUATION_CLEANUP_PATTERN = re.compile(
     # ↓ ひらがな、カタカナ、漢字

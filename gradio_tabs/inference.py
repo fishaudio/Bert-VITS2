@@ -96,9 +96,63 @@ examples = [
 ]
 
 initial_md = """
-- Ver 2.3で追加されたエディターのほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py --inbrowser`で起動できます。
+- Ver 2.5で追加されたデフォルトの [`koharune-ami`（小春音アミ）モデル](https://huggingface.co/litagin/sbv2_koharune_ami) と[`amitaro`（あみたろ）モデル](https://huggingface.co/litagin/sbv2_amitaro) は、[あみたろの声素材工房](https://amitaro.net/)で公開されているコーパス音源・ライブ配信音声を利用して事前に許可を得て学習したモデルです。下記の**利用規約を必ず読んで**からご利用ください。
 
-- 初期からある[jvnvのモデル](https://huggingface.co/litagin/style_bert_vits2_jvnv)は、[JVNVコーパス（言語音声と非言語音声を持つ日本語感情音声コーパス）](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus)で学習されたモデルです。ライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)です。
+- Ver 2.3で追加された**エディター版**のほうが実際に読み上げさせるには使いやすいかもしれません。`Editor.bat`か`python server_editor.py --inbrowser`で起動できます。
+"""
+
+terms_of_use_md = """
+## 利用規約
+
+最新の利用規約は [こちら](https://github.com/litagin02/Style-Bert-VITS2/blob/master/docs/TERMS_OF_USE.md) を参照してください。常に最新のものが適用されます。
+
+Style-Bert-VITS2を用いる際は、以下の利用規約を遵守してください。
+
+## 禁止事項
+
+以下の目的での利用は禁止されています。
+
+- 法律に違反する目的
+- 政治的な目的（本家Bert-VITS2で禁止されています）
+- 他者を傷つける目的
+- なりすまし・ディープフェイク作成目的
+
+## 遵守事項
+
+- Style-Bert-VITS2を利用する際は、使用するモデルの利用規約・ライセンス必ず確認し、存在する場合はそれに従わなければなりません。
+- またソースコードを利用する際は、[リポジトリのライセンス](https://github.com/litagin02/Style-Bert-VITS2#license)に従わなければなりません。
+
+以下はデフォルトで付随しているモデルのライセンスです。
+
+### JVNVコーパス (jvnv-F1-jp, jvnv-F2-jp, jvnv-M1-jp, jvnv-M2-jp)
+
+- [JVNVコーパス](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvnv_corpus) のライセンスは[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)ですので、これを継承します。
+
+### 小春音アミ (koharune-ami) / あみたろ (amitaro)
+
+[あみたろの声素材工房様の規約](https://amitaro.net/voice/voice_rule/) と [あみたろのライブ配信音声・利用規約](https://amitaro.net/voice/livevoice/#index_id6) を全て守らなければなりません。特に、以下の事項を遵守してください（規約を守れば商用非商用問わず利用できます）：
+
+#### 禁止事項
+
+- 年齢制限のある作品・用途への使用
+- 新興宗教・政治・マルチ購などに深く関係する作品・用途
+- 特定の団体や個人や国家を誹謗中傷する作品・用途
+- 生成された音声を、あみたろ本人の声として扱うこと
+- 生成された音声を、あみたろ以外の人の声として扱うこと
+
+#### クレジット表記
+
+生成音声を公開する際は（媒体は問わない）、必ず分かりやすい場所に `あみたろの声素材工房 (https://amitaro.net/)` の声を元にした音声モデルを使用していることが分かるようなクレジット表記を記載してください。
+
+クレジット表記例:
+- `Style-BertVITS2モデル: 小春音アミ、あみたろの声素材工房 (https://amitaro.net/)`
+- `Style-BertVITS2モデル: あみたろ、あみたろの声素材工房 (https://amitaro.net/)`
+
+#### モデルマージ
+
+モデルマージに関しては、[あみたろの声素材工房のよくある質問への回答](https://amitaro.net/voice/faq/#index_id17)を遵守してください：
+- 本モデルを別モデルとマージできるのは、その別モデル作成の際に学習に使われた声の権利者が許諾している場合に限る
+- あみたろの声の特徴が残っている場合（マージの割合が25%以上の場合）は、その利用は[あみたろの声素材工房様の規約](https://amitaro.net/voice/voice_rule/)の範囲内に限定され、そのモデルに関してもこの規約が適応される
 """
 
 how_to_md = """
@@ -266,6 +320,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
+        gr.Markdown(terms_of_use_md)
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(how_to_md)
         with gr.Row():
@@ -394,10 +449,10 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 )
                 style_weight = gr.Slider(
                     minimum=0,
-                    maximum=50,
+                    maximum=20,
                     value=DEFAULT_STYLE_WEIGHT,
                     step=0.1,
-                    label="スタイルの強さ",
+                    label="スタイルの強さ（声が崩壊したら小さくしてください）",
                 )
                 ref_audio_path = gr.Audio(
                     label="参照音声", type="filepath", visible=False

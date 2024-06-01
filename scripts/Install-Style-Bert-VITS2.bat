@@ -89,6 +89,10 @@ if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 @REM Style-Bert-VITS2フォルダに移動
 pushd Style-Bert-VITS2
 
+@REM 後で消す！！！！！！！！！！
+@REM git checkout dev
+@REM 後で消す！！！！！！！！！！
+
 echo --------------------------------------------------
 echo Activating the virtual environment...
 echo --------------------------------------------------
@@ -97,17 +101,31 @@ call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
+echo Installing package manager uv...
+echo --------------------------------------------------
+echo Executing: pip install uv
+pip install uv
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
+echo Installing pip for compatibility...
+echo --------------------------------------------------
+echo Executing: uv pip install pip
+uv pip install pip
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
 echo Installing PyTorch...
 echo --------------------------------------------------
-echo Executing: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+echo Executing: uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
 echo Installing other dependencies...
 echo --------------------------------------------------
-echo Executing: pip install -r requirements.txt
-pip install -r requirements.txt
+echo Executing: uv pip install -r requirements.txt
+uv pip install -r requirements.txt
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo ----------------------------------------

@@ -10,7 +10,7 @@ import soundfile
 from numpy.typing import NDArray
 from tqdm import tqdm
 
-from config import config
+from config import get_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
@@ -62,6 +62,7 @@ def resample(
         if trim:
             wav, _ = librosa.effects.trim(wav, top_db=30)
         relative_path = file.relative_to(input_dir)
+        # ここで拡張子が.wav以外でも.wavに置き換えられる
         output_path = output_dir / relative_path.with_suffix(".wav")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         soundfile.write(output_path, wav, sr)
@@ -70,6 +71,7 @@ def resample(
 
 
 if __name__ == "__main__":
+    config = get_config()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sr",

@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import default_style
-from config import config
+from config import get_config
 from data_utils import (
     DistributedBucketSampler,
     TextAudioSpeakerCollate,
@@ -48,6 +48,8 @@ torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(
     True
 )  # Not available if torch version is lower than 2.0
+
+config = get_config()
 global_step = 0
 
 api = HfApi()
@@ -96,6 +98,11 @@ def run():
         help="Huggingface model repo id to backup the model.",
         default=None,
     )
+    parser.add_argument(
+        "--not_use_custom_batch_sampler",
+        help="Don't use custom batch sampler for training, which was used in the version < 2.5",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     # Set log file
@@ -107,7 +114,7 @@ def run():
     envs = config.train_ms_config.env
     for env_name, env_value in envs.items():
         if env_name not in os.environ.keys():
-            logger.info("Loading configuration from config {}".format(str(env_value)))
+            logger.info(f"Loading configuration from config {env_value!s}")
             os.environ[env_name] = str(env_value)
     logger.info(
         "Loading environment variables \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
@@ -141,7 +148,7 @@ def run():
     if os.path.realpath(args.config) != os.path.realpath(
         config.train_ms_config.config_path
     ):
-        with open(args.config, "r", encoding="utf-8") as f:
+        with open(args.config, encoding="utf-8") as f:
             data = f.read()
         os.makedirs(os.path.dirname(config.train_ms_config.config_path), exist_ok=True)
         with open(config.train_ms_config.config_path, "w", encoding="utf-8") as f:
@@ -191,13 +198,11 @@ def run():
     os.makedirs(config.out_dir, exist_ok=True)
 
     if not args.skip_default_style:
-        # Save default style to out_dir
-        default_style.set_style_config(
-            args.config, os.path.join(config.out_dir, "config.json")
-        )
-        default_style.save_neutral_vector(
+        default_style.save_styles_by_dirs(
             os.path.join(args.model, "wavs"),
-            os.path.join(config.out_dir, "style_vectors.npy"),
+            config.out_dir,
+            config_path=args.config,
+            config_output_path=os.path.join(config.out_dir, "config.json"),
         )
 
     torch.manual_seed(hps.train.seed)
@@ -213,28 +218,45 @@ def run():
         writer = SummaryWriter(log_dir=model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(model_dir, "eval"))
     train_dataset = TextAudioSpeakerLoader(hps.data.training_files, hps.data)
-    train_sampler = DistributedBucketSampler(
-        train_dataset,
-        hps.train.batch_size,
-        [32, 300, 400, 500, 600, 700, 800, 900, 1000],
-        num_replicas=n_gpus,
-        rank=rank,
-        shuffle=True,
-    )
     collate_fn = TextAudioSpeakerCollate(use_jp_extra=True)
-    train_loader = DataLoader(
-        train_dataset,
-        # メモリ消費量を減らそうとnum_workersを1にしてみる
-        # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
-        num_workers=1,
-        shuffle=False,
-        pin_memory=True,
-        collate_fn=collate_fn,
-        batch_sampler=train_sampler,
-        persistent_workers=True,
-        # これもメモリ消費量を減らそうとしてコメントアウト
-        # prefetch_factor=6,
-    )  # DataLoader config could be adjusted.
+    if not args.not_use_custom_batch_sampler:
+        train_sampler = DistributedBucketSampler(
+            train_dataset,
+            hps.train.batch_size,
+            [32, 300, 400, 500, 600, 700, 800, 900, 1000],
+            num_replicas=n_gpus,
+            rank=rank,
+            shuffle=True,
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            # メモリ消費量を減らそうとnum_workersを1にしてみる
+            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            num_workers=1,
+            shuffle=False,
+            pin_memory=True,
+            collate_fn=collate_fn,
+            batch_sampler=train_sampler,
+            # batch_size=hps.train.batch_size,
+            persistent_workers=True,
+            # これもメモリ消費量を減らそうとしてコメントアウト
+            # prefetch_factor=6,
+        )
+    else:
+        train_loader = DataLoader(
+            train_dataset,
+            # メモリ消費量を減らそうとnum_workersを1にしてみる
+            # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
+            num_workers=1,
+            shuffle=True,
+            pin_memory=True,
+            collate_fn=collate_fn,
+            # batch_sampler=train_sampler,
+            batch_size=hps.train.batch_size,
+            persistent_workers=True,
+            # これもメモリ消費量を減らそうとしてコメントアウト
+            # prefetch_factor=6,
+        )
     eval_dataset = None
     eval_loader = None
     if rank == 0 and not args.speedup:
@@ -577,7 +599,7 @@ def run():
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(model_dir, "G_{}.pth".format(global_step)),
+                os.path.join(model_dir, f"G_{global_step}.pth"),
             )
             assert optim_d is not None
             utils.checkpoints.save_checkpoint(
@@ -585,7 +607,7 @@ def run():
                 optim_d,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(model_dir, "D_{}.pth".format(global_step)),
+                os.path.join(model_dir, f"D_{global_step}.pth"),
             )
             if net_dur_disc is not None:
                 assert optim_dur_disc is not None
@@ -594,7 +616,7 @@ def run():
                     optim_dur_disc,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(model_dir, "DUR_{}.pth".format(global_step)),
+                    os.path.join(model_dir, f"DUR_{global_step}.pth"),
                 )
             if net_wd is not None:
                 assert optim_wd is not None
@@ -603,7 +625,7 @@ def run():
                     optim_wd,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(model_dir, "WD_{}.pth".format(global_step)),
+                    os.path.join(model_dir, f"WD_{global_step}.pth"),
                 )
             utils.safetensors.save_safetensors(
                 net_g,
@@ -661,7 +683,7 @@ def train_and_evaluate(
     if writers is not None:
         writer, writer_eval = writers
 
-    train_loader.batch_sampler.set_epoch(epoch)
+    # train_loader.batch_sampler.set_epoch(epoch)
     global global_step
 
     net_g.train()
@@ -867,14 +889,12 @@ def train_and_evaluate(
                         "loss/g/kl": loss_kl,
                     }
                 )
+                scalar_dict.update({f"loss/g/{i}": v for i, v in enumerate(losses_gen)})
                 scalar_dict.update(
-                    {"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)}
+                    {f"loss/d_r/{i}": v for i, v in enumerate(losses_disc_r)}
                 )
                 scalar_dict.update(
-                    {"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)}
-                )
-                scalar_dict.update(
-                    {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
+                    {f"loss/d_g/{i}": v for i, v in enumerate(losses_disc_g)}
                 )
 
                 if net_dur_disc is not None:
@@ -882,23 +902,20 @@ def train_and_evaluate(
 
                     scalar_dict.update(
                         {
-                            "loss/dur_disc_g/{}".format(i): v
+                            f"loss/dur_disc_g/{i}": v
                             for i, v in enumerate(losses_dur_disc_g)
                         }
                     )
                     scalar_dict.update(
                         {
-                            "loss/dur_disc_r/{}".format(i): v
+                            f"loss/dur_disc_r/{i}": v
                             for i, v in enumerate(losses_dur_disc_r)
                         }
                     )
 
                     scalar_dict.update({"loss/g/dur_gen": loss_dur_gen})
                     scalar_dict.update(
-                        {
-                            "loss/g/dur_gen_{}".format(i): v
-                            for i, v in enumerate(losses_dur_gen)
-                        }
+                        {f"loss/g/dur_gen_{i}": v for i, v in enumerate(losses_dur_gen)}
                     )
 
                 if net_wd is not None:
@@ -910,24 +927,25 @@ def train_and_evaluate(
                             "loss/g/lm_gen": loss_lm_gen,
                         }
                     )
-                image_dict = {
-                    "slice/mel_org": utils.plot_spectrogram_to_numpy(
-                        y_mel[0].data.cpu().numpy()
-                    ),
-                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(
-                        y_hat_mel[0].data.cpu().numpy()
-                    ),
-                    "all/mel": utils.plot_spectrogram_to_numpy(
-                        mel[0].data.cpu().numpy()
-                    ),
-                    "all/attn": utils.plot_alignment_to_numpy(
-                        attn[0, 0].data.cpu().numpy()
-                    ),
-                }
+                # 以降のログは計算が重い気がするし誰も見てない気がするのでコメントアウト
+                # image_dict = {
+                #     "slice/mel_org": utils.plot_spectrogram_to_numpy(
+                #         y_mel[0].data.cpu().numpy()
+                #     ),
+                #     "slice/mel_gen": utils.plot_spectrogram_to_numpy(
+                #         y_hat_mel[0].data.cpu().numpy()
+                #     ),
+                #     "all/mel": utils.plot_spectrogram_to_numpy(
+                #         mel[0].data.cpu().numpy()
+                #     ),
+                #     "all/attn": utils.plot_alignment_to_numpy(
+                #         attn[0, 0].data.cpu().numpy()
+                #     ),
+                # }
                 utils.summarize(
                     writer=writer,
                     global_step=global_step,
-                    images=image_dict,
+                    # images=image_dict,
                     scalars=scalar_dict,
                 )
 
@@ -943,14 +961,14 @@ def train_and_evaluate(
                     optim_g,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
+                    os.path.join(hps.model_dir, f"G_{global_step}.pth"),
                 )
                 utils.checkpoints.save_checkpoint(
                     net_d,
                     optim_d,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
+                    os.path.join(hps.model_dir, f"D_{global_step}.pth"),
                 )
                 if net_dur_disc is not None:
                     utils.checkpoints.save_checkpoint(
@@ -958,7 +976,7 @@ def train_and_evaluate(
                         optim_dur_disc,
                         hps.train.learning_rate,
                         epoch,
-                        os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
+                        os.path.join(hps.model_dir, f"DUR_{global_step}.pth"),
                     )
                 if net_wd is not None:
                     utils.checkpoints.save_checkpoint(
@@ -966,7 +984,7 @@ def train_and_evaluate(
                         optim_wd,
                         hps.train.learning_rate,
                         epoch,
-                        os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
+                        os.path.join(hps.model_dir, f"WD_{global_step}.pth"),
                     )
                 keep_ckpts = config.train_ms_config.keep_ckpts
                 if keep_ckpts > 0:
@@ -1004,9 +1022,7 @@ def train_and_evaluate(
         global_step += 1
         if pbar is not None:
             pbar.set_description(
-                "Epoch {}({:.0f}%)/{}".format(
-                    epoch, 100.0 * batch_idx / len(train_loader), hps.train.epochs
-                )
+                f"Epoch {epoch}({100.0 * batch_idx / len(train_loader):.0f}%)/{hps.train.epochs}"
             )
             pbar.update()
 
@@ -1020,6 +1036,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
     image_dict = {}
     audio_dict = {}
+    print()
     logger.info("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (
@@ -1057,44 +1074,44 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                     sdp_ratio=0.0 if not use_sdp else 1.0,
                 )
                 y_hat_lengths = mask.sum([1, 2]).long() * hps.data.hop_length
-
-                mel = spec_to_mel_torch(
-                    spec,
-                    hps.data.filter_length,
-                    hps.data.n_mel_channels,
-                    hps.data.sampling_rate,
-                    hps.data.mel_fmin,
-                    hps.data.mel_fmax,
-                )
-                y_hat_mel = mel_spectrogram_torch(
-                    y_hat.squeeze(1).float(),
-                    hps.data.filter_length,
-                    hps.data.n_mel_channels,
-                    hps.data.sampling_rate,
-                    hps.data.hop_length,
-                    hps.data.win_length,
-                    hps.data.mel_fmin,
-                    hps.data.mel_fmax,
-                )
-                image_dict.update(
-                    {
-                        f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
-                            y_hat_mel[0].cpu().numpy()
-                        )
-                    }
-                )
+                # 以降のログは計算が重い気がするし誰も見てない気がするのでコメントアウト
+                # mel = spec_to_mel_torch(
+                #     spec,
+                #     hps.data.filter_length,
+                #     hps.data.n_mel_channels,
+                #     hps.data.sampling_rate,
+                #     hps.data.mel_fmin,
+                #     hps.data.mel_fmax,
+                # )
+                # y_hat_mel = mel_spectrogram_torch(
+                #     y_hat.squeeze(1).float(),
+                #     hps.data.filter_length,
+                #     hps.data.n_mel_channels,
+                #     hps.data.sampling_rate,
+                #     hps.data.hop_length,
+                #     hps.data.win_length,
+                #     hps.data.mel_fmin,
+                #     hps.data.mel_fmax,
+                # )
+                # image_dict.update(
+                #     {
+                #         f"gen/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
+                #             y_hat_mel[0].cpu().numpy()
+                #         )
+                #     }
+                # )
+                # image_dict.update(
+                #     {
+                #         f"gt/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
+                #             mel[0].cpu().numpy()
+                #         )
+                #     }
+                # )
                 audio_dict.update(
                     {
                         f"gen/audio_{batch_idx}_{use_sdp}": y_hat[
                             0, :, : y_hat_lengths[0]
                         ]
-                    }
-                )
-                image_dict.update(
-                    {
-                        f"gt/mel_{batch_idx}": utils.plot_spectrogram_to_numpy(
-                            mel[0].cpu().numpy()
-                        )
                     }
                 )
                 audio_dict.update({f"gt/audio_{batch_idx}": y[0, :, : y_lengths[0]]})

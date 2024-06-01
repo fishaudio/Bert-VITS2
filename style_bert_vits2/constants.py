@@ -4,7 +4,7 @@ from style_bert_vits2.utils.strenum import StrEnum
 
 
 # Style-Bert-VITS2 のバージョン
-VERSION = "2.4.1"
+VERSION = "2.5.0"
 
 # Style-Bert-VITS2 のベースディレクトリ
 BASE_DIR = Path(__file__).parent.parent
@@ -32,7 +32,7 @@ DEFAULT_USER_DICT_DIR = BASE_DIR / "dict_data"
 
 # デフォルトの推論パラメータ
 DEFAULT_STYLE = "Neutral"
-DEFAULT_STYLE_WEIGHT = 5.0
+DEFAULT_STYLE_WEIGHT = 1.0
 DEFAULT_SDP_RATIO = 0.2
 DEFAULT_NOISE = 0.6
 DEFAULT_NOISEW = 0.8

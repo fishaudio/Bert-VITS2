@@ -89,6 +89,10 @@ if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 @REM Style-Bert-VITS2フォルダに移動
 pushd Style-Bert-VITS2
 
+@REM 後で消す！！！！！！！！！！
+@REM git checkout dev
+@REM 後で消す！！！！！！！！！！
+
 echo --------------------------------------------------
 echo Activating the virtual environment...
 echo --------------------------------------------------
@@ -97,10 +101,24 @@ call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
+echo Installing package manager uv...
+echo --------------------------------------------------
+echo Executing: pip install uv
+pip install uv
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
+echo Installing pip for compatibility...
+echo --------------------------------------------------
+echo Executing: uv pip install pip
+uv pip install pip
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
 echo Installing dependencies...
 echo --------------------------------------------------
-echo Executing: pip install -r requirements.txt
-pip install -r requirements.txt
+echo Executing: uv pip install -r requirements-infer.txt
+uv pip install -r requirements-infer.txt
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo ----------------------------------------

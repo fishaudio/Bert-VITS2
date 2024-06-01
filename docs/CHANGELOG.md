@@ -1,5 +1,43 @@
 # Changelog
 
+## v2.5.0 (2024-06-02)
+
+このバージョンから[利用規約](/docs/TERMS_OF_USE.md)が追加されました。ご利用の際は必ずお読みください。
+
+### 新機能等
+
+- デフォルトモデルに [あみたろの声素材工房](https://amitaro.net/) のあみたろ様が公開しているコーパスとライブ配信音声を利用して学習した**小春音アミ**と**あみたろ**モデルを追加（あみたろ様には事前に連絡して許諾を得ています）
+    - アプデの場合は新たに`App.bat`や`Editor.bat`を起動した際に自動でダウンロードされます
+- 学習時に音声データをスタイルごとにフォルダ分けしておくことで、そのフォルダごとのスタイルを学習時に自動的に作成するように
+    - `inputs`からスライスして使う場合は`inputs`直下に作りたいスタイルだけサブフォルダを作りそこに音声ファイルを配置
+    - `Data/モデル名/raw`から使う場合も`raw`直下に同様に配置
+    - サブフォルダの個数が0または1の場合は、今まで通りのNeutralスタイルのみが作成されます
+- batファイルでのインストールの大幅な高速化（Pythonのライブラリインストールに[uv](https://github.com/astral-sh/uv)を使用）
+- [よくある質問](/docs/FAQ.md)を追加
+- 英語の音声合成の速度向上（[gordon0414](https://github.com/gordon0414)さんによる[PR](https://github.com/litagin02/Style-Bert-VITS2/pull/124)です、ありがとうございます！）
+- エディターの各種機能改善（多くが[kamexy](https://github.com/kamexy)様による[エディターリポジトリ](https://github.com/litagin02/Style-Bert-VITS2-Editor)へのプルリク群です、ありがとうございます！）
+    - 選択した行の下に新規の行を作成できるように
+    - Mac使用時に日本語変換のエンターで音声合成が走るバグの修正
+    - ペースト時に改行を含まない場合は通常のペーストの振る舞いになるように修正
+
+
+### その他の改善
+
+- 上のスタイル自動作成機能を既存モデルでも使えるような機能追加。具体的には、スタイル作成タブにて、フォルダ分けされた音声ファイルのディレクトリを任意に指定し、そのフォルダ分けを使って既存のモデルのスタイルの作成が可能に
+- 音声書き起こしに[kotoba-whisper](https://huggingface.co/kotoba-tech/kotoba-whisper-v1.1)を追加
+- 音声書き起こし時にHugging FaceのWhisperモデルを使う際に、書き起こしを順次保存するように改善
+- （**ライブラリとしてのみ**）依存関係の軽量化、音声合成時に読み上げテキストの読みを表す音素列を指定する機能を追加 + 様々な改善 ([tsukumijimaさん](https://github.com/tsukumijima)による[プルリク](https://github.com/litagin02/Style-Bert-VITS2/pull/118)です、ありがとうございます！)
+
+### 内部変更
+
+- これまでpath管理に`configs/paths.yml`を使っていたが、`configs/default_paths.yml`にリネームし、`configs/paths.yml`はgitの管理対象外に変更
+
+### バグ修正
+
+- Gradioのアップデートにより、モデル選択時やスタイルのDBSCAN作成時等に`TypeError: Type is not JSON serializable: WindowsPath`のようなエラーが出る問題を修正
+- TensorboardをWebUIから立ち上げた際にエラーが出る問題の修正 ([#129](https://github.com/litagin02/Style-Bert-VITS2/issues/129))
+
+
 ## v2.4.1 (2024-03-16)
 
 **batファイルでのインストール・アップデート方法の変更**（それ以外の変更はありません）

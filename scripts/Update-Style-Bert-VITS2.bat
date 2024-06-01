@@ -45,10 +45,17 @@ call ".\venv\Scripts\activate.bat"
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo --------------------------------------------------
+echo Installing uv...
+echo --------------------------------------------------
+echo Executing: pip install -U uv
+pip install -U uv
+if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
+
+echo --------------------------------------------------
 echo Updating dependencies...
 echo --------------------------------------------------
-echo Executing: pip install -U -r requirements.txt
-pip install -U -r requirements.txt
+echo Executing: uv pip install -U -r requirements.txt
+uv pip install -U -r requirements.txt
 if !errorlevel! neq 0 ( pause & popd & exit /b !errorlevel! )
 
 echo ----------------------------------------

@@ -5,21 +5,18 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-from config import config
+from config import get_config
 from style_bert_vits2.constants import Languages
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models import commons
 from style_bert_vits2.models.hyper_parameters import HyperParameters
-from style_bert_vits2.nlp import (
-    bert_models,
-    cleaned_text_to_sequence,
-    extract_bert_feature,
-)
+from style_bert_vits2.nlp import cleaned_text_to_sequence, extract_bert_feature
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
+config = get_config()
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
 pyopenjtalk_worker.initialize_worker()
 
@@ -61,7 +58,7 @@ def process_line(x: tuple[str, bool]):
         bert = torch.load(bert_path)
         assert bert.shape[-1] == len(phone)
     except Exception:
-        bert = extract_bert_feature(text, word2ph, language_str, device)
+        bert = extract_bert_feature(text, word2ph, Languages(language_str), device)
         assert bert.shape[-1] == len(phone)
         torch.save(bert, bert_path)
 
@@ -77,10 +74,10 @@ if __name__ == "__main__":
     config_path = args.config
     hps = HyperParameters.load_from_json(config_path)
     lines: list[str] = []
-    with open(hps.data.training_files, "r", encoding="utf-8") as f:
+    with open(hps.data.training_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
 
-    with open(hps.data.validation_files, "r", encoding="utf-8") as f:
+    with open(hps.data.validation_files, encoding="utf-8") as f:
         lines.extend(f.readlines())
     add_blank = [hps.data.add_blank] * len(lines)
 

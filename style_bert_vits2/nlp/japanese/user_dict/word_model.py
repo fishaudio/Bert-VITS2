@@ -114,7 +114,7 @@ class PartOfSpeechDetail(BaseModel):
     part_of_speech_detail_2: str = Field(title="品詞細分類2")
     part_of_speech_detail_3: str = Field(title="品詞細分類3")
     # context_idは辞書の左・右文脈IDのこと
-    # https://github.com/VOICEVOX/open_jtalk/blob/427cfd761b78efb6094bea3c5bb8c968f0d711ab/src/mecab-naist-jdic/_left-id.def # noqa
+    # https://github.com/VOICEVOX/open_jtalk/blob/427cfd761b78efb6094bea3c5bb8c968f0d711ab/src/mecab-naist-jdic/_left-id.def
     context_id: int = Field(title="文脈ID")
     cost_candidates: List[int] = Field(title="コストのパーセンタイル")
     accent_associative_rules: List[str] = Field(title="アクセント結合規則の一覧")

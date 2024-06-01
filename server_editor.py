@@ -22,7 +22,6 @@ import numpy as np
 import requests
 import torch
 import uvicorn
-import yaml
 from fastapi import APIRouter, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -30,6 +29,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from scipy.io import wavfile
 
+from config import get_path_config
+from initialize import download_default_models
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_NOISE,
@@ -127,7 +128,7 @@ def download_and_extract(url, extract_to: Path):
 
 def new_release_available(latest_release):
     if LAST_DOWNLOAD_FILE.exists():
-        with open(LAST_DOWNLOAD_FILE, "r") as file:
+        with open(LAST_DOWNLOAD_FILE) as file:
             last_download_str = file.read().strip()
             # 'Z'を除去して日時オブジェクトに変換
             last_download_str = last_download_str.replace("Z", "+00:00")
@@ -174,34 +175,31 @@ origins = [
     "http://127.0.0.1:8000",
 ]
 
-# Get path settings
-with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
-    path_config: dict[str, str] = yaml.safe_load(f.read())
-    # dataset_root = path_config["dataset_root"]
-    assets_root = path_config["assets_root"]
-
+path_config = get_path_config()
 parser = argparse.ArgumentParser()
-parser.add_argument("--model_dir", type=str, default="model_assets/")
+parser.add_argument("--model_dir", type=str, default=path_config.assets_root)
 parser.add_argument("--device", type=str, default="cuda")
 parser.add_argument("--port", type=int, default=8000)
 parser.add_argument("--inbrowser", action="store_true")
 parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
-parser.add_argument(
-    "--dir", "-d", type=str, help="Model directory", default=assets_root
-)
-
+parser.add_argument("--skip_default_models", action="store_true")
+parser.add_argument("--skip_static_files", action="store_true")
 args = parser.parse_args()
 device = args.device
 if device == "cuda" and not torch.cuda.is_available():
     device = "cpu"
 model_dir = Path(args.model_dir)
 port = int(args.port)
+if not args.skip_default_models:
+    download_default_models()
+skip_static_files = bool(args.skip_static_files)
 
 model_holder = TTSModelHolder(model_dir, device)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)
+
 
 app = FastAPI()
 
@@ -444,7 +442,8 @@ def delete_user_dict_word(uuid: str):
 app.include_router(router, prefix="/api")
 
 if __name__ == "__main__":
-    download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
+    if not skip_static_files:
+        download_static_files("litagin02", "Style-Bert-VITS2-Editor", "out.zip")
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     if args.inbrowser:
         webbrowser.open(f"http://localhost:{port}")

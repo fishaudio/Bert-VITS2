@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from scipy.io import wavfile
 
-from config import config
+from config import get_config
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
     DEFAULT_LENGTH,
@@ -40,6 +40,7 @@ from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
 
 
+config = get_config()
 ln = config.server_config.language
 
 
@@ -113,6 +114,12 @@ if __name__ == "__main__":
     load_models(model_holder)
 
     limit = config.server_config.limit
+    if limit < 1:
+        limit = None
+    else:
+        logger.info(
+            f"The maximum length of the text is {limit}. If you want to change it, modify config.yml. Set limit to -1 to remove the limit."
+        )
     app = FastAPI()
     allow_origins = config.server_config.origins
     if allow_origins:
@@ -305,6 +312,9 @@ if __name__ == "__main__":
 
     logger.info(f"server listen: http://127.0.0.1:{config.server_config.port}")
     logger.info(f"API docs: http://127.0.0.1:{config.server_config.port}/docs")
+    logger.info(
+        f"Input text length limit: {limit}. You can change it in server.limit in config.yml"
+    )
     uvicorn.run(
         app, port=config.server_config.port, host="0.0.0.0", log_level="warning"
     )

@@ -1,5 +1,7 @@
 # Style-Bert-VITS2
 
+**利用の際は必ず[利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
+
 Bert-VITS2 with more controllable voice styles.
 
 https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-4202-a1dd-56ded3c562a0
@@ -7,13 +9,13 @@ https://github.com/litagin02/Style-Bert-VITS2/assets/139731664/e853f9a2-db4a-420
 You can install via `pip install style-bert-vits2` (inference only), see [library.ipynb](/library.ipynb) for example usage.
 
 - **解説チュートリアル動画** [YouTube](https://youtu.be/aTUSzgDl1iY)　[ニコニコ動画](https://www.nicovideo.jp/watch/sm43391524)
-- [English README](docs/README_en.md)
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
+- [FAQ](/docs/FAQ.md)
 - [🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-Editor-Demo)
 - [Zennの解説記事](https://zenn.dev/litagin/articles/034819a5256ff4)
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
-
+  - 2024-06-01: Ver 2.5.0 (**[利用規約](/docs/TERMS_OF_USE.md)の追加**、フォルダ分けからのスタイル生成、小春音アミ・あみたろモデルの追加、インストールの高速化等)
   - 2024-03-16: ver 2.4.1 (**batファイルによるインストール方法の変更**)
   - 2024-03-15: ver 2.4.0 (大規模リファクタリングや種々の改良、ライブラリ化)
   - 2024-02-26: ver 2.3 (辞書機能とエディター機能)
@@ -32,13 +34,15 @@ This repository is based on [Bert-VITS2](https://github.com/fishaudio/Bert-VITS2
 - 入力されたテキストの内容をもとに感情豊かな音声を生成する[Bert-VITS2](https://github.com/fishaudio/Bert-VITS2)のv2.1とJapanese-Extraを元に、感情や発話スタイルを強弱込みで自由に制御できるようにしたものです。
 - GitやPythonがない人でも（Windowsユーザーなら）簡単にインストールでき、学習もできます (多くを[EasyBertVits2](https://github.com/Zuntan03/EasyBertVits2/)からお借りしました)。またGoogle Colabでの学習もサポートしています: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
 - 音声合成のみに使う場合は、グラボがなくてもCPUで動作します。
+- 音声合成のみに使う場合、Pythonライブラリとして`pip install style-bert-vits2`でインストールできます。例は[library.ipynb](/library.ipynb)を参照してください。
 - 他との連携に使えるAPIサーバーも同梱しています ([@darai0512](https://github.com/darai0512) 様によるPRです、ありがとうございます)。
 - 元々「楽しそうな文章は楽しそうに、悲しそうな文章は悲しそうに」読むのがBert-VITS2の強みですので、スタイル指定がデフォルトでも感情豊かな音声を生成することができます。
 
 
 ## 使い方
 
-CLIでの使い方は[こちら](/docs/CLI.md)を参照してください。
+- CLIでの使い方は[こちら](/docs/CLI.md)を参照してください。
+- [よくある質問](/docs/FAQ.md)も参照してください。
 
 ### 動作環境
 
@@ -52,7 +56,7 @@ Pythonライブラリとしてのpipでのインストールや使用例は[libr
 
 Windowsを前提としています。
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.4.1/sbv2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.5.0/sbv2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。CPU版では学習はできませんが、音声合成とマージは可能です。
 2. 待つと自動で必要な環境がインストールされます。
@@ -64,13 +68,17 @@ Windowsを前提としています。
 
 #### GitやPython使える人
 
+Pythonの仮想環境・パッケージ管理ツールである[uv](https://github.com/astral-sh/uv)がpipより高速なので、それを使ってインストールすることをお勧めします。
+（使いたくない場合は通常のpipでも大丈夫です。）
+
 ```bash
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
-python -m venv venv
+uv venv venv
+uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+uv pip install -r requirements.txt
 venv\Scripts\activate
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
 最後を忘れずに。
@@ -116,20 +124,16 @@ model_assets
 - `App.bat`をダブルクリックか`python app.py`したところの「データセット作成」タブから、音声ファイルを適切な長さにスライスし、その後に文字の書き起こしを自動で行えます。
 - 指示に従った後、下の「学習」タブでそのまま学習を行うことができます。
 
-注意: データセットの手動修正やノイズ除去等、細かい修正を行いたい場合は[Aivis](https://github.com/tsukumijima/Aivis)や、そのデータセット部分のWindows対応版 [Aivis Dataset](https://github.com/litagin02/Aivis-Dataset) を使うといいかもしれません。ですがファイル数が多い場合などは、このツールで簡易的に切り出してデータセットを作るだけでも十分という気もしています。
-
-データセットがどのようなものがいいかは各自試行錯誤中してください。
-
 #### 学習WebUI
 
 - `App.bat`をダブルクリックか`python app.py`して開くWebUIの「学習」タブから指示に従ってください。
 
 ### スタイルの生成
 
-- デフォルトスタイル「Neutral」以外のスタイルを使いたい人向けです。
+- デフォルトでは、デフォルトスタイル「Neutral」の他、学習フォルダのフォルダ分けに応じたスタイルが生成されます。
+- それ以外の方法で手動でスタイルを作成したい人向けです。
 - `App.bat`をダブルクリックか`python app.py`して開くWebUIの「スタイル作成」タブから、音声ファイルを使ってスタイルを生成できます。
 - 学習とは独立しているので、学習中でもできるし、学習が終わっても何度もやりなおせます（前処理は終わらせている必要があります）。
-- スタイルについての仕様の詳細は[clustering.ipynb](clustering.ipynb)を参照してください。
 
 ### API Server
 

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "style-bert-vits2"
 dynamic = ["version"]
-description = 'Style-Bert-VITS2: Bert-VITS2 with more controllable voice styles.'
+description = "Style-Bert-VITS2: Bert-VITS2 with more controllable voice styles."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "AGPL-3.0"
@@ -22,21 +22,21 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    'cmudict',
-    'cn2an',
-    'g2p_en',
-    'jieba',
-    'loguru',
-    'num2words',
-    'numba',
-    'numpy',
-    'pydantic>=2.0',
-    'pyopenjtalk-dict',
-    'pypinyin',
-    'pyworld-prebuilt',
-    'safetensors',
-    'torch>=2.1',
-    'transformers',
+    "cmudict",
+    "cn2an",
+    "g2p_en",
+    "jieba",
+    "loguru",
+    "num2words",
+    "numba",
+    "numpy",
+    "pydantic>=2.0",
+    "pyopenjtalk-dict",
+    "pypinyin",
+    "pyworld-prebuilt",
+    "safetensors",
+    "torch>=2.1",
+    "transformers",
 ]
 
 [project.urls]
@@ -59,42 +59,26 @@ only-include = [
     "pyproject.toml",
     "README.md",
 ]
-exclude = [
-    ".git",
-    ".gitignore",
-    ".gitattributes",
-]
+exclude = [".git", ".gitignore", ".gitattributes"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["style_bert_vits2"]
 
 [tool.hatch.envs.test]
-dependencies = [
-    "coverage[toml]>=6.5",
-    "pytest",
-]
+dependencies = ["coverage[toml]>=6.5", "pytest"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
 test = "pytest {args:tests}"
 # Usage: `hatch run test:coverage`
 test-cov = "coverage run -m pytest {args:tests}"
 # Usage: `hatch run test:cov-report`
-cov-report = [
-    "- coverage combine",
-    "coverage report",
-]
+cov-report = ["- coverage combine", "coverage report"]
 # Usage: `hatch run test:cov`
-cov = [
-    "test-cov",
-    "cov-report",
-]
+cov = ["test-cov", "cov-report"]
 
 [tool.hatch.envs.style]
 detached = true
-dependencies = [
-    "black",
-    "isort",
-]
+dependencies = ["black[jupyter]", "isort"]
 [tool.hatch.envs.style.scripts]
 check = [
     "black --check --diff .",
@@ -113,17 +97,17 @@ python = ["3.9", "3.10", "3.11"]
 source_pkgs = ["style_bert_vits2", "tests"]
 branch = true
 parallel = true
-omit = [
-    "style_bert_vits2/constants.py",
-]
+omit = ["style_bert_vits2/constants.py"]
 
 [tool.coverage.paths]
 style_bert_vits2 = ["style_bert_vits2", "*/style-bert-vits2/style_bert_vits2"]
 tests = ["tests", "*/style-bert-vits2/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-    "no cov",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+
+[tool.ruff]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2

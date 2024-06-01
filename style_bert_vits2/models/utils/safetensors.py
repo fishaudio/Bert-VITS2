@@ -77,7 +77,7 @@ def save_safetensors(
     keys = []
     for k in state_dict:
         if "enc_q" in k and for_infer:
-            continue  # noqa: E701
+            continue
         keys.append(k)
 
     new_dict = (

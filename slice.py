@@ -7,15 +7,15 @@ from typing import Any, Optional
 
 import soundfile as sf
 import torch
-import yaml
 from tqdm import tqdm
 
+from config import get_path_config
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 
 
 def is_audio_file(file: Path) -> bool:
-    supported_extensions = [".wav", ".flac", ".mp3", ".ogg", ".opus"]
+    supported_extensions = [".wav", ".flac", ".mp3", ".ogg", ".opus", ".m4a"]
     return file.suffix.lower() in supported_extensions
 
 
@@ -150,13 +150,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    with open(Path("configs/paths.yml"), "r", encoding="utf-8") as f:
-        path_config: dict[str, str] = yaml.safe_load(f.read())
-        dataset_root = path_config["dataset_root"]
+    path_config = get_path_config()
+    dataset_root = path_config.dataset_root
 
     model_name = str(args.model_name)
     input_dir = Path(args.input_dir)
-    output_dir = Path(dataset_root) / model_name / "raw"
+    output_dir = dataset_root / model_name / "raw"
     min_sec: float = args.min_sec
     max_sec: float = args.max_sec
     min_silence_dur_ms: int = args.min_silence_dur_ms
@@ -198,11 +197,12 @@ if __name__ == "__main__":
                 q.task_done()
                 break
             try:
+                rel_path = file.relative_to(input_dir)
                 time_sec, count = split_wav(
                     vad_model=vad_model,
                     utils=utils,
                     audio_file=file,
-                    target_dir=output_dir,
+                    target_dir=output_dir / rel_path.parent,
                     min_sec=min_sec,
                     max_sec=max_sec,
                     min_silence_dur_ms=min_silence_dur_ms,
