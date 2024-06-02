@@ -27,6 +27,7 @@
 - 上のスタイル自動作成機能を既存モデルでも使えるような機能追加。具体的には、スタイル作成タブにて、フォルダ分けされた音声ファイルのディレクトリを任意に指定し、そのフォルダ分けを使って既存のモデルのスタイルの作成が可能に
 - 音声書き起こしに[kotoba-whisper](https://huggingface.co/kotoba-tech/kotoba-whisper-v1.1)を追加
 - 音声書き起こし時にHugging FaceのWhisperモデルを使う際に、書き起こしを順次保存するように改善
+- 音声書き起こしのデフォルトをfaster-whiperからHugging FaceのWhisperモデルへ変更
 - （**ライブラリとしてのみ**）依存関係の軽量化、音声合成時に読み上げテキストの読みを表す音素列を指定する機能を追加 + 様々な改善 ([tsukumijimaさん](https://github.com/tsukumijima)による[プルリク](https://github.com/litagin02/Style-Bert-VITS2/pull/118)です、ありがとうございます！)
 
 ### 内部変更
