@@ -10,7 +10,7 @@ You can install via `pip install style-bert-vits2` (inference only), see [librar
 
 - **解説チュートリアル動画** [YouTube](https://youtu.be/aTUSzgDl1iY)　[ニコニコ動画](https://www.nicovideo.jp/watch/sm43391524)
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/litagin02/Style-Bert-VITS2/blob/master/colab.ipynb)
-- [FAQ](/docs/FAQ.md)
+- [**よくある質問** (FAQ)](/docs/FAQ.md)
 - [🤗 オンラインデモはこちらから](https://huggingface.co/spaces/litagin/Style-Bert-VITS2-Editor-Demo)
 - [Zennの解説記事](https://zenn.dev/litagin/articles/034819a5256ff4)
 
