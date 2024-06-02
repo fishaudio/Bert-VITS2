@@ -28,7 +28,7 @@ def merge_style(
     model_name_b: str,
     weight: float,
     output_name: str,
-    style_triple_list: list[tuple[str, str, str]],
+    style_triple_list: list[tuple[str, ...]],
 ) -> tuple[Path, list[str]]:
     """
     style_triple_list: list[(model_aでのスタイル名, model_bでのスタイル名, 出力するスタイル名)]
@@ -88,6 +88,85 @@ def merge_style(
     else:
         info = {}
     info["style_triple_list"] = style_triple_list
+    with open(info_path, "w", encoding="utf-8") as f:
+        json.dump(info, f, indent=2, ensure_ascii=False)
+
+    return output_style_path, list(new_style2id.keys())
+
+
+def merge_style_add_diff(
+    model_name_a: str,
+    model_name_b: str,
+    model_name_c: str,
+    weight: float,
+    output_name: str,
+    style_tuple_list: list[tuple[str, ...]],
+) -> tuple[Path, list[str]]:
+    """
+    new = A + weight * (B - C)
+    """
+    if any(triple[3] == DEFAULT_STYLE for triple in style_tuple_list):
+        # 存在する場合、リストをソート
+        sorted_list = sorted(style_tuple_list, key=lambda x: x[3] != DEFAULT_STYLE)
+    else:
+        # 存在しない場合、エラーを発生
+        raise ValueError(f"No element with {DEFAULT_STYLE} output style name found.")
+
+    style_vectors_a = np.load(
+        assets_root / model_name_a / "style_vectors.npy"
+    )  # (style_num_a, 256)
+    style_vectors_b = np.load(
+        assets_root / model_name_b / "style_vectors.npy"
+    )  # (style_num_b, 256)
+    style_vectors_c = np.load(
+        assets_root / model_name_c / "style_vectors.npy"
+    )  # (style_num_c, 256)
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
+        config_a = json.load(f)
+    with open(assets_root / model_name_b / "config.json", encoding="utf-8") as f:
+        config_b = json.load(f)
+    with open(assets_root / model_name_c / "config.json", encoding="utf-8") as f:
+        config_c = json.load(f)
+    style2id_a = config_a["data"]["style2id"]
+    style2id_b = config_b["data"]["style2id"]
+    style2id_c = config_c["data"]["style2id"]
+    new_style_vecs = []
+    new_style2id = {}
+    for style_a, style_b, style_c, style_out in sorted_list:
+        if style_a not in style2id_a:
+            logger.error(f"{style_a} is not in {model_name_a}.")
+            raise ValueError(f"{style_a} は {model_name_a} にありません。")
+        if style_b not in style2id_b:
+            logger.error(f"{style_b} is not in {model_name_b}.")
+            raise ValueError(f"{style_b} は {model_name_b} にありません。")
+        if style_c not in style2id_c:
+            logger.error(f"{style_c} is not in {model_name_c}.")
+            raise ValueError(f"{style_c} は {model_name_c} にありません。")
+        new_style = style_vectors_a[style2id_a[style_a]] + weight * (
+            style_vectors_b[style2id_b[style_b]] - style_vectors_c[style2id_c[style_c]]
+        )
+        new_style_vecs.append(new_style)
+        new_style2id[style_out] = len(new_style_vecs) - 1
+    new_style_vecs = np.array(new_style_vecs)
+
+    output_style_path = assets_root / output_name / "style_vectors.npy"
+    np.save(output_style_path, new_style_vecs)
+
+    new_config = config_a.copy()
+    new_config["data"]["num_styles"] = len(new_style2id)
+    new_config["data"]["style2id"] = new_style2id
+    new_config["model_name"] = output_name
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
+
+    # recipe.jsonを読み込んで、style_tuple_listを追記
+    info_path = assets_root / output_name / "recipe.json"
+    if info_path.exists():
+        with open(info_path, encoding="utf-8") as f:
+            info = json.load(f)
+    else:
+        info = {}
+    info["style_tuple_list"] = style_tuple_list
     with open(info_path, "w", encoding="utf-8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
 
@@ -175,11 +254,77 @@ def merge_models(
     return merged_model_path
 
 
+def merge_models_add_diff(
+    model_path_a: str,
+    model_path_b: str,
+    model_path_c: str,
+    voice_weight: float,
+    voice_pitch_weight: float,
+    speech_style_weight: float,
+    tempo_weight: float,
+    output_name: str,
+):
+    """
+    new = A + weight * (B - C)
+    """
+    model_a_weight: dict[str, torch.Tensor] = {}
+    with safe_open(model_path_a, framework="pt", device="cpu") as f:
+        for k in f.keys():
+            model_a_weight[k] = f.get_tensor(k)
+
+    model_b_weight: dict[str, torch.Tensor] = {}
+    with safe_open(model_path_b, framework="pt", device="cpu") as f:
+        for k in f.keys():
+            model_b_weight[k] = f.get_tensor(k)
+
+    model_c_weight: dict[str, torch.Tensor] = {}
+    with safe_open(model_path_c, framework="pt", device="cpu") as f:
+        for k in f.keys():
+            model_c_weight[k] = f.get_tensor(k)
+
+    merged_model_weight = model_a_weight.copy()
+
+    for key in model_a_weight:
+        if any([key.startswith(prefix) for prefix in voice_keys]):
+            weight = voice_weight
+        elif any([key.startswith(prefix) for prefix in voice_pitch_keys]):
+            weight = voice_pitch_weight
+        elif any([key.startswith(prefix) for prefix in speech_style_keys]):
+            weight = speech_style_weight
+        elif any([key.startswith(prefix) for prefix in tempo_keys]):
+            weight = tempo_weight
+        else:
+            continue
+        merged_model_weight[key] = model_a_weight[key] + weight * (
+            model_b_weight[key] - model_c_weight[key]
+        )
+
+    merged_model_path = assets_root / output_name / f"{output_name}.safetensors"
+    merged_model_path.parent.mkdir(parents=True, exist_ok=True)
+    save_file(merged_model_weight, merged_model_path)
+
+    info = {
+        "model_a": model_path_a,
+        "model_b": model_path_b,
+        "model_c": model_path_c,
+        "voice_weight": voice_weight,
+        "voice_pitch_weight": voice_pitch_weight,
+        "speech_style_weight": speech_style_weight,
+        "tempo_weight": tempo_weight,
+    }
+    with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
+        json.dump(info, f, indent=2, ensure_ascii=False)
+    return merged_model_path
+
+
 def merge_models_gr(
     model_name_a: str,
     model_path_a: str,
     model_name_b: str,
     model_path_b: str,
+    model_name_c: str,
+    model_path_c: str,
+    use_add_diff: bool,
     output_name: str,
     voice_weight: float,
     voice_pitch_weight: float,
@@ -189,48 +334,86 @@ def merge_models_gr(
 ):
     if output_name == "":
         return "Error: 新しいモデル名を入力してください。"
-    merged_model_path = merge_models(
-        model_path_a,
-        model_path_b,
-        voice_weight,
-        voice_pitch_weight,
-        speech_style_weight,
-        tempo_weight,
-        output_name,
-        use_slerp_instead_of_lerp,
-    )
+    if not use_add_diff:
+        merged_model_path = merge_models(
+            model_path_a,
+            model_path_b,
+            voice_weight,
+            voice_pitch_weight,
+            speech_style_weight,
+            tempo_weight,
+            output_name,
+            use_slerp_instead_of_lerp,
+        )
+    else:
+        merged_model_path = merge_models_add_diff(
+            model_path_a,
+            model_path_b,
+            model_path_c,
+            voice_weight,
+            voice_pitch_weight,
+            speech_style_weight,
+            tempo_weight,
+            output_name,
+        )
     return f"Success: モデルを{merged_model_path}に保存しました。"
 
 
 def merge_style_gr(
     model_name_a: str,
     model_name_b: str,
+    model_name_c: str,
+    use_add_diff: bool,
     weight: float,
     output_name: str,
-    style_triple_list_str: str,
+    style_tuple_list_str: str,
 ):
     if output_name == "":
         return "Error: 新しいモデル名を入力してください。", None
-    style_triple_list = []
-    for line in style_triple_list_str.split("\n"):
+    style_tuple_list: list[tuple[str, ...]] = []
+    for line in style_tuple_list_str.split("\n"):
         if not line:
             continue
         style_triple = line.split(",")
-        if len(style_triple) != 3:
-            logger.error(f"Invalid style triple: {line}")
-            return (
-                f"Error: スタイルを3つのカンマ区切りで入力してください:\n{line}",
-                None,
-            )
-        style_a, style_b, style_out = style_triple
-        style_a = style_a.strip()
-        style_b = style_b.strip()
-        style_out = style_out.strip()
-        style_triple_list.append((style_a, style_b, style_out))
+        if not use_add_diff:
+            if len(style_triple) != 3:
+                logger.error(f"Invalid style triple: {line}")
+                return (
+                    f"Error: スタイルを3つのカンマ区切りで入力してください:\n{line}",
+                    None,
+                )
+            style_a, style_b, style_out = style_triple
+            style_a = style_a.strip()
+            style_b = style_b.strip()
+            style_out = style_out.strip()
+            style_tuple_list.append((style_a, style_b, style_out))
+        else:
+            if len(style_triple) != 4:
+                logger.error(f"Invalid style triple: {line}")
+                return (
+                    f"Error: スタイルを4つのカンマ区切りで入力してください:\n{line}",
+                    None,
+                )
+            style_a, style_b, style_c, style_out = style_triple
+            style_a = style_a.strip()
+            style_b = style_b.strip()
+            style_c = style_c.strip()
+            style_out = style_out.strip()
+            style_tuple_list.append((style_a, style_b, style_c, style_out))
     try:
-        new_style_path, new_styles = merge_style(
-            model_name_a, model_name_b, weight, output_name, style_triple_list
-        )
+        if not use_add_diff:
+            new_style_path, new_styles = merge_style(
+                model_name_a, model_name_b, weight, output_name, style_tuple_list
+            )
+        else:
+            new_style_path, new_styles = merge_style_add_diff(
+                model_name_a,
+                model_name_b,
+                model_name_c,
+                weight,
+                output_name,
+                style_tuple_list,
+            )
     except ValueError as e:
         return f"Error: {e}"
     return f"Success: スタイルを{new_style_path}に保存しました。", gr.Dropdown(
@@ -342,6 +525,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(initial_md)
+        use_add_diff = gr.Checkbox(label="差分マージ", value=False)
         with gr.Row():
             with gr.Column(scale=3):
                 model_name_a = gr.Dropdown(
@@ -365,7 +549,23 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     choices=initial_model_files,
                     value=initial_model_files[0],
                 )
+            with gr.Column(scale=3):
+                model_name_c = gr.Dropdown(
+                    label="モデルC",
+                    choices=model_names,
+                    value=model_names[initial_id],
+                    visible=False,
+                )
+                model_path_c = gr.Dropdown(
+                    label="モデルファイル",
+                    choices=initial_model_files,
+                    value=initial_model_files[0],
+                    visible=False,
+                )
             refresh_button = gr.Button("更新", scale=1, visible=True)
+        gr.Markdown(
+            "通常マージの場合、`new = (1 - weight) * A + weight * B`、差分マージの場合、`new = A + weight * (B - C)`"
+        )
         with gr.Column(variant="panel"):
             new_name = gr.Textbox(label="新しいモデル名", placeholder="new_model")
             with gr.Row():
@@ -438,7 +638,11 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
         tts_button = gr.Button("音声合成", variant="primary")
         audio_output = gr.Audio(label="結果")
-
+        use_add_diff.change(
+            lambda x: (gr.Dropdown(visible=x), gr.Dropdown(visible=x)),
+            inputs=[use_add_diff],
+            outputs=[model_name_c, model_path_c],
+        )
         model_name_a.change(
             model_holder.update_model_files_for_gradio,
             inputs=[model_name_a],
@@ -448,6 +652,11 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
             model_holder.update_model_files_for_gradio,
             inputs=[model_name_b],
             outputs=[model_path_b],
+        )
+        model_name_c.change(
+            model_holder.update_model_files_for_gradio,
+            inputs=[model_name_c],
+            outputs=[model_path_c],
         )
 
         refresh_button.click(
@@ -468,6 +677,9 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 model_path_a,
                 model_name_b,
                 model_path_b,
+                model_name_c,
+                model_path_c,
+                use_add_diff,
                 new_name,
                 voice_slider,
                 voice_pitch_slider,
@@ -483,6 +695,8 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
             inputs=[
                 model_name_a,
                 model_name_b,
+                model_name_c,
+                use_add_diff,
                 speech_style_slider,
                 new_name,
                 style_triple_list,
