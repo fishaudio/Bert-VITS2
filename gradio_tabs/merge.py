@@ -432,9 +432,9 @@ def simple_tts(
     return model.infer(text, style=style, style_weight=style_weight)
 
 
-def update_two_model_names_dropdown(model_holder: TTSModelHolder):
+def update_three_model_names_dropdown(model_holder: TTSModelHolder):
     new_names, new_files, _ = model_holder.update_model_names_for_gradio()
-    return new_names, new_files, new_names, new_files
+    return new_names, new_files, new_names, new_files, new_names, new_files
 
 
 def load_styles_gr(model_name_a: str, model_name_b: str):
@@ -660,8 +660,15 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
 
         refresh_button.click(
-            lambda: update_two_model_names_dropdown(model_holder),
-            outputs=[model_name_a, model_path_a, model_name_b, model_path_b],
+            lambda: update_three_model_names_dropdown(model_holder),
+            outputs=[
+                model_name_a,
+                model_path_a,
+                model_name_b,
+                model_path_b,
+                model_name_c,
+                model_path_c,
+            ],
         )
 
         load_style_button.click(
