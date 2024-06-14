@@ -104,25 +104,25 @@ initial_md = """
 """
 
 terms_of_use_md = """
-## 利用規約
+## お願いとデフォルトモデルのライセンス
 
-最新の利用規約は [こちら](https://github.com/litagin02/Style-Bert-VITS2/blob/master/docs/TERMS_OF_USE.md) を参照してください。常に最新のものが適用されます。
+最新のお願い・利用規約は [こちら](https://github.com/litagin02/Style-Bert-VITS2/blob/master/docs/TERMS_OF_USE.md) を参照してください。常に最新のものが適用されます。
 
-Style-Bert-VITS2を用いる際は、以下の利用規約を遵守してください。
+Style-Bert-VITS2を用いる際は、以下のお願いを守っていただけると幸いです。ただしモデルの利用規約以前の箇所はあくまで「お願い」であり、何の強制力はなく、Style-Bert-VITS2の利用規約ではありません。よって[リポジトリのライセンス](https://github.com/litagin02/Style-Bert-VITS2#license)とは矛盾せず、リポジトリの利用にあたっては常にリポジトリのライセンスのみが拘束力を持ちます。
 
-## 禁止事項
+### やってほしくないこと
 
-以下の目的での利用は禁止されています。
+以下の目的での利用はStyle-Bert-VITS2を使ってほしくありません。
 
 - 法律に違反する目的
 - 政治的な目的（本家Bert-VITS2で禁止されています）
 - 他者を傷つける目的
 - なりすまし・ディープフェイク作成目的
 
-## 遵守事項
+### 守ってほしいこと
 
-- Style-Bert-VITS2を利用する際は、使用するモデルの利用規約・ライセンス必ず確認し、存在する場合はそれに従わなければなりません。
-- またソースコードを利用する際は、[リポジトリのライセンス](https://github.com/litagin02/Style-Bert-VITS2#license)に従わなければなりません。
+- Style-Bert-VITS2を利用する際は、使用するモデルの利用規約・ライセンス必ず確認し、存在する場合はそれに従ってほしいです。
+- またソースコードを利用する際は、[リポジトリのライセンス](https://github.com/litagin02/Style-Bert-VITS2#license)に従ってほしいです。
 
 以下はデフォルトで付随しているモデルのライセンスです。
 
