@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Union
 
 import gradio as gr
 import numpy as np
@@ -21,6 +22,14 @@ tempo_keys = ["sdp", "dp"]
 device = "cuda" if torch.cuda.is_available() else "cpu"
 path_config = get_path_config()
 assets_root = path_config.assets_root
+
+
+def load_safetensors(model_path: Union[str, Path]) -> dict[str, torch.Tensor]:
+    result: dict[str, torch.Tensor] = {}
+    with safe_open(model_path, framework="pt", device="cpu") as f:
+        for k in f.keys():
+            result[k] = f.get_tensor(k)
+    return result
 
 
 def merge_style(
@@ -208,17 +217,11 @@ def merge_models(
     output_name: str,
     use_slerp_instead_of_lerp: bool,
 ):
-    """model Aを起点に、model Bの各要素を重み付けしてマージする。
-    safetensors形式を前提とする。"""
-    model_a_weight: dict[str, torch.Tensor] = {}
-    with safe_open(model_path_a, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            model_a_weight[k] = f.get_tensor(k)
-
-    model_b_weight: dict[str, torch.Tensor] = {}
-    with safe_open(model_path_b, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            model_b_weight[k] = f.get_tensor(k)
+    """
+    new = (1 - weight) * A + weight * B
+    """
+    model_a_weight = load_safetensors(model_path_a)
+    model_b_weight = load_safetensors(model_path_b)
 
     merged_model_weight = model_a_weight.copy()
 
@@ -242,15 +245,43 @@ def merge_models(
     save_file(merged_model_weight, merged_model_path)
 
     info = {
+        "method": "usual",
         "model_a": model_path_a,
         "model_b": model_path_b,
         "voice_weight": voice_weight,
         "voice_pitch_weight": voice_pitch_weight,
         "speech_style_weight": speech_style_weight,
         "tempo_weight": tempo_weight,
+        "use_slerp_instead_of_lerp": use_slerp_instead_of_lerp,
     }
     with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
+
+    # Default style merge only using Neutral style
+    model_name_a = Path(model_path_a).parent.name
+    model_name_b = Path(model_path_b).parent.name
+    style_vectors_a = np.load(
+        assets_root / model_name_a / "style_vectors.npy"
+    )  # (style_num_a, 256)
+    style_vectors_b = np.load(
+        assets_root / model_name_b / "style_vectors.npy"
+    )  # (style_num_b, 256)
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
+        new_config = json.load(f)
+
+    new_config["model_name"] = output_name
+    new_config["data"]["num_styles"] = 1
+    new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
+
+    neutral_vector_a = style_vectors_a[0]
+    neutral_vector_b = style_vectors_b[0]
+    weight = speech_style_weight
+    new_neutral_vector = (1 - weight) * neutral_vector_a + weight * neutral_vector_b
+    new_style_vectors = np.array([new_neutral_vector])
+    new_style_path = assets_root / output_name / "style_vectors.npy"
+    np.save(new_style_path, new_style_vectors)
     return merged_model_path
 
 
@@ -267,20 +298,9 @@ def merge_models_add_diff(
     """
     new = A + weight * (B - C)
     """
-    model_a_weight: dict[str, torch.Tensor] = {}
-    with safe_open(model_path_a, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            model_a_weight[k] = f.get_tensor(k)
-
-    model_b_weight: dict[str, torch.Tensor] = {}
-    with safe_open(model_path_b, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            model_b_weight[k] = f.get_tensor(k)
-
-    model_c_weight: dict[str, torch.Tensor] = {}
-    with safe_open(model_path_c, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            model_c_weight[k] = f.get_tensor(k)
+    model_a_weight = load_safetensors(model_path_a)
+    model_b_weight = load_safetensors(model_path_b)
+    model_c_weight = load_safetensors(model_path_c)
 
     merged_model_weight = model_a_weight.copy()
 
@@ -304,6 +324,7 @@ def merge_models_add_diff(
     save_file(merged_model_weight, merged_model_path)
 
     info = {
+        "method": "add_diff",
         "model_a": model_path_a,
         "model_b": model_path_b,
         "model_c": model_path_c,
@@ -314,17 +335,199 @@ def merge_models_add_diff(
     }
     with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
+
+    # Default style merge only using Neutral style
+    model_name_a = Path(model_path_a).parent.name
+    model_name_b = Path(model_path_b).parent.name
+    model_name_c = Path(model_path_c).parent.name
+
+    style_vectors_a = np.load(
+        assets_root / model_name_a / "style_vectors.npy"
+    )  # (style_num_a, 256)
+    style_vectors_b = np.load(
+        assets_root / model_name_b / "style_vectors.npy"
+    )  # (style_num_b, 256)
+    style_vectors_c = np.load(
+        assets_root / model_name_c / "style_vectors.npy"
+    )  # (style_num_c, 256)
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
+        new_config = json.load(f)
+
+    new_config["model_name"] = output_name
+    new_config["data"]["num_styles"] = 1
+    new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
+
+    neutral_vector_a = style_vectors_a[0]
+    neutral_vector_b = style_vectors_b[0]
+    neutral_vector_c = style_vectors_c[0]
+    weight = speech_style_weight
+    new_neutral_vector = neutral_vector_a + weight * (
+        neutral_vector_b - neutral_vector_c
+    )
+    new_style_vectors = np.array([new_neutral_vector])
+    new_style_path = assets_root / output_name / "style_vectors.npy"
+    np.save(new_style_path, new_style_vectors)
+    return merged_model_path
+
+
+def merge_models_weighted_sum(
+    model_path_a: str,
+    model_path_b: str,
+    model_path_c: str,
+    model_a_coeff: float,
+    model_b_coeff: float,
+    model_c_coeff: float,
+    output_name: str,
+):
+    model_a_weight = load_safetensors(model_path_a)
+    model_b_weight = load_safetensors(model_path_b)
+    model_c_weight = load_safetensors(model_path_c)
+
+    merged_model_weight = model_a_weight.copy()
+
+    for key in model_a_weight:
+        merged_model_weight[key] = (
+            model_a_coeff * model_a_weight[key]
+            + model_b_coeff * model_b_weight[key]
+            + model_c_coeff * model_c_weight[key]
+        )
+
+    merged_model_path = assets_root / output_name / f"{output_name}.safetensors"
+    merged_model_path.parent.mkdir(parents=True, exist_ok=True)
+    save_file(merged_model_weight, merged_model_path)
+
+    info = {
+        "method": "weighted_sum",
+        "model_a": model_path_a,
+        "model_b": model_path_b,
+        "model_c": model_path_c,
+        "model_a_coeff": model_a_coeff,
+        "model_b_coeff": model_b_coeff,
+        "model_c_coeff": model_c_coeff,
+    }
+    with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
+        json.dump(info, f, indent=2, ensure_ascii=False)
+
+    # Default style merge only using Neutral style
+    model_name_a = Path(model_path_a).parent.name
+    model_name_b = Path(model_path_b).parent.name
+    model_name_c = Path(model_path_c).parent.name
+
+    style_vectors_a = np.load(
+        assets_root / model_name_a / "style_vectors.npy"
+    )  # (style_num_a, 256)
+    style_vectors_b = np.load(
+        assets_root / model_name_b / "style_vectors.npy"
+    )  # (style_num_b, 256)
+    style_vectors_c = np.load(
+        assets_root / model_name_c / "style_vectors.npy"
+    )  # (style_num_c, 256)
+
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
+        new_config = json.load(f)
+
+    new_config["model_name"] = output_name
+    new_config["data"]["num_styles"] = 1
+    new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
+
+    neutral_vector_a = style_vectors_a[0]
+    neutral_vector_b = style_vectors_b[0]
+    neutral_vector_c = style_vectors_c[0]
+    new_neutral_vector = (
+        model_a_coeff * neutral_vector_a
+        + model_b_coeff * neutral_vector_b
+        + model_c_coeff * neutral_vector_c
+    )
+    new_style_vectors = np.array([new_neutral_vector])
+    new_style_path = assets_root / output_name / "style_vectors.npy"
+    np.save(new_style_path, new_style_vectors)
+    return merged_model_path
+
+
+def merge_models_add_zero(
+    model_path_a: str,
+    model_path_b: str,
+    voice_weight: float,
+    voice_pitch_weight: float,
+    speech_style_weight: float,
+    tempo_weight: float,
+    output_name: str,
+):
+    model_a_weight = load_safetensors(model_path_a)
+    model_b_weight = load_safetensors(model_path_b)
+
+    merged_model_weight = model_a_weight.copy()
+
+    for key in model_a_weight:
+        if any([key.startswith(prefix) for prefix in voice_keys]):
+            weight = voice_weight
+        elif any([key.startswith(prefix) for prefix in voice_pitch_keys]):
+            weight = voice_pitch_weight
+        elif any([key.startswith(prefix) for prefix in speech_style_keys]):
+            weight = speech_style_weight
+        elif any([key.startswith(prefix) for prefix in tempo_keys]):
+            weight = tempo_weight
+        else:
+            continue
+        merged_model_weight[key] = model_a_weight[key] + weight * model_b_weight[key]
+
+    merged_model_path = assets_root / output_name / f"{output_name}.safetensors"
+    merged_model_path.parent.mkdir(parents=True, exist_ok=True)
+    save_file(merged_model_weight, merged_model_path)
+
+    info = {
+        "method": "add_zero",
+        "model_a": model_path_a,
+        "model_b": model_path_b,
+        "voice_weight": voice_weight,
+        "voice_pitch_weight": voice_pitch_weight,
+        "speech_style_weight": speech_style_weight,
+        "tempo_weight": tempo_weight,
+    }
+    with open(assets_root / output_name / "recipe.json", "w", encoding="utf-8") as f:
+        json.dump(info, f, indent=2, ensure_ascii=False)
+
+    # Default style merge only using Neutral style
+    model_name_a = Path(model_path_a).parent.name
+    model_name_b = Path(model_path_b).parent.name
+
+    style_vectors_a = np.load(
+        assets_root / model_name_a / "style_vectors.npy"
+    )  # (style_num_a, 256)
+    style_vectors_b = np.load(
+        assets_root / model_name_b / "style_vectors.npy"
+    )  # (style_num_b, 256)
+    with open(assets_root / model_name_a / "config.json", encoding="utf-8") as f:
+        new_config = json.load(f)
+
+    new_config["model_name"] = output_name
+    new_config["data"]["num_styles"] = 1
+    new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
+    with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
+        json.dump(new_config, f, indent=2, ensure_ascii=False)
+
+    neutral_vector_a = style_vectors_a[0]
+    neutral_vector_b = style_vectors_b[0]
+    weight = speech_style_weight
+    new_neutral_vector = neutral_vector_a + weight * neutral_vector_b
+    new_style_vectors = np.array([new_neutral_vector])
+    new_style_path = assets_root / output_name / "style_vectors.npy"
+    np.save(new_style_path, new_style_vectors)
     return merged_model_path
 
 
 def merge_models_gr(
-    model_name_a: str,
     model_path_a: str,
-    model_name_b: str,
     model_path_b: str,
-    model_name_c: str,
     model_path_c: str,
-    use_add_diff: bool,
+    model_a_coeff: float,
+    model_b_coeff: float,
+    model_c_coeff: float,
+    method: str,
     output_name: str,
     voice_weight: float,
     voice_pitch_weight: float,
@@ -334,7 +537,13 @@ def merge_models_gr(
 ):
     if output_name == "":
         return "Error: 新しいモデル名を入力してください。"
-    if not use_add_diff:
+    assert method in [
+        "usual",
+        "add_diff",
+        "weighted_sum",
+        "add_zero",
+    ], f"Invalid method: {method}"
+    if method == "usual":
         merged_model_path = merge_models(
             model_path_a,
             model_path_b,
@@ -345,11 +554,31 @@ def merge_models_gr(
             output_name,
             use_slerp_instead_of_lerp,
         )
-    else:
+    elif method == "add_diff":
         merged_model_path = merge_models_add_diff(
             model_path_a,
             model_path_b,
             model_path_c,
+            voice_weight,
+            voice_pitch_weight,
+            speech_style_weight,
+            tempo_weight,
+            output_name,
+        )
+    elif method == "weighted_sum":
+        merged_model_path = merge_models_weighted_sum(
+            model_path_a,
+            model_path_b,
+            model_path_c,
+            model_a_coeff,
+            model_b_coeff,
+            model_c_coeff,
+            output_name,
+        )
+    else:  # add_zero
+        merged_model_path = merge_models_add_zero(
+            model_path_a,
+            model_path_b,
             voice_weight,
             voice_pitch_weight,
             speech_style_weight,
@@ -363,7 +592,7 @@ def merge_style_gr(
     model_name_a: str,
     model_name_b: str,
     model_name_c: str,
-    use_add_diff: bool,
+    method: str,
     weight: float,
     output_name: str,
     style_tuple_list_str: str,
@@ -374,38 +603,35 @@ def merge_style_gr(
     for line in style_tuple_list_str.split("\n"):
         if not line:
             continue
-        style_triple = line.split(",")
-        if not use_add_diff:
-            if len(style_triple) != 3:
+        style_tuple = line.split(",")
+        if method == "usual":
+            if len(style_tuple) != 3:
                 logger.error(f"Invalid style triple: {line}")
                 return (
                     f"Error: スタイルを3つのカンマ区切りで入力してください:\n{line}",
                     None,
                 )
-            style_a, style_b, style_out = style_triple
+            style_a, style_b, style_out = style_tuple
             style_a = style_a.strip()
             style_b = style_b.strip()
             style_out = style_out.strip()
             style_tuple_list.append((style_a, style_b, style_out))
+            new_style_path, new_styles = merge_style(
+                model_name_a, model_name_b, weight, output_name, style_tuple_list
+            )
         else:
-            if len(style_triple) != 4:
+            if len(style_tuple) != 4:
                 logger.error(f"Invalid style triple: {line}")
                 return (
                     f"Error: スタイルを4つのカンマ区切りで入力してください:\n{line}",
                     None,
                 )
-            style_a, style_b, style_c, style_out = style_triple
+            style_a, style_b, style_c, style_out = style_tuple
             style_a = style_a.strip()
             style_b = style_b.strip()
             style_c = style_c.strip()
             style_out = style_out.strip()
             style_tuple_list.append((style_a, style_b, style_c, style_out))
-    try:
-        if not use_add_diff:
-            new_style_path, new_styles = merge_style(
-                model_name_a, model_name_b, weight, output_name, style_tuple_list
-            )
-        else:
             new_style_path, new_styles = merge_style_add_diff(
                 model_name_a,
                 model_name_b,
@@ -414,8 +640,6 @@ def merge_style_gr(
                 output_name,
                 style_tuple_list,
             )
-    except ValueError as e:
-        return f"Error: {e}"
     return f"Success: スタイルを{new_style_path}に保存しました。", gr.Dropdown(
         choices=new_styles, value=new_styles[0]
     )
@@ -501,6 +725,95 @@ Happy, Surprise, HappySurprise
 - 構造上の相性の関係で、スタイルベクトルを混ぜる重みは、上の「話し方」と同じ比率で混ぜられます。例えば「話し方」が0のときはモデルAのみしか使われません。
 """
 
+usual_md = """
+`weight` を下の各スライダーで定める数値とすると、各要素ごとに、
+```
+new_model = (1 - weight) * A + weight * B
+```
+としてマージされます。
+"""
+
+add_diff_md = """
+`weight` を下の各スライダーで定める数値とすると、各要素ごとに、
+```
+new_model = A + weight * (B - C)
+```
+としてマージされます。
+"""
+
+weighted_sum_md = """
+モデルの係数をそれぞれ `a`, `b`, `c` とすると、 **全要素に対して**、
+```
+new_model = a * A + b * B + c * C
+```
+としてマージされます。
+
+TIPS:
+
+- A, B, C が全て通常モデルの場合は、`a + b + c = 1`となるようにするのがよいと思います。
+- `a + b + c = 0` とすると（たとえば `A - B`）、話者性を持たないゼロモデルを作ることができ、「ゼロモデルとの和」で結果を使うことが出来ます（差分マージなど）
+"""
+
+add_zero_md = """
+「ゼロモデル」を、いくつかのモデルの加重和であってその係数の和が0であるようなものとします（例えば `C - D` など）。
+
+そうして作ったゼロモデルBと通常モデルAに対して、`weight` を下の各スライダーで定める数値とすると、各要素ごとに、
+```
+new_model = A + weight * B
+```
+としてマージされます。
+"""
+
+
+def method_change(x: str):
+    assert x in [
+        "usual",
+        "add_diff",
+        "weighted_sum",
+        "add_zero",
+    ], f"Invalid method: {x}"
+    # model_desc, c_col, model_a_coeff, model_b_coeff, model_c_coeff, weight_row, use_slerp_instead_of_lerp
+    if x == "usual":
+        return (
+            gr.Markdown(usual_md),
+            gr.Column(visible=False),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Row(visible=True),
+            gr.Checkbox(visible=True),
+        )
+    elif x == "add_diff":
+        return (
+            gr.Markdown(add_diff_md),
+            gr.Column(visible=True),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Row(visible=True),
+            gr.Checkbox(visible=False),
+        )
+    elif x == "add_zero":
+        return (
+            gr.Markdown(add_zero_md),
+            gr.Column(visible=False),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Number(visible=False),
+            gr.Row(visible=True),
+            gr.Checkbox(visible=False),
+        )
+    else:  # weighted_sum
+        return (
+            gr.Markdown(weighted_sum_md),
+            gr.Column(visible=True),
+            gr.Number(visible=True),
+            gr.Number(visible=True),
+            gr.Number(visible=True),
+            gr.Row(visible=False),
+            gr.Checkbox(visible=False),
+        )
+
 
 def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
     model_names = model_holder.model_names
@@ -525,7 +838,16 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(initial_md)
-        use_add_diff = gr.Checkbox(label="差分マージ", value=False)
+        method = gr.Radio(
+            label="マージ方法",
+            choices=[
+                ("通常マージ", "usual"),
+                ("差分マージ", "add_diff"),
+                ("加重和", "weighted_sum"),
+                ("ゼロモデルマージ", "add_zero"),
+            ],
+            value="usual",
+        )
         with gr.Row():
             with gr.Column(scale=3):
                 model_name_a = gr.Dropdown(
@@ -538,6 +860,12 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     choices=initial_model_files,
                     value=initial_model_files[0],
                 )
+                model_a_coeff = gr.Number(
+                    label="モデルAの係数",
+                    value=1.0,
+                    step=0.1,
+                    visible=False,
+                )
             with gr.Column(scale=3):
                 model_name_b = gr.Dropdown(
                     label="モデルB",
@@ -549,26 +877,34 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                     choices=initial_model_files,
                     value=initial_model_files[0],
                 )
-            with gr.Column(scale=3):
+                model_b_coeff = gr.Number(
+                    label="モデルBの係数",
+                    value=-1.0,
+                    step=0.1,
+                    visible=False,
+                )
+            with gr.Column(scale=3, visible=False) as c_col:
                 model_name_c = gr.Dropdown(
                     label="モデルC",
                     choices=model_names,
                     value=model_names[initial_id],
-                    visible=False,
                 )
                 model_path_c = gr.Dropdown(
                     label="モデルファイル",
                     choices=initial_model_files,
                     value=initial_model_files[0],
+                )
+                model_c_coeff = gr.Number(
+                    label="モデルCの係数",
+                    value=0.0,
+                    step=0.1,
                     visible=False,
                 )
             refresh_button = gr.Button("更新", scale=1, visible=True)
-        gr.Markdown(
-            "通常マージの場合、`new = (1 - weight) * A + weight * B`、差分マージの場合、`new = A + weight * (B - C)`"
-        )
+        method_desc = gr.Markdown(usual_md)
         with gr.Column(variant="panel"):
             new_name = gr.Textbox(label="新しいモデル名", placeholder="new_model")
-            with gr.Row():
+            with gr.Row() as weight_row:
                 voice_slider = gr.Slider(
                     label="声質",
                     value=0,
@@ -600,6 +936,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 use_slerp_instead_of_lerp = gr.Checkbox(
                     label="線形補完のかわりに球面線形補完を使う",
                     value=False,
+                    visible=True,
                 )
             with gr.Column(variant="panel"):
                 gr.Markdown("## モデルファイル（safetensors）のマージ")
@@ -626,8 +963,8 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
         style = gr.Dropdown(
             label="スタイル",
-            choices=["スタイルをマージしてください"],
-            value="スタイルをマージしてください",
+            choices=[DEFAULT_STYLE],
+            value=DEFAULT_STYLE,
         )
         emotion_weight = gr.Slider(
             minimum=0,
@@ -638,10 +975,18 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
         tts_button = gr.Button("音声合成", variant="primary")
         audio_output = gr.Audio(label="結果")
-        use_add_diff.change(
-            lambda x: (gr.Dropdown(visible=x), gr.Dropdown(visible=x)),
-            inputs=[use_add_diff],
-            outputs=[model_name_c, model_path_c],
+        method.change(
+            method_change,
+            inputs=[method],
+            outputs=[
+                method_desc,
+                c_col,
+                model_a_coeff,
+                model_b_coeff,
+                model_c_coeff,
+                weight_row,
+                use_slerp_instead_of_lerp,
+            ],
         )
         model_name_a.change(
             model_holder.update_model_files_for_gradio,
@@ -680,13 +1025,13 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
         model_merge_button.click(
             merge_models_gr,
             inputs=[
-                model_name_a,
                 model_path_a,
-                model_name_b,
                 model_path_b,
-                model_name_c,
                 model_path_c,
-                use_add_diff,
+                model_a_coeff,
+                model_b_coeff,
+                model_c_coeff,
+                method,
                 new_name,
                 voice_slider,
                 voice_pitch_slider,
@@ -703,7 +1048,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 model_name_a,
                 model_name_b,
                 model_name_c,
-                use_add_diff,
+                method,
                 speech_style_slider,
                 new_name,
                 style_triple_list,
