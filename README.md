@@ -1,6 +1,6 @@
 # Style-Bert-VITS2
 
-**利用の際は必ず[利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
+**利用の際は必ず[お願いとデフォルトモデルの利用規約](/docs/TERMS_OF_USE.md)をお読みください。**
 
 Bert-VITS2 with more controllable voice styles.
 
