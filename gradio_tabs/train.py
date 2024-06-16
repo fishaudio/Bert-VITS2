@@ -14,6 +14,7 @@ import gradio as gr
 import yaml
 
 from config import get_path_config
+from style_bert_vits2.constants import GRADIO_THEME
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
 from style_bert_vits2.utils.subprocess import run_script_with_log, second_elem_of
@@ -484,7 +485,7 @@ english_teacher.wav|Mary|EN|How are you? I'm fine, thank you, and you?
 
 
 def create_train_app():
-    with gr.Blocks().queue() as app:
+    with gr.Blocks(theme=GRADIO_THEME).queue() as app:
         gr.Markdown(change_log_md)
         with gr.Accordion("使い方", open=False):
             gr.Markdown(how_to_md)
@@ -840,3 +841,8 @@ def create_train_app():
         )
 
     return app
+
+
+if __name__ == "__main__":
+    app = create_train_app()
+    app.launch(inbrowser=True)
