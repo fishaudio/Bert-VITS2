@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Union, Any
+from typing import Any, Union
 
 import gradio as gr
 import numpy as np
@@ -780,67 +780,6 @@ def merge_style_add_zero_gr(
     )
 
 
-# def merge_style_gr(
-#     model_name_a: str,
-#     model_name_b: str,
-#     model_name_c: str,
-#     model_a_coeff: float,
-#     model_b_coeff: float,
-#     model_c_coeff: float,
-#     method: str,
-#     weight: float,
-#     output_name: str,
-#     style_tuple_list: list[tuple[str, ...]],
-# ):
-#     if output_name == "":
-#         return "Error: 新しいモデル名を入力してください。", None
-#     assert method in [
-#         "usual",
-#         "add_diff",
-#         "weighted_sum",
-#         "add_zero",
-#     ], f"Invalid method: {method}"
-#     if method == "usual":
-#         new_styles = merge_style_usual(
-#             model_name_a,
-#             model_name_b,
-#             weight,
-#             output_name,
-#             style_tuple_list,
-#         )
-#     elif method == "add_diff":
-#         new_styles = merge_style_add_diff(
-#             model_name_a,
-#             model_name_b,
-#             model_name_c,
-#             weight,
-#             output_name,
-#             style_tuple_list,
-#         )
-#     elif method == "weighted_sum":
-#         new_styles = merge_style_weighted_sum(
-#             model_name_a,
-#             model_name_b,
-#             model_name_c,
-#             model_a_coeff,
-#             model_b_coeff,
-#             model_c_coeff,
-#             output_name,
-#             style_tuple_list,
-#         )
-#     else:  # add_zero
-#         new_styles = merge_style_add_zero(
-#             model_name_a,
-#             model_name_b,
-#             weight,
-#             output_name,
-#             style_tuple_list,
-#         )
-#     return f"Success: {output_name}のスタイルを保存しました。", gr.Dropdown(
-#         choices=new_styles, value=new_styles[0]
-#     )
-
-
 def simple_tts(
     model_name: str, text: str, style: str = DEFAULT_STYLE, style_weight: float = 1.0
 ):
@@ -1535,12 +1474,6 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 model_path_c,
             ],
         )
-
-        # load_style_button.click(
-        #     load_styles_gr,
-        #     inputs=[model_name_a, model_name_b],
-        #     outputs=[styles_a, styles_b, style_triple_list],
-        # )
 
         model_merge_button.click(
             merge_models_gr,
