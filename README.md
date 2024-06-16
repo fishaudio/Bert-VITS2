@@ -58,7 +58,7 @@ Pythonライブラリとしてのpipでのインストールや使用例は[libr
 
 Windowsを前提としています。
 
-1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.5.0/sbv2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
+1. [このzipファイル](https://github.com/litagin02/Style-Bert-VITS2/releases/download/2.6.0/sbv2.zip)を**パスに日本語や空白が含まれない場所に**ダウンロードして展開します。
   - グラボがある方は、`Install-Style-Bert-VITS2.bat`をダブルクリックします。
   - グラボがない方は、`Install-Style-Bert-VITS2-CPU.bat`をダブルクリックします。CPU版では学習はできませんが、音声合成とマージは可能です。
 2. 待つと自動で必要な環境がインストールされます。
