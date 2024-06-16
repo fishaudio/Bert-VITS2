@@ -228,7 +228,7 @@ def merge_style_weighted_sum(
     return list(new_style2id.keys())
 
 
-def merge_style_add_zero(
+def merge_style_add_null(
     model_name_a: str,
     model_name_b: str,
     weight: float,
@@ -535,7 +535,7 @@ def merge_models_weighted_sum(
     return merged_model_path
 
 
-def merge_models_add_zero(
+def merge_models_add_null(
     model_path_a: str,
     model_path_b: str,
     voice_weight: float,
@@ -567,7 +567,7 @@ def merge_models_add_zero(
     save_file(merged_model_weight, merged_model_path)
 
     info = {
-        "method": "add_zero",
+        "method": "add_null",
         "model_a": model_path_a,
         "model_b": model_path_b,
         "voice_weight": voice_weight,
@@ -628,7 +628,7 @@ def merge_models_gr(
         "usual",
         "add_diff",
         "weighted_sum",
-        "add_zero",
+        "add_null",
     ], f"Invalid method: {method}"
     model_a_name = Path(model_path_a).parent.name
     model_b_name = Path(model_path_b).parent.name
@@ -671,10 +671,10 @@ def merge_models_gr(
             model_c_coeff,
             output_name,
         )
-    else:  # add_zero
+    else:  # add_null
         if output_name in [model_a_name, model_b_name]:
             return "Error: マージ元のモデル名と同じ名前は使用できません。", None
-        merged_model_path = merge_models_add_zero(
+        merged_model_path = merge_models_add_null(
             model_path_a,
             model_path_b,
             voice_weight,
@@ -759,7 +759,7 @@ def merge_style_weighted_sum_gr(
     )
 
 
-def merge_style_add_zero_gr(
+def merge_style_add_null_gr(
     model_name_a: str,
     model_name_b: str,
     weight: float,
@@ -768,7 +768,7 @@ def merge_style_add_zero_gr(
 ):
     if output_name == "":
         return "Error: 新しいモデル名を入力してください。", None
-    new_styles = merge_style_add_zero(
+    new_styles = merge_style_add_null(
         model_name_a,
         model_name_b,
         weight,
@@ -852,9 +852,9 @@ initial_md = """
     - 例えば、Bが「Cと同じ人だけど囁いているモデル」とすると、`B - C`は「囁きを表すベクトル」だと思えるので、それをAに足すことで、Aの声のままで囁き声を出すモデルができたりする
     - 他にも活用例はいろいろありそう
 - 重み付き和 `new = a * A + b * B + c * C`: AとBとCのモデルを指定して、各モデルの係数を指定して混ぜる
-    - 例えば`new = A - B` としておくと、結果としてできたモデルを別のモデルと「ゼロモデルの加算」で使うことで、差分マージが実現できる
+    - 例えば`new = A - B` としておくと、結果としてできたモデルを別のモデルと「ヌルモデルの加算」で使うことで、差分マージが実現できる
     - 他にも何らかの活用法があるかもしれない
-- ゼロモデルの加算 `new = A + weight * B`: AとBのモデルを指定して、Bのモデルに要素ごとに比率をかけたものをAに足す
+- ヌルモデルの加算 `new = A + weight * B`: AとBのモデルを指定して、Bのモデルに要素ごとに比率をかけたものをAに足す
     - Bのモデルは重み付き和などで `C - D` などとして作っている場合を想定している
     - 他にも何らかの活用法があるかもしれない
 
@@ -922,18 +922,20 @@ new_model = a * A + b * B + c * C
 ## TIPS
 
 - A, B, C が全て通常モデルで、通常モデルを作りたい場合は、`a + b + c = 1`となるようにするのがよいと思います。
-- `a + b + c = 0` とすると（たとえば `A - B`）、話者性を持たないゼロモデルを作ることができ、「ゼロモデルとの和」で結果を使うことが出来ます（差分マージの材料などに）
+- `a + b + c = 0` とすると（たとえば `A - B`）、話者性を持たないヌルモデルを作ることができ、「ヌルモデルとの和」で結果を使うことが出来ます（差分マージの材料などに）
 - 他にも、`a = 0.5, b = c = 0`などでモデルAを謎に小さくしたり大きくしたり負にしたりできるので、実験に使ってください。
 """
 
-add_zero_md = """
-「ゼロモデル」を、いくつかのモデルの加重和であってその係数の和が0であるようなものとします（例えば `C - D` など）。
+add_null_md = """
+「ヌルモデル」を、いくつかのモデルの加重和であってその係数の和が0であるようなものとします（例えば `C - D` など）。
 
-そうして作ったゼロモデルBと通常モデルAに対して、`weight` を下の各スライダーで定める数値とすると、各要素ごとに、
+そうして作ったヌルモデルBと通常モデルAに対して、`weight` を下の各スライダーで定める数値とすると、各要素ごとに、
 ```
 new_model = A + weight * B
 ```
 としてマージされます。
+
+実際にはヌルモデルでないBに対しても使えますが、その場合はおそらく音声が正常に生成されないモデルができる気がします。が、もしかしたら何かに使えるかもしれません。
 """
 
 tts_md = f"""
@@ -948,7 +950,7 @@ def method_change(x: str):
         "usual",
         "add_diff",
         "weighted_sum",
-        "add_zero",
+        "add_null",
     ], f"Invalid method: {x}"
     # model_desc, c_col, model_a_coeff, model_b_coeff, model_c_coeff, weight_row, use_slerp_instead_of_lerp
     if x == "usual":
@@ -971,9 +973,9 @@ def method_change(x: str):
             gr.Row(visible=True),
             gr.Checkbox(visible=False),
         )
-    elif x == "add_zero":
+    elif x == "add_null":
         return (
-            gr.Markdown(add_zero_md),
+            gr.Markdown(add_null_md),
             gr.Column(visible=False),
             gr.Number(visible=False),
             gr.Number(visible=False),
@@ -1011,7 +1013,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(
-            "2つのStyle-Bert-VITS2モデルから、声質・話し方・話す速さを取り替えたり混ぜたりできます。"
+            "複数のStyle-Bert-VITS2モデルから、声質・話し方・話す速さを取り替えたり混ぜたり引いたりして新しいモデルを作成できます。"
         )
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(initial_md)
@@ -1021,7 +1023,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 ("通常マージ", "usual"),
                 ("差分マージ", "add_diff"),
                 ("加重和", "weighted_sum"),
-                ("ゼロモデルマージ", "add_zero"),
+                ("ヌルモデルマージ", "add_null"),
             ],
             value="usual",
         )
@@ -1177,14 +1179,11 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
             def render_style(
                 style_count, style_a_list, style_b_list, style_c_list, method
             ):
-                print(
-                    f"{style_count=}, {method=}, {style_a_list=}, {style_b_list=}, {style_c_list=}"
-                )
                 a_components = []
                 b_components = []
                 c_components = []
                 out_components = []
-                if method in ["usual", "add_zero"]:
+                if method in ["usual", "add_null"]:
                     for i in range(style_count):
                         with gr.Row():
                             style_a = gr.Dropdown(
@@ -1252,17 +1251,17 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                             ),
                             outputs=[info_style_merge, style],
                         )
-                    else:  # add_zero
+                    else:  # add_null
 
-                        def _merge_add_zero(data):
-                            print("Method is add_zero")
+                        def _merge_add_null(data):
+                            print("Method is add_null")
                             style_tuple_list = [
                                 (data[a], data[b], data[out])
                                 for a, b, out in zip(
                                     a_components, b_components, out_components
                                 )
                             ]
-                            return merge_style_add_zero_gr(
+                            return merge_style_add_null_gr(
                                 data[model_name_a],
                                 data[model_name_b],
                                 data[speech_style_slider],
@@ -1271,7 +1270,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
                             )
 
                         style_merge_btn.click(
-                            _merge_add_zero,
+                            _merge_add_null,
                             inputs=set(
                                 a_components
                                 + b_components
