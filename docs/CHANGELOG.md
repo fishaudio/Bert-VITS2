@@ -13,6 +13,12 @@
 
 これらのマージの活用法については各自いろいろ考えて実験してみて、面白い使い方があればぜひ共有してください。
 
+囁きについて実験的に作ったヌルモデルを[こちら](https://huggingface.co/litagin/sbv2_null_models)に置いています。これをヌルモデルマージで使うことで、任意のモデルを囁きモデルにある程度は変換できます。
+
+### 改善？
+
+- WebUIの`App.bat`の起動が少し重いので、それぞれの機能を分割した`Dataset.bat`, `Inference.bat`, `Merge.bat`, `StyleVectors.bat`, `Train.bat`を追加 (今までの`App.bat`もこれまで通り使えます)
+
 ## v2.5.1 (2024-06-14)
 
 ライセンスとのコンフリクトから、[利用規約](/docs/TERMS_OF_USE.md)を[開発陣からのお願いとデフォルトモデルの利用規約](/docs/TERMS_OF_USE.md)に変更しました。

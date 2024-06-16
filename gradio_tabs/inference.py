@@ -523,3 +523,15 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
 
     return app
+
+
+if __name__ == "__main__":
+    from config import get_path_config
+    import torch
+
+    path_config = get_path_config()
+    assets_root = path_config.assets_root
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model_holder = TTSModelHolder(assets_root, device)
+    app = create_inference_app(model_holder)
+    app.launch(inbrowser=True)

@@ -910,6 +910,8 @@ add_diff_md = """
 new_model = A + weight * (B - C)
 ```
 としてマージされます。
+
+通常のマージと違い、**重みを1にしてもAの要素はそのまま保たれます**。
 """
 
 weighted_sum_md = """
@@ -935,7 +937,11 @@ new_model = A + weight * B
 ```
 としてマージされます。
 
+通常のマージと違い、**重みを1にしてもAの要素はそのまま保たれます**。
+
 実際にはヌルモデルでないBに対しても使えますが、その場合はおそらく音声が正常に生成されないモデルができる気がします。が、もしかしたら何かに使えるかもしれません。
+
+囁きについて実験的に作ったヌルモデルを[こちら](https://huggingface.co/litagin/sbv2_null_models)に置いています。これを `B` に使うことで、任意のモデルを囁きモデルにある程度は変換できます。
 """
 
 tts_md = f"""
@@ -1522,4 +1528,4 @@ if __name__ == "__main__":
         assets_root, device="cuda" if torch.cuda.is_available() else "cpu"
     )
     app = create_merge_app(model_holder)
-    app.launch()
+    app.launch(inbrowser=True)

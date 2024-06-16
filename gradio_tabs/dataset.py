@@ -1,5 +1,6 @@
 import gradio as gr
 
+from style_bert_vits2.constants import GRADIO_THEME
 from style_bert_vits2.logging import logger
 from style_bert_vits2.utils.subprocess import run_script_with_log
 
@@ -109,7 +110,7 @@ Style-Bert-VITS2の学習用データセットを作成するためのツール�
 
 
 def create_dataset_app() -> gr.Blocks:
-    with gr.Blocks() as app:
+    with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(
             "**既に1ファイル2-12秒程度の音声ファイル集とその書き起こしデータがある場合は、このタブは使用せずに学習できます。**"
         )
@@ -257,3 +258,8 @@ def create_dataset_app() -> gr.Blocks:
         )
 
     return app
+
+
+if __name__ == "__main__":
+    app = create_dataset_app()
+    app.launch(inbrowser=True)

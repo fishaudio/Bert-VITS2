@@ -1,3 +1,8 @@
+"""
+TODO:
+importが重いので、WebUI全般が重くなっている。どうにかしたい。
+"""
+
 import json
 import shutil
 from pathlib import Path
@@ -568,3 +573,8 @@ def create_style_vectors_app():
                     )
 
     return app
+
+
+if __name__ == "__main__":
+    app = create_style_vectors_app()
+    app.launch(inbrowser=True)
