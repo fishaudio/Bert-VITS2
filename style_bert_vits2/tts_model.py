@@ -61,6 +61,7 @@ class TTSModel:
 
         self.model_path: Path = model_path
         self.device: str = device
+        self.null_model_params: dict[str, dict[str,Any]] = {}
 
         # ハイパーパラメータの Pydantic モデルが直接指定された
         if isinstance(config_path, HyperParameters):
@@ -113,6 +114,36 @@ class TTSModel:
             device=self.device,
             hps=self.hyper_parameters,
         )
+        if(len(self.null_model_params.keys())==0):
+            return
+        
+        for index, null_model in enumerate(self.null_model_params["names"].keys()):
+            null_model_add = get_net_g(
+                model_path=str(self.null_model_params["paths"][str(index)].value),
+                version=self.hyper_parameters.version,
+                device=self.device,
+                hps=self.hyper_parameters,
+            )
+            #愚直。もっと上手い方法ありそう
+            params = zip(self.__net_g.dec.parameters(), null_model_add.dec.parameters())
+            for v in params:
+                v[0].data.add(v[1].data,alpha=self.null_model_params["weights"][str(index)].value)
+
+            params = zip(self.__net_g.flow.parameters(), null_model_add.flow.parameters())
+            for v in params:
+                v[0].data.add(v[1].data,alpha=self.null_model_params["pitchs"][str(index)].value)
+
+            params = zip(self.__net_g.enc_p.parameters(), null_model_add.enc_p.parameters())
+            for v in params:
+                v[0].data.add(v[1].data,alpha=self.null_model_params["styles"][str(index)].value)
+            #テンポはsdpとdp二つあるからとりあえずどっちも足す
+            params = zip(self.__net_g.sdp.parameters(), null_model_add.sdp.parameters())
+            for v in params:
+                v[0].data.add(v[1].data,alpha=self.null_model_params["tempos"][str(index)].value)
+            params = zip(self.__net_g.dp.parameters(), null_model_add.dp.parameters())
+            for v in params:
+                v[0].data.add(v[1].data,alpha=self.null_model_params["tempos"][str(index)].value)
+
 
     def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -227,6 +258,7 @@ class TTSModel:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
+        null_model_params: dict[str,dict[str,Any]] = {}
     ) -> tuple[int, NDArray[Any]]:
         """
         テキストから音声を合成する。
@@ -251,7 +283,7 @@ class TTSModel:
             given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
-
+            null_model_params(dict[str,dict[str,gr.Component],optional):推論時に使用するヌルモデルの名前、重みのdictが入ったdict。
         Returns:
             tuple[int, NDArray[Any]]: サンプリングレートと音声データ (16bit PCM)
         """
@@ -265,7 +297,10 @@ class TTSModel:
             reference_audio_path = None
         if assist_text == "" or not use_assist_text:
             assist_text = None
-
+        if null_model_params is not {}:
+            self.null_model_params = null_model_params
+        else:
+            self.null_model_params = {}
         if self.__net_g is None:
             self.load()
         assert self.__net_g is not None
@@ -372,6 +407,8 @@ class TTSModelHolder:
         self.device: str = device
         self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[TTSModel] = None
+        self.current_null_models: dict[str,TTSModel] = {}
+        self.null_models_params: dict[str,dict[str,Any]] = {}
         self.model_names: list[str] = []
         self.models_info: list[TTSModelInfo] = []
         self.refresh()
@@ -384,6 +421,8 @@ class TTSModelHolder:
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
+        self.current_null_models = {}
+        self.null_models_params = {}
         self.models_info = []
 
         model_dirs = [d for d in self.root_dir.iterdir() if d.is_dir()]
@@ -445,6 +484,29 @@ class TTSModelHolder:
             )
 
         return self.current_model
+    def get_null_models(self, null_model_index:dict[str,dict[str,Any]]) -> dict[str, TTSModel]:
+        """
+        get_modelをヌルモデル用に改変。複数まとめて使うかも知れないのでdictで戻す
+        
+        """
+        self.current_null_models = {}
+        self.null_models_params = null_model_index
+        for index, value in enumerate(null_model_index["names"]):
+            model_path = Path(null_model_index["paths"][str(index)].value)
+            model_name = null_model_index["names"][str(index)].value
+            if model_name not in self.model_files_dict:
+                raise ValueError(f"Model `{model_name}` is not found")
+            if model_path not in self.model_files_dict[model_name]:
+                raise ValueError(f"Model file `{model_path}` is not found")
+
+            if len(self.current_null_models) == 0 or model_path not in self.current_null_models.keys():
+                self.current_null_models[model_name] = TTSModel(
+                    model_path=model_path,
+                    config_path=self.root_dir / model_name / "config.json",
+                    style_vec_path=self.root_dir / model_name / "style_vectors.npy",
+                    device=self.device,
+                )
+        return self.current_null_models
 
     def get_model_for_gradio(self, model_name: str, model_path_str: str):
         import gradio as gr
@@ -474,6 +536,8 @@ class TTSModelHolder:
         )
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
+        #if len(null_models.keys())!=0:
+        #    self.get_null_models(null_models)
         return (
             gr.Dropdown(choices=styles, value=styles[0]),  # type: ignore
             gr.Button(interactive=True, value="音声合成"),

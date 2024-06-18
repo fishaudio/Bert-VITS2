@@ -185,7 +185,12 @@ style_md = f"""
 - どのくらいに強さがいいかはモデルやスタイルによって異なるようです。
 - 音声ファイルを入力する場合は、学習データと似た声音の話者（特に同じ性別）でないとよい効果が出ないかもしれません。
 """
+voice_keys = ["dec"]
+voice_pitch_keys = ["flow"]
+speech_style_keys = ["enc_p"]
+tempo_keys = ["sdp", "dp"]
 
+null_models = {}#グローバルに置いてるけどもっと良い置き場所ありそう
 
 def make_interactive():
     return gr.update(interactive=True, value="音声合成")
@@ -228,6 +233,14 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     ):
         model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
+        #null_model_paths,
+        #null_voice_weights,
+        #null_voice_pitch_weights,
+        #null_speech_style_weights,
+        #null_tempo_weights
+        if len(null_models) > 0 and len(null_models["names"].keys()) > 0:
+            model_holder.get_null_models(null_models)
+            assert len(model_holder.current_null_models) > 0
 
         wrong_tone_message = ""
         kata_tone: Optional[list[tuple[str, int]]] = None
@@ -282,6 +295,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 speaker_id=speaker_id,
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
+                null_model_params = null_models
             )
         except InvalidToneError as e:
             logger.error(f"Tone error: {e}")
@@ -436,6 +450,113 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                         inputs=[use_assist_text],
                         outputs=[assist_text, assist_text_weight],
                     )
+                with gr.Accordion(label="ヌルモデル", open=False):
+                    #null_voice_weights,
+                    #null_voice_pitch_weights,
+                    #null_speech_style_weights,
+                    #null_tempo_weights
+                    with gr.Row():
+                        style_count = gr.Number(label="作るスタイルの数", value=0, step=1)
+                    with gr.Column(variant="panel"):
+                        @gr.render(
+                            inputs=[
+                                style_count,
+                            ]
+                        )
+                        def render_style(
+                            style_count
+                        ):
+                            name_components = {}
+                            path_components = {}
+                            weight_components = {}
+                            pitch_components = {}
+                            style_components = {}
+                            tempo_components = {}
+                            for i in range(style_count):
+                                with gr.Row():
+                                    null_model_name = gr.Dropdown(
+                                        label="モデル一覧",
+                                        choices=model_names,
+                                        key=f"null_model_name_{i}",
+                                        value=model_names[initial_id],
+                                        interactive=True
+                                    )
+                                    null_model_path = gr.Dropdown(
+                                        label="モデルファイル",
+                                        choices=initial_pth_files,
+                                        key=f"null_model_path_{i}",
+                                        value=initial_pth_files[0],
+                                        interactive=True
+                                    )
+                                    null_voice_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_voice_weights_{i}",
+                                        label="声質",
+                                        interactive=True
+                                    )
+                                    null_voice_pitch_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_voice_pitch_weights_{i}",
+                                        label="声の高さ",
+                                        interactive=True
+                                    )
+                                    null_speech_style_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_speech_style_weights_{i}",
+                                        label="話し方",
+                                        interactive=True
+                                    )
+                                    null_tempo_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_tempo_weights_{i}",
+                                        label="テンポ",
+                                        interactive=True
+                                    )
+                                    null_model_name.change(
+                                        model_holder.update_model_files_for_gradio,
+                                        inputs=[null_model_name],
+                                        outputs=[null_model_path],
+                                    )
+                                    null_model_path.change(make_non_interactive, outputs=[tts_button])
+                                #もっといい方法ありそう
+                                name_components[str(i)]=(null_model_name)
+                                path_components[str(i)]=(null_model_path)
+                                weight_components[str(i)]=(null_voice_weights)
+                                pitch_components[str(i)]=(null_voice_pitch_weights)
+                                style_components[str(i)]=(null_speech_style_weights)
+                                tempo_components[str(i)]=(null_tempo_weights)
+                            null_models["names"]=(name_components)
+                            null_models["paths"]=(path_components)
+                            null_models["weights"]=(weight_components)
+                            null_models["pitchs"]=(pitch_components)
+                            null_models["styles"]=(style_components)
+                            null_models["tempos"]=(tempo_components)
+
+                    add_btn = gr.Button("ヌルモデルを増やす")
+                    del_btn = gr.Button("ヌルモデルを減らす")
+                    add_btn.click(
+                        lambda x: x + 1,
+                        inputs=[style_count],
+                        outputs=[style_count],
+                    )
+                    del_btn.click(
+                        lambda x: x - 1 if x > 0 else 0,
+                        inputs=[style_count],
+                        outputs=[style_count],
+                    )
+
             with gr.Column():
                 with gr.Accordion("スタイルについて詳細", open=False):
                     gr.Markdown(style_md)
@@ -523,7 +644,6 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         )
 
     return app
-
 
 if __name__ == "__main__":
     from config import get_path_config
