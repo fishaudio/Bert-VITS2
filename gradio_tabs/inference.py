@@ -203,9 +203,12 @@ def gr_util(item):
         return (gr.update(visible=True), gr.Audio(visible=False, value=None))
     else:
         return (gr.update(visible=False), gr.update(visible=True))
+
+null_models_frame = 0
 def change_null_model_row(null_model_index:int, null_model_name:str, null_model_path:str,null_voice_weights:float, 
                         null_voice_pitch_weights:float, null_speech_style_weights:float,null_tempo_weights:float, 
                         null_models:dict[int,dict[str, Any]]):
+    logger.debug("change_null_model_row:sta"+str(null_models))
     mid_result={}
     mid_result["name"]=null_model_name
     mid_result["path"]=null_model_path
@@ -214,7 +217,12 @@ def change_null_model_row(null_model_index:int, null_model_name:str, null_model_
     mid_result["style"]=null_speech_style_weights
     mid_result["tempo"]=null_tempo_weights
     null_models[null_model_index] = mid_result
+    logger.debug("decreasing:"+str(null_models_frame)+":"+str(len(null_models.keys())))
+    if null_models_frame < len(null_models.keys()):
+        for i in range(null_models_frame ,len(null_models.keys())):
+            _ = null_models.pop(i, None)
     result = null_models
+    logger.debug("change_null_model_row:res"+str(null_models))
     return result
 
 def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
@@ -459,9 +467,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                         outputs=[assist_text, assist_text_weight],
                     )
                 with gr.Accordion(label="ヌルモデル", open=False):
-                    with gr.Row():
+                    with gr.Row() as null_row:
                         null_models_count = gr.Number(label="ヌルモデルの数", value=0, step=1)
-                    with gr.Column(variant="panel"):
+                    with gr.Column(variant="panel") as null_column:
                         @gr.render(
                             inputs=[
                                 null_models_count,
@@ -470,6 +478,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                         def render_style(
                             null_models_count:int,
                         ):
+                            global null_models_frame
+                            null_models_frame = null_models_count
                             for i in range(0, null_models_count):
                                 with gr.Row():
                                     null_model_index = gr.Number(
@@ -484,6 +494,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         value=model_names[initial_id],
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        logger.debug(f"null model parameter exists in index {i}")
+                                        null_model_name.value=null_models.value[i]["name"]
                                     null_model_path = gr.Dropdown(
                                         label="モデルファイル",
                                         choices=initial_pth_files,
@@ -491,6 +504,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         value=initial_pth_files[0],
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        #null_model_path.choices = #ToDo
+                                        null_model_path.value=null_models.value[i]["path"]
                                     null_voice_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -500,6 +516,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         label="声質",
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        null_voice_weights.value=null_models.value[i]["weight"]
                                     null_voice_pitch_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -509,6 +527,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         label="声の高さ",
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        null_voice_pitch_weights.value=null_models.value[i]["pitch"]
                                     null_speech_style_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -518,6 +538,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         label="話し方",
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        null_speech_style_weights.value=null_models.value[i]["style"]
                                     null_tempo_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -527,11 +549,14 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         label="テンポ",
                                         interactive=True
                                     )
+                                    if i in null_models.value:
+                                        null_tempo_weights.value=null_models.value[i]["tempo"]
                                     null_model_name.change(
                                         model_holder.update_model_files_for_gradio,
                                         inputs=[null_model_name],
                                         outputs=[null_model_path],
                                     )
+                                    #null_model_name.change(model_holder.refresh, outputs=[])
                                     null_model_path.change(make_non_interactive, outputs=[tts_button])
                                     #愚直すぎるのでもう少しなんとかしたい
                                     null_model_path.change(change_null_model_row,
@@ -564,9 +589,6 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                                                     null_models],
                                                             outputs=[null_models]
                                     )
-                            if null_models_count < len(null_models.value.keys()):
-                                for i in range(null_models_count ,len(null_models.value.keys())):
-                                    _ = null_models.value.pop(i, None)
                     add_btn = gr.Button("ヌルモデルを増やす")
                     del_btn = gr.Button("ヌルモデルを減らす")
                     add_btn.click(
