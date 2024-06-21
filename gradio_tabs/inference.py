@@ -223,7 +223,7 @@ def change_null_model_row(null_model_index:int, null_model_name:str, null_model_
             _ = null_models.pop(i, None)
     result = null_models
     #logger.debug("change_null_model_row:res"+str(null_models))
-    return result
+    return result, True
 
 def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     def tts_fn(
@@ -248,7 +248,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         speaker,
         pitch_scale,
         intonation_scale,
-        null_models:dict[int, dict[str, Union[str, float]]]
+        null_models:dict[int, dict[str, Union[str, float]]],
+        force_reload_model:bool
     ):
         model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
@@ -306,7 +307,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 speaker_id=speaker_id,
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
-                null_model_params = null_models
+                null_model_params = null_models,
+                force_reload_model = force_reload_model
             )
         except InvalidToneError as e:
             logger.error(f"Tone error: {e}")
@@ -328,7 +330,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         message = f"Success, time: {duration} seconds."
         if wrong_tone_message != "":
             message = wrong_tone_message + "\n" + message
-        return message, (sr, audio), kata_tone_json_str
+        return message, (sr, audio), kata_tone_json_str, False
 
     model_names = model_holder.model_names
     if len(model_names) == 0:
@@ -349,6 +351,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         gr.Markdown(initial_md)
         gr.Markdown(terms_of_use_md)
         null_models = gr.State({})
+        force_reload_model = gr.State(False)
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(how_to_md)
         with gr.Row():
@@ -559,31 +562,31 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                                             inputs=[null_model_index, null_model_name, null_model_path,null_voice_weights, 
                                                                     null_voice_pitch_weights, null_speech_style_weights,null_tempo_weights, 
                                                                     null_models],
-                                                            outputs=[null_models]
+                                                            outputs=[null_models,force_reload_model]
                                     )
                                     null_voice_weights.change(change_null_model_row,
                                                             inputs=[null_model_index, null_model_name, null_model_path,null_voice_weights, 
                                                                     null_voice_pitch_weights, null_speech_style_weights,null_tempo_weights, 
                                                                     null_models],
-                                                            outputs=[null_models]
+                                                            outputs=[null_models,force_reload_model]
                                     )
                                     null_voice_pitch_weights.change(change_null_model_row,
                                                             inputs=[null_model_index, null_model_name, null_model_path,null_voice_weights, 
                                                                     null_voice_pitch_weights, null_speech_style_weights,null_tempo_weights, 
                                                                     null_models],
-                                                            outputs=[null_models]
+                                                            outputs=[null_models,force_reload_model]
                                     )
                                     null_speech_style_weights.change(change_null_model_row,
                                                             inputs=[null_model_index, null_model_name, null_model_path,null_voice_weights, 
                                                                     null_voice_pitch_weights, null_speech_style_weights,null_tempo_weights, 
                                                                     null_models],
-                                                            outputs=[null_models]
+                                                            outputs=[null_models,force_reload_model]
                                     )
                                     null_tempo_weights.change(change_null_model_row,
                                                             inputs=[null_model_index, null_model_name, null_model_path,null_voice_weights, 
                                                                     null_voice_pitch_weights, null_speech_style_weights,null_tempo_weights, 
                                                                     null_models],
-                                                            outputs=[null_models]
+                                                            outputs=[null_models,force_reload_model]
                                     )
                     add_btn = gr.Button("ヌルモデルを増やす")
                     del_btn = gr.Button("ヌルモデルを減らす")
@@ -655,9 +658,10 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 speaker,
                 pitch_scale,
                 intonation_scale,
-                null_models
+                null_models,
+                force_reload_model
             ],
-            outputs=[text_output, audio_output, tone],
+            outputs=[text_output, audio_output, tone, force_reload_model],
         )
 
         model_name.change(

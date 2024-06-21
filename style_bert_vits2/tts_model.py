@@ -258,7 +258,8 @@ class TTSModel:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
-        null_model_params: dict[int,dict[str,Union[str, float]]] = {}
+        null_model_params: dict[int,dict[str,Union[str, float]]] = {},
+        force_reload_model:bool = False
     ) -> tuple[int, NDArray[Any]]:
         """
         テキストから音声を合成する。
@@ -298,11 +299,11 @@ class TTSModel:
         if assist_text == "" or not use_assist_text:
             assist_text = None
         if null_model_params is not {}:
-            #ヌルモデルがあるときは常時ロードしなおすけどもっといい手段ありそう
-            self.__net_g = None
             self.null_model_params = null_model_params
         else:
             self.null_model_params = {}
+        if force_reload_model is True:
+            self.__net_g = None
         if self.__net_g is None:
             self.load()
         assert self.__net_g is not None
