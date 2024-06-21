@@ -208,7 +208,7 @@ null_models_frame = 0
 def change_null_model_row(null_model_index:int, null_model_name:str, null_model_path:str,null_voice_weights:float, 
                         null_voice_pitch_weights:float, null_speech_style_weights:float,null_tempo_weights:float, 
                         null_models:dict[int,dict[str, Any]]):
-    logger.debug("change_null_model_row:sta"+str(null_models))
+    #logger.debug("change_null_model_row:sta"+str(null_models))
     mid_result={}
     mid_result["name"]=null_model_name
     mid_result["path"]=null_model_path
@@ -217,12 +217,12 @@ def change_null_model_row(null_model_index:int, null_model_name:str, null_model_
     mid_result["style"]=null_speech_style_weights
     mid_result["tempo"]=null_tempo_weights
     null_models[null_model_index] = mid_result
-    logger.debug("decreasing:"+str(null_models_frame)+":"+str(len(null_models.keys())))
+    #logger.debug("decreasing:"+str(null_models_frame)+":"+str(len(null_models.keys())))
     if null_models_frame < len(null_models.keys()):
         for i in range(null_models_frame ,len(null_models.keys())):
             _ = null_models.pop(i, None)
     result = null_models
-    logger.debug("change_null_model_row:res"+str(null_models))
+    #logger.debug("change_null_model_row:res"+str(null_models))
     return result
 
 def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
@@ -252,10 +252,6 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     ):
         model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
-
-        if len(null_models.keys()) > 0:
-            model_holder.get_null_models(null_models)
-            assert len(model_holder.null_models_params.keys()) > 0
 
         wrong_tone_message = ""
         kata_tone: Optional[list[tuple[str, int]]] = None

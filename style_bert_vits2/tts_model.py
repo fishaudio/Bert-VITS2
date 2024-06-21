@@ -298,6 +298,8 @@ class TTSModel:
         if assist_text == "" or not use_assist_text:
             assist_text = None
         if null_model_params is not {}:
+            #ヌルモデルがあるときは常時ロードしなおすけどもっといい手段ありそう
+            self.__net_g = None
             self.null_model_params = null_model_params
         else:
             self.null_model_params = {}
@@ -407,7 +409,6 @@ class TTSModelHolder:
         self.device: str = device
         self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[TTSModel] = None
-        self.null_models_params: dict[int,dict[str,Union[str, float]]] = {}
         self.model_names: list[str] = []
         self.models_info: list[TTSModelInfo] = []
         self.refresh()
@@ -420,7 +421,6 @@ class TTSModelHolder:
         self.model_files_dict = {}
         self.model_names = []
         self.current_model = None
-        self.null_models_params = {}
         self.models_info = []
 
         model_dirs = [d for d in self.root_dir.iterdir() if d.is_dir()]
@@ -482,13 +482,6 @@ class TTSModelHolder:
             )
 
         return self.current_model
-    def get_null_models(self, null_model_index:dict[int,dict[str,Union[str, float]]]) -> dict[int, dict[str, Union[str, float]]]:
-        """
-        get_modelをヌルモデル用に改変。複数まとめて使うかも知れないのでdictで戻す
-        
-        """
-        self.null_models_params = null_model_index
-        return self.null_models_params
 
     def get_model_for_gradio(self, model_name: str, model_path_str: str):
         import gradio as gr
