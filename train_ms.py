@@ -13,6 +13,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from transformers.trainer_pt_utils import DistributedLengthGroupedSampler
 
 # logging.getLogger("numba").setLevel(logging.WARNING)
 import default_style
@@ -34,7 +35,6 @@ from style_bert_vits2.models.models import (
 )
 from style_bert_vits2.nlp.symbols import SYMBOLS
 from style_bert_vits2.utils.stdout_wrapper import SAFE_STDOUT
-
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
@@ -242,15 +242,23 @@ def run():
             # prefetch_factor=6,
         )
     else:
+        train_sampler = DistributedLengthGroupedSampler(
+            dataset=train_dataset,
+            batch_size=hps.train.batch_size,
+            num_replicas=n_gpus,
+            rank=rank,
+            lengths=train_dataset.lengths,
+            drop_last=True,
+        )
         train_loader = DataLoader(
             train_dataset,
             # メモリ消費量を減らそうとnum_workersを1にしてみる
             # num_workers=min(config.train_ms_config.num_workers, os.cpu_count() // 2),
             num_workers=1,
-            shuffle=True,
+            # shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
-            # batch_sampler=train_sampler,
+            batch_sampler=train_sampler,
             batch_size=hps.train.batch_size,
             persistent_workers=True,
             # これもメモリ消費量を減らそうとしてコメントアウト
