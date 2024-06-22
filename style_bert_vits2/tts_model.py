@@ -61,7 +61,7 @@ class TTSModel:
 
         self.model_path: Path = model_path
         self.device: str = device
-        self.null_model_params: dict[int, dict[str,Union[float, str]]] = {}
+        self.null_model_params: dict[int, dict[str, Union[float, str]]] = {}
 
         # ハイパーパラメータの Pydantic モデルが直接指定された
         if isinstance(config_path, HyperParameters):
@@ -114,9 +114,9 @@ class TTSModel:
             device=self.device,
             hps=self.hyper_parameters,
         )
-        if(len(self.null_model_params.keys())==0):
+        if len(self.null_model_params.keys()) == 0:
             return
-        
+
         for index, null_model in enumerate(self.null_model_params.keys()):
             null_model_add = get_net_g(
                 model_path=str(self.null_model_params[index]["path"]),
@@ -124,26 +124,39 @@ class TTSModel:
                 device=self.device,
                 hps=self.hyper_parameters,
             )
-            #愚直。もっと上手い方法ありそう
+            # 愚直。もっと上手い方法ありそう
             print(str(self.null_model_params[index]["weight"]))
             params = zip(self.__net_g.dec.parameters(), null_model_add.dec.parameters())
             for v in params:
-                v[0].data.add_(v[1].data,alpha=float(self.null_model_params[index]["weight"]))
-            params = zip(self.__net_g.flow.parameters(), null_model_add.flow.parameters())
+                v[0].data.add_(
+                    v[1].data, alpha=float(self.null_model_params[index]["weight"])
+                )
+            params = zip(
+                self.__net_g.flow.parameters(), null_model_add.flow.parameters()
+            )
             for v in params:
-                v[0].data.add_(v[1].data,alpha=float(self.null_model_params[index]["pitch"]))
+                v[0].data.add_(
+                    v[1].data, alpha=float(self.null_model_params[index]["pitch"])
+                )
 
-            params = zip(self.__net_g.enc_p.parameters(), null_model_add.enc_p.parameters())
+            params = zip(
+                self.__net_g.enc_p.parameters(), null_model_add.enc_p.parameters()
+            )
             for v in params:
-                v[0].data.add_(v[1].data,alpha=float(self.null_model_params[index]["style"]))
-            #テンポはsdpとdp二つあるからとりあえずどっちも足す
+                v[0].data.add_(
+                    v[1].data, alpha=float(self.null_model_params[index]["style"])
+                )
+            # テンポはsdpとdp二つあるからとりあえずどっちも足す
             params = zip(self.__net_g.sdp.parameters(), null_model_add.sdp.parameters())
             for v in params:
-                v[0].data.add_(v[1].data,alpha=float(self.null_model_params[index]["tempo"]))
+                v[0].data.add_(
+                    v[1].data, alpha=float(self.null_model_params[index]["tempo"])
+                )
             params = zip(self.__net_g.dp.parameters(), null_model_add.dp.parameters())
             for v in params:
-                v[0].data.add_(v[1].data,alpha=float(self.null_model_params[index]["tempo"]))
-
+                v[0].data.add_(
+                    v[1].data, alpha=float(self.null_model_params[index]["tempo"])
+                )
 
     def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -258,8 +271,8 @@ class TTSModel:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
-        null_model_params: dict[int,dict[str,Union[str, float]]] = {},
-        force_reload_model:bool = False
+        null_model_params: dict[int, dict[str, Union[str, float]]] = {},
+        force_reload_model: bool = False,
     ) -> tuple[int, NDArray[Any]]:
         """
         テキストから音声を合成する。
