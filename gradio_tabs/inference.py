@@ -223,7 +223,7 @@ def change_null_model_row(
     mid_result = {}
     mid_result["name"] = null_model_name
     mid_result["path"] = null_model_path
-    mid_result["weight"] = null_tempo_weights
+    mid_result["weight"] = null_voice_weights
     mid_result["pitch"] = null_voice_pitch_weights
     mid_result["style"] = null_speech_style_weights
     mid_result["tempo"] = null_tempo_weights
