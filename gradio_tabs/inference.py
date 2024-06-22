@@ -219,21 +219,19 @@ def change_null_model_row(
     null_tempo_weights: float,
     null_models: dict[int, dict[str, Any]],
 ):
-    # logger.debug("change_null_model_row:sta"+str(null_models))
-    mid_result = {}
-    mid_result["name"] = null_model_name
-    mid_result["path"] = null_model_path
-    mid_result["weight"] = null_voice_weights
-    mid_result["pitch"] = null_voice_pitch_weights
-    mid_result["style"] = null_speech_style_weights
-    mid_result["tempo"] = null_tempo_weights
-    null_models[null_model_index] = mid_result
-    # logger.debug("decreasing:"+str(null_models_frame)+":"+str(len(null_models.keys())))
-    if null_models_frame < len(null_models.keys()):
-        for i in range(null_models_frame, len(null_models.keys())):
-            _ = null_models.pop(i, None)
-    result = null_models
-    # logger.debug("change_null_model_row:res"+str(null_models))
+    null_models[null_model_index] = {
+        "name": null_model_name,
+        "path": null_model_path,
+        "weight": null_voice_weights,
+        "pitch": null_voice_pitch_weights,
+        "style": null_speech_style_weights,
+        "tempo": null_tempo_weights,
+    }
+    if len(null_models) > null_models_frame:
+        keys_to_keep = list(range(null_models_frame))
+        result = {k: null_models[k] for k in keys_to_keep}
+    else:
+        result = null_models
     return result, True
 
 
@@ -265,6 +263,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
     ):
         model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
+        logger.debug(f"Null models setting: {null_models}")
 
         wrong_tone_message = ""
         kata_tone: Optional[list[tuple[str, int]]] = None
@@ -344,6 +343,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
             message = wrong_tone_message + "\n" + message
         return message, (sr, audio), kata_tone_json_str, False
 
+    def get_model_files(model_name: str):
+        return [str(f) for f in model_holder.model_files_dict[model_name]]
+
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(
@@ -355,9 +357,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
             )
         return app
     initial_id = 0
-    initial_pth_files = [
-        str(f) for f in model_holder.model_files_dict[model_names[initial_id]]
-    ]
+    initial_pth_files = get_model_files(model_names[initial_id])
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
@@ -478,23 +478,19 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                         outputs=[assist_text, assist_text_weight],
                     )
                 with gr.Accordion(label="ヌルモデル", open=False):
-                    with gr.Row() as null_row:
+                    with gr.Row():
                         null_models_count = gr.Number(
                             label="ヌルモデルの数", value=0, step=1
                         )
-                    with gr.Column(variant="panel") as null_column:
+                    with gr.Column(variant="panel"):
 
-                        @gr.render(
-                            inputs=[
-                                null_models_count,
-                            ]
-                        )
-                        def render_style(
+                        @gr.render(inputs=[null_models_count])
+                        def render_null_models(
                             null_models_count: int,
                         ):
                             global null_models_frame
                             null_models_frame = null_models_count
-                            for i in range(0, null_models_count):
+                            for i in range(null_models_count):
                                 with gr.Row():
                                     null_model_index = gr.Number(
                                         value=i,
@@ -506,27 +502,15 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         choices=model_names,
                                         key=f"null_model_name_{i}",
                                         value=model_names[initial_id],
-                                        interactive=True,
                                     )
-                                    if i in null_models.value:
-                                        logger.debug(
-                                            f"null model parameter exists in index {i}"
-                                        )
-                                        null_model_name.value = null_models.value[i][
-                                            "name"
-                                        ]
                                     null_model_path = gr.Dropdown(
                                         label="モデルファイル",
-                                        choices=initial_pth_files,
                                         key=f"null_model_path_{i}",
-                                        value=initial_pth_files[0],
-                                        interactive=True,
+                                        # FIXME: 再レンダー時に選択肢が消えるのでどうにかしたい
+                                        # 現在は再レンダーでvalueは保存されるが選択肢は保存されないので選択肢が空になる
+                                        # そのときに選択肢にない値となるので、それを許す
+                                        allow_custom_value=True,
                                     )
-                                    if i in null_models.value:
-                                        # null_model_path.choices = #ToDo
-                                        null_model_path.value = null_models.value[i][
-                                            "path"
-                                        ]
                                     null_voice_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -534,12 +518,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         step=0.1,
                                         key=f"null_voice_weights_{i}",
                                         label="声質",
-                                        interactive=True,
                                     )
-                                    if i in null_models.value:
-                                        null_voice_weights.value = null_models.value[i][
-                                            "weight"
-                                        ]
                                     null_voice_pitch_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -547,12 +526,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         step=0.1,
                                         key=f"null_voice_pitch_weights_{i}",
                                         label="声の高さ",
-                                        interactive=True,
                                     )
-                                    if i in null_models.value:
-                                        null_voice_pitch_weights.value = (
-                                            null_models.value[i]["pitch"]
-                                        )
                                     null_speech_style_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -560,12 +534,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         step=0.1,
                                         key=f"null_speech_style_weights_{i}",
                                         label="話し方",
-                                        interactive=True,
                                     )
-                                    if i in null_models.value:
-                                        null_speech_style_weights.value = (
-                                            null_models.value[i]["style"]
-                                        )
                                     null_tempo_weights = gr.Slider(
                                         minimum=0,
                                         maximum=1,
@@ -573,18 +542,13 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                                         step=0.1,
                                         key=f"null_tempo_weights_{i}",
                                         label="テンポ",
-                                        interactive=True,
                                     )
-                                    if i in null_models.value:
-                                        null_tempo_weights.value = null_models.value[i][
-                                            "tempo"
-                                        ]
+
                                     null_model_name.change(
                                         model_holder.update_model_files_for_gradio,
                                         inputs=[null_model_name],
                                         outputs=[null_model_path],
                                     )
-                                    # null_model_name.change(model_holder.refresh, outputs=[])
                                     null_model_path.change(
                                         make_non_interactive, outputs=[tts_button]
                                     )

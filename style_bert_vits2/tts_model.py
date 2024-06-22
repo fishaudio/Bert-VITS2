@@ -117,46 +117,36 @@ class TTSModel:
         if len(self.null_model_params.keys()) == 0:
             return
 
-        for index, null_model in enumerate(self.null_model_params.keys()):
+        for null_model_info in self.null_model_params.values():
+            logger.info(f"Adding null model: {null_model_info['path']}...")
             null_model_add = get_net_g(
-                model_path=str(self.null_model_params[index]["path"]),
+                model_path=str(null_model_info["path"]),
                 version=self.hyper_parameters.version,
                 device=self.device,
                 hps=self.hyper_parameters,
             )
             # 愚直。もっと上手い方法ありそう
-            print(str(self.null_model_params[index]["weight"]))
             params = zip(self.__net_g.dec.parameters(), null_model_add.dec.parameters())
             for v in params:
-                v[0].data.add_(
-                    v[1].data, alpha=float(self.null_model_params[index]["weight"])
-                )
+                v[0].data.add_(v[1].data, alpha=float(null_model_info["weight"]))
             params = zip(
                 self.__net_g.flow.parameters(), null_model_add.flow.parameters()
             )
             for v in params:
-                v[0].data.add_(
-                    v[1].data, alpha=float(self.null_model_params[index]["pitch"])
-                )
+                v[0].data.add_(v[1].data, alpha=float(null_model_info["pitch"]))
 
             params = zip(
                 self.__net_g.enc_p.parameters(), null_model_add.enc_p.parameters()
             )
             for v in params:
-                v[0].data.add_(
-                    v[1].data, alpha=float(self.null_model_params[index]["style"])
-                )
+                v[0].data.add_(v[1].data, alpha=float(null_model_info["style"]))
             # テンポはsdpとdp二つあるからとりあえずどっちも足す
             params = zip(self.__net_g.sdp.parameters(), null_model_add.sdp.parameters())
             for v in params:
-                v[0].data.add_(
-                    v[1].data, alpha=float(self.null_model_params[index]["tempo"])
-                )
+                v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
             params = zip(self.__net_g.dp.parameters(), null_model_add.dp.parameters())
             for v in params:
-                v[0].data.add_(
-                    v[1].data, alpha=float(self.null_model_params[index]["tempo"])
-                )
+                v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
 
     def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -298,6 +288,7 @@ class TTSModel:
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             null_model_params (dict[int, dict[str, Union[str, float]]], optional): 推論時に使用するヌルモデルの名前、適用割合のdictが入ったdict。
+            force_reload_model (bool, optional): モデルを強制的に再ロードするかどうか. Defaults to False.
         Returns:
             tuple[int, NDArray[Any]]: サンプリングレートと音声データ (16bit PCM)
         """
