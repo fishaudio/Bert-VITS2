@@ -1,11 +1,12 @@
 cmudict
 cn2an
 g2p_en
-gradio
+gradio>=4.32
 jieba
 librosa==0.9.2
 loguru
 num2words
+numpy<2
 onnxruntime
 pyannote.audio>=3.1.0
 pyloudnorm
