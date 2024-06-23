@@ -104,7 +104,7 @@ webui:
   # 模型路径
   model: "models/G_8000.pth"
   # 配置文件路径
-  config_path: "config.json"
+  config_path: "configs/config.json"
   # 端口号
   port: 7860
   # 是否公开部署，对外网开放
