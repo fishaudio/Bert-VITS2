@@ -260,12 +260,16 @@ def run():
             # shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
-            batch_sampler=train_sampler,
+            sampler=train_sampler,
             batch_size=hps.train.batch_size,
             persistent_workers=True,
             # これもメモリ消費量を減らそうとしてコメントアウト
             # prefetch_factor=6,
         )
+        logger.info("Using DistributedLengthGroupedSampler for training.")
+        logger.debug(f"len(train_dataset): {len(train_dataset)}")
+        logger.debug(f"len(train_loader): {len(train_loader)}")
+
     eval_dataset = None
     eval_loader = None
     if rank == 0 and not args.speedup:

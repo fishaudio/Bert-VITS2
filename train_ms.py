@@ -259,7 +259,7 @@ def run():
             # shuffle=True,
             pin_memory=True,
             collate_fn=collate_fn,
-            batch_sampler=train_sampler,
+            sampler=train_sampler,
             batch_size=hps.train.batch_size,
             persistent_workers=True,
             # これもメモリ消費量を減らそうとしてコメントアウト
