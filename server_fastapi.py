@@ -141,6 +141,10 @@ if __name__ == "__main__":
         request: Request,
         text: str = Query(..., min_length=1, max_length=limit, description="セリフ"),
         encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
+        model_name: str = Query(
+            None,
+            description="モデル名(model_idより優先)。model_assets内のディレクトリ名を指定",
+        ),
         model_id: int = Query(
             0, description="モデルID。`GET /models/info`のkeyの値を指定ください"
         ),
@@ -198,6 +202,20 @@ if __name__ == "__main__":
         ):  # /models/refresh があるためQuery(le)で表現不可
             raise_validation_error(f"model_id={model_id} not found", "model_id")
 
+        if model_name:
+            # load_models() の 処理内容が i の正当性を担保していることに注意
+            model_ids = [i for i, x in enumerate(model_holder.models_info) if x.name == model_name]
+            if not model_ids:
+                raise_validation_error(
+                    f"model_name={model_name} not found", "model_name"
+                )
+            # 今の実装ではディレクトリ名が重複することは無いはずだが...
+            if len(model_ids) > 1:
+                raise_validation_error(
+                    f"model_name={model_name} is ambiguous", "model_name"
+                )
+            model_id = model_ids[0]
+            
         model = loaded_models[model_id]
         if speaker_name is None:
             if speaker_id not in model.id2spk.keys():
