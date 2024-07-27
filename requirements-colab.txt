@@ -13,7 +13,7 @@ pyloudnorm
 pyopenjtalk-dict
 pypinyin
 pyworld-prebuilt
-torch
+torch<2.4
 torchaudio
 transformers
 umap-learn
