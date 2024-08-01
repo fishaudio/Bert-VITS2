@@ -78,22 +78,21 @@ def load_model(
     # BERT モデルをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Model でロードする必要がある
     if language == Languages.EN:
-        model = cast(
+        __loaded_models[language] = cast(
             DebertaV2Model,
             DebertaV2Model.from_pretrained(
                 pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
             ),
         )
     else:
-        model = AutoModelForMaskedLM.from_pretrained(
+        __loaded_models[language] = AutoModelForMaskedLM.from_pretrained(
             pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
         )
-    __loaded_models[language] = model
     logger.info(
         f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
     )
 
-    return model
+    return __loaded_models[language]
 
 
 def load_tokenizer(
@@ -139,23 +138,40 @@ def load_tokenizer(
     # BERT トークナイザーをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Tokenizer でロードする必要がある
     if language == Languages.EN:
-        tokenizer = DebertaV2Tokenizer.from_pretrained(
+        __loaded_tokenizers[language] = DebertaV2Tokenizer.from_pretrained(
             pretrained_model_name_or_path,
             cache_dir=cache_dir,
             revision=revision,
         )
     else:
-        tokenizer = AutoTokenizer.from_pretrained(
+        __loaded_tokenizers[language] = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
             cache_dir=cache_dir,
             revision=revision,
         )
-    __loaded_tokenizers[language] = tokenizer
     logger.info(
         f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}"
     )
 
-    return tokenizer
+    return __loaded_tokenizers[language]
+
+
+def transfer_model(language: Languages, device: str) -> None:
+    """
+    指定された言語の BERT モデルを、指定されたデバイスに移動する。
+
+    Args:
+        language (Languages): モデルを移動する言語
+        device (str): モデルを移動するデバイス
+    """
+
+    if language not in __loaded_models:
+        raise ValueError(f"BERT model for {language} is not loaded.")
+
+    current_device = str(__loaded_models[language].device)
+    if current_device != device:
+        __loaded_models[language].to(device)  # type: ignore
+        logger.info(f"Transferred the {language} BERT model from {current_device} to {device}")
 
 
 def unload_model(language: Languages) -> None:
