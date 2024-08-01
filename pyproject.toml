@@ -65,7 +65,7 @@ exclude = [".git", ".gitignore", ".gitattributes"]
 packages = ["style_bert_vits2"]
 
 [tool.hatch.envs.test]
-dependencies = ["coverage[toml]>=6.5", "pytest"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "scipy"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
 test = "pytest {args:tests}"
