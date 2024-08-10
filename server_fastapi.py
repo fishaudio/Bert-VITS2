@@ -51,15 +51,6 @@ pyopenjtalk.initialize_worker()
 # dict_data/ 以下の辞書データを pyopenjtalk に適用
 update_dict()
 
-# 事前に BERT モデル/トークナイザーをロードしておく
-## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
-bert_models.load_model(Languages.JP)
-bert_models.load_tokenizer(Languages.JP)
-bert_models.load_model(Languages.EN)
-bert_models.load_tokenizer(Languages.EN)
-bert_models.load_model(Languages.ZH)
-bert_models.load_tokenizer(Languages.ZH)
-
 
 def raise_validation_error(msg: str, param: str):
     logger.warning(f"Validation error: {msg}")
@@ -103,6 +94,15 @@ if __name__ == "__main__":
         device = "cpu"
     else:
         device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # 事前に BERT モデル/トークナイザーをロードしておく
+    ## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+    bert_models.load_model(Languages.JP, device_map=device)
+    bert_models.load_tokenizer(Languages.JP)
+    bert_models.load_model(Languages.EN, device_map=device)
+    bert_models.load_tokenizer(Languages.EN)
+    bert_models.load_model(Languages.ZH, device_map=device)
+    bert_models.load_tokenizer(Languages.ZH)
 
     model_dir = Path(args.dir)
     model_holder = TTSModelHolder(model_dir, device)

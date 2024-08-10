@@ -22,6 +22,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
+    "accelerate",
     "cmudict",
     "cn2an",
     "g2p_en",

@@ -1,3 +1,4 @@
+accelerate
 cmudict
 cn2an
 g2p_en

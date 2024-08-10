@@ -38,6 +38,9 @@ __loaded_tokenizers: dict[
 def load_model(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
+    device_map: Optional[
+        Union[str, dict[str, Union[int, str, torch.device]], int, torch.device]
+    ] = None,
     cache_dir: Optional[str] = None,
     revision: str = "main",
 ) -> Union[PreTrainedModel, DebertaV2Model]:
@@ -46,6 +49,7 @@ def load_model(
     一度ロードされていれば、ロード済みの BERT モデルを即座に返す。
     ライブラリ利用時は常に必ず pretrain_model_name_or_path (Hugging Face のリポジトリ名 or ローカルのファイルパス) を指定する必要がある。
     ロードにはそれなりに時間がかかるため、ライブラリ利用前に明示的に pretrained_model_name_or_path を指定してロードしておくべき。
+    device_map は既に指定された言語の BERT モデルがロードされている場合は効果がない。
     cache_dir と revision は pretrain_model_name_or_path がリポジトリ名の場合のみ有効。
 
     Style-Bert-VITS2 では、BERT モデルに下記の 3 つが利用されている。
@@ -57,6 +61,9 @@ def load_model(
     Args:
         language (Languages): ロードする学習済みモデルの対象言語
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
+        device_map (Optional[str]): accelerate を使用して高速にデバイスにモデルをロードするためのデバイスマップ。
+            指定しない場合は通常のモデルロード処理になる (デフォルト: None)
+            ref: https://huggingface.co/docs/accelerate/usage_guides/big_modeling
         cache_dir (Optional[str]): モデルのキャッシュディレクトリ。指定しない場合はデフォルトのキャッシュディレクトリが利用される (デフォルト: None)
         revision (str): モデルの Hugging Face 上の Git リビジョン。指定しない場合は最新の main ブランチの内容が利用される (デフォルト: None)
 
@@ -81,12 +88,18 @@ def load_model(
         __loaded_models[language] = cast(
             DebertaV2Model,
             DebertaV2Model.from_pretrained(
-                pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+                pretrained_model_name_or_path,
+                device_map=device_map,
+                cache_dir=cache_dir,
+                revision=revision,
             ),
         )
     else:
         __loaded_models[language] = AutoModelForMaskedLM.from_pretrained(
-            pretrained_model_name_or_path, cache_dir=cache_dir, revision=revision
+            pretrained_model_name_or_path,
+            device_map=device_map,
+            cache_dir=cache_dir,
+            revision=revision,
         )
     logger.info(
         f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
@@ -170,10 +183,15 @@ def transfer_model(language: Languages, device: str) -> None:
     if language not in __loaded_models:
         raise ValueError(f"BERT model for {language} is not loaded.")
 
+    # 既に指定されたデバイスにモデルがロードされている場合は何もしない
+    # ex: current_device="cuda:0", device="cuda" → 何もしない
+    # ex: current_device="cuda:0", device="cpu" → モデルを CPU に移動
     current_device = str(__loaded_models[language].device)
-    if current_device != device:
-        __loaded_models[language].to(device)  # type: ignore
-        logger.info(
+    if current_device.startswith(device):
+        return
+
+    __loaded_models[language].to(device)  # type: ignore
+    logger.info(
             f"Transferred the {language} BERT model from {current_device} to {device}"
         )
 

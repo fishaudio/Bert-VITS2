@@ -1,3 +1,4 @@
+accelerate
 cmudict
 cn2an
 faster-whisper==0.10.1
