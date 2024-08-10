@@ -36,7 +36,7 @@ def extract_bert_feature(
 
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
-    model = bert_models.load_model(Languages.JP)
+    model = bert_models.load_model(Languages.JP, device_map=device)
     bert_models.transfer_model(Languages.JP, device)
 
     style_res_mean = None
