@@ -15,6 +15,7 @@ def load_checkpoint(
     optimizer: Optional[torch.optim.Optimizer] = None,
     skip_optimizer: bool = False,
     for_infer: bool = False,
+    device: Union[str, torch.device] = "cpu",
 ) -> tuple[torch.nn.Module, Optional[torch.optim.Optimizer], float, int]:
     """
     指定されたパスからチェックポイントを読み込み、モデルとオプティマイザーを更新する。
@@ -31,7 +32,7 @@ def load_checkpoint(
     """
 
     assert os.path.isfile(checkpoint_path)
-    checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint_dict = torch.load(checkpoint_path, map_location=device)
     iteration = checkpoint_dict["iteration"]
     learning_rate = checkpoint_dict["learning_rate"]
     logger.info(

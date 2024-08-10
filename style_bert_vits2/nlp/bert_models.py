@@ -192,8 +192,8 @@ def transfer_model(language: Languages, device: str) -> None:
 
     __loaded_models[language].to(device)  # type: ignore
     logger.info(
-            f"Transferred the {language} BERT model from {current_device} to {device}"
-        )
+        f"Transferred the {language} BERT model from {current_device} to {device}"
+    )
 
 
 def unload_model(language: Languages) -> None:
