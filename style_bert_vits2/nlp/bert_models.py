@@ -159,6 +159,8 @@ def load_tokenizer(
 def transfer_model(language: Languages, device: str) -> None:
     """
     指定された言語の BERT モデルを、指定されたデバイスに移動する。
+    モデルのロード後に推論デバイスを変更したい場合に利用する。
+    既に指定されたデバイスにモデルがロードされている場合は何も行われない。
 
     Args:
         language (Languages): モデルを移動する言語
@@ -171,7 +173,9 @@ def transfer_model(language: Languages, device: str) -> None:
     current_device = str(__loaded_models[language].device)
     if current_device != device:
         __loaded_models[language].to(device)  # type: ignore
-        logger.info(f"Transferred the {language} BERT model from {current_device} to {device}")
+        logger.info(
+            f"Transferred the {language} BERT model from {current_device} to {device}"
+        )
 
 
 def unload_model(language: Languages) -> None:

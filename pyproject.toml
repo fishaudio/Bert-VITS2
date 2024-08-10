@@ -80,10 +80,12 @@ cov = ["test-cov", "cov-report"]
 detached = true
 dependencies = ["black[jupyter]", "isort"]
 [tool.hatch.envs.style.scripts]
+# Usage: `hatch run style:check`
 check = [
     "black --check --diff .",
     "isort --check-only --diff --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
 ]
+# Usage: `hatch run style:fmt`
 fmt = [
     "black .",
     "isort --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
