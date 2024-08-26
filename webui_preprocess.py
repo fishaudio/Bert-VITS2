@@ -44,11 +44,16 @@ def resample(data_dir):
     in_dir = os.path.join(start_path, "raw")
     out_dir = os.path.join(start_path, "wavs")
     subprocess.run(
-        f"python resample_legacy.py "
-        f"--sr 44100 "
-        f"--in_dir {in_dir} "
-        f"--out_dir {out_dir} ",
-        shell=True,
+        [
+            "python",
+            "resample_legacy.py",
+            "--sr",
+            "44100",
+            "--in_dir",
+            f"{in_dir}",
+            "--out_dir",
+            f"{out_dir}",
+        ]
     )
     return "音频文件预处理完成"
 
@@ -65,12 +70,18 @@ def preprocess_text(data_dir):
             )
             f.writelines(f"{path}|{spk}|{language}|{text}\n")
     subprocess.run(
-        f"python preprocess_text.py "
-        f"--transcription-path {lbl_path} "
-        f"--train-path {train_path} "
-        f"--val-path {val_path} "
-        f"--config-path {config_path}",
-        shell=True,
+        [
+            "python",
+            "preprocess_text.py",
+            "--transcription-path",
+            f"{lbl_path}",
+            "--train-path",
+            f"{train_path}",
+            "--val-path",
+            f"{val_path}",
+            "--config-path",
+            f"{config_path}",
+        ]
     )
     return "标签文件预处理完成"
 
@@ -78,10 +89,7 @@ def preprocess_text(data_dir):
 def bert_gen(data_dir):
     assert data_dir != "", "数据集名称不能为空"
     _, _, _, _, config_path = get_path(data_dir)
-    subprocess.run(
-        f"python bert_gen.py " f"--config {config_path}",
-        shell=True,
-    )
+    subprocess.run(["python", "bert_gen.py", "--config", f"{config_path}"])
     return "BERT 特征文件生成完成"
 
 
