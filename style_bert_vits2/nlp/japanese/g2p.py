@@ -289,7 +289,7 @@ def adjust_word2ph(
     current_generated_index = 0
 
     # word2ph の要素数 (=正規化された読み上げテキストの文字数) を維持しながら、差分情報を使って word2ph を修正
-    ## 音素数が generated_phone と given_phone で異なる場合にこの align_word2ph() が呼び出される
+    ## 音素数が generated_phone と given_phone で異なる場合にこの adjust_word2ph() が呼び出される
     ## word2ph は正規化された読み上げテキストの文字数に対応しているので、要素数はそのまま given_phone で増減した音素数に合わせて各要素の値を増減する
     for word2ph_element_index, word2ph_element in enumerate(word2ph):
         # ここの word2ph_element は、正規化された読み上げテキストの各文字に割り当てられる音素の数を示す
@@ -717,5 +717,5 @@ class YomiError(Exception):
     """
     OpenJTalk で、読みが正しく取得できない箇所があるときに発生する例外。
     基本的に「学習の前処理のテキスト処理時」には発生させ、そうでない場合は、
-    ignore_yomi_error=True にしておいて、この例外を発生させないようにする。
+    raise_yomi_error=False にしておいて、この例外を発生させないようにする。
     """
