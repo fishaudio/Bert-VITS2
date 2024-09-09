@@ -15,5 +15,6 @@ pypinyin
 pyworld-prebuilt
 torch<2.4
 torchaudio
+torchvision<0.19
 transformers
 umap-learn
