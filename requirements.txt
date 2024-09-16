@@ -10,6 +10,8 @@ librosa==0.9.2
 loguru
 num2words
 numpy<2
+onnxruntime
+onnxsim
 protobuf==4.25
 psutil
 punctuators
