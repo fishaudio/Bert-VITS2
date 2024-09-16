@@ -526,8 +526,9 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
 
 
 if __name__ == "__main__":
-    from config import get_path_config
     import torch
+
+    from config import get_path_config
 
     path_config = get_path_config()
     assets_root = path_config.assets_root
