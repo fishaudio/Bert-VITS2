@@ -10,6 +10,7 @@ Style-Bert-VITS2 の ONNX 推論に必要な各言語ごとの ONNX 版 BERT モ
 """
 
 import gc
+import time
 from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
@@ -73,7 +74,7 @@ def load_model(
     if pretrained_model_name_or_path is None:
         assert DEFAULT_ONNX_BERT_MODEL_PATHS[
             language
-        ].exists(), f"The default {language} ONNX BERT model does not exist on the file system. Please specify the path to the pre-trained model."
+        ].exists(), f"The default {language.name} ONNX BERT model does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_ONNX_BERT_MODEL_PATHS[language])
 
     # pretrained_model_name_or_path に Hugging Face のリポジトリ名が指定された場合 (aaaa/bbbb のフォーマットを想定):
@@ -93,12 +94,13 @@ def load_model(
         model_path = Path(pretrained_model_name_or_path).resolve() / "model.onnx"
 
     # BERT モデルをロードし、辞書に格納して返す
+    start_time = time.time()
     __loaded_models[language] = onnxruntime.InferenceSession(
         model_path,
         providers=onnx_providers,
     )
     logger.info(
-        f"Loaded the {language} ONNX BERT model from {pretrained_model_name_or_path}"
+        f"Loaded the {language.name} ONNX BERT model from {pretrained_model_name_or_path} ({time.time() - start_time:.2f}s)"
     )
 
     return __loaded_models[language]
@@ -139,7 +141,7 @@ def load_tokenizer(
     if pretrained_model_name_or_path is None:
         assert DEFAULT_ONNX_BERT_MODEL_PATHS[
             language
-        ].exists(), f"The default {language} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
+        ].exists(), f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_ONNX_BERT_MODEL_PATHS[language])
 
     # BERT トークナイザーをロードし、辞書に格納して返す
@@ -158,7 +160,7 @@ def load_tokenizer(
             use_fast=True,  # デフォルトで True だが念のため明示的に指定
         )
     logger.info(
-        f"Loaded the {language} ONNX BERT tokenizer from {pretrained_model_name_or_path}"
+        f"Loaded the {language.name} ONNX BERT tokenizer from {pretrained_model_name_or_path}"
     )
 
     return __loaded_tokenizers[language]
@@ -175,7 +177,7 @@ def unload_model(language: Languages) -> None:
     if language in __loaded_models:
         del __loaded_models[language]
         gc.collect()
-        logger.info(f"Unloaded the {language} ONNX BERT model")
+        logger.info(f"Unloaded the {language.name} ONNX BERT model")
 
 
 def unload_tokenizer(language: Languages) -> None:
@@ -189,7 +191,7 @@ def unload_tokenizer(language: Languages) -> None:
     if language in __loaded_tokenizers:
         del __loaded_tokenizers[language]
         gc.collect()
-        logger.info(f"Unloaded the {language} ONNX BERT tokenizer")
+        logger.info(f"Unloaded the {language.name} ONNX BERT tokenizer")
 
 
 def unload_all_models() -> None:

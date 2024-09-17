@@ -179,6 +179,7 @@ parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
 # parser.add_argument("--skip_default_models", action="store_true")
 parser.add_argument("--skip_static_files", action="store_true")
+parser.add_argument("--preload_onnx_bert", action="store_true")
 args = parser.parse_args()
 device = args.device
 if device == "cuda" and not torch.cuda.is_available():
@@ -194,10 +195,12 @@ skip_static_files = bool(args.skip_static_files)
 ## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
 bert_models.load_model(Languages.JP, device_map=device)
 bert_models.load_tokenizer(Languages.JP)
-onnx_bert_models.load_model(
-    Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
-)
-onnx_bert_models.load_tokenizer(Languages.JP)
+# VRAM を浪費しないように、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
+if args.preload_onnx_bert:
+    onnx_bert_models.load_model(
+        Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
+    )
+    onnx_bert_models.load_tokenizer(Languages.JP)
 
 model_holder = TTSModelHolder(
     model_dir, device, torch_device_to_onnx_providers(device)

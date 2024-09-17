@@ -89,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dir", "-d", type=str, help="Model directory", default=config.assets_root
     )
+    parser.add_argument("--preload_onnx_bert", action="store_true")
     args = parser.parse_args()
 
     if args.cpu:
@@ -104,10 +105,12 @@ if __name__ == "__main__":
     bert_models.load_tokenizer(Languages.EN)
     bert_models.load_model(Languages.ZH, device_map=device)
     bert_models.load_tokenizer(Languages.ZH)
-    onnx_bert_models.load_model(
-        Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
-    )
-    onnx_bert_models.load_tokenizer(Languages.JP)
+    # VRAM を浪費しないように、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
+    if args.preload_onnx_bert:
+        onnx_bert_models.load_model(
+            Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
+        )
+        onnx_bert_models.load_tokenizer(Languages.JP)
 
     model_dir = Path(args.dir)
     model_holder = TTSModelHolder(

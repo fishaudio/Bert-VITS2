@@ -9,6 +9,7 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 """
 
 import gc
+import time
 from typing import Optional, Union, cast
 
 import torch
@@ -80,11 +81,12 @@ def load_model(
     if pretrained_model_name_or_path is None:
         assert DEFAULT_BERT_MODEL_PATHS[
             language
-        ].exists(), f"The default {language} BERT model does not exist on the file system. Please specify the path to the pre-trained model."
+        ].exists(), f"The default {language.name} BERT model does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_BERT_MODEL_PATHS[language])
 
     # BERT モデルをロードし、辞書に格納して返す
     ## 英語のみ DebertaV2Model でロードする必要がある
+    start_time = time.time()
     if language == Languages.EN:
         __loaded_models[language] = cast(
             DebertaV2Model,
@@ -103,7 +105,7 @@ def load_model(
             revision=revision,
         )
     logger.info(
-        f"Loaded the {language} BERT model from {pretrained_model_name_or_path}"
+        f"Loaded the {language.name} BERT model from {pretrained_model_name_or_path} ({time.time() - start_time:.2f}s)"
     )
 
     return __loaded_models[language]
@@ -146,7 +148,7 @@ def load_tokenizer(
     if pretrained_model_name_or_path is None:
         assert DEFAULT_BERT_MODEL_PATHS[
             language
-        ].exists(), f"The default {language} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
+        ].exists(), f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
         pretrained_model_name_or_path = str(DEFAULT_BERT_MODEL_PATHS[language])
 
     # BERT トークナイザーをロードし、辞書に格納して返す
@@ -165,7 +167,7 @@ def load_tokenizer(
             use_fast=True,  # デフォルトで True だが念のため明示的に指定
         )
     logger.info(
-        f"Loaded the {language} BERT tokenizer from {pretrained_model_name_or_path}"
+        f"Loaded the {language.name} BERT tokenizer from {pretrained_model_name_or_path}"
     )
 
     return __loaded_tokenizers[language]
@@ -183,7 +185,7 @@ def transfer_model(language: Languages, device: str) -> None:
     """
 
     if language not in __loaded_models:
-        raise ValueError(f"BERT model for {language} is not loaded.")
+        raise ValueError(f"BERT model for {language.name} is not loaded.")
 
     # 既に指定されたデバイスにモデルがロードされている場合は何もしない
     # ex: current_device="cuda:0", device="cuda" → 何もしない
@@ -194,7 +196,7 @@ def transfer_model(language: Languages, device: str) -> None:
 
     __loaded_models[language].to(device)  # type: ignore
     logger.info(
-        f"Transferred the {language} BERT model from {current_device} to {device}"
+        f"Transferred the {language.name} BERT model from {current_device} to {device}"
     )
 
 
@@ -211,7 +213,7 @@ def unload_model(language: Languages) -> None:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        logger.info(f"Unloaded the {language} BERT model")
+        logger.info(f"Unloaded the {language.name} BERT model")
 
 
 def unload_tokenizer(language: Languages) -> None:
@@ -227,7 +229,7 @@ def unload_tokenizer(language: Languages) -> None:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        logger.info(f"Unloaded the {language} BERT tokenizer")
+        logger.info(f"Unloaded the {language.name} BERT tokenizer")
 
 
 def unload_all_models() -> None:
