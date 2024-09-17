@@ -39,11 +39,10 @@ __loaded_tokenizers: dict[
 def load_model(
     language: Languages,
     pretrained_model_name_or_path: Optional[str] = None,
-    onnx_providers: list[str] = ["CPUExecutionProvider"],
-    onnx_provider_options: Optional[Sequence[dict[str, Any]]] = None,
+    onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]] = ["CPUExecutionProvider"],
     cache_dir: Optional[str] = None,
     revision: str = "main",
-) -> onnxruntime.InferenceSession:
+) -> onnxruntime.InferenceSession:  # fmt: skip
     """
     指定された言語の ONNX 版 BERT モデルをロードし、ロード済みの ONNX 版 BERT モデルを返す。
     一度ロードされていれば、ロード済みの ONNX 版 BERT モデルを即座に返す。
@@ -59,7 +58,6 @@ def load_model(
         language (Languages): ロードする学習済みモデルの対象言語
         pretrained_model_name_or_path (Optional[str]): ロードする学習済みモデルの名前またはパス。指定しない場合はデフォルトのパスが利用される (デフォルト: None)
         onnx_providers (list[str]): ONNX 推論で利用する ExecutionProvider (CPUExecutionProvider, CUDAExecutionProvider など)
-        onnx_provider_options (Optional[dict[str, Any]]): ONNX 推論で利用する ExecutionProvider のオプション
         cache_dir (Optional[str]): モデルのキャッシュディレクトリ。指定しない場合はデフォルトのキャッシュディレクトリが利用される (デフォルト: None)
         revision (str): モデルの Hugging Face 上の Git リビジョン。指定しない場合は最新の main ブランチの内容が利用される (デフォルト: None)
 
@@ -98,7 +96,6 @@ def load_model(
     __loaded_models[language] = onnxruntime.InferenceSession(
         model_path,
         providers=onnx_providers,
-        provider_options=onnx_provider_options,
     )
     logger.info(
         f"Loaded the {language} ONNX BERT model from {pretrained_model_name_or_path}"

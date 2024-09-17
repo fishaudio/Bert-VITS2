@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 import numpy as np
 import onnxruntime
@@ -35,8 +35,7 @@ def get_text_onnx(
     text: str,
     language_str: Languages,
     hps: HyperParameters,
-    onnx_providers: list[str],
-    onnx_provider_options: Optional[Sequence[dict[str, Any]]],
+    onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]],
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
     given_phone: Optional[list[str]] = None,
@@ -68,7 +67,6 @@ def get_text_onnx(
         word2ph,
         language_str,
         onnx_providers,
-        onnx_provider_options,
         assist_text,
         assist_text_weight,
     )
@@ -111,8 +109,7 @@ def infer_onnx(
     language: Languages,
     hps: HyperParameters,
     onnx_session: onnxruntime.InferenceSession,
-    onnx_providers: list[str],
-    onnx_provider_options: Optional[Sequence[dict[str, Any]]],
+    onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]],
     skip_start: bool = False,
     skip_end: bool = False,
     assist_text: Optional[str] = None,
@@ -126,7 +123,6 @@ def infer_onnx(
         language,
         hps,
         onnx_providers=onnx_providers,
-        onnx_provider_options=onnx_provider_options,
         assist_text=assist_text,
         assist_text_weight=assist_text_weight,
         given_phone=given_phone,
@@ -171,8 +167,8 @@ def infer_onnx(
                 input_names[4]: lang_ids,
                 input_names[5]: ja_bert,
                 input_names[6]: style_vec_tensor,
-                input_names[7]: length_scale,
-                input_names[8]: sdp_ratio,
+                input_names[7]: np.array([length_scale], dtype=np.float32),
+                input_names[8]: np.array([sdp_ratio], dtype=np.float32),
             },
         )
     else:

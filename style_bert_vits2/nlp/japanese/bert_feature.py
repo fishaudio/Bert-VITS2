@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -86,8 +86,7 @@ def extract_bert_feature(
 def extract_bert_feature_onnx(
     text: str,
     word2ph: list[int],
-    onnx_providers: list[str],
-    onnx_provider_options: Optional[Sequence[dict[str, Any]]],
+    onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]],
     assist_text: Optional[str] = None,
     assist_text_weight: float = 0.7,
 ) -> NDArray[Any]:
@@ -98,7 +97,6 @@ def extract_bert_feature_onnx(
         text (str): 日本語のテキスト
         word2ph (list[int]): 元のテキストの各文字に音素が何個割り当てられるかを表すリスト
         onnx_providers (list[str]): ONNX 推論で利用する ExecutionProvider (CPUExecutionProvider, CUDAExecutionProvider など)
-        onnx_provider_options (Optional[dict[str, Any]]): ONNX 推論で利用する ExecutionProvider のオプション
         assist_text (Optional[str], optional): 補助テキスト (デフォルト: None)
         assist_text_weight (float, optional): 補助テキストの重み (デフォルト: 0.7)
 
@@ -118,7 +116,6 @@ def extract_bert_feature_onnx(
     session = onnx_bert_models.load_model(
         language=Languages.JP,
         onnx_providers=onnx_providers,
-        onnx_provider_options=onnx_provider_options,
     )
     output_name = session.get_outputs()[0].name
     res = session.run(

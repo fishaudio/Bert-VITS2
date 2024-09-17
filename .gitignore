@@ -13,6 +13,7 @@ dist/
 /bert/*/*.model
 /bert/*/*.safetensors
 /bert/*/*.msgpack
+/bert/*/*.onnx
 
 /configs/paths.yml
 

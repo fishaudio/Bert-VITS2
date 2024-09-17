@@ -44,9 +44,8 @@ class TTSModel:
         config_path: Union[Path, HyperParameters],
         style_vec_path: Union[Path, NDArray[Any]],
         device: str = "cpu",
-        onnx_providers: list[str] = ["CPUExecutionProvider"],
-        onnx_provider_options: Optional[Sequence[dict[str, Any]]] = None,
-    ) -> None:
+        onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]] = ["CPUExecutionProvider"],
+    ) -> None:  # fmt: skip
         """
         Style-Bert-VITS2 の音声合成モデルを初期化する。
         この時点ではモデルはロードされていない (明示的にロードしたい場合は model.load() を呼び出す)。
@@ -57,13 +56,11 @@ class TTSModel:
             style_vec_path (Union[Path, NDArray[Any]]): スタイルベクトル (style_vectors.npy) のパス (直接 NDArray を指定することも可能)
             device (str): PyTorch 推論での音声合成時に利用するデバイス (cpu, cuda, mps など)
             onnx_providers (list[str]): ONNX 推論で利用する ExecutionProvider (CPUExecutionProvider, CUDAExecutionProvider など)
-            onnx_provider_options (Optional[dict[str, Any]]): ONNX 推論で利用する ExecutionProvider のオプション
         """
 
         self.model_path: Path = model_path
         self.device: str = device
-        self.onnx_providers: list[str] = onnx_providers
-        self.onnx_provider_options: Optional[Sequence[dict[str, Any]]] = onnx_provider_options  # fmt: skip
+        self.onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]] = onnx_providers  # fmt: skip
 
         # ONNX 形式のモデルかどうか
         if self.model_path.suffix == ".onnx":
@@ -85,11 +82,11 @@ class TTSModel:
         # スタイルベクトルの NDArray が直接指定された
         if isinstance(style_vec_path, np.ndarray):
             self.style_vec_path: Path = Path("")  # 互換性のため空の Path を設定
-            self.__style_vectors: NDArray[Any] = style_vec_path
+            self.style_vectors: NDArray[Any] = style_vec_path
         # スタイルベクトルのパスが指定された
         else:
             self.style_vec_path: Path = style_vec_path
-            self.__style_vectors: NDArray[Any] = np.load(self.style_vec_path)
+            self.style_vectors: NDArray[Any] = np.load(self.style_vec_path)
 
         self.spk2id: dict[str, int] = self.hyper_parameters.data.spk2id
         self.id2spk: dict[int, str] = {v: k for k, v in self.spk2id.items()}
@@ -104,17 +101,17 @@ class TTSModel:
                 f"Number of styles ({num_styles}) does not match the number of style2id ({len(self.style2id)})"
             )
 
-        if self.__style_vectors.shape[0] != num_styles:
+        if self.style_vectors.shape[0] != num_styles:
             raise ValueError(
-                f"The number of styles ({num_styles}) does not match the number of style vectors ({self.__style_vectors.shape[0]})"
+                f"The number of styles ({num_styles}) does not match the number of style vectors ({self.style_vectors.shape[0]})"
             )
-        self.__style_vector_inference: Optional[Any] = None
+        self.style_vector_inference: Optional[Any] = None
 
-        # __net_g は PyTorch 推論時のみ遅延初期化される
-        self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
+        # net_g は PyTorch 推論時のみ遅延初期化される
+        self.net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
-        # __onnx_session は ONNX 推論時のみ遅延初期化される
-        self.__onnx_session: Optional[onnxruntime.InferenceSession] = None
+        # onnx_session は ONNX 推論時のみ遅延初期化される
+        self.onnx_session: Optional[onnxruntime.InferenceSession] = None
 
     def load(self) -> None:
         """
@@ -125,7 +122,7 @@ class TTSModel:
         if not self.is_onnx_model:
             from style_bert_vits2.models.infer import get_net_g
 
-            self.__net_g = get_net_g(
+            self.net_g = get_net_g(
                 model_path=str(self.model_path),
                 version=self.hyper_parameters.version,
                 device=self.device,
@@ -134,11 +131,12 @@ class TTSModel:
 
         # ONNX 推論時
         else:
-            self.__onnx_session = onnxruntime.InferenceSession(
+            self.onnx_session = onnxruntime.InferenceSession(
                 path_or_bytes=str(self.model_path),
                 providers=self.onnx_providers,
-                provider_options=self.onnx_provider_options,
             )
+
+        logger.info(f"Model loaded successfully from {self.model_path}")
 
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -151,8 +149,8 @@ class TTSModel:
         Returns:
             NDArray[Any]: スタイルベクトル
         """
-        mean = self.__style_vectors[0]
-        style_vec = self.__style_vectors[style_id]
+        mean = self.style_vectors[0]
+        style_vec = self.style_vectors[style_id]
         style_vec = mean + (style_vec - mean) * weight
         return style_vec
 
@@ -169,7 +167,7 @@ class TTSModel:
             NDArray[Any]: スタイルベクトル
         """
 
-        if self.__style_vector_inference is None:
+        if self.style_vector_inference is None:
 
             # pyannote.audio は scikit-learn などの大量の重量級ライブラリに依存しているため、
             # TTSModel.infer() に reference_audio_path を指定し音声からスタイルベクトルを推論する場合のみ遅延 import する
@@ -183,17 +181,17 @@ class TTSModel:
             # スタイルベクトルを取得するための推論モデルを初期化
             import torch
 
-            self.__style_vector_inference = pyannote.audio.Inference(
+            self.style_vector_inference = pyannote.audio.Inference(
                 model=pyannote.audio.Model.from_pretrained(
                     "pyannote/wespeaker-voxceleb-resnet34-LM"
                 ),
                 window="whole",
             )
-            self.__style_vector_inference.to(torch.device(self.device))
+            self.style_vector_inference.to(torch.device(self.device))
 
         # 音声からスタイルベクトルを推論
-        xvec = self.__style_vector_inference(audio_path)
-        mean = self.__style_vectors[0]
+        xvec = self.style_vector_inference(audio_path)
+        mean = self.style_vectors[0]
         xvec = mean + (xvec - mean) * weight
         return xvec
 
@@ -310,9 +308,9 @@ class TTSModel:
             from style_bert_vits2.models.infer import infer
 
             # モデルがロードされていない場合はロードする
-            if self.__net_g is None:
+            if self.net_g is None:
                 self.load()
-            assert self.__net_g is not None
+            assert self.net_g is not None
 
             # 通常のテキストから音声を生成
             if not line_split:
@@ -326,7 +324,7 @@ class TTSModel:
                         sid=speaker_id,
                         language=language,
                         hps=self.hyper_parameters,
-                        net_g=self.__net_g,
+                        net_g=self.net_g,
                         device=self.device,
                         assist_text=assist_text,
                         assist_text_weight=assist_text_weight,
@@ -352,7 +350,7 @@ class TTSModel:
                                 sid=speaker_id,
                                 language=language,
                                 hps=self.hyper_parameters,
-                                net_g=self.__net_g,
+                                net_g=self.net_g,
                                 device=self.device,
                                 assist_text=assist_text,
                                 assist_text_weight=assist_text_weight,
@@ -368,9 +366,9 @@ class TTSModel:
             from style_bert_vits2.models.infer_onnx import infer_onnx
 
             # モデルがロードされていない場合はロードする
-            if self.__onnx_session is None:
+            if self.onnx_session is None:
                 self.load()
-            assert self.__onnx_session is not None
+            assert self.onnx_session is not None
 
             # 通常のテキストから音声を生成
             if not line_split:
@@ -383,9 +381,8 @@ class TTSModel:
                     sid=speaker_id,
                     language=language,
                     hps=self.hyper_parameters,
-                    onnx_session=self.__onnx_session,
+                    onnx_session=self.onnx_session,
                     onnx_providers=self.onnx_providers,
-                    onnx_provider_options=self.onnx_provider_options,
                     assist_text=assist_text,
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
@@ -409,9 +406,8 @@ class TTSModel:
                             sid=speaker_id,
                             language=language,
                             hps=self.hyper_parameters,
-                            onnx_session=self.__onnx_session,
+                            onnx_session=self.onnx_session,
                             onnx_providers=self.onnx_providers,
-                            onnx_provider_options=self.onnx_provider_options,
                             assist_text=assist_text,
                             assist_text_weight=assist_text_weight,
                             style_vec=style_vector,
@@ -487,13 +483,17 @@ class TTSModelHolder:
         self.current_model = None
         self.models_info = []
 
-        model_dirs = [d for d in self.root_dir.iterdir() if d.is_dir()]
+        model_dirs = sorted([d for d in self.root_dir.iterdir() if d.is_dir()])
         for model_dir in model_dirs:
-            model_files = [
-                f
-                for f in model_dir.iterdir()
-                if f.suffix in [".pth", ".pt", ".safetensors", ".onnx"]
-            ]
+            if model_dir.name.startswith("."):
+                continue
+            model_files = sorted(
+                [
+                    f
+                    for f in model_dir.iterdir()
+                    if f.suffix in [".pth", ".pt", ".safetensors", ".onnx"]
+                ]
+            )
             if len(model_files) == 0:
                 logger.warning(f"No model files found in {model_dir}, so skip it")
                 continue
