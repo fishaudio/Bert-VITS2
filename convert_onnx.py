@@ -1,13 +1,17 @@
 # usage: .venv/bin/python convert_onnx.py --model model_assets/amitaro/amitaro.safetensors
 # ref: https://github.com/tuna2134/sbv2-api/blob/main/convert/convert_model.py
 
+import time
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import cast
 
 import onnx
 import torch
-from onnxsim import simplify
+from onnxsim import model_info, simplify
+from rich import print
+from rich.rule import Rule
+from rich.style import Style
 
 from style_bert_vits2.constants import (
     DEFAULT_ASSIST_TEXT_WEIGHT,
@@ -23,6 +27,7 @@ from style_bert_vits2.tts_model import TTSModel
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     parser = ArgumentParser()
     parser.add_argument("--model", required=True)
     args = parser.parse_args()
@@ -37,6 +42,11 @@ if __name__ == "__main__":
     assert config_path.exists(), "Config file does not exist"
     assert style_vec_path.exists(), "Style vector file does not exist"
     assert model_path.suffix != ".onnx", "Model file is already ONNX"
+    print(Rule(characters="=", style=Style(color="blue")))
+    print(f"[bold cyan]Model file:[/bold cyan] {model_path}")
+    print(f"[bold cyan]Config file:[/bold cyan] {config_path}")
+    print(f"[bold cyan]Style vector file:[/bold cyan] {style_vec_path}")
+    print(Rule(characters="=", style=Style(color="blue")))
 
     # PyTorch モデルを読み込む
     device = "cpu"
@@ -104,6 +114,10 @@ if __name__ == "__main__":
     style_vec_tensor = torch.from_numpy(style_vector).to(device).unsqueeze(0)
 
     # モデルを ONNX に変換
+    print(Rule(characters="=", style=Style(color="blue")))
+    print(f"[bold cyan]Exporting ONNX model...[/bold cyan]")
+    print(Rule(characters="=", style=Style(color="blue")))
+    export_start_time = time.time()
     torch.onnx.export(
         model=tts_model.net_g,
         args=(
@@ -139,12 +153,26 @@ if __name__ == "__main__":
         ],
         output_names=["output"],
     )
+    print(
+        f"[bold green]ONNX model exported to {onnx_temp_model_path} ({time.time() - export_start_time:.2f}s)[/bold green]"
+    )
 
     # ONNX モデルを最適化
+    print(Rule(characters="=", style=Style(color="blue")))
+    print(f"[bold cyan]Optimizing ONNX model...[/bold cyan]")
+    print(Rule(characters="=", style=Style(color="blue")))
+    optimize_start_time = time.time()
     onnx_model = onnx.load(onnx_temp_model_path)
     simplified_onnx_model, check = simplify(onnx_model)
     onnx.save(simplified_onnx_model, onnx_optimized_model_path)
-
-    # 最適化前の ONNX モデルを削除
     onnx_temp_model_path.unlink()
-    print(f"ONNX model optimized and saved to {onnx_optimized_model_path}")
+    print(
+        f"[bold green]ONNX model optimized and saved to {onnx_optimized_model_path} ({time.time() - optimize_start_time:.2f}s)[/bold green]"
+    )
+    print(
+        f"[bold]Total Time: {time.time() - start_time:.2f}s / Size: {onnx_optimized_model_path.stat().st_size / 1024 / 1024:.2f}MB[/bold]"
+    )
+    print(Rule(characters="=", style=Style(color="blue")))
+    print("[bold cyan]Optimized model info:[/bold cyan]")
+    model_info.print_simplifying_info(onnx_model, simplified_onnx_model)
+    print(Rule(characters="=", style=Style(color="blue")))
