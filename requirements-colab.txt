@@ -9,6 +9,7 @@ loguru
 num2words
 numpy<2
 onnxruntime
+onnxruntime-gpu
 pyannote.audio>=3.1.0
 pyloudnorm
 pyopenjtalk-dict

@@ -11,6 +11,7 @@ loguru
 num2words
 numpy<2
 onnxruntime
+onnxruntime-gpu
 onnxsim
 protobuf==4.25
 psutil
@@ -22,7 +23,7 @@ pypinyin
 pyworld-prebuilt
 stable_ts
 tensorboard
-torch<2.4
-torchaudio<2.4
+torch
+torchaudio
 transformers
 umap-learn

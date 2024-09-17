@@ -22,7 +22,6 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "accelerate",
     "cmudict",
     "cn2an",
     "g2p_en",
@@ -37,8 +36,13 @@ dependencies = [
     "pypinyin",
     "pyworld-prebuilt",
     "safetensors",
-    "torch>=2.1",
     "transformers",
+]
+
+[project.optional-dependencies]
+torch = [
+    "accelerate",
+    "torch>=2.1",
 ]
 
 [project.urls]
@@ -68,6 +72,7 @@ packages = ["style_bert_vits2"]
 
 [tool.hatch.envs.test]
 dependencies = ["coverage[toml]>=6.5", "pytest", "scipy"]
+features = ["torch"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
 test = "pytest {args:tests}"
@@ -77,6 +82,8 @@ test-cov = "coverage run -m pytest {args:tests}"
 cov-report = ["- coverage combine", "coverage report"]
 # Usage: `hatch run test:cov`
 cov = ["test-cov", "cov-report"]
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11"]
 
 [tool.hatch.envs.style]
 detached = true
@@ -93,9 +100,6 @@ fmt = [
     "isort --profile black --gitignore --lai 2 . --sg \"Data/*\" --sg \"inputs/*\" --sg \"model_assets/*\" --sg \"static/*\"",
     "check",
 ]
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.9", "3.10", "3.11"]
 
 [tool.coverage.run]
 source_pkgs = ["style_bert_vits2", "tests"]
