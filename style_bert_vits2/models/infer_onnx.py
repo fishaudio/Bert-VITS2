@@ -5,13 +5,30 @@ import onnxruntime
 from numpy.typing import NDArray
 
 from style_bert_vits2.constants import Languages
-from style_bert_vits2.models import commons
 from style_bert_vits2.models.hyper_parameters import HyperParameters
 from style_bert_vits2.nlp import (
     clean_text_with_given_phone_tone,
     cleaned_text_to_sequence,
     extract_bert_feature_onnx,
 )
+
+
+def __intersperse(lst: list[Any], item: Any) -> list[Any]:
+    """
+    リストの要素の間に特定のアイテムを挿入する
+    style_bert_vits2.models.commons.intersperse と同一実装
+    style_bert_vits2.models.commons モジュールは PyTorch に依存しているため、ONNX 推論時は import できない
+
+    Args:
+        lst (list[Any]): 元のリスト
+        item (Any): 挿入するアイテム
+
+    Returns:
+        list[Any]: 新しいリスト
+    """
+    result = [item] * (len(lst) * 2 + 1)
+    result[1::2] = lst
+    return result
 
 
 def get_text_onnx(
@@ -40,9 +57,9 @@ def get_text_onnx(
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 
     if hps.data.add_blank:
-        phone = commons.intersperse(phone, 0)
-        tone = commons.intersperse(tone, 0)
-        language = commons.intersperse(language, 0)
+        phone = __intersperse(phone, 0)
+        tone = __intersperse(tone, 0)
+        language = __intersperse(language, 0)
         for i in range(len(word2ph)):
             word2ph[i] = word2ph[i] * 2
         word2ph[0] += 1
