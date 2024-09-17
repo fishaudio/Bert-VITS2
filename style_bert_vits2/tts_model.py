@@ -131,6 +131,9 @@ class TTSModel:
                 device=self.device,
                 hps=self.hyper_parameters,
             )
+            logger.info(
+                f"Model loaded successfully from {self.model_path} to \"{self.device}\" device ({time.time() - start_time:.2f}s)"
+            )
 
         # ONNX 推論時
         else:
@@ -138,10 +141,9 @@ class TTSModel:
                 path_or_bytes=str(self.model_path),
                 providers=self.onnx_providers,
             )
-
-        logger.info(
-            f"Model loaded successfully from {self.model_path} ({time.time() - start_time:.2f}s)"
-        )
+            logger.info(
+                f"Model loaded successfully from {self.model_path} to {self.onnx_session.get_providers()[0]} ({time.time() - start_time:.2f}s)"
+            )
 
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -447,13 +449,18 @@ class TTSModelInfo(BaseModel):
 
 class TTSModelHolder:
     """
-    Style-Bert-Vits2 の音声合成モデルを管理するクラス。
+    Style-Bert-VITS2 の音声合成モデルを管理するクラス。
     model_holder.models_info から指定されたディレクトリ内にある音声合成モデルの一覧を取得できる。
     """
 
-    def __init__(self, model_root_dir: Path, device: str) -> None:
+    def __init__(
+        self,
+        model_root_dir: Path,
+        device: str,
+        onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]],
+    ) -> None:
         """
-        Style-Bert-Vits2 の音声合成モデルを管理するクラスを初期化する。
+        Style-Bert-VITS2 の音声合成モデルを管理するクラスを初期化する。
         音声合成モデルは下記のように配置されていることを前提とする (.safetensors / .onnx のファイル名は自由) 。
         ```
         model_root_dir
@@ -470,11 +477,13 @@ class TTSModelHolder:
 
         Args:
             model_root_dir (Path): 音声合成モデルが配置されているディレクトリのパス
-            device (str): 音声合成時に利用するデバイス (cpu, cuda, mps など)
+            device (str): PyTorch 推論での音声合成時に利用するデバイス (cpu, cuda, mps など)
+            onnx_providers (list[str]): ONNX 推論で利用する ExecutionProvider (CPUExecutionProvider, CUDAExecutionProvider など)
         """
 
         self.root_dir: Path = model_root_dir
         self.device: str = device
+        self.onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]] = onnx_providers  # fmt: skip
         self.model_files_dict: dict[str, list[Path]] = {}
         self.current_model: Optional[TTSModel] = None
         self.model_names: list[str] = []
@@ -551,6 +560,7 @@ class TTSModelHolder:
                 config_path=self.root_dir / model_name / "config.json",
                 style_vec_path=self.root_dir / model_name / "style_vectors.npy",
                 device=self.device,
+                onnx_providers=self.onnx_providers,
             )
 
         return self.current_model
@@ -580,6 +590,7 @@ class TTSModelHolder:
             config_path=self.root_dir / model_name / "config.json",
             style_vec_path=self.root_dir / model_name / "style_vectors.npy",
             device=self.device,
+            onnx_providers=self.onnx_providers,
         )
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())

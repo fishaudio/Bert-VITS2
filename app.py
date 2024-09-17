@@ -14,6 +14,7 @@ from style_bert_vits2.constants import GRADIO_THEME, VERSION
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModelHolder
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 # このプロセスからはワーカーを起動して辞書を使いたいので、ここで初期化
@@ -40,7 +41,9 @@ if device == "cuda" and not torch.cuda.is_available():
 #     download_default_models()
 
 path_config = get_path_config()
-model_holder = TTSModelHolder(Path(path_config.assets_root), device)
+model_holder = TTSModelHolder(
+    Path(path_config.assets_root), device, torch_device_to_onnx_providers(device)
+)
 
 with gr.Blocks(theme=GRADIO_THEME) as app:
     gr.Markdown(f"# Style-Bert-VITS2 WebUI (version {VERSION})")

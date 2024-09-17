@@ -12,6 +12,7 @@ from config import get_path_config
 from style_bert_vits2.constants import DEFAULT_STYLE, GRADIO_THEME
 from style_bert_vits2.logging import logger
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 voice_keys = ["dec"]
@@ -1524,8 +1525,9 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
 
 
 if __name__ == "__main__":
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model_holder = TTSModelHolder(
-        assets_root, device="cuda" if torch.cuda.is_available() else "cpu"
+        assets_root, device, torch_device_to_onnx_providers(device)
     )
     app = create_merge_app(model_holder)
     app.launch(inbrowser=True)

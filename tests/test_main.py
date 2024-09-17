@@ -5,10 +5,13 @@ from style_bert_vits2.constants import BASE_DIR, Languages
 from style_bert_vits2.tts_model import TTSModelHolder
 
 
-def synthesize(device: str = "cpu"):
+def synthesize(
+    device: str = "cpu",
+    onnx_providers: list[str] = ["CPUExecutionProvider"],
+):
 
     # 音声合成モデルが配置されていれば、音声合成を実行
-    model_holder = TTSModelHolder(BASE_DIR / "model_assets", device)
+    model_holder = TTSModelHolder(BASE_DIR / "model_assets", device, onnx_providers)
     if len(model_holder.models_info) > 0:
 
         # jvnv-F2-jp モデルを探す

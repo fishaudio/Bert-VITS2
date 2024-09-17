@@ -53,6 +53,7 @@ from style_bert_vits2.nlp.japanese.user_dict import (
     update_dict,
 )
 from style_bert_vits2.tts_model import TTSModelHolder, TTSModelInfo
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 # ---フロントエンド部分に関する処理---
@@ -193,14 +194,14 @@ skip_static_files = bool(args.skip_static_files)
 ## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
 bert_models.load_model(Languages.JP, device_map=device)
 bert_models.load_tokenizer(Languages.JP)
-if device == "cpu":
-    onnx_provider = "CPUExecutionProvider"
-else:
-    onnx_provider = ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"})
-onnx_bert_models.load_model(Languages.JP, onnx_providers=[onnx_provider])
+onnx_bert_models.load_model(
+    Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
+)
 onnx_bert_models.load_tokenizer(Languages.JP)
 
-model_holder = TTSModelHolder(model_dir, device)
+model_holder = TTSModelHolder(
+    model_dir, device, torch_device_to_onnx_providers(device)
+)
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)
