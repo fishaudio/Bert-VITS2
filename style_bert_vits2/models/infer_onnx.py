@@ -157,24 +157,40 @@ def infer_onnx(
     input_names = [input.name for input in onnx_session.get_inputs()]
     output_name = onnx_session.get_outputs()[0].name
     if is_jp_extra:
-        output = onnx_session.run(
-            [output_name],
-            {
-                input_names[0]: x_tst,
-                input_names[1]: x_tst_lengths,
-                input_names[2]: sid_tensor,
-                input_names[3]: tones,
-                input_names[4]: lang_ids,
-                input_names[5]: ja_bert,
-                input_names[6]: style_vec_tensor,
-                input_names[7]: np.array([length_scale], dtype=np.float32),
-                input_names[8]: np.array([sdp_ratio], dtype=np.float32),
-            },
-        )
+        input_tensor = [
+            x_tst,
+            x_tst_lengths,
+            sid_tensor,
+            tones,
+            lang_ids,
+            ja_bert,
+            style_vec_tensor,
+            np.array([length_scale], dtype=np.float32),
+            np.array([sdp_ratio], dtype=np.float32),
+        ]
+
+        first_provider = onnx_session.get_providers()[0]
+        if first_provider == "CUDAExecutionProvider":
+            device_type = "cuda"
+        elif first_provider == "DmlExecutionProvider":
+            device_type = "dml"
+        else:
+            device_type = "cpu"
+
+        # GPU メモリに入力テンソルを割り当て
+        io_binding = onnx_session.io_binding()
+        for name, value in zip(input_names, input_tensor):
+            gpu_tensor = onnxruntime.OrtValue.ortvalue_from_numpy(value, device_type)
+            io_binding.bind_ortvalue_input(name, gpu_tensor)
+
+        # 推論の実行
+        io_binding.bind_output(output_name, device_type)
+        onnx_session.run_with_iobinding(io_binding)
+        output = io_binding.get_outputs()
     else:
         raise NotImplementedError("Not implemented yet")
 
-    audio = output[0][0, 0]
+    audio = output[0].numpy()[0, 0]
 
     del (
         x_tst,
