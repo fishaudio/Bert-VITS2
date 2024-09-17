@@ -137,8 +137,18 @@ class TTSModel:
 
         # ONNX 推論時
         else:
+            sess_options = onnxruntime.SessionOptions()
+            # 基本的な最適化のみ有効化
+            # ONNX モデルの作成時にすでに onnxsim により最適化されているため、ここでは基本的な最適化のみ有効化する
+            sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
+            # エラー以外のログを出力しない
+            # 本来は log_severity_level = 3 だけで効くはずだが、なぜか抑制できないので set_default_logger_severity() も呼び出している
+            sess_options.log_severity_level = 3
+            onnxruntime.set_default_logger_severity(3)
+
             self.onnx_session = onnxruntime.InferenceSession(
-                path_or_bytes=str(self.model_path),
+                str(self.model_path),
+                sess_options=sess_options,
                 providers=self.onnx_providers,
             )
             logger.info(

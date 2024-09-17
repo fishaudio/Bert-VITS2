@@ -93,10 +93,20 @@ def load_model(
     else:
         model_path = Path(pretrained_model_name_or_path).resolve() / "model.onnx"
 
-    # BERT モデルをロードし、辞書に格納して返す
     start_time = time.time()
+    sess_options = onnxruntime.SessionOptions()
+    # 基本的な最適化のみ有効化
+    # ONNX モデルの作成時にすでに onnxsim により最適化されているため、ここでは基本的な最適化のみ有効化する
+    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
+    # エラー以外のログを出力しない
+    # 本来は log_severity_level = 3 だけで効くはずだが、なぜか抑制できないので set_default_logger_severity() も呼び出している
+    sess_options.log_severity_level = 3
+    onnxruntime.set_default_logger_severity(3)
+
+    # BERT モデルをロードし、辞書に格納して返す
     __loaded_models[language] = onnxruntime.InferenceSession(
         model_path,
+        sess_options=sess_options,
         providers=onnx_providers,
     )
     logger.info(
