@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
@@ -118,6 +119,8 @@ class TTSModel:
         音声合成モデルをデバイスにロードする。
         """
 
+        start_time = time.time()
+
         # PyTorch 推論時
         if not self.is_onnx_model:
             from style_bert_vits2.models.infer import get_net_g
@@ -136,7 +139,9 @@ class TTSModel:
                 providers=self.onnx_providers,
             )
 
-        logger.info(f"Model loaded successfully from {self.model_path}")
+        logger.info(
+            f"Model loaded successfully from {self.model_path} ({time.time() - start_time:.2f}s)"
+        )
 
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -302,6 +307,7 @@ class TTSModel:
             )
 
         # PyTorch 推論時
+        start_time = time.time()
         if not self.is_onnx_model:
             import torch
 
@@ -417,7 +423,9 @@ class TTSModel:
                         audios.append(np.zeros(int(44100 * split_interval)))
                 audio = np.concatenate(audios)
 
-        logger.info("Audio data generated successfully")
+        logger.info(
+            f"Audio data generated successfully ({time.time() - start_time:.2f}s)"
+        )
 
         if not (pitch_scale == 1.0 and intonation_scale == 1.0):
             _, audio = adjust_voice(
