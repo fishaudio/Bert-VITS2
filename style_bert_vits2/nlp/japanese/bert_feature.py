@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from style_bert_vits2.constants import Languages
-from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp import bert_models, onnx_bert_models
 from style_bert_vits2.nlp.japanese.g2p import text_to_sep_kata
 
 
@@ -112,31 +112,47 @@ def extract_bert_feature_onnx(
     if assist_text:
         assist_text = "".join(text_to_sep_kata(assist_text, raise_yomi_error=False)[0])
 
-    tokenizer = Tokenizer.from_file("tokenizer.json")
-    token_ids = [1]
-    attention_mask = [1]
-    for word in text:
-        encoded = tokenizer.encode(word)
-        token_ids.extend(encoded.ids[1:-1])
-        attention_mask.extend(encoded.attention_mask[1:-1])
+    tokenizer = onnx_bert_models.load_tokenizer(Languages.JP)
+    inputs = tokenizer(text, return_tensors="pt")
 
-    token_ids.append(2)
-    attention_mask.append(1)
-
-    bert_output_name = bert_session.get_outputs()[0].name
-    res = bert_session.run(
-        [bert_output_name],
+    session = onnx_bert_models.load_model(
+        language=Languages.JP,
+        onnx_providers=onnx_providers,
+        onnx_provider_options=onnx_provider_options,
+    )
+    output_name = session.get_outputs()[0].name
+    res = session.run(
+        [output_name],
         {
-            "input_ids": np.array(token_ids).reshape(1, -1),
-            "attention_mask": np.array(attention_mask).reshape(1, -1),
+            "input_ids": inputs["input_ids"].detach().numpy(),
+            "attention_mask": inputs["attention_mask"].detach().numpy(),
         },
     )[0]
+
+    style_res_mean = None
+    if assist_text:
+        style_inputs = tokenizer(assist_text, return_tensors="pt")
+        style_res = session.run(
+            [output_name],
+            {
+                "input_ids": style_inputs["input_ids"].detach().numpy(),
+                "attention_mask": style_inputs["attention_mask"].detach().numpy(),
+            },
+        )[0]
+        style_res_mean = np.mean(style_res, axis=0)
 
     assert len(word2ph) == len(text) + 2, text
     word2phone = word2ph
     phone_level_feature = []
     for i in range(len(word2phone)):
-        repeat_feature = np.tile(res[i], (word2phone[i], 1))
+        if assist_text:
+            assert style_res_mean is not None
+            repeat_feature = (
+                np.tile(res[i], (word2phone[i], 1)) * (1 - assist_text_weight)
+                + np.tile(style_res_mean, (word2phone[i], 1)) * assist_text_weight
+            )
+        else:
+            repeat_feature = np.tile(res[i], (word2phone[i], 1))
         phone_level_feature.append(repeat_feature)
 
     phone_level_feature = np.concatenate(phone_level_feature, axis=0)

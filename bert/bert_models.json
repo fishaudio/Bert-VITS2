@@ -3,6 +3,10 @@
         "repo_id": "ku-nlp/deberta-v2-large-japanese-char-wwm",
         "files": ["pytorch_model.bin"]
     },
+    "deberta-v2-large-japanese-char-wwm-onnx": {
+        "repo_id": "tsukumijima/deberta-v2-large-japanese-char-wwm-onnx",
+        "files": ["model.onnx"]
+    },
     "chinese-roberta-wwm-ext-large": {
         "repo_id": "hfl/chinese-roberta-wwm-ext-large",
         "files": ["pytorch_model.bin"]
