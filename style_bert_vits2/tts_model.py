@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 import numpy as np
 import onnxruntime
@@ -20,12 +22,14 @@ from style_bert_vits2.constants import (
 )
 from style_bert_vits2.logging import logger
 from style_bert_vits2.models.hyper_parameters import HyperParameters
-from style_bert_vits2.models.infer import get_net_g, infer
-from style_bert_vits2.models.models import SynthesizerTrn
-from style_bert_vits2.models.models_jp_extra import (
-    SynthesizerTrn as SynthesizerTrnJPExtra,
-)
 from style_bert_vits2.voice import adjust_voice
+
+
+if TYPE_CHECKING:
+    from style_bert_vits2.models.models import SynthesizerTrn
+    from style_bert_vits2.models.models_jp_extra import (
+        SynthesizerTrn as SynthesizerTrnJPExtra,
+    )
 
 
 class TTSModel:
@@ -109,10 +113,8 @@ class TTSModel:
         # __net_g は PyTorch 推論時のみ遅延初期化される
         self.__net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
 
-        # __inference_session* は ONNX 推論時のみ遅延初期化される
+        # __onnx_session は ONNX 推論時のみ遅延初期化される
         self.__onnx_session: Optional[onnxruntime.InferenceSession] = None
-        self.__onnx_input_names: Optional[list[str]] = None
-        self.__onnx_output_names: Optional[list[str]] = None
 
     def load(self) -> None:
         """
@@ -121,6 +123,8 @@ class TTSModel:
 
         # PyTorch 推論時
         if not self.is_onnx_model:
+            from style_bert_vits2.models.infer import get_net_g
+
             self.__net_g = get_net_g(
                 model_path=str(self.model_path),
                 version=self.hyper_parameters.version,
@@ -135,14 +139,8 @@ class TTSModel:
                 providers=self.onnx_providers,
                 provider_options=self.onnx_provider_options,
             )
-            self.__onnx_input_names = [
-                input.name for input in self.__onnx_session.get_inputs()
-            ]
-            self.__onnx_output_names = [
-                output.name for output in self.__onnx_session.get_outputs()
-            ]
 
-    def __get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
+    def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
         スタイルベクトルを取得する。
 
@@ -158,7 +156,7 @@ class TTSModel:
         style_vec = mean + (style_vec - mean) * weight
         return style_vec
 
-    def __get_style_vector_from_audio(
+    def get_style_vector_from_audio(
         self, audio_path: str, weight: float = 1.0
     ) -> NDArray[Any]:
         """
@@ -199,7 +197,7 @@ class TTSModel:
         xvec = mean + (xvec - mean) * weight
         return xvec
 
-    def __convert_to_16_bit_wav(self, data: NDArray[Any]) -> NDArray[Any]:
+    def convert_to_16_bit_wav(self, data: NDArray[Any]) -> NDArray[Any]:
         """
         音声データを 16-bit int 形式に変換する。
         gradio.processing_utils.convert_to_16_bit_wav() を移植したもの。
@@ -299,15 +297,17 @@ class TTSModel:
         # スタイルベクトルを取得
         if reference_audio_path is None:
             style_id = self.style2id[style]
-            style_vector = self.__get_style_vector(style_id, style_weight)
+            style_vector = self.get_style_vector(style_id, style_weight)
         else:
-            style_vector = self.__get_style_vector_from_audio(
+            style_vector = self.get_style_vector_from_audio(
                 reference_audio_path, style_weight
             )
 
         # PyTorch 推論時
         if not self.is_onnx_model:
             import torch
+
+            from style_bert_vits2.models.infer import infer
 
             # モデルがロードされていない場合はロードする
             if self.__net_g is None:
@@ -365,13 +365,12 @@ class TTSModel:
 
         # ONNX 推論時
         else:
+            from style_bert_vits2.models.infer_onnx import infer_onnx
 
             # モデルがロードされていない場合はロードする
             if self.__onnx_session is None:
                 self.load()
             assert self.__onnx_session is not None
-            assert self.__onnx_input_names is not None
-            assert self.__onnx_output_names is not None
 
             # 通常のテキストから音声を生成
             if not line_split:
@@ -384,7 +383,9 @@ class TTSModel:
                     sid=speaker_id,
                     language=language,
                     hps=self.hyper_parameters,
-                    device=self.device,
+                    onnx_session=self.__onnx_session,
+                    onnx_providers=self.onnx_providers,
+                    onnx_provider_options=self.onnx_provider_options,
                     assist_text=assist_text,
                     assist_text_weight=assist_text_weight,
                     style_vec=style_vector,
@@ -408,7 +409,9 @@ class TTSModel:
                             sid=speaker_id,
                             language=language,
                             hps=self.hyper_parameters,
-                            device=self.device,
+                            onnx_session=self.__onnx_session,
+                            onnx_providers=self.onnx_providers,
+                            onnx_provider_options=self.onnx_provider_options,
                             assist_text=assist_text,
                             assist_text_weight=assist_text_weight,
                             style_vec=style_vector,
@@ -427,7 +430,7 @@ class TTSModel:
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
             )
-        audio = self.__convert_to_16_bit_wav(audio)
+        audio = self.convert_to_16_bit_wav(audio)
         return (self.hyper_parameters.data.sampling_rate, audio)
 
 
@@ -560,9 +563,9 @@ class TTSModelHolder:
             speakers = list(self.current_model.spk2id.keys())
             styles = list(self.current_model.style2id.keys())
             return (
-                gr.Dropdown(choices=styles, value=styles[0]),  # type: ignore
+                gr.Dropdown(choices=styles, value=styles[0]),
                 gr.Button(interactive=True, value="音声合成"),
-                gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
+                gr.Dropdown(choices=speakers, value=speakers[0]),
             )
         self.current_model = TTSModel(
             model_path=model_path,
@@ -573,16 +576,16 @@ class TTSModelHolder:
         speakers = list(self.current_model.spk2id.keys())
         styles = list(self.current_model.style2id.keys())
         return (
-            gr.Dropdown(choices=styles, value=styles[0]),  # type: ignore
+            gr.Dropdown(choices=styles, value=styles[0]),
             gr.Button(interactive=True, value="音声合成"),
-            gr.Dropdown(choices=speakers, value=speakers[0]),  # type: ignore
+            gr.Dropdown(choices=speakers, value=speakers[0]),
         )
 
     def update_model_files_for_gradio(self, model_name: str):
         import gradio as gr
 
         model_files = [str(f) for f in self.model_files_dict[model_name]]
-        return gr.Dropdown(choices=model_files, value=model_files[0])  # type: ignore
+        return gr.Dropdown(choices=model_files, value=model_files[0])
 
     def update_model_names_for_gradio(
         self,
@@ -595,7 +598,7 @@ class TTSModelHolder:
             str(f) for f in self.model_files_dict[initial_model_name]
         ]
         return (
-            gr.Dropdown(choices=self.model_names, value=initial_model_name),  # type: ignore
-            gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),  # type: ignore
+            gr.Dropdown(choices=self.model_names, value=initial_model_name),
+            gr.Dropdown(choices=initial_model_files, value=initial_model_files[0]),
             gr.Button(interactive=False),  # For tts_button
         )

@@ -12,14 +12,16 @@ from style_bert_vits2.models.models_jp_extra import (
     SynthesizerTrn as SynthesizerTrnJPExtra,
 )
 from style_bert_vits2.nlp import (
-    clean_text,
+    clean_text_with_given_phone_tone,
     cleaned_text_to_sequence,
     extract_bert_feature,
 )
 from style_bert_vits2.nlp.symbols import SYMBOLS
 
 
-def get_net_g(model_path: str, version: str, device: str, hps: HyperParameters):
+def get_net_g(
+    model_path: str, version: str, device: str, hps: HyperParameters
+) -> Union[SynthesizerTrn, SynthesizerTrnJPExtra]:
     if version.endswith("JP-Extra"):
         logger.info("Using JP-Extra model")
         net_g = SynthesizerTrnJPExtra(
@@ -104,59 +106,19 @@ def get_text(
     assist_text_weight: float = 0.7,
     given_phone: Optional[list[str]] = None,
     given_tone: Optional[list[int]] = None,
-):
+) -> tuple[
+    torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
+]:
     use_jp_extra = hps.version.endswith("JP-Extra")
-    # 推論時のみ呼び出されるので、raise_yomi_error は False に設定
-    norm_text, phone, tone, word2ph = clean_text(
+    norm_text, phone, tone, word2ph = clean_text_with_given_phone_tone(
         text,
         language_str,
+        given_phone=given_phone,
+        given_tone=given_tone,
         use_jp_extra=use_jp_extra,
+        # 推論時のみ呼び出されるので、raise_yomi_error は False に設定
         raise_yomi_error=False,
     )
-    # phone と tone の両方が与えられた場合はそれを使う
-    if given_phone is not None and given_tone is not None:
-        # 指定された phone と指定された tone 両方の長さが一致していなければならない
-        if len(given_phone) != len(given_tone):
-            raise InvalidPhoneError(
-                f"Length of given_phone ({len(given_phone)}) != length of given_tone ({len(given_tone)})"
-            )
-        # 与えられた音素数と pyopenjtalk で生成した読みの音素数が一致しない
-        if len(given_phone) != sum(word2ph):
-            # 日本語の場合、len(given_phone) と sum(word2ph) が一致するように word2ph を適切に調整する
-            # 他の言語は word2ph の調整方法が思いつかないのでエラー
-            if language_str == Languages.JP:
-                from style_bert_vits2.nlp.japanese.g2p import adjust_word2ph
-
-                # use_jp_extra でない場合は given_phone 内の「N」を「n」に変換
-                if not use_jp_extra:
-                    given_phone = [p if p != "N" else "n" for p in given_phone]
-                # clean_text() から取得した word2ph を調整結果で上書き
-                word2ph = adjust_word2ph(word2ph, phone, given_phone)
-                # 上記処理により word2ph の合計が given_phone の長さと一致するはず
-                # それでも一致しない場合、大半は読み上げテキストと given_phone が著しく乖離していて調整し切れなかったことを意味する
-                if len(given_phone) != sum(word2ph):
-                    raise InvalidPhoneError(
-                        f"Length of given_phone ({len(given_phone)}) != sum of word2ph ({sum(word2ph)})"
-                    )
-            else:
-                raise InvalidPhoneError(
-                    f"Length of given_phone ({len(given_phone)}) != sum of word2ph ({sum(word2ph)})"
-                )
-        phone = given_phone
-        # 生成あるいは指定された phone と指定された tone 両方の長さが一致していなければならない
-        if len(phone) != len(given_tone):
-            raise InvalidToneError(
-                f"Length of phone ({len(phone)}) != length of given_tone ({len(given_tone)})"
-            )
-        tone = given_tone
-    # tone だけが与えられた場合は clean_text() で生成した phone と合わせて使う
-    elif given_tone is not None:
-        # 生成した phone と指定された tone 両方の長さが一致していなければならない
-        if len(phone) != len(given_tone):
-            raise InvalidToneError(
-                f"Length of phone ({len(phone)}) != length of given_tone ({len(given_tone)})"
-            )
-        tone = given_tone
     phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
 
     if hps.data.add_blank:
@@ -220,7 +182,7 @@ def infer(
     assist_text_weight: float = 0.7,
     given_phone: Optional[list[str]] = None,
     given_tone: Optional[list[int]] = None,
-):
+) -> NDArray[Any]:
     is_jp_extra = hps.version.endswith("JP-Extra")
     bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
         text,
@@ -246,6 +208,7 @@ def infer(
         bert = bert[:, :-2]
         ja_bert = ja_bert[:, :-2]
         en_bert = en_bert[:, :-2]
+
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -257,6 +220,7 @@ def infer(
         style_vec_tensor = torch.from_numpy(style_vec).to(device).unsqueeze(0)
         del phones
         sid_tensor = torch.LongTensor([sid]).to(device)
+
         if is_jp_extra:
             output = cast(SynthesizerTrnJPExtra, net_g).infer(
                 x_tst,
@@ -287,7 +251,9 @@ def infer(
                 noise_scale_w=noise_scale_w,
                 length_scale=length_scale,
             )
+
         audio = output[0][0, 0].data.cpu().float().numpy()
+
         del (
             x_tst,
             tones,
@@ -301,12 +267,5 @@ def infer(
         )  # , emo
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+
         return audio
-
-
-class InvalidPhoneError(ValueError):
-    pass
-
-
-class InvalidToneError(ValueError):
-    pass
