@@ -6,6 +6,7 @@ gradio>=4.32
 jieba
 librosa==0.9.2
 loguru
+nltk<=3.8.1
 num2words
 numpy<2
 onnxruntime

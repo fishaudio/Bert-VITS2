@@ -27,6 +27,7 @@ dependencies = [
     "g2p_en",
     "jieba",
     "loguru",
+    "nltk<=3.8.1",
     "num2words",
     "numba",
     "numpy",
