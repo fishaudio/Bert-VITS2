@@ -1003,6 +1003,11 @@ def method_change(x: str):
 
 
 def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
+    # ONNX モデルが混じらないよう、渡された TTSModelHolder のインスタンス変数を使って TTSModelHolder を作り直す
+    model_holder = TTSModelHolder(
+        model_holder.root_dir, model_holder.device, model_holder.onnx_providers, ignore_onnx=True
+    )
+
     model_names = model_holder.model_names
     if len(model_names) == 0:
         logger.error(
@@ -1527,7 +1532,7 @@ def create_merge_app(model_holder: TTSModelHolder) -> gr.Blocks:
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model_holder = TTSModelHolder(
-        assets_root, device, torch_device_to_onnx_providers(device)
+        assets_root, device, torch_device_to_onnx_providers(device), ignore_onnx=True
     )
     app = create_merge_app(model_holder)
     app.launch(inbrowser=True)
