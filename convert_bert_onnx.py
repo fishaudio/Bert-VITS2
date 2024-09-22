@@ -21,7 +21,7 @@ from style_bert_vits2.nlp import bert_models
 if __name__ == "__main__":
     start_time = time.time()
     parser = ArgumentParser()
-    parser.add_argument("--language", default=Languages.JP)
+    parser.add_argument("--language", default=Languages.JP, help="Language of the BERT model to be converted")
     args = parser.parse_args()
 
     # モデルの入出力先ファイルパスを取得
@@ -70,11 +70,19 @@ if __name__ == "__main__":
     export_start_time = time.time()
     torch.onnx.export(
         model=model,
-        args=(inputs["input_ids"], inputs["token_type_ids"], inputs["attention_mask"]),
+        args=(
+            inputs["input_ids"],
+            inputs["token_type_ids"],
+            inputs["attention_mask"],
+        ),
         f=str(onnx_temp_model_path),
-        input_names=["input_ids", "token_type_ids", "attention_mask"],
+        verbose=False,
+        input_names=[
+            "input_ids",
+            "token_type_ids",
+            "attention_mask",
+        ],
         output_names=["output"],
-        verbose=True,
         dynamic_axes={
             "input_ids": {1: "batch_size"},
             "attention_mask": {1: "batch_size"},
@@ -92,13 +100,15 @@ if __name__ == "__main__":
     onnx_model = onnx.load(onnx_temp_model_path)
     simplified_onnx_model, check = simplify(onnx_model)
     onnx.save(simplified_onnx_model, onnx_optimized_model_path)
-    onnx_temp_model_path.unlink()
     print(
         f"[bold green]ONNX model optimized and saved to {onnx_optimized_model_path} ({time.time() - optimize_start_time:.2f}s)[/bold green]"
     )
     print(
-        f"[bold]Total Time: {time.time() - start_time:.2f}s / Size: {onnx_optimized_model_path.stat().st_size / 1024 / 1024:.2f}MB[/bold]"
+        f"[bold]Total Time: {time.time() - start_time:.2f}s / "
+        f"Size: {onnx_temp_model_path.stat().st_size / 1000 / 1000:.2f}MB -> "
+        f"{onnx_optimized_model_path.stat().st_size / 1000 / 1000:.2f}MB[/bold]"
     )
+    onnx_temp_model_path.unlink()
     print(Rule(characters="=", style=Style(color="blue")))
     print("[bold cyan]Optimized model info:[/bold cyan]")
     model_info.print_simplifying_info(onnx_model, simplified_onnx_model)
