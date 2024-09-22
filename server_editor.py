@@ -195,7 +195,7 @@ skip_static_files = bool(args.skip_static_files)
 ## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
 bert_models.load_model(Languages.JP, device_map=device)
 bert_models.load_tokenizer(Languages.JP)
-# VRAM を浪費しないように、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
+# VRAM 節約のため、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
 if args.preload_onnx_bert:
     onnx_bert_models.load_model(
         Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
