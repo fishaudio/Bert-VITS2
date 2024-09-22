@@ -21,7 +21,11 @@ from style_bert_vits2.nlp import bert_models
 if __name__ == "__main__":
     start_time = time.time()
     parser = ArgumentParser()
-    parser.add_argument("--language", default=Languages.JP, help="Language of the BERT model to be converted")
+    parser.add_argument(
+        "--language",
+        default=Languages.JP,
+        help="Language of the BERT model to be converted",
+    )
     args = parser.parse_args()
 
     # モデルの入出力先ファイルパスを取得

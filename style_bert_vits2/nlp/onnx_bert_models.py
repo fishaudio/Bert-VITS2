@@ -95,11 +95,8 @@ def load_model(
 
     start_time = time.time()
     sess_options = onnxruntime.SessionOptions()
-    # 基本的な最適化のみ有効化
-    # ONNX モデルの作成時にすでに onnxsim により最適化されているため、ここでは基本的な最適化のみ有効化する
-    sess_options.graph_optimization_level = (
-        onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
-    )
+    # ONNX モデルの作成時にすでに onnxsim により最適化されていることから、ロード高速化のため最適化を無効にする
+    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL  # fmt: skip
     # エラー以外のログを出力しない
     # 本来は log_severity_level = 3 だけで効くはずだが、なぜか抑制できないので set_default_logger_severity() も呼び出している
     sess_options.log_severity_level = 3

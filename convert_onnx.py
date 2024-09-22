@@ -30,8 +30,14 @@ from style_bert_vits2.tts_model import TTSModel
 if __name__ == "__main__":
     start_time = time.time()
     parser = ArgumentParser()
-    parser.add_argument("--model", required=True, help="Path to the model file or directory")
-    parser.add_argument("--force-convert", action="store_true", help="Already converted models will be overwritten")
+    parser.add_argument(
+        "--model", required=True, help="Path to the model file or directory"
+    )
+    parser.add_argument(
+        "--force-convert",
+        action="store_true",
+        help="Already converted models will be overwritten",
+    )
     args = parser.parse_args()
 
     # --model に指定されたパスがディレクトリの時、配下にある全ての .safetensors ファイルを対象に変換する
@@ -61,8 +67,12 @@ if __name__ == "__main__":
 
         # すでに ONNX モデルが存在する場合、--force-convert オプションが指定されていない場合はスキップ
         if onnx_optimized_model_path.exists() and not args.force_convert:
-            print(f"[bold yellow]ONNX model already exists: {onnx_optimized_model_path}[/bold yellow]")
-            print("[bold]If you want to overwrite it, use the --force-convert option.[/bold]")
+            print(
+                f"[bold yellow]ONNX model already exists: {onnx_optimized_model_path}[/bold yellow]"
+            )
+            print(
+                "[bold]If you want to overwrite it, use the --force-convert option.[/bold]"
+            )
             print(Rule(characters="=", style=Style(color="blue")))
             continue
 
@@ -127,7 +137,9 @@ if __name__ == "__main__":
                 sdp_ratio: float = 0.0,
                 noise_scale: float = 0.667,
                 noise_scale_w: float = 0.8,
-            ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor, ...]]:
+            ) -> tuple[
+                torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor, ...]
+            ]:
                 return cast(SynthesizerTrnJPExtra, tts_model.net_g).infer(
                     x,
                     x_lengths,
