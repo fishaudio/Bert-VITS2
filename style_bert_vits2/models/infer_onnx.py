@@ -75,15 +75,15 @@ def get_text_onnx(
 
     if language_str == Languages.ZH:
         bert = bert_ori
-        ja_bert = np.zeros((1024, len(phone)))
-        en_bert = np.zeros((1024, len(phone)))
+        ja_bert = np.zeros((1024, len(phone)), dtype=np.float32)
+        en_bert = np.zeros((1024, len(phone)), dtype=np.float32)
     elif language_str == Languages.JP:
-        bert = np.zeros((1024, len(phone)))
+        bert = np.zeros((1024, len(phone)), dtype=np.float32)
         ja_bert = bert_ori
-        en_bert = np.zeros((1024, len(phone)))
+        en_bert = np.zeros((1024, len(phone)), dtype=np.float32)
     elif language_str == Languages.EN:
-        bert = np.zeros((1024, len(phone)))
-        ja_bert = np.zeros((1024, len(phone)))
+        bert = np.zeros((1024, len(phone)), dtype=np.float32)
+        ja_bert = np.zeros((1024, len(phone)), dtype=np.float32)
         en_bert = bert_ori
     else:
         raise ValueError("language_str should be ZH, JP or EN")
@@ -170,27 +170,41 @@ def infer_onnx(
             np.array([noise_scale], dtype=np.float32),
             np.array([noise_scale_w], dtype=np.float32),
         ]
-
-        first_provider = onnx_session.get_providers()[0]
-        if first_provider == "CUDAExecutionProvider":
-            device_type = "cuda"
-        elif first_provider == "DmlExecutionProvider":
-            device_type = "dml"
-        else:
-            device_type = "cpu"
-
-        # GPU メモリに入力テンソルを割り当て
-        io_binding = onnx_session.io_binding()
-        for name, value in zip(input_names, input_tensor):
-            gpu_tensor = onnxruntime.OrtValue.ortvalue_from_numpy(value, device_type)
-            io_binding.bind_ortvalue_input(name, gpu_tensor)
-
-        # 推論の実行
-        io_binding.bind_output(output_name, device_type)
-        onnx_session.run_with_iobinding(io_binding)
-        output = io_binding.get_outputs()
     else:
-        raise NotImplementedError("Not implemented yet")
+        input_tensor = [
+            x_tst,
+            x_tst_lengths,
+            sid_tensor,
+            tones,
+            lang_ids,
+            bert,
+            ja_bert,
+            en_bert,
+            style_vec_tensor,
+            np.array([length_scale], dtype=np.float32),
+            np.array([sdp_ratio], dtype=np.float32),
+            np.array([noise_scale], dtype=np.float32),
+            np.array([noise_scale_w], dtype=np.float32),
+        ]
+
+    first_provider = onnx_session.get_providers()[0]
+    if first_provider == "CUDAExecutionProvider":
+        device_type = "cuda"
+    elif first_provider == "DmlExecutionProvider":
+        device_type = "dml"
+    else:
+        device_type = "cpu"
+
+    # GPU メモリに入力テンソルを割り当て
+    io_binding = onnx_session.io_binding()
+    for name, value in zip(input_names, input_tensor):
+        gpu_tensor = onnxruntime.OrtValue.ortvalue_from_numpy(value, device_type)
+        io_binding.bind_ortvalue_input(name, gpu_tensor)
+
+    # 推論の実行
+    io_binding.bind_output(output_name, device_type)
+    onnx_session.run_with_iobinding(io_binding)
+    output = io_binding.get_outputs()
 
     audio = output[0].numpy()[0, 0]
 

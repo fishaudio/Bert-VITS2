@@ -38,7 +38,8 @@ class HyperParametersTrain(BaseModel):
 
 
 class HyperParametersData(BaseModel):
-    use_jp_extra: bool = False  # このフィールドが存在しない旧モデルとの互換性のために False をデフォルト値とする
+    # use_jp_extra フィールドが存在しない旧モデルとの互換性のために False をデフォルト値とする
+    use_jp_extra: bool = False
     training_files: str = "Data/Dummy/train.list"
     validation_files: str = "Data/Dummy/val.list"
     max_wav_value: float = 32768.0

@@ -21,6 +21,7 @@ from style_bert_vits2.constants import (
     Languages,
 )
 from style_bert_vits2.models.infer import get_text
+from style_bert_vits2.models.models import SynthesizerTrn
 from style_bert_vits2.models.models_jp_extra import (
     SynthesizerTrn as SynthesizerTrnJPExtra,
 )
@@ -122,10 +123,10 @@ if __name__ == "__main__":
         noise_scale_w = torch.tensor(0.8)
 
         # JP-Extra モデルアーキテクチャ向けの ONNX 変換ロジック
-        if tts_model.hyper_parameters.data.use_jp_extra is True:
+        if isinstance(tts_model.net_g, SynthesizerTrnJPExtra):
 
             # SynthesizerTrnJPExtra の forward メソッドをオーバーライド
-            def forward(
+            def forward_jp_extra(
                 x: torch.Tensor,
                 x_lengths: torch.Tensor,
                 sid: torch.Tensor,
@@ -154,7 +155,7 @@ if __name__ == "__main__":
                     noise_scale_w=noise_scale_w,
                 )
 
-            tts_model.net_g.forward = forward  # type: ignore
+            tts_model.net_g.forward = forward_jp_extra  # type: ignore
 
             # モデルを ONNX に変換
             print(Rule(characters="=", style=Style(color="blue")))
@@ -208,9 +209,101 @@ if __name__ == "__main__":
                 f"[bold green]ONNX model exported to {onnx_temp_model_path} ({time.time() - export_start_time:.2f}s)[/bold green]"
             )
 
+        # 非 JP-Extra モデルアーキテクチャ向けの ONNX 変換ロジック
         else:
-            raise NotImplementedError(
-                "non-JP-Extra model architecture is not implemented yet"
+
+            # SynthesizerTrn の forward メソッドをオーバーライド
+            def forward_non_jp_extra(
+                x: torch.Tensor,
+                x_lengths: torch.Tensor,
+                sid: torch.Tensor,
+                tone: torch.Tensor,
+                language: torch.Tensor,
+                bert: torch.Tensor,
+                ja_bert: torch.Tensor,
+                en_bert: torch.Tensor,
+                style_vec: torch.Tensor,
+                length_scale: float = 1.0,
+                sdp_ratio: float = 0.0,
+                noise_scale: float = 0.667,
+                noise_scale_w: float = 0.8,
+            ) -> tuple[
+                torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor, ...]
+            ]:
+                return cast(SynthesizerTrn, tts_model.net_g).infer(
+                    x,
+                    x_lengths,
+                    sid,
+                    tone,
+                    language,
+                    bert,
+                    ja_bert,
+                    en_bert,
+                    style_vec,
+                    length_scale=length_scale,
+                    sdp_ratio=sdp_ratio,
+                    noise_scale=noise_scale,
+                    noise_scale_w=noise_scale_w,
+                )
+
+            tts_model.net_g.forward = forward_non_jp_extra  # type: ignore
+
+            # モデルを ONNX に変換
+            print(Rule(characters="=", style=Style(color="blue")))
+            print(
+                f"[bold cyan]Exporting ONNX model... (Architecture: Non-JP-Extra)[/bold cyan]"
+            )
+            print(Rule(characters="=", style=Style(color="blue")))
+            export_start_time = time.time()
+            torch.onnx.export(
+                model=tts_model.net_g,
+                args=(
+                    x_tst,
+                    x_tst_lengths,
+                    sid_tensor,
+                    tones,
+                    lang_ids,
+                    bert,
+                    ja_bert,
+                    en_bert,
+                    style_vec_tensor,
+                    length_scale,
+                    sdp_ratio,
+                    noise_scale,
+                    noise_scale_w,
+                ),
+                f=str(onnx_temp_model_path),
+                verbose=False,
+                input_names=[
+                    "x_tst",
+                    "x_tst_lengths",
+                    "sid",
+                    "tones",
+                    "language",
+                    "bert",
+                    "ja_bert",
+                    "en_bert",
+                    "style_vec",
+                    "length_scale",
+                    "sdp_ratio",
+                    "noise_scale",
+                    "noise_scale_w",
+                ],
+                output_names=["output"],
+                dynamic_axes={
+                    "x_tst": {0: "batch_size", 1: "x_tst_max_length"},
+                    "x_tst_lengths": {0: "batch_size"},
+                    "sid": {0: "batch_size"},
+                    "tones": {0: "batch_size", 1: "x_tst_max_length"},
+                    "language": {0: "batch_size", 1: "x_tst_max_length"},
+                    "bert": {0: "batch_size", 2: "x_tst_max_length"},
+                    "ja_bert": {0: "batch_size", 2: "x_tst_max_length"},
+                    "en_bert": {0: "batch_size", 2: "x_tst_max_length"},
+                    "style_vec": {0: "batch_size"},
+                },
+            )
+            print(
+                f"[bold green]ONNX model exported to {onnx_temp_model_path} ({time.time() - export_start_time:.2f}s)[/bold green]"
             )
 
         # ONNX モデルを最適化
