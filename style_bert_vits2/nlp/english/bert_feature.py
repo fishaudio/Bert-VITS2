@@ -98,7 +98,7 @@ def extract_bert_feature_onnx(
     """
 
     tokenizer = onnx_bert_models.load_tokenizer(Languages.EN)
-    inputs = tokenizer(text, return_tensors="pt")
+    inputs = tokenizer(text, return_tensors="np")
 
     session = onnx_bert_models.load_model(
         language=Languages.EN,
@@ -108,19 +108,19 @@ def extract_bert_feature_onnx(
     res = session.run(
         [output_name],
         {
-            "input_ids": inputs["input_ids"].detach().numpy(),  # type: ignore
-            "attention_mask": inputs["attention_mask"].detach().numpy(),  # type: ignore
+            "input_ids": inputs["input_ids"],
+            "attention_mask": inputs["attention_mask"],
         },
     )[0]
 
     style_res_mean = None
     if assist_text:
-        style_inputs = tokenizer(assist_text, return_tensors="pt")
+        style_inputs = tokenizer(assist_text, return_tensors="np")
         style_res = session.run(
             [output_name],
             {
-                "input_ids": style_inputs["input_ids"].detach().numpy(),  # type: ignore
-                "attention_mask": style_inputs["attention_mask"].detach().numpy(),  # type: ignore
+                "input_ids": style_inputs["input_ids"],
+                "attention_mask": style_inputs["attention_mask"],
             },
         )[0]
         style_res_mean = np.mean(style_res, axis=0)
