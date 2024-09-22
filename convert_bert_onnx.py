@@ -47,7 +47,6 @@ if __name__ == "__main__":
     print(f"[bold green]Tokenizer JSON saved to {tokenizer_json_path}[/bold green]")
     print(Rule(characters="=", style=Style(color="blue")))
 
-    # TODO: JP, ZH は変換できるが、EN は途中で強制終了されてしまい変換できない
     class ONNXBert(nn.Module):
         def __init__(self):
             super(ONNXBert, self).__init__()
@@ -88,8 +87,9 @@ if __name__ == "__main__":
         ],
         output_names=["output"],
         dynamic_axes={
-            "input_ids": {1: "batch_size"},
-            "attention_mask": {1: "batch_size"},
+            "input_ids": {0: "batch_size", 1: "sequence_length"},
+            "token_type_ids": {0: "batch_size", 1: "sequence_length"},
+            "attention_mask": {0: "batch_size", 1: "sequence_length"},
         },
     )
     print(

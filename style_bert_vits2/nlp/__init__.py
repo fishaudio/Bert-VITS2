@@ -81,6 +81,10 @@ def extract_bert_feature_onnx(
 
     if language == Languages.JP:
         from style_bert_vits2.nlp.japanese.bert_feature import extract_bert_feature_onnx
+    elif language == Languages.EN:
+        from style_bert_vits2.nlp.english.bert_feature import extract_bert_feature_onnx
+    elif language == Languages.ZH:
+        from style_bert_vits2.nlp.chinese.bert_feature import extract_bert_feature_onnx
     else:
         raise ValueError(f"Language {language} not supported")
 

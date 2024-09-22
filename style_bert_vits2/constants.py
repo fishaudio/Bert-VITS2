@@ -28,6 +28,8 @@ DEFAULT_BERT_MODEL_PATHS = {
 # 言語ごとのデフォルトの BERT モデル (ONNX 版) のパス
 DEFAULT_ONNX_BERT_MODEL_PATHS = {
     Languages.JP: BASE_DIR / "bert" / "deberta-v2-large-japanese-char-wwm-onnx",
+    Languages.EN: BASE_DIR / "bert" / "deberta-v3-large-onnx",
+    Languages.ZH: BASE_DIR / "bert" / "chinese-roberta-wwm-ext-large-onnx",
 }
 
 # デフォルトのユーザー辞書ディレクトリ

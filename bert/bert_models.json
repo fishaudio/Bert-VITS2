@@ -11,8 +11,16 @@
         "repo_id": "hfl/chinese-roberta-wwm-ext-large",
         "files": ["pytorch_model.bin"]
     },
+    "chinese-roberta-wwm-ext-large-onnx": {
+        "repo_id": "tsukumijima/chinese-roberta-wwm-ext-large-onnx",
+        "files": ["model.onnx"]
+    },
     "deberta-v3-large": {
         "repo_id": "microsoft/deberta-v3-large",
         "files": ["spm.model", "pytorch_model.bin"]
+    },
+    "deberta-v3-large-onnx": {
+        "repo_id": "tsukumijima/deberta-v3-large-onnx",
+        "files": ["model.onnx"]
     }
 }

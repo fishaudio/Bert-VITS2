@@ -121,8 +121,8 @@ def extract_bert_feature_onnx(
     res = session.run(
         [output_name],
         {
-            "input_ids": inputs["input_ids"].detach().numpy(),
-            "attention_mask": inputs["attention_mask"].detach().numpy(),
+            "input_ids": inputs["input_ids"].detach().numpy(),  # type: ignore
+            "attention_mask": inputs["attention_mask"].detach().numpy(),  # type: ignore
         },
     )[0]
 
@@ -132,8 +132,8 @@ def extract_bert_feature_onnx(
         style_res = session.run(
             [output_name],
             {
-                "input_ids": style_inputs["input_ids"].detach().numpy(),
-                "attention_mask": style_inputs["attention_mask"].detach().numpy(),
+                "input_ids": style_inputs["input_ids"].detach().numpy(),  # type: ignore
+                "attention_mask": style_inputs["attention_mask"].detach().numpy(),  # type: ignore
             },
         )[0]
         style_res_mean = np.mean(style_res, axis=0)
