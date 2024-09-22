@@ -230,10 +230,10 @@ def infer(
                 lang_ids,
                 ja_bert,
                 style_vec=style_vec_tensor,
+                length_scale=length_scale,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
             )
         else:
             output = cast(SynthesizerTrn, net_g).infer(
@@ -246,10 +246,10 @@ def infer(
                 ja_bert,
                 en_bert,
                 style_vec=style_vec_tensor,
+                length_scale=length_scale,
                 sdp_ratio=sdp_ratio,
                 noise_scale=noise_scale,
                 noise_scale_w=noise_scale_w,
-                length_scale=length_scale,
             )
 
         audio = output[0][0, 0].data.cpu().float().numpy()

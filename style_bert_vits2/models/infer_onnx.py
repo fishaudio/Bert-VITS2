@@ -167,6 +167,8 @@ def infer_onnx(
             style_vec_tensor,
             np.array([length_scale], dtype=np.float32),
             np.array([sdp_ratio], dtype=np.float32),
+            np.array([noise_scale], dtype=np.float32),
+            np.array([noise_scale_w], dtype=np.float32),
         ]
 
         first_provider = onnx_session.get_providers()[0]
