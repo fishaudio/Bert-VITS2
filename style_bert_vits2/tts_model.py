@@ -523,7 +523,8 @@ class TTSModelHolder:
                 [
                     f
                     for f in model_dir.iterdir()
-                    if f.suffix in suffixes
+                    # 上記 suffixes にマッチするファイルのみを取得し、. から始まるファイルは除外
+                    if f.suffix in suffixes and not f.name.startswith(".")
                 ]
             )
             if len(model_files) == 0:

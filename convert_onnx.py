@@ -45,7 +45,9 @@ if __name__ == "__main__":
     model_paths: list[Path] = []
     if Path(args.model).is_dir():
         for path in Path(args.model).glob("**/*.safetensors"):
-            model_paths.append(path)
+            # . から始まるファイルは除外
+            if not path.name.startswith("."):
+                model_paths.append(path)
     else:
         model_paths.append(Path(args.model))
 
