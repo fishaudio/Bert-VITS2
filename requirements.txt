@@ -12,7 +12,8 @@ nltk<=3.8.1
 num2words
 numpy<2
 onnxruntime
-onnxruntime-gpu
+onnxruntime-directml; sys_platform == 'win32'
+onnxruntime-gpu; sys_platform != 'darwin'
 onnxsim
 protobuf==4.25
 psutil

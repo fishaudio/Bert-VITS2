@@ -73,7 +73,11 @@ packages = ["style_bert_vits2"]
 
 # for PyTorch inference
 [tool.hatch.envs.test]
-dependencies = ["coverage[toml]>=6.5", "pytest", "scipy"]
+dependencies = [
+    "coverage[toml]>=6.5",
+    "pytest",
+    "scipy",
+]
 features = ["torch"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
@@ -91,7 +95,13 @@ python = ["3.9", "3.10", "3.11"]
 
 # for ONNX inference (without PyTorch dependency)
 [tool.hatch.envs.test-onnx]
-dependencies = ["coverage[toml]>=6.5", "pytest", "scipy", "onnxruntime-gpu", "onnxruntime-directml; sys_platform == 'win32'"]
+dependencies = [
+    "coverage[toml]>=6.5",
+    "pytest",
+    "scipy",
+    "onnxruntime-directml; sys_platform == 'win32'",
+    "onnxruntime-gpu; sys_platform != 'darwin'",
+]
 [tool.hatch.envs.test-onnx.scripts]
 # Usage: `hatch run test-onnx:test`
 test = "pytest tests/test_main.py::test_synthesize_onnx_cpu"
