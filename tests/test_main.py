@@ -37,7 +37,9 @@ def synthesize(
                         if f.endswith(".onnx") and not f.startswith(".")
                     ]
                 if len(model_files) == 0:
-                    pytest.skip(f"音声合成モデル \"{model_info.name}\" のモデルファイルが見つかりませんでした。")
+                    pytest.skip(
+                        f'音声合成モデル "{model_info.name}" のモデルファイルが見つかりませんでした。'
+                    )
 
                 # モデルをロード
                 model = model_holder.get_model(model_info.name, model_files[0])
@@ -100,3 +102,8 @@ def test_synthesize_onnx_cuda():
             ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"})
         ],
     )
+
+
+def test_synthesize_onnx_directml():
+    pytest.importorskip("onnxruntime_directml")
+    synthesize(inference_type="onnx", onnx_providers=["DmlExecutionProvider"])

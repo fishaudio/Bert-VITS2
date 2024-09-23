@@ -91,12 +91,14 @@ python = ["3.9", "3.10", "3.11"]
 
 # for ONNX inference (without PyTorch dependency)
 [tool.hatch.envs.test-onnx]
-dependencies = ["coverage[toml]>=6.5", "pytest", "scipy", "onnxruntime-gpu"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "scipy", "onnxruntime-gpu", "onnxruntime-directml; sys_platform == 'win32'"]
 [tool.hatch.envs.test-onnx.scripts]
 # Usage: `hatch run test-onnx:test`
 test = "pytest tests/test_main.py::test_synthesize_onnx_cpu"
 # Usage: `hatch run test-onnx:test-cuda`
 test-cuda = "pytest tests/test_main.py::test_synthesize_onnx_cuda"
+# Usage: `hatch run test-onnx:test-directml`
+test-directml = "pytest tests/test_main.py::test_synthesize_onnx_directml"
 # Usage: `hatch run test-onnx:coverage`
 test-cov = "coverage run -m pytest tests/test_main.py::test_synthesize_onnx_cpu"
 # Usage: `hatch run test-onnx:cov-report`
