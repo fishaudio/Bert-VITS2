@@ -81,11 +81,11 @@ dependencies = [
 features = ["torch"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
-test = "pytest tests/test_main.py::test_synthesize_cpu"
+test = "pytest -s tests/test_main.py::test_synthesize_cpu"
 # Usage: `hatch run test:test-cuda`
-test-cuda = "pytest tests/test_main.py::test_synthesize_cuda"
+test-cuda = "pytest -s tests/test_main.py::test_synthesize_cuda"
 # Usage: `hatch run test:coverage`
-test-cov = "coverage run -m pytest tests/test_main.py::test_synthesize_cpu"
+test-cov = "coverage run -m pytest -s tests/test_main.py::test_synthesize_cpu"
 # Usage: `hatch run test:cov-report`
 cov-report = ["- coverage combine", "coverage report"]
 # Usage: `hatch run test:cov`
@@ -104,13 +104,13 @@ dependencies = [
 ]
 [tool.hatch.envs.test-onnx.scripts]
 # Usage: `hatch run test-onnx:test`
-test = "pytest tests/test_main.py::test_synthesize_onnx_cpu"
+test = "pytest -s tests/test_main.py::test_synthesize_onnx_cpu"
 # Usage: `hatch run test-onnx:test-cuda`
-test-cuda = "pytest tests/test_main.py::test_synthesize_onnx_cuda"
+test-cuda = "pytest -s tests/test_main.py::test_synthesize_onnx_cuda"
 # Usage: `hatch run test-onnx:test-directml`
-test-directml = "pytest tests/test_main.py::test_synthesize_onnx_directml"
+test-directml = "pytest -s tests/test_main.py::test_synthesize_onnx_directml"
 # Usage: `hatch run test-onnx:coverage`
-test-cov = "coverage run -m pytest tests/test_main.py::test_synthesize_onnx_cpu"
+test-cov = "coverage run -m pytest -s tests/test_main.py::test_synthesize_onnx_cpu"
 # Usage: `hatch run test-onnx:cov-report`
 cov-report = ["- coverage combine", "coverage report"]
 # Usage: `hatch run test-onnx:cov`

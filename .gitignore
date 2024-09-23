@@ -2,7 +2,7 @@ __pycache__/
 venv/
 .venv/
 dist/
-.coverage
+.coverage*
 .ipynb_checkpoints/
 .ruff_cache/
 
