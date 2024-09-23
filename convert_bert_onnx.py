@@ -1,4 +1,4 @@
-# usage: .venv/bin/python convert_bert_onnx.py --language JP
+# Usage: .venv/bin/python convert_bert_onnx.py --language JP
 # ref: https://github.com/tuna2134/sbv2-api/blob/main/convert/convert_deberta.py
 
 import time

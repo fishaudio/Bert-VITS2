@@ -30,7 +30,7 @@ dependencies = [
     "nltk<=3.8.1",
     "num2words",
     "numba",
-    "numpy",
+    "numpy<2",
     "onnxruntime",
     "pydantic>=2.0",
     "pyopenjtalk-dict",
@@ -71,19 +71,39 @@ exclude = [".git", ".gitignore", ".gitattributes"]
 [tool.hatch.build.targets.wheel]
 packages = ["style_bert_vits2"]
 
+# for PyTorch inference
 [tool.hatch.envs.test]
 dependencies = ["coverage[toml]>=6.5", "pytest", "scipy"]
 features = ["torch"]
 [tool.hatch.envs.test.scripts]
 # Usage: `hatch run test:test`
-test = "pytest {args:tests}"
+test = "pytest tests/test_main.py::test_synthesize_cpu"
+# Usage: `hatch run test:test-cuda`
+test-cuda = "pytest tests/test_main.py::test_synthesize_cuda"
 # Usage: `hatch run test:coverage`
-test-cov = "coverage run -m pytest {args:tests}"
+test-cov = "coverage run -m pytest tests/test_main.py::test_synthesize_cpu"
 # Usage: `hatch run test:cov-report`
 cov-report = ["- coverage combine", "coverage report"]
 # Usage: `hatch run test:cov`
 cov = ["test-cov", "cov-report"]
 [[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11"]
+
+# for ONNX inference (without PyTorch dependency)
+[tool.hatch.envs.test-onnx]
+dependencies = ["coverage[toml]>=6.5", "pytest", "scipy", "onnxruntime-gpu"]
+[tool.hatch.envs.test-onnx.scripts]
+# Usage: `hatch run test-onnx:test`
+test = "pytest tests/test_main.py::test_synthesize_onnx_cpu"
+# Usage: `hatch run test-onnx:test-cuda`
+test-cuda = "pytest tests/test_main.py::test_synthesize_onnx_cuda"
+# Usage: `hatch run test-onnx:coverage`
+test-cov = "coverage run -m pytest tests/test_main.py::test_synthesize_onnx_cpu"
+# Usage: `hatch run test-onnx:cov-report`
+cov-report = ["- coverage combine", "coverage report"]
+# Usage: `hatch run test-onnx:cov`
+cov = ["test-cov", "cov-report"]
+[[tool.hatch.envs.test-onnx.matrix]]
 python = ["3.9", "3.10", "3.11"]
 
 [tool.hatch.envs.style]

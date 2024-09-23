@@ -8,11 +8,12 @@ Style-Bert-VITS2 の学習・推論に必要な各言語ごとの BERT モデル
 一度 load_model/tokenizer() で当該言語の BERT モデルがロードされていれば、ライブラリ内部のどこからでもロード済みのモデル/トークナイザーを取得できる。
 """
 
+from __future__ import annotations
+
 import gc
 import time
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
-import torch
 from transformers import (
     AutoModelForMaskedLM,
     AutoTokenizer,
@@ -25,6 +26,10 @@ from transformers import (
 
 from style_bert_vits2.constants import DEFAULT_BERT_MODEL_PATHS, Languages
 from style_bert_vits2.logging import logger
+
+
+if TYPE_CHECKING:
+    import torch
 
 
 # 各言語ごとのロード済みの BERT モデルを格納する辞書
@@ -208,6 +213,8 @@ def unload_model(language: Languages) -> None:
         language (Languages): アンロードする BERT モデルの言語
     """
 
+    import torch
+
     if language in __loaded_models:
         del __loaded_models[language]
         gc.collect()
@@ -223,6 +230,8 @@ def unload_tokenizer(language: Languages) -> None:
     Args:
         language (Languages): アンロードする BERT トークナイザーの言語
     """
+
+    import torch
 
     if language in __loaded_tokenizers:
         del __loaded_tokenizers[language]

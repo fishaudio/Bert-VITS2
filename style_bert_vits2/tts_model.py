@@ -154,6 +154,16 @@ class TTSModel:
                 f"Model loaded successfully from {self.model_path} to {self.onnx_session.get_providers()[0]} ({time.time() - start_time:.2f}s)"
             )
 
+    def unload(self) -> None:
+        """
+        音声合成モデルをデバイスからアンロードする。
+        """
+
+        if self.net_g is not None:
+            self.net_g = None
+        if self.onnx_session is not None:
+            self.onnx_session = None
+
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
         スタイルベクトルを取得する。

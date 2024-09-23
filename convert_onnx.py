@@ -1,5 +1,5 @@
-# usage: .venv/bin/python convert_onnx.py --model model_assets/koharune-ami/koharune-ami.safetensors
-# usage: .venv/bin/python convert_onnx.py --model model_assets/ (All models in the directory will be converted)
+# Usage: .venv/bin/python convert_onnx.py --model model_assets/koharune-ami/koharune-ami.safetensors
+# Usage: .venv/bin/python convert_onnx.py --model model_assets/ (All models in the directory will be converted)
 # ref: https://github.com/tuna2134/sbv2-api/blob/main/convert/convert_model.py
 
 import time
