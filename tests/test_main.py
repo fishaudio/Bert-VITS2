@@ -1,4 +1,4 @@
-from typing import Any, Literal, Sequence, Union
+from typing import Any, Literal, Sequence
 
 import pytest
 from scipy.io import wavfile
@@ -10,8 +10,8 @@ from style_bert_vits2.tts_model import TTSModelHolder
 def synthesize(
     inference_type: Literal["torch", "onnx"] = "torch",
     device: str = "cpu",
-    onnx_providers: Sequence[Union[str, tuple[str, dict[str, Any]]]] = [
-        "CPUExecutionProvider"
+    onnx_providers: Sequence[tuple[str, dict[str, Any]]] = [
+        ("CPUExecutionProvider", {}),
     ],
 ):
 
@@ -44,6 +44,11 @@ def synthesize(
                 # モデルをロード
                 model = model_holder.get_model(model_info.name, model_files[0])
                 model.load()
+
+                # ロードされた InferenceSession の ExecutionProvider が一致するか確認
+                # 一致しない場合、指定された ExecutionProvider で推論できない状態
+                assert model.onnx_session is not None
+                assert model.onnx_session.get_providers()[0] == onnx_providers[0][0]
 
                 # すべてのスタイルに対して音声合成を実行
                 for style in model_info.styles:
@@ -87,23 +92,35 @@ def test_synthesize_cpu():
 
 
 def test_synthesize_cuda():
-    pytest.importorskip("torch.cuda")
     synthesize(inference_type="torch", device="cuda")
 
 
 def test_synthesize_onnx_cpu():
-    synthesize(inference_type="onnx", onnx_providers=["CPUExecutionProvider"])
+    synthesize(
+        inference_type="onnx",
+        onnx_providers=[
+            ("CPUExecutionProvider", {}),
+        ],
+    )
 
 
 def test_synthesize_onnx_cuda():
     synthesize(
         inference_type="onnx",
         onnx_providers=[
-            ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"})
+            ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}),
         ],
     )
 
 
 def test_synthesize_onnx_directml():
-    pytest.importorskip("onnxruntime_directml")
-    synthesize(inference_type="onnx", onnx_providers=["DmlExecutionProvider"])
+    synthesize(
+        inference_type="onnx",
+        onnx_providers=[
+            # device_id: 0 は、システムにインストールされているプライマリディスプレイ用 GPU に対応する
+            # プライマリディスプレイ用 GPU (GPU 0) よりも性能の高い GPU が接続されている環境では、
+            # 適宜 device_id を変更する必要がある
+            # ref: https://github.com/w-okada/voice-changer/issues/410#issuecomment-1627994911
+            ("DmlExecutionProvider", {"device_id": 0}),
+        ],
+    )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -108,9 +108,9 @@ def extract_bert_feature_onnx(
     res = session.run(
         [output_name],
         {
-            "input_ids": cast(NDArray[Any], inputs["input_ids"]).astype(np.int64),
-            "token_type_ids": cast(NDArray[Any], inputs["token_type_ids"]).astype(np.int64),
-            "attention_mask": cast(NDArray[Any], inputs["attention_mask"]).astype(np.int64),
+            "input_ids": inputs["input_ids"].astype(np.int64),  # type: ignore
+            "token_type_ids": inputs["token_type_ids"].astype(np.int64),  # type: ignore
+            "attention_mask": inputs["attention_mask"].astype(np.int64),  # type: ignore
         },
     )[0]
 
@@ -120,9 +120,9 @@ def extract_bert_feature_onnx(
         style_res = session.run(
             [output_name],
             {
-                "input_ids": cast(NDArray[Any], style_inputs["input_ids"]).astype(np.int64),
-                "token_type_ids": cast(NDArray[Any], style_inputs["token_type_ids"]).astype(np.int64),
-                "attention_mask": cast(NDArray[Any], style_inputs["attention_mask"]).astype(np.int64),
+                "input_ids": style_inputs["input_ids"].astype(np.int64),  # type: ignore
+                "token_type_ids": style_inputs["token_type_ids"].astype(np.int64),  # type: ignore
+                "attention_mask": style_inputs["attention_mask"].astype(np.int64),  # type: ignore
             },
         )[0]
         style_res_mean = np.mean(style_res, axis=0)
