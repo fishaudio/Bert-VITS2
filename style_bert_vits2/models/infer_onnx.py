@@ -92,9 +92,9 @@ def get_text_onnx(
         phone
     ), f"Bert seq len {bert.shape[-1]} != {len(phone)}"
 
-    phone = np.array(phone)
-    tone = np.array(tone)
-    language = np.array(language)
+    phone = np.array(phone, dtype=np.int64)
+    tone = np.array(tone, dtype=np.int64)
+    language = np.array(language, dtype=np.int64)
     return bert, ja_bert, en_bert, phone, tone, language
 
 
