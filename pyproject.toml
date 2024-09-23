@@ -109,6 +109,8 @@ test = "pytest -s tests/test_main.py::test_synthesize_onnx_cpu"
 test-cuda = "pytest -s tests/test_main.py::test_synthesize_onnx_cuda"
 # Usage: `hatch run test-onnx:test-directml`
 test-directml = "pytest -s tests/test_main.py::test_synthesize_onnx_directml"
+# Usage: `hatch run test-onnx:test-coreml`
+test-coreml = "pytest -s tests/test_main.py::test_synthesize_onnx_coreml"
 # Usage: `hatch run test-onnx:coverage`
 test-cov = "coverage run -m pytest -s tests/test_main.py::test_synthesize_onnx_cpu"
 # Usage: `hatch run test-onnx:cov-report`

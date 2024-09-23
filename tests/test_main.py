@@ -125,3 +125,12 @@ def test_synthesize_onnx_directml():
             ("DmlExecutionProvider", {"device_id": 0}),
         ],
     )
+
+
+def test_synthesize_onnx_coreml():
+    synthesize(
+        inference_type="onnx",
+        onnx_providers=[
+            ("CoreMLExecutionProvider", {}),
+        ],
+    )
