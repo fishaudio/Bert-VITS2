@@ -47,8 +47,9 @@ def synthesize(
 
                 # ロードされた InferenceSession の ExecutionProvider が一致するか確認
                 # 一致しない場合、指定された ExecutionProvider で推論できない状態
-                assert model.onnx_session is not None
-                assert model.onnx_session.get_providers()[0] == onnx_providers[0][0]
+                if inference_type == "onnx":
+                    assert model.onnx_session is not None
+                    assert model.onnx_session.get_providers()[0] == onnx_providers[0][0]
 
                 # すべてのスタイルに対して音声合成を実行
                 for style in model_info.styles:
