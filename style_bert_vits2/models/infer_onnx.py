@@ -195,10 +195,17 @@ def infer_onnx(
     else:
         device_type = "cpu"
 
+    device_id = 0
+    first_provider_options = onnx_session.get_provider_options()[first_provider]
+    if "device_id" in first_provider_options:
+        device_id = int(first_provider_options["device_id"])
+
     # GPU メモリに入力テンソルを割り当て
     io_binding = onnx_session.io_binding()
     for name, value in zip(input_names, input_tensor):
-        gpu_tensor = onnxruntime.OrtValue.ortvalue_from_numpy(value, device_type)
+        gpu_tensor = onnxruntime.OrtValue.ortvalue_from_numpy(
+            value, device_type, device_id
+        )
         io_binding.bind_ortvalue_input(name, gpu_tensor)
 
     # 推論の実行
