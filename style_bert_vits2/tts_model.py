@@ -139,7 +139,17 @@ class TTSModel:
         else:
             sess_options = onnxruntime.SessionOptions()
             # ONNX モデルの作成時にすでに onnxsim により最適化されていることから、ロード高速化のため最適化を無効にする
-            sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL  # fmt: skip
+            ## DmlExecutionProvider が先頭に指定されているときのみ、DirectML 推論の高速化のためすべての最適化を有効にする
+            assert len(self.onnx_providers) > 0
+            first_provider_name = (
+                self.onnx_providers[0]
+                if type(self.onnx_providers[0]) is str
+                else self.onnx_providers[0][0]
+            )
+            if first_provider_name == "DmlExecutionProvider":
+                sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL  # fmt: skip
+            else:
+                sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL  # fmt: skip
             # エラー以外のログを出力しない
             # 本来は log_severity_level = 3 だけで効くはずだが、なぜか抑制できないので set_default_logger_severity() も呼び出している
             sess_options.log_severity_level = 3
