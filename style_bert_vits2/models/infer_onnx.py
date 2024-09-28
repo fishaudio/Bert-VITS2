@@ -165,10 +165,10 @@ def infer_onnx(
             lang_ids,
             ja_bert,
             style_vec_tensor,
-            np.array([length_scale], dtype=np.float32),
-            np.array([sdp_ratio], dtype=np.float32),
-            np.array([noise_scale], dtype=np.float32),
-            np.array([noise_scale_w], dtype=np.float32),
+            np.array(length_scale, dtype=np.float32),
+            np.array(sdp_ratio, dtype=np.float32),
+            np.array(noise_scale, dtype=np.float32),
+            np.array(noise_scale_w, dtype=np.float32),
         ]
     else:
         input_tensor = [
@@ -181,10 +181,10 @@ def infer_onnx(
             ja_bert,
             en_bert,
             style_vec_tensor,
-            np.array([length_scale], dtype=np.float32),
-            np.array([sdp_ratio], dtype=np.float32),
-            np.array([noise_scale], dtype=np.float32),
-            np.array([noise_scale_w], dtype=np.float32),
+            np.array(length_scale, dtype=np.float32),
+            np.array(sdp_ratio, dtype=np.float32),
+            np.array(noise_scale, dtype=np.float32),
+            np.array(noise_scale_w, dtype=np.float32),
         ]
 
     # 入力テンソルを転送する GPU デバイスを取得
