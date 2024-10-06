@@ -204,9 +204,10 @@ def infer_onnx(
     ## 手元環境だと DmlExecutionProvider のみ常に空の辞書が返されるため、当面 onnx_providers から直接オプションを取り出している
     device_id = 0
     onnx_providers_dict: dict[str, dict[str, Any]] = {}
-    for provider, options in onnx_providers:
-        if isinstance(options, dict):
-            onnx_providers_dict[provider] = options
+    for provider in onnx_providers:
+        if isinstance(provider, tuple):
+            provider_name, options = provider
+            onnx_providers_dict[provider_name] = options
         else:
             onnx_providers_dict[provider] = {}
     first_provider_options = onnx_providers_dict[first_provider]
