@@ -108,8 +108,9 @@ class TTSModel:
             )
         self.style_vector_inference: Optional[Any] = None
 
-        # net_g は PyTorch 推論時のみ遅延初期化される
+        # net_g / null_model_params は PyTorch 推論時のみ遅延初期化される
         self.net_g: Union[SynthesizerTrn, SynthesizerTrnJPExtra, None] = None
+        self.null_model_params: dict[int, dict[str, Union[float, str]]] = {}
 
         # onnx_session は ONNX 推論時のみ遅延初期化される
         self.onnx_session: Optional[onnxruntime.InferenceSession] = None
@@ -134,6 +135,44 @@ class TTSModel:
             logger.info(
                 f'Model loaded successfully from {self.model_path} to "{self.device}" device ({time.time() - start_time:.2f}s)'
             )
+
+            # ここからはヌルモデルのロード用パラメータが指定されている場合のみ
+            if len(self.null_model_params.keys()) == 0:
+                return
+
+            # 推論対象のモデルの重みとヌルモデルの重みをマージ
+            for null_model_info in self.null_model_params.values():
+                logger.info(f"Adding null model: {null_model_info['path']}...")
+                null_model_add = get_net_g(
+                    model_path=str(null_model_info["path"]),
+                    version=self.hyper_parameters.version,
+                    device=self.device,
+                    hps=self.hyper_parameters,
+                )
+                # 愚直。もっと上手い方法ありそう
+                params = zip(self.net_g.dec.parameters(), null_model_add.dec.parameters())
+                for v in params:
+                    v[0].data.add_(v[1].data, alpha=float(null_model_info["weight"]))
+                params = zip(
+                    self.net_g.flow.parameters(), null_model_add.flow.parameters()
+                )
+                for v in params:
+                    v[0].data.add_(v[1].data, alpha=float(null_model_info["pitch"]))
+
+                params = zip(
+                    self.net_g.enc_p.parameters(), null_model_add.enc_p.parameters()
+                )
+                for v in params:
+                    v[0].data.add_(v[1].data, alpha=float(null_model_info["style"]))
+                # テンポは sdp と dp 二つあるからとりあえずどっちも足す
+                params = zip(self.net_g.sdp.parameters(), null_model_add.sdp.parameters())
+                for v in params:
+                    v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
+                params = zip(self.net_g.dp.parameters(), null_model_add.dp.parameters())
+                for v in params:
+                    v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
+
+            logger.info(f"Null models merged successfully ({time.time() - start_time:.2f}s)")
 
         # ONNX 推論時
         else:
@@ -289,6 +328,8 @@ class TTSModel:
         given_tone: Optional[list[int]] = None,
         pitch_scale: float = 1.0,
         intonation_scale: float = 1.0,
+        null_model_params: dict[int, dict[str, Union[str, float]]] = {},
+        force_reload_model: bool = False,
     ) -> tuple[int, NDArray[Any]]:
         """
         テキストから音声を合成する。
@@ -313,7 +354,8 @@ class TTSModel:
             given_tone (Optional[list[int]], optional): アクセントのトーンのリスト. Defaults to None.
             pitch_scale (float, optional): ピッチの高さ (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
             intonation_scale (float, optional): 抑揚の平均からの変化幅 (1.0 から変更すると若干音質が低下する). Defaults to 1.0.
-
+            null_model_params (dict[int, dict[str, Union[str, float]]], optional): 推論時に使用するヌルモデルの名前、適用割合の dict が入った dict 。ONNX 推論では無視される。
+            force_reload_model (bool, optional): モデルを強制的に再ロードするかどうか. Defaults to False.
         Returns:
             tuple[int, NDArray[Any]]: サンプリングレートと音声データ (16bit PCM)
         """
@@ -343,6 +385,15 @@ class TTSModel:
             import torch
 
             from style_bert_vits2.models.infer import infer
+
+            if null_model_params is not {}:
+                self.null_model_params = null_model_params
+            else:
+                self.null_model_params = {}
+
+            # force_reload_model が True のとき、メモリ上に保持されているモデルを破棄する
+            if force_reload_model is True:
+                self.net_g = None
 
             # モデルがロードされていない場合はロードする
             if self.net_g is None:
@@ -401,6 +452,10 @@ class TTSModel:
         # ONNX 推論時
         else:
             from style_bert_vits2.models.infer_onnx import infer_onnx
+
+            # force_reload_model が True のとき、メモリ上に保持されているモデルを破棄する
+            if force_reload_model is True:
+                self.onnx_session = None
 
             # モデルがロードされていない場合はロードする
             if self.onnx_session is None:

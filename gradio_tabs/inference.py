@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import Optional
+from typing import Any, Optional, Union
 
 import gradio as gr
 
@@ -186,6 +186,10 @@ style_md = f"""
 - どのくらいに強さがいいかはモデルやスタイルによって異なるようです。
 - 音声ファイルを入力する場合は、学習データと似た声音の話者（特に同じ性別）でないとよい効果が出ないかもしれません。
 """
+voice_keys = ["dec"]
+voice_pitch_keys = ["flow"]
+speech_style_keys = ["enc_p"]
+tempo_keys = ["sdp", "dp"]
 
 
 def make_interactive():
@@ -201,6 +205,35 @@ def gr_util(item):
         return (gr.update(visible=True), gr.Audio(visible=False, value=None))
     else:
         return (gr.update(visible=False), gr.update(visible=True))
+
+
+null_models_frame = 0
+
+
+def change_null_model_row(
+    null_model_index: int,
+    null_model_name: str,
+    null_model_path: str,
+    null_voice_weights: float,
+    null_voice_pitch_weights: float,
+    null_speech_style_weights: float,
+    null_tempo_weights: float,
+    null_models: dict[int, dict[str, Any]],
+):
+    null_models[null_model_index] = {
+        "name": null_model_name,
+        "path": null_model_path,
+        "weight": null_voice_weights,
+        "pitch": null_voice_pitch_weights,
+        "style": null_speech_style_weights,
+        "tempo": null_tempo_weights,
+    }
+    if len(null_models) > null_models_frame:
+        keys_to_keep = list(range(null_models_frame))
+        result = {k: null_models[k] for k in keys_to_keep}
+    else:
+        result = null_models
+    return result, True
 
 
 def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
@@ -226,9 +259,12 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         speaker,
         pitch_scale,
         intonation_scale,
+        null_models: dict[int, dict[str, Union[str, float]]],
+        force_reload_model: bool,
     ):
         model_holder.get_model(model_name, model_path)
         assert model_holder.current_model is not None
+        logger.debug(f"Null models setting: {null_models}")
 
         wrong_tone_message = ""
         kata_tone: Optional[list[tuple[str, int]]] = None
@@ -283,6 +319,8 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 speaker_id=speaker_id,
                 pitch_scale=pitch_scale,
                 intonation_scale=intonation_scale,
+                null_model_params=null_models,
+                force_reload_model=force_reload_model,
             )
         except InvalidToneError as e:
             logger.error(f"Tone error: {e}")
@@ -304,7 +342,10 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         message = f"Success, time: {duration} seconds."
         if wrong_tone_message != "":
             message = wrong_tone_message + "\n" + message
-        return message, (sr, audio), kata_tone_json_str
+        return message, (sr, audio), kata_tone_json_str, False
+
+    def get_model_files(model_name: str):
+        return [str(f) for f in model_holder.model_files_dict[model_name]]
 
     model_names = model_holder.model_names
     if len(model_names) == 0:
@@ -317,13 +358,13 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
             )
         return app
     initial_id = 0
-    initial_pth_files = [
-        str(f) for f in model_holder.model_files_dict[model_names[initial_id]]
-    ]
+    initial_pth_files = get_model_files(model_names[initial_id])
 
     with gr.Blocks(theme=GRADIO_THEME) as app:
         gr.Markdown(initial_md)
         gr.Markdown(terms_of_use_md)
+        null_models = gr.State({})
+        force_reload_model = gr.State(False)
         with gr.Accordion(label="使い方", open=False):
             gr.Markdown(how_to_md)
         with gr.Row():
@@ -437,6 +478,166 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                         inputs=[use_assist_text],
                         outputs=[assist_text, assist_text_weight],
                     )
+                with gr.Accordion(label="ヌルモデル", open=False):
+                    with gr.Row():
+                        null_models_count = gr.Number(
+                            label="ヌルモデルの数", value=0, step=1
+                        )
+                    with gr.Column(variant="panel"):
+
+                        @gr.render(inputs=[null_models_count])
+                        def render_null_models(
+                            null_models_count: int,
+                        ):
+                            global null_models_frame
+                            null_models_frame = null_models_count
+                            for i in range(null_models_count):
+                                with gr.Row():
+                                    null_model_index = gr.Number(
+                                        value=i,
+                                        key=f"null_model_index_{i}",
+                                        visible=False,
+                                    )
+                                    null_model_name = gr.Dropdown(
+                                        label="モデル一覧",
+                                        choices=model_names,
+                                        key=f"null_model_name_{i}",
+                                        value=model_names[initial_id],
+                                    )
+                                    null_model_path = gr.Dropdown(
+                                        label="モデルファイル",
+                                        key=f"null_model_path_{i}",
+                                        # FIXME: 再レンダー時に選択肢が消えるのでどうにかしたい
+                                        # 現在は再レンダーでvalueは保存されるが選択肢は保存されないので選択肢が空になる
+                                        # そのときに選択肢にない値となるので、それを許す
+                                        allow_custom_value=True,
+                                    )
+                                    null_voice_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_voice_weights_{i}",
+                                        label="声質",
+                                    )
+                                    null_voice_pitch_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_voice_pitch_weights_{i}",
+                                        label="声の高さ",
+                                    )
+                                    null_speech_style_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_speech_style_weights_{i}",
+                                        label="話し方",
+                                    )
+                                    null_tempo_weights = gr.Slider(
+                                        minimum=0,
+                                        maximum=1,
+                                        value=1,
+                                        step=0.1,
+                                        key=f"null_tempo_weights_{i}",
+                                        label="テンポ",
+                                    )
+
+                                    null_model_name.change(
+                                        model_holder.update_model_files_for_gradio,
+                                        inputs=[null_model_name],
+                                        outputs=[null_model_path],
+                                    )
+                                    null_model_path.change(
+                                        make_non_interactive, outputs=[tts_button]
+                                    )
+                                    # 愚直すぎるのでもう少しなんとかしたい
+                                    null_model_path.change(
+                                        change_null_model_row,
+                                        inputs=[
+                                            null_model_index,
+                                            null_model_name,
+                                            null_model_path,
+                                            null_voice_weights,
+                                            null_voice_pitch_weights,
+                                            null_speech_style_weights,
+                                            null_tempo_weights,
+                                            null_models,
+                                        ],
+                                        outputs=[null_models, force_reload_model],
+                                    )
+                                    null_voice_weights.change(
+                                        change_null_model_row,
+                                        inputs=[
+                                            null_model_index,
+                                            null_model_name,
+                                            null_model_path,
+                                            null_voice_weights,
+                                            null_voice_pitch_weights,
+                                            null_speech_style_weights,
+                                            null_tempo_weights,
+                                            null_models,
+                                        ],
+                                        outputs=[null_models, force_reload_model],
+                                    )
+                                    null_voice_pitch_weights.change(
+                                        change_null_model_row,
+                                        inputs=[
+                                            null_model_index,
+                                            null_model_name,
+                                            null_model_path,
+                                            null_voice_weights,
+                                            null_voice_pitch_weights,
+                                            null_speech_style_weights,
+                                            null_tempo_weights,
+                                            null_models,
+                                        ],
+                                        outputs=[null_models, force_reload_model],
+                                    )
+                                    null_speech_style_weights.change(
+                                        change_null_model_row,
+                                        inputs=[
+                                            null_model_index,
+                                            null_model_name,
+                                            null_model_path,
+                                            null_voice_weights,
+                                            null_voice_pitch_weights,
+                                            null_speech_style_weights,
+                                            null_tempo_weights,
+                                            null_models,
+                                        ],
+                                        outputs=[null_models, force_reload_model],
+                                    )
+                                    null_tempo_weights.change(
+                                        change_null_model_row,
+                                        inputs=[
+                                            null_model_index,
+                                            null_model_name,
+                                            null_model_path,
+                                            null_voice_weights,
+                                            null_voice_pitch_weights,
+                                            null_speech_style_weights,
+                                            null_tempo_weights,
+                                            null_models,
+                                        ],
+                                        outputs=[null_models, force_reload_model],
+                                    )
+
+                    add_btn = gr.Button("ヌルモデルを増やす")
+                    del_btn = gr.Button("ヌルモデルを減らす")
+                    add_btn.click(
+                        lambda x: x + 1,
+                        inputs=[null_models_count],
+                        outputs=[null_models_count],
+                    )
+                    del_btn.click(
+                        lambda x: x - 1 if x > 0 else 0,
+                        inputs=[null_models_count],
+                        outputs=[null_models_count],
+                    )
+
             with gr.Column():
                 with gr.Accordion("スタイルについて詳細", open=False):
                     gr.Markdown(style_md)
@@ -494,8 +695,10 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
                 speaker,
                 pitch_scale,
                 intonation_scale,
+                null_models,
+                force_reload_model,
             ],
-            outputs=[text_output, audio_output, tone],
+            outputs=[text_output, audio_output, tone, force_reload_model],
         )
 
         model_name.change(
