@@ -150,7 +150,9 @@ class TTSModel:
                     hps=self.hyper_parameters,
                 )
                 # 愚直。もっと上手い方法ありそう
-                params = zip(self.net_g.dec.parameters(), null_model_add.dec.parameters())
+                params = zip(
+                    self.net_g.dec.parameters(), null_model_add.dec.parameters()
+                )
                 for v in params:
                     v[0].data.add_(v[1].data, alpha=float(null_model_info["weight"]))
                 params = zip(
@@ -165,14 +167,18 @@ class TTSModel:
                 for v in params:
                     v[0].data.add_(v[1].data, alpha=float(null_model_info["style"]))
                 # テンポは sdp と dp 二つあるからとりあえずどっちも足す
-                params = zip(self.net_g.sdp.parameters(), null_model_add.sdp.parameters())
+                params = zip(
+                    self.net_g.sdp.parameters(), null_model_add.sdp.parameters()
+                )
                 for v in params:
                     v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
                 params = zip(self.net_g.dp.parameters(), null_model_add.dp.parameters())
                 for v in params:
                     v[0].data.add_(v[1].data, alpha=float(null_model_info["tempo"]))
 
-            logger.info(f"Null models merged successfully ({time.time() - start_time:.2f}s)")
+            logger.info(
+                f"Null models merged successfully ({time.time() - start_time:.2f}s)"
+            )
 
         # ONNX 推論時
         else:

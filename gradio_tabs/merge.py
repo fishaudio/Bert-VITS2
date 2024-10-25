@@ -106,7 +106,7 @@ def merge_style_usual(
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     new_config["model_name"] = output_name
     save_config(new_config, output_name)
 
@@ -163,7 +163,7 @@ def merge_style_add_diff(
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     new_config["model_name"] = output_name
     save_config(new_config, output_name)
 
@@ -224,7 +224,7 @@ def merge_style_weighted_sum(
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     new_config["model_name"] = output_name
     save_config(new_config, output_name)
 
@@ -275,7 +275,7 @@ def merge_style_add_null(
     new_config["data"]["num_styles"] = len(new_style2id)
     new_config["data"]["style2id"] = new_style2id
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     new_config["model_name"] = output_name
     save_config(new_config, output_name)
 
@@ -371,7 +371,7 @@ def merge_models_usual(
     new_config["data"]["num_styles"] = 1
     new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     save_config(new_config, output_name)
 
     neutral_vector_a = style_vectors_a[0]
@@ -455,7 +455,7 @@ def merge_models_add_diff(
     new_config["data"]["num_styles"] = 1
     new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
         json.dump(new_config, f, indent=2, ensure_ascii=False)
 
@@ -532,7 +532,7 @@ def merge_models_weighted_sum(
     new_config["data"]["num_styles"] = 1
     new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
         json.dump(new_config, f, indent=2, ensure_ascii=False)
 
@@ -610,7 +610,7 @@ def merge_models_add_null(
     new_config["data"]["num_styles"] = 1
     new_config["data"]["style2id"] = {DEFAULT_STYLE: 0}
     if new_config["data"]["n_speakers"] == 1:
-        new_config["data"]["spk2id"] = { output_name : 0}
+        new_config["data"]["spk2id"] = {output_name: 0}
     with open(assets_root / output_name / "config.json", "w", encoding="utf-8") as f:
         json.dump(new_config, f, indent=2, ensure_ascii=False)
 
