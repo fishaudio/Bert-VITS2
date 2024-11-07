@@ -26,6 +26,7 @@ from transformers import (
 
 from style_bert_vits2.constants import DEFAULT_BERT_MODEL_PATHS, Languages
 from style_bert_vits2.logging import logger
+from style_bert_vits2.nlp import onnx_bert_models
 
 
 if TYPE_CHECKING:
@@ -84,9 +85,8 @@ def load_model(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_BERT_MODEL_PATHS[
-            language
-        ].exists(), f"The default {language.name} BERT model does not exist on the file system. Please specify the path to the pre-trained model."
+        assert DEFAULT_BERT_MODEL_PATHS[language].exists(), \
+            f"The default {language.name} BERT model does not exist on the file system. Please specify the path to the pre-trained model."  # fmt: skip
         pretrained_model_name_or_path = str(DEFAULT_BERT_MODEL_PATHS[language])
 
     # BERT モデルをロードし、辞書に格納して返す
@@ -151,9 +151,13 @@ def load_tokenizer(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_BERT_MODEL_PATHS[
-            language
-        ].exists(), f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
+        # ライブラリ利用時、特例的にこの状況で ONNX 版 BERT トークナイザーがロードされている場合はそのまま返す
+        ## ONNX 版 BERT トークナイザー単独で g2p 処理を行うために必要 (各言語の g2p.py はこの関数に依存している)
+        ## 設計的には微妙だがこの方が差異を吸収できて手っ取り早い
+        if DEFAULT_BERT_MODEL_PATHS[language].exists() is False and onnx_bert_models.is_tokenizer_loaded(language):  # fmt: skip
+            return onnx_bert_models.load_tokenizer(language)
+        assert DEFAULT_BERT_MODEL_PATHS[language].exists(), \
+            f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."  # fmt: skip
         pretrained_model_name_or_path = str(DEFAULT_BERT_MODEL_PATHS[language])
 
     # BERT トークナイザーをロードし、辞書に格納して返す
@@ -203,6 +207,22 @@ def transfer_model(language: Languages, device: str) -> None:
     logger.info(
         f"Transferred the {language.name} BERT model from {current_device} to {device}"
     )
+
+
+def is_model_loaded(language: Languages) -> bool:
+    """
+    指定された言語の BERT モデルがロード済みかどうかを返す。
+    """
+
+    return language in __loaded_models
+
+
+def is_tokenizer_loaded(language: Languages) -> bool:
+    """
+    指定された言語の BERT トークナイザーがロード済みかどうかを返す。
+    """
+
+    return language in __loaded_tokenizers
 
 
 def unload_model(language: Languages) -> None:

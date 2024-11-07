@@ -72,9 +72,8 @@ def load_model(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_ONNX_BERT_MODEL_PATHS[
-            language
-        ].exists(), f"The default {language.name} ONNX BERT model does not exist on the file system. Please specify the path to the pre-trained model."
+        assert DEFAULT_ONNX_BERT_MODEL_PATHS[language].exists(), \
+            f"The default {language.name} ONNX BERT model does not exist on the file system. Please specify the path to the pre-trained model."  # fmt: skip
         pretrained_model_name_or_path = str(DEFAULT_ONNX_BERT_MODEL_PATHS[language])
 
     # pretrained_model_name_or_path に Hugging Face のリポジトリ名が指定された場合 (aaaa/bbbb のフォーマットを想定):
@@ -148,9 +147,8 @@ def load_tokenizer(
 
     # pretrained_model_name_or_path が指定されていない場合はデフォルトのパスを利用
     if pretrained_model_name_or_path is None:
-        assert DEFAULT_ONNX_BERT_MODEL_PATHS[
-            language
-        ].exists(), f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."
+        assert DEFAULT_ONNX_BERT_MODEL_PATHS[language].exists(), \
+            f"The default {language.name} BERT tokenizer does not exist on the file system. Please specify the path to the pre-trained model."  # fmt: skip
         pretrained_model_name_or_path = str(DEFAULT_ONNX_BERT_MODEL_PATHS[language])
 
     # BERT トークナイザーをロードし、辞書に格納して返す
@@ -175,9 +173,25 @@ def load_tokenizer(
     return __loaded_tokenizers[language]
 
 
+def is_model_loaded(language: Languages) -> bool:
+    """
+    指定された言語の ONNX 版 BERT モデルがロード済みかどうかを返す。
+    """
+
+    return language in __loaded_models
+
+
+def is_tokenizer_loaded(language: Languages) -> bool:
+    """
+    指定された言語の ONNX 版 BERT トークナイザーがロード済みかどうかを返す。
+    """
+
+    return language in __loaded_tokenizers
+
+
 def unload_model(language: Languages) -> None:
     """
-    指定された言語の BERT モデルをアンロードする。
+    指定された言語の ONNX 版 BERT モデルをアンロードする。
 
     Args:
         language (Languages): アンロードする BERT モデルの言語
@@ -191,7 +205,7 @@ def unload_model(language: Languages) -> None:
 
 def unload_tokenizer(language: Languages) -> None:
     """
-    指定された言語の BERT トークナイザーをアンロードする。
+    指定された言語の ONNX 版 BERT トークナイザーをアンロードする。
 
     Args:
         language (Languages): アンロードする BERT トークナイザーの言語
@@ -205,7 +219,7 @@ def unload_tokenizer(language: Languages) -> None:
 
 def unload_all_models() -> None:
     """
-    すべての BERT モデルをアンロードする。
+    すべての ONNX 版 BERT モデルをアンロードする。
     """
 
     for language in list(__loaded_models.keys()):
@@ -215,7 +229,7 @@ def unload_all_models() -> None:
 
 def unload_all_tokenizers() -> None:
     """
-    すべての BERT トークナイザーをアンロードする。
+    すべての ONNX 版 BERT トークナイザーをアンロードする。
     """
 
     for language in list(__loaded_tokenizers.keys()):
