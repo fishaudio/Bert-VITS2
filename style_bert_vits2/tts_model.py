@@ -308,7 +308,8 @@ class TTSModel:
         xvec = mean + (xvec - mean) * weight
         return xvec
 
-    def convert_to_16_bit_wav(self, data: NDArray[Any]) -> NDArray[Any]:
+    @staticmethod
+    def convert_to_16_bit_wav(data: NDArray[Any]) -> NDArray[Any]:
         """
         音声データを 16-bit int 形式に変換する。
         gradio.processing_utils.convert_to_16_bit_wav() を移植したもの。
@@ -319,6 +320,7 @@ class TTSModel:
         Returns:
             NDArray[Any]: 16-bit int 形式の音声データ
         """
+
         # Based on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html
         if data.dtype in [np.float64, np.float32, np.float16]:  # type: ignore
             data = data / np.abs(data).max()
@@ -343,6 +345,7 @@ class TTSModel:
                 "Audio data cannot be converted automatically from "
                 f"{data.dtype} to 16-bit int format."
             )
+
         return data
 
     def infer(
