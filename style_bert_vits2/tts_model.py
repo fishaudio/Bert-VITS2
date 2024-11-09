@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
@@ -226,12 +227,29 @@ class TTSModel:
     def unload(self) -> None:
         """
         音声合成モデルをデバイスからアンロードする。
+        PyTorch モデルの場合は CUDA メモリも解放される。
         """
 
+        import torch
+
+        start_time = time.time()
+
+        # PyTorch 推論時
         if self.net_g is not None:
+            del self.net_g
             self.net_g = None
+
+            # CUDA キャッシュをクリア
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        # ONNX 推論時
         if self.onnx_session is not None:
+            del self.onnx_session
             self.onnx_session = None
+
+        gc.collect()
+        logger.info(f"Model unloaded successfully ({time.time() - start_time:.2f}s)")
 
     def get_style_vector(self, style_id: int, weight: float = 1.0) -> NDArray[Any]:
         """
@@ -443,8 +461,7 @@ class TTSModel:
 
             # 改行ごとに分割して音声を生成
             else:
-                texts = text.split("\n")
-                texts = [t for t in texts if t != ""]
+                texts = [t for t in text.split("\n") if t != ""]
                 audios = []
                 with torch.no_grad():
                     for i, t in enumerate(texts):
@@ -504,8 +521,7 @@ class TTSModel:
 
             # 改行ごとに分割して音声を生成
             else:
-                texts = text.split("\n")
-                texts = [t for t in texts if t != ""]
+                texts = [t for t in text.split("\n") if t != ""]
                 audios = []
                 for i, t in enumerate(texts):
                     audios.append(

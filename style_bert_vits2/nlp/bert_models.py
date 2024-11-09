@@ -237,9 +237,9 @@ def unload_model(language: Languages) -> None:
 
     if language in __loaded_models:
         del __loaded_models[language]
-        gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        gc.collect()
         logger.info(f"Unloaded the {language.name} BERT model")
 
 
@@ -256,8 +256,6 @@ def unload_tokenizer(language: Languages) -> None:
     if language in __loaded_tokenizers:
         del __loaded_tokenizers[language]
         gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
         logger.info(f"Unloaded the {language.name} BERT tokenizer")
 
 
