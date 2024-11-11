@@ -41,7 +41,7 @@ from style_bert_vits2.constants import (
     Languages,
 )
 from style_bert_vits2.logging import logger
-from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp import bert_models, onnx_bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
@@ -53,6 +53,7 @@ from style_bert_vits2.nlp.japanese.user_dict import (
     update_dict,
 )
 from style_bert_vits2.tts_model import TTSModelHolder, TTSModelInfo
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 # ---フロントエンド部分に関する処理---
@@ -156,12 +157,6 @@ pyopenjtalk.initialize_worker()
 # pyopenjtalk の辞書を更新
 update_dict()
 
-# 事前に BERT モデル/トークナイザーをロードしておく
-## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
-## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
-bert_models.load_model(Languages.JP)
-bert_models.load_tokenizer(Languages.JP)
-
 
 class AudioResponse(Response):
     media_type = "audio/wav"
@@ -184,6 +179,7 @@ parser.add_argument("--line_length", type=int, default=None)
 parser.add_argument("--line_count", type=int, default=None)
 # parser.add_argument("--skip_default_models", action="store_true")
 parser.add_argument("--skip_static_files", action="store_true")
+parser.add_argument("--preload_onnx_bert", action="store_true")
 args = parser.parse_args()
 device = args.device
 if device == "cuda" and not torch.cuda.is_available():
@@ -194,7 +190,19 @@ port = int(args.port)
 #     download_default_models()
 skip_static_files = bool(args.skip_static_files)
 
-model_holder = TTSModelHolder(model_dir, device)
+# 事前に BERT モデル/トークナイザーをロードしておく
+## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+## server_editor.py は日本語にしか対応していないため、日本語の BERT モデル/トークナイザーのみロードする
+bert_models.load_model(Languages.JP, device_map=device)
+bert_models.load_tokenizer(Languages.JP)
+# VRAM 節約のため、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
+if args.preload_onnx_bert:
+    onnx_bert_models.load_model(
+        Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
+    )
+    onnx_bert_models.load_tokenizer(Languages.JP)
+
+model_holder = TTSModelHolder(model_dir, device, torch_device_to_onnx_providers(device))
 if len(model_holder.model_names) == 0:
     logger.error(f"Models not found in {model_dir}.")
     sys.exit(1)

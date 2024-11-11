@@ -2,9 +2,11 @@ __pycache__/
 venv/
 .venv/
 dist/
-.coverage
+.coverage*
 .ipynb_checkpoints/
 .ruff_cache/
+.DS_Store
+._*
 
 /*.yml
 !/default_config.yml
@@ -13,6 +15,7 @@ dist/
 /bert/*/*.model
 /bert/*/*.safetensors
 /bert/*/*.msgpack
+/bert/*/*.onnx
 
 /configs/paths.yml
 

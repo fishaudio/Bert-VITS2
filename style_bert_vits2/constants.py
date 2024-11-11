@@ -4,7 +4,7 @@ from style_bert_vits2.utils.strenum import StrEnum
 
 
 # Style-Bert-VITS2 のバージョン
-VERSION = "2.6.0"
+VERSION = "2.6.1"
 
 # Style-Bert-VITS2 のベースディレクトリ
 BASE_DIR = Path(__file__).parent.parent
@@ -18,11 +18,18 @@ class Languages(StrEnum):
     ZH = "ZH"
 
 
-# 言語ごとのデフォルトの BERT トークナイザーのパス
-DEFAULT_BERT_TOKENIZER_PATHS = {
+# 言語ごとのデフォルトの BERT モデルのパス
+DEFAULT_BERT_MODEL_PATHS = {
     Languages.JP: BASE_DIR / "bert" / "deberta-v2-large-japanese-char-wwm",
     Languages.EN: BASE_DIR / "bert" / "deberta-v3-large",
     Languages.ZH: BASE_DIR / "bert" / "chinese-roberta-wwm-ext-large",
+}
+
+# 言語ごとのデフォルトの BERT モデル (ONNX 版) のパス
+DEFAULT_ONNX_BERT_MODEL_PATHS = {
+    Languages.JP: BASE_DIR / "bert" / "deberta-v2-large-japanese-char-wwm-onnx",
+    Languages.EN: BASE_DIR / "bert" / "deberta-v3-large-onnx",
+    Languages.ZH: BASE_DIR / "bert" / "chinese-roberta-wwm-ext-large-onnx",
 }
 
 # デフォルトのユーザー辞書ディレクトリ

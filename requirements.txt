@@ -1,3 +1,4 @@
+accelerate
 cmudict
 cn2an
 faster-whisper==0.10.1
@@ -7,8 +8,13 @@ gradio>=4.32
 jieba
 librosa==0.9.2
 loguru
+nltk<=3.8.1
 num2words
 numpy<2
+onnxruntime
+onnxruntime-directml; sys_platform == 'win32'
+onnxruntime-gpu; sys_platform != 'darwin'
+onnxsim
 protobuf==4.25
 psutil
 punctuators

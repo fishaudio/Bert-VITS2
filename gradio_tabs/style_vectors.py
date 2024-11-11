@@ -336,7 +336,12 @@ def save_style_vectors_by_dirs(model_name: str, audio_dir_str: str):
     if style_vector_path.exists():
         logger.info(f"Backup {style_vector_path} to {style_vector_path}.bak")
         shutil.copy(style_vector_path, f"{style_vector_path}.bak")
-    save_styles_by_dirs(audio_dir, result_dir)
+    save_styles_by_dirs(
+        wav_dir=audio_dir,
+        output_dir=result_dir,
+        config_path=config_path,
+        config_output_path=config_path,
+    )
     return f"成功!\n{result_dir}にスタイルベクトルを保存しました。"
 
 

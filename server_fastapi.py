@@ -34,10 +34,11 @@ from style_bert_vits2.constants import (
     Languages,
 )
 from style_bert_vits2.logging import logger
-from style_bert_vits2.nlp import bert_models
+from style_bert_vits2.nlp import bert_models, onnx_bert_models
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.user_dict import update_dict
 from style_bert_vits2.tts_model import TTSModel, TTSModelHolder
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 config = get_config()
@@ -50,15 +51,6 @@ pyopenjtalk.initialize_worker()
 
 # dict_data/ 以下の辞書データを pyopenjtalk に適用
 update_dict()
-
-# 事前に BERT モデル/トークナイザーをロードしておく
-## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
-bert_models.load_model(Languages.JP)
-bert_models.load_tokenizer(Languages.JP)
-bert_models.load_model(Languages.EN)
-bert_models.load_tokenizer(Languages.EN)
-bert_models.load_model(Languages.ZH)
-bert_models.load_tokenizer(Languages.ZH)
 
 
 def raise_validation_error(msg: str, param: str):
@@ -97,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dir", "-d", type=str, help="Model directory", default=config.assets_root
     )
+    parser.add_argument("--preload_onnx_bert", action="store_true")
     args = parser.parse_args()
 
     if args.cpu:
@@ -104,8 +97,22 @@ if __name__ == "__main__":
     else:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    # 事前に BERT モデル/トークナイザーをロードしておく
+    ## ここでロードしなくても必要になった際に自動ロードされるが、時間がかかるため事前にロードしておいた方が体験が良い
+    ## 英語や中国語で音声合成するユースケースは限られていることから、VRAM 節約のため日本語の BERT モデル/トークナイザーのみロードする
+    bert_models.load_model(Languages.JP, device_map=device)
+    bert_models.load_tokenizer(Languages.JP)
+    # VRAM 節約のため、既定では ONNX 版 BERT モデル/トークナイザーは事前ロードしない
+    if args.preload_onnx_bert:
+        onnx_bert_models.load_model(
+            Languages.JP, onnx_providers=torch_device_to_onnx_providers(device)
+        )
+        onnx_bert_models.load_tokenizer(Languages.JP)
+
     model_dir = Path(args.dir)
-    model_holder = TTSModelHolder(model_dir, device)
+    model_holder = TTSModelHolder(
+        model_dir, device, torch_device_to_onnx_providers(device)
+    )
     if len(model_holder.model_names) == 0:
         logger.error(f"Models not found in {model_dir}.")
         sys.exit(1)
@@ -141,6 +148,10 @@ if __name__ == "__main__":
         request: Request,
         text: str = Query(..., min_length=1, max_length=limit, description="セリフ"),
         encoding: str = Query(None, description="textをURLデコードする(ex, `utf-8`)"),
+        model_name: str = Query(
+            None,
+            description="モデル名(model_idより優先)。model_assets内のディレクトリ名を指定",
+        ),
         model_id: int = Query(
             0, description="モデルID。`GET /models/info`のkeyの値を指定ください"
         ),
@@ -197,6 +208,24 @@ if __name__ == "__main__":
             model_holder.model_names
         ):  # /models/refresh があるためQuery(le)で表現不可
             raise_validation_error(f"model_id={model_id} not found", "model_id")
+
+        if model_name:
+            # load_models() の 処理内容が i の正当性を担保していることに注意
+            model_ids = [
+                i
+                for i, x in enumerate(model_holder.models_info)
+                if x.name == model_name
+            ]
+            if not model_ids:
+                raise_validation_error(
+                    f"model_name={model_name} not found", "model_name"
+                )
+            # 今の実装ではディレクトリ名が重複することは無いはずだが...
+            if len(model_ids) > 1:
+                raise_validation_error(
+                    f"model_name={model_name} is ambiguous", "model_name"
+                )
+            model_id = model_ids[0]
 
         model = loaded_models[model_id]
         if speaker_name is None:

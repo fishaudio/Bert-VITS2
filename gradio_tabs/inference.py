@@ -1,6 +1,7 @@
 import datetime
 import json
-from typing import Any, Optional, Union
+from pathlib import Path
+from typing import Optional
 
 import gradio as gr
 
@@ -18,11 +19,12 @@ from style_bert_vits2.constants import (
     Languages,
 )
 from style_bert_vits2.logging import logger
-from style_bert_vits2.models.infer import InvalidToneError
+from style_bert_vits2.nlp import InvalidToneError
 from style_bert_vits2.nlp.japanese import pyopenjtalk_worker as pyopenjtalk
 from style_bert_vits2.nlp.japanese.g2p_utils import g2kata_tone, kata_tone2phone_tone
 from style_bert_vits2.nlp.japanese.normalizer import normalize_text
-from style_bert_vits2.tts_model import TTSModelHolder
+from style_bert_vits2.tts_model import NullModelParam, TTSModelHolder
+from style_bert_vits2.utils import torch_device_to_onnx_providers
 
 
 # pyopenjtalk_worker を起動
@@ -217,16 +219,16 @@ def change_null_model_row(
     null_voice_pitch_weights: float,
     null_speech_style_weights: float,
     null_tempo_weights: float,
-    null_models: dict[int, dict[str, Any]],
+    null_models: dict[int, NullModelParam],
 ):
-    null_models[null_model_index] = {
-        "name": null_model_name,
-        "path": null_model_path,
-        "weight": null_voice_weights,
-        "pitch": null_voice_pitch_weights,
-        "style": null_speech_style_weights,
-        "tempo": null_tempo_weights,
-    }
+    null_models[null_model_index] = NullModelParam(
+        name=null_model_name,
+        path=Path(null_model_path),
+        weight=null_voice_weights,
+        pitch=null_voice_pitch_weights,
+        style=null_speech_style_weights,
+        tempo=null_tempo_weights,
+    )
     if len(null_models) > null_models_frame:
         keys_to_keep = list(range(null_models_frame))
         result = {k: null_models[k] for k in keys_to_keep}
@@ -258,7 +260,7 @@ def create_inference_app(model_holder: TTSModelHolder) -> gr.Blocks:
         speaker,
         pitch_scale,
         intonation_scale,
-        null_models: dict[int, dict[str, Union[str, float]]],
+        null_models: dict[int, NullModelParam],
         force_reload_model: bool,
     ):
         model_holder.get_model(model_name, model_path)
@@ -736,6 +738,8 @@ if __name__ == "__main__":
     path_config = get_path_config()
     assets_root = path_config.assets_root
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model_holder = TTSModelHolder(assets_root, device)
+    model_holder = TTSModelHolder(
+        assets_root, device, torch_device_to_onnx_providers(device)
+    )
     app = create_inference_app(model_holder)
     app.launch(inbrowser=True)

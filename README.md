@@ -15,7 +15,8 @@ You can install via `pip install style-bert-vits2` (inference only), see [librar
 - [Zennの解説記事](https://zenn.dev/litagin/articles/034819a5256ff4)
 
 - [**リリースページ**](https://github.com/litagin02/Style-Bert-VITS2/releases/)、[更新履歴](/docs/CHANGELOG.md)
-  - 2024-06-16: Ver 2.6.0 (モデルの差分マージ・加重マージ・ヌルモデルマージの追加)
+  - 2024-09-09: Ver 2.6.1: Google colabでうまく学習できない等のバグ修正のみ
+  - 2024-06-16: Ver 2.6.0 (モデルの差分マージ・加重マージ・ヌルモデルマージの追加、使い道については[この記事](https://zenn.dev/litagin/articles/1297b1dc7bdc79)参照)
   - 2024-06-14: Ver 2.5.1 (利用規約をお願いへ変更したのみ)
   - 2024-06-02: Ver 2.5.0 (**[利用規約](/docs/TERMS_OF_USE.md)の追加**、フォルダ分けからのスタイル生成、小春音アミ・あみたろモデルの追加、インストールの高速化等)
   - 2024-03-16: ver 2.4.1 (**batファイルによるインストール方法の変更**)
@@ -78,9 +79,9 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 git clone https://github.com/litagin02/Style-Bert-VITS2.git
 cd Style-Bert-VITS2
 uv venv venv
-uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
-uv pip install -r requirements.txt
 venv\Scripts\activate
+uv pip install "torch<2.4" "torchaudio<2.4" --index-url https://download.pytorch.org/whl/cu118
+uv pip install -r requirements.txt
 python initialize.py  # 必要なモデルとデフォルトTTSモデルをダウンロード
 ```
 最後を忘れずに。

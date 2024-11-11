@@ -12,6 +12,7 @@ def load_safetensors(
     checkpoint_path: Union[str, Path],
     model: torch.nn.Module,
     for_infer: bool = False,
+    device: Union[str, torch.device] = "cpu",
 ) -> tuple[torch.nn.Module, Optional[int]]:
     """
     指定されたパスから safetensors モデルを読み込み、モデルとイテレーションを返す。
@@ -27,7 +28,7 @@ def load_safetensors(
 
     tensors: dict[str, Any] = {}
     iteration: Optional[int] = None
-    with safe_open(str(checkpoint_path), framework="pt", device="cpu") as f:  # type: ignore
+    with safe_open(str(checkpoint_path), framework="pt", device=device) as f:  # type: ignore
         for key in f.keys():
             if key == "iteration":
                 iteration = f.get_tensor(key).item()
