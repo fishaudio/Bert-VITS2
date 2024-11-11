@@ -174,12 +174,13 @@ def create_dataset_app() -> gr.Blocks:
                 )
                 use_hf_whisper = gr.Checkbox(
                     label="HuggingFaceのWhisperを使う（速度が速いがVRAMを多く使う）",
-                    value=True,
+                    value=False,
                 )
                 hf_repo_id = gr.Dropdown(
                     ["openai/whisper", "kotoba-tech/kotoba-whisper-v1.1"],
                     label="HuggingFaceのWhisperモデル",
                     value="openai/whisper",
+                    visible=False,
                 )
                 compute_type = gr.Dropdown(
                     [
@@ -194,7 +195,7 @@ def create_dataset_app() -> gr.Blocks:
                     ],
                     label="計算精度",
                     value="bfloat16",
-                    visible=False,
+                    visible=True,
                 )
                 batch_size = gr.Slider(
                     minimum=1,
@@ -203,6 +204,7 @@ def create_dataset_app() -> gr.Blocks:
                     step=1,
                     label="バッチサイズ",
                     info="大きくすると速度が速くなるがVRAMを多く使う",
+                    visible=False,
                 )
                 language = gr.Dropdown(["ja", "en", "zh"], value="ja", label="言語")
                 initial_prompt = gr.Textbox(
