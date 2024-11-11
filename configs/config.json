@@ -69,5 +69,5 @@
     "use_spectral_norm": false,
     "gin_channels": 256
   },
-  "version": "2.6.1"
+  "version": "2.7.0"
 }
