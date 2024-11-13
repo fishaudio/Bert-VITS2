@@ -9,6 +9,7 @@ loguru
 nltk<=3.8.1
 num2words
 numpy<2
+onnx
 onnxruntime
 onnxruntime-gpu
 pyannote.audio>=3.1.0
