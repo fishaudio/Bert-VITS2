@@ -67,8 +67,7 @@ def transcribe_files_with_hf_whisper(
         "num_beams": num_beams,
         "no_repeat_ngram_size": no_repeat_ngram_size,
     }
-    logger.info(f"generate_kwargs: {generate_kwargs}")
-
+    logger.info(f"generate_kwargs: {generate_kwargs}, loading pipeline...")
     pipe = pipeline(
         model=model_id,
         max_new_tokens=128,
@@ -79,6 +78,7 @@ def transcribe_files_with_hf_whisper(
         trust_remote_code=True,
         # generate_kwargs=generate_kwargs,
     )
+    logger.info("Loaded pipeline")
     if initial_prompt is not None:
         prompt_ids: torch.Tensor = pipe.tokenizer.get_prompt_ids(
             initial_prompt, return_tensors="pt"
@@ -196,10 +196,7 @@ if __name__ == "__main__":
             with open(output_file, "a", encoding="utf-8") as f:
                 f.write(f"{wav_rel_path}|{model_name}|{language_id}|{text}\n")
     else:
-        if args.hf_repo_id == "":
-            model_id = f"openai/whisper-{args.model}"
-        else:
-            model_id = args.hf_repo_id
+        model_id = args.hf_repo_id
         logger.info(f"Loading HF Whisper model ({model_id})")
         pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
         results = transcribe_files_with_hf_whisper(
