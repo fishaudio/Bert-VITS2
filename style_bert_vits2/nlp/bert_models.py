@@ -251,7 +251,6 @@ def unload_tokenizer(language: Languages) -> None:
         language (Languages): アンロードする BERT トークナイザーの言語
     """
 
-    import torch
 
     if language in __loaded_tokenizers:
         del __loaded_tokenizers[language]

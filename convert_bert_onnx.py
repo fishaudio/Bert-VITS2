@@ -31,8 +31,8 @@ if __name__ == "__main__":
     # モデルの入出力先ファイルパスを取得
     language = Languages(args.language)
     pretrained_model_name_or_path = DEFAULT_BERT_MODEL_PATHS[language]
-    onnx_temp_model_path = Path(pretrained_model_name_or_path) / f"model_temp.onnx"
-    onnx_optimized_model_path = Path(pretrained_model_name_or_path) / f"model.onnx"
+    onnx_temp_model_path = Path(pretrained_model_name_or_path) / "model_temp.onnx"
+    onnx_optimized_model_path = Path(pretrained_model_name_or_path) / "model.onnx"
     tokenizer_json_path = Path(pretrained_model_name_or_path) / "tokenizer.json"
     print(Rule(characters="=", style=Style(color="blue")))
     print(f"[bold cyan]Language:[/bold cyan] {language.name}")
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # モデルを ONNX に変換
     print(Rule(characters="=", style=Style(color="blue")))
-    print(f"[bold cyan]Exporting ONNX model...[/bold cyan]")
+    print("[bold cyan]Exporting ONNX model...[/bold cyan]")
     print(Rule(characters="=", style=Style(color="blue")))
     export_start_time = time.time()
     torch.onnx.export(
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # ONNX モデルを最適化
     print(Rule(characters="=", style=Style(color="blue")))
-    print(f"[bold cyan]Optimizing ONNX model...[/bold cyan]")
+    print("[bold cyan]Optimizing ONNX model...[/bold cyan]")
     print(Rule(characters="=", style=Style(color="blue")))
     optimize_start_time = time.time()
     onnx_model = onnx.load(onnx_temp_model_path)

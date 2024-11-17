@@ -1,5 +1,5 @@
-# Usage: .venv/bin/python convert_onnx.py --model model_assets/koharune-ami/koharune-ami.safetensors
-# Usage: .venv/bin/python convert_onnx.py --model model_assets/ (All models in the directory will be converted)
+# Usage: python convert_onnx.py --model model_assets/koharune-ami/koharune-ami.safetensors
+# Usage: python convert_onnx.py --model model_assets/ (All models in the directory will be converted)
 # ref: https://github.com/tuna2134/sbv2-api/blob/main/convert/convert_model.py
 
 import time
@@ -162,7 +162,7 @@ if __name__ == "__main__":
             # モデルを ONNX に変換
             print(Rule(characters="=", style=Style(color="blue")))
             print(
-                f"[bold cyan]Exporting ONNX model... (Architecture: JP-Extra)[/bold cyan]"
+                "[bold cyan]Exporting ONNX model... (Architecture: JP-Extra)[/bold cyan]"
             )
             print(Rule(characters="=", style=Style(color="blue")))
             export_start_time = time.time()
@@ -253,7 +253,7 @@ if __name__ == "__main__":
             # モデルを ONNX に変換
             print(Rule(characters="=", style=Style(color="blue")))
             print(
-                f"[bold cyan]Exporting ONNX model... (Architecture: Non-JP-Extra)[/bold cyan]"
+                "[bold cyan]Exporting ONNX model... (Architecture: Non-JP-Extra)[/bold cyan]"
             )
             print(Rule(characters="=", style=Style(color="blue")))
             export_start_time = time.time()
@@ -310,7 +310,7 @@ if __name__ == "__main__":
 
         # ONNX モデルを最適化
         print(Rule(characters="=", style=Style(color="blue")))
-        print(f"[bold cyan]Optimizing ONNX model...[/bold cyan]")
+        print("[bold cyan]Optimizing ONNX model...[/bold cyan]")
         print(Rule(characters="=", style=Style(color="blue")))
         optimize_start_time = time.time()
         onnx_model = onnx.load(onnx_temp_model_path)

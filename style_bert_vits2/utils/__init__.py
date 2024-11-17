@@ -1,4 +1,5 @@
-from typing import Any, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Union
 
 
 def torch_device_to_onnx_providers(

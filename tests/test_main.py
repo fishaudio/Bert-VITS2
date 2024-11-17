@@ -1,4 +1,5 @@
-from typing import Any, Literal, Sequence
+from collections.abc import Sequence
+from typing import Any, Literal
 
 import pytest
 from scipy.io import wavfile
