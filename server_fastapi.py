@@ -266,6 +266,10 @@ if __name__ == "__main__":
             wavfile.write(wavContent, sr, audio)
             return Response(content=wavContent.getvalue(), media_type="audio/wav")
 
+    @app.post("/g2p")
+    def g2p(text: str):
+        return g2kata_tone(normalize_text(text))
+
     @app.get("/models/info")
     def get_loaded_models_info():
         """ロードされたモデル情報の取得"""
