@@ -82,7 +82,7 @@ def load_model(
         model_path = Path(
             hf_hub_download(
                 repo_id=pretrained_model_name_or_path,
-                filename="model.onnx",
+                filename="model_fp16.onnx",
                 cache_dir=cache_dir,
                 revision=revision,
             )
@@ -99,7 +99,7 @@ def load_model(
     # pretrained_model_name_or_path にファイルパスが指定された場合:
     # 既にダウンロード済みという前提のもと、モデルへのローカルパスを model_path に格納する
     else:
-        model_path = Path(pretrained_model_name_or_path).resolve() / "model.onnx"
+        model_path = Path(pretrained_model_name_or_path).resolve() / "model_fp16.onnx"
 
     start_time = time.time()
     sess_options = onnxruntime.SessionOptions()

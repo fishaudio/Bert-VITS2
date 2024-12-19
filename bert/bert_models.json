@@ -5,7 +5,7 @@
     },
     "deberta-v2-large-japanese-char-wwm-onnx": {
         "repo_id": "tsukumijima/deberta-v2-large-japanese-char-wwm-onnx",
-        "files": ["model.onnx"]
+        "files": ["model_fp16.onnx"]
     },
     "chinese-roberta-wwm-ext-large": {
         "repo_id": "hfl/chinese-roberta-wwm-ext-large",
@@ -13,7 +13,7 @@
     },
     "chinese-roberta-wwm-ext-large-onnx": {
         "repo_id": "tsukumijima/chinese-roberta-wwm-ext-large-onnx",
-        "files": ["model.onnx"]
+        "files": ["model_fp16.onnx"]
     },
     "deberta-v3-large": {
         "repo_id": "microsoft/deberta-v3-large",
@@ -21,6 +21,6 @@
     },
     "deberta-v3-large-onnx": {
         "repo_id": "tsukumijima/deberta-v3-large-onnx",
-        "files": ["spm.model", "model.onnx"]
+        "files": ["spm.model", "model_fp16.onnx"]
     }
 }
