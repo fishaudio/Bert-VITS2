@@ -142,7 +142,7 @@ def load_tokenizer(
         revision (str): モデルの Hugging Face 上の Git リビジョン。指定しない場合は最新の main ブランチの内容が利用される (デフォルト: None)
 
     Returns:
-        Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2Tokenizer]: ロード済みの BERT トークナイザー
+        Union[PreTrainedTokenizer, PreTrainedTokenizerFast, DebertaV2TokenizerFast]: ロード済みの BERT トークナイザー
     """
 
     # すでにロード済みの場合はそのまま返す
@@ -250,8 +250,6 @@ def unload_tokenizer(language: Languages) -> None:
     Args:
         language (Languages): アンロードする BERT トークナイザーの言語
     """
-
-    import torch
 
     if language in __loaded_tokenizers:
         del __loaded_tokenizers[language]
