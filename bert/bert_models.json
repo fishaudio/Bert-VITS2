@@ -21,6 +21,6 @@
     },
     "deberta-v3-large-onnx": {
         "repo_id": "tsukumijima/deberta-v3-large-onnx",
-        "files": ["model.onnx"]
+        "files": ["spm.model", "model.onnx"]
     }
 }

@@ -228,22 +228,24 @@ if __name__ == "__main__":
 
     # トークナイザーを Fast Tokenizer 用形式に変換して保存
     if language == Languages.EN:
-        slow_tokenizer = DebertaV2Tokenizer.from_pretrained(
+        tokenizer = DebertaV2Tokenizer.from_pretrained(
             pretrained_model_name_or_path,
         )
-        convert_slow_tokenizer(slow_tokenizer).save(str(tokenizer_json_path))
+        convert_slow_tokenizer(tokenizer).save(str(tokenizer_json_path))
     elif language == Languages.JP:
-        slow_tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
             use_fast=False,  # 明示的に Slow Tokenizer を使う
         )
-        BertConverter(slow_tokenizer).converted().save(str(tokenizer_json_path))
+        BertConverter(tokenizer).converted().save(str(tokenizer_json_path))
     elif language == Languages.ZH:
-        slow_tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
             use_fast=False,  # 明示的に Slow Tokenizer を使う
         )
-        convert_slow_tokenizer(slow_tokenizer).save(str(tokenizer_json_path))
+        convert_slow_tokenizer(tokenizer).save(str(tokenizer_json_path))
+    else:
+        assert False, "Invalid language"
     print(Rule(characters="=", style=Style(color="blue")))
     print(f"[bold green]Tokenizer JSON saved to {tokenizer_json_path}[/bold green]")
     print(Rule(characters="=", style=Style(color="blue")))
