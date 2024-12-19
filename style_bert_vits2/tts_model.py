@@ -230,12 +230,12 @@ class TTSModel:
         PyTorch モデルの場合は CUDA メモリも解放される。
         """
 
-        import torch
-
         start_time = time.time()
 
         # PyTorch 推論時
         if self.net_g is not None:
+            import torch
+
             del self.net_g
             self.net_g = None
 
