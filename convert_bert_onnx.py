@@ -265,6 +265,9 @@ if __name__ == "__main__":
             res = torch.cat(res["hidden_states"][-3:-2], -1)[0].cpu()
             return res
 
+    # 再度 Fast Tokenizer でロード
+    tokenizer = bert_models.load_tokenizer(language)
+
     # ONNX 変換用の BERT モデルをロード
     model = ONNXBert()
     inputs = tokenizer("今日はいい天気ですね", return_tensors="pt")
