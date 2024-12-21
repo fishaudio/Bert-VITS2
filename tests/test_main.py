@@ -11,7 +11,7 @@ def synthesize(
     inference_type: Literal["torch", "onnx"] = "torch",
     device: str = "cpu",
     onnx_providers: Sequence[tuple[str, dict[str, Any]]] = [
-        ("CPUExecutionProvider", {}),
+        ("CPUExecutionProvider", {"arena_extend_strategy": "kSameAsRequested"}),
     ],
 ):
 
@@ -100,7 +100,7 @@ def test_synthesize_onnx_cpu():
     synthesize(
         inference_type="onnx",
         onnx_providers=[
-            ("CPUExecutionProvider", {}),
+            ("CPUExecutionProvider", {"arena_extend_strategy": "kSameAsRequested"}),
         ],
     )
 
@@ -109,7 +109,7 @@ def test_synthesize_onnx_cuda():
     synthesize(
         inference_type="onnx",
         onnx_providers=[
-            ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}),
+            ("CUDAExecutionProvider", {"arena_extend_strategy": "kSameAsRequested", "cudnn_conv_algo_search": "DEFAULT"}),  # fmt: skip
         ],
     )
 
@@ -118,10 +118,6 @@ def test_synthesize_onnx_directml():
     synthesize(
         inference_type="onnx",
         onnx_providers=[
-            # device_id: 0 は、システムにインストールされているプライマリディスプレイ用 GPU に対応する
-            # プライマリディスプレイ用 GPU (GPU 0) よりも性能の高い GPU が接続されている環境では、
-            # 適宜 device_id を変更する必要がある
-            # ref: https://github.com/w-okada/voice-changer/issues/410#issuecomment-1627994911
             ("DmlExecutionProvider", {"device_id": 0}),
         ],
     )

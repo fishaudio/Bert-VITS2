@@ -19,14 +19,23 @@ def torch_device_to_onnx_providers(
     if device.startswith("cuda"):
         return [
             # cudnn_conv_algo_search を DEFAULT にすると推論速度が大幅に向上する
-            # ref: https://medium.com/neuml/debug-onnx-gpu-performance-c9290fe07459
-            ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "DEFAULT"}),
-            # CUDA が利用できない場合、可能であれば DirectML を利用する
+            ## ref: https://medium.com/neuml/debug-onnx-gpu-performance-c9290fe07459
+            ("CUDAExecutionProvider", {"arena_extend_strategy": "kSameAsRequested", "cudnn_conv_algo_search": "DEFAULT"}),
+            # CUDA が利用できない場合、可能であれば DirectML を利用する (明示的な device_id 指定が必要)
+            ## device_id: 0 は、システムにインストールされているプライマリディスプレイ用 GPU に対応する
+            ## プライマリディスプレイ用 GPU (GPU 0) よりも性能の高い GPU が接続されている環境では、 適宜 device_id を変更する必要がある
+            ## ref: https://github.com/w-okada/voice-changer/issues/410#issuecomment-1627994911
             ("DmlExecutionProvider", {"device_id": 0}),
-            ("CPUExecutionProvider", {}),
-        ]
+            # arena_extend_strategy を kSameAsRequested にすると、推論セッションによって作成される
+            # メモリアリーナが、実際に推論に必要な容量以上にメモリを確保する問題を防ぐことができる
+            ## ref: https://github.com/microsoft/onnxruntime/issues/11627#issuecomment-1137668551
+            ## ref: https://skottmckay.github.io/onnxruntime/docs/reference/api/c-api.html
+            ("CPUExecutionProvider", {"arena_extend_strategy": "kSameAsRequested"}),
+        ]  # fmt: skip
     else:
-        return ["CPUExecutionProvider"]
+        return [
+            ("CPUExecutionProvider", {"arena_extend_strategy": "kSameAsRequested"}),
+        ]
 
 
 def get_onnx_device_options(
@@ -90,7 +99,7 @@ def get_onnx_device_options(
     run_options = onnxruntime.RunOptions()
     if first_provider == "CPUExecutionProvider":
         # CPU 推論時は cpu:0 を指定
-        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", "cpu:0")
+        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", "cpu:0")  # fmt: skip
     elif first_provider == "DmlExecutionProvider":
         # DirectML 推論時はこのオプションはサポートされていないようなので、何も指定しない
         # "The registered allocator for device-id combination is not an arena based allocator: gpu:0" のようなエラーが出る…
@@ -98,6 +107,6 @@ def get_onnx_device_options(
     elif first_provider == "CUDAExecutionProvider":
         # CUDA 推論時は cpu:0;gpu:(device_id) を指定
         ## 公式テストコードを読む限り、CUDA だけでなく CPU のメモリも明示的に解放した方がよいらしい
-        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", f"cpu:0;gpu:{device_id}")
+        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", f"cpu:0;gpu:{device_id}")  # fmt: skip
 
     return device_type, device_id, run_options
