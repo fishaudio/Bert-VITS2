@@ -141,6 +141,7 @@ class TTSModel:
         if not self.is_onnx_model:
             from style_bert_vits2.models.infer import get_net_g
 
+            # PyTorch モデルをロード
             self.net_g = get_net_g(
                 model_path=str(self.model_path),
                 version=self.hyper_parameters.version,
@@ -197,24 +198,28 @@ class TTSModel:
 
         # ONNX 推論時
         else:
-            sess_options = onnxruntime.SessionOptions()
-            # ONNX モデルの作成時にすでに onnxsim により最適化されていることから、ロード高速化のため最適化を無効にする
-            ## DmlExecutionProvider が先頭に指定されているときのみ、DirectML 推論の高速化のためすべての最適化を有効にする
+            # 推論時に一番優先される ExecutionProvider の名前を取得
             assert len(self.onnx_providers) > 0
             first_provider_name = (
                 self.onnx_providers[0]
                 if type(self.onnx_providers[0]) is str
                 else self.onnx_providers[0][0]
             )
+
+            # 推論セッションの設定
+            sess_options = onnxruntime.SessionOptions()
+            ## ONNX モデルの作成時にすでに onnxsim により最適化されていることから、ロード高速化のため最適化を無効にする
+            ## DmlExecutionProvider が先頭に指定されているときのみ、DirectML 推論の高速化のためすべての最適化を有効にする
             if first_provider_name == "DmlExecutionProvider":
                 sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL  # fmt: skip
             else:
                 sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL  # fmt: skip
-            # エラー以外のログを出力しない
-            # 本来は log_severity_level = 3 だけで効くはずだが、なぜか抑制できないので set_default_logger_severity() も呼び出している
+            ## エラー以外のログを出力しない
+            ## 本来は log_severity_level = 3 だけで効くはずだが、なぜか CUDA 系のログが抑制できないので set_default_logger_severity() も呼び出している
             sess_options.log_severity_level = 3
             onnxruntime.set_default_logger_severity(3)
 
+            # ONNX モデルをロードし、推論セッションを初期化
             self.onnx_session = onnxruntime.InferenceSession(
                 str(self.model_path),
                 sess_options=sess_options,

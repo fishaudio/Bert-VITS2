@@ -53,6 +53,9 @@ def get_onnx_device_options(
         tuple[str, int, onnxruntime.RunOptions]: 入力テンソルの転送に使用するデバイス種別, デバイス ID, 実行オプション
     """
 
+    # ONNX セッションに対応する SessionOptions を取得
+    sess_options = onnx_session.get_session_options()
+
     # 実際に推論に用いられる ExecutionProvider を取得
     first_provider = onnx_session.get_providers()[0]
 
@@ -85,11 +88,12 @@ def get_onnx_device_options(
         if "device_id" in first_provider_options:
             device_id = int(first_provider_options["device_id"])
 
-    # 推論後にメモリアリーナを縮小し、メモリを解放する
-    ## onnxruntime.SessionOptions の enable_cpu_mem_arena (デフォルト: True) により、デフォルトでは CPU 推論時にメモリアリーナが構築される
-    ## メモリアリーナを無効化すると、推論にのみ使用されたメモリは推論後にすべて解放されるが、一方パフォーマンスがかなり落ちる
-    ## そこでメモリアリーナを有効化した上で、推論後にメモリアリーナを縮小し、何回も音声合成するほど漸進的にメモリが消費される現象を回避する
-    ## この設定は GPU 推論時にもある程度効果があると思われる
+    # 推論後にメモリアリーナを縮小し、確保されていたメモリを解放する
+    ## この設定により、多量の推論処理を行った際に漸進的にメモリが消費される現象を回避できる
+    ## 特に CPU 推論時に有効な設定で、これによりアイドル時のメモリ消費量が大幅に削減される
+    ## 音声合成モデルの CPU 推論時に SessionOptions の enable_cpu_mem_arena を無効化すると 推論速度が 1 秒以上低下してしまうが、
+    ## enable_cpu_mem_arena は有効のまま下記設定を行うと、推論速度を維持しながらメモリ消費量を削減できる
+    ## SessionOptions の enable_cpu_mem_arena が False の時は実行しない
     ## ref: https://onnxruntime.ai/docs/get-started/with-c.html
     ## ref: https://github.com/microsoft/onnxruntime/issues/9313#issuecomment-2182919186
     ## ref: https://github.com/microsoft/onnxruntime/issues/11627
@@ -97,16 +101,17 @@ def get_onnx_device_options(
     ## ref: https://github.com/microsoft/onnxruntime/blob/v1.20.1/onnxruntime/test/python/onnxruntime_test_python.py#L1626-L1647
     ## ref: https://github.com/microsoft/onnxruntime/blob/v1.20.1/include/onnxruntime/core/session/onnxruntime_run_options_config_keys.h#L19-L27
     run_options = onnxruntime.RunOptions()
-    if first_provider == "CPUExecutionProvider":
-        # CPU 推論時は cpu:0 を指定
-        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", "cpu:0")  # fmt: skip
-    elif first_provider == "DmlExecutionProvider":
-        # DirectML 推論時はこのオプションはサポートされていないようなので、何も指定しない
-        # "The registered allocator for device-id combination is not an arena based allocator: gpu:0" のようなエラーが出る…
-        pass
-    elif first_provider == "CUDAExecutionProvider":
-        # CUDA 推論時は cpu:0;gpu:(device_id) を指定
-        ## 公式テストコードを読む限り、CUDA だけでなく CPU のメモリも明示的に解放した方がよいらしい
-        run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", f"cpu:0;gpu:{device_id}")  # fmt: skip
+    if sess_options.enable_cpu_mem_arena is True:
+        if first_provider == "CPUExecutionProvider":
+            # CPU 推論時は cpu:0 を指定
+            run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", "cpu:0")  # fmt: skip
+        elif first_provider == "DmlExecutionProvider":
+            # DirectML 推論時はこのオプションはサポートされていないようなので、何も指定しない
+            # "The registered allocator for device-id combination is not an arena based allocator: gpu:0" のようなエラーが出る…
+            pass
+        elif first_provider == "CUDAExecutionProvider":
+            # CUDA 推論時は cpu:0;gpu:(device_id) を指定
+            ## 公式テストコードを読む限り、CUDA だけでなく CPU のメモリも明示的に解放した方がよいらしい
+            run_options.add_run_config_entry("memory.enable_memory_arena_shrinkage", f"cpu:0;gpu:{device_id}")  # fmt: skip
 
     return device_type, device_id, run_options
