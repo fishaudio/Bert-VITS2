@@ -71,6 +71,7 @@ class WorkerServer:
     def start_server(self, port: int, no_client_timeout: int = 30) -> None:
         logger.info("start pyopenjtalk worker server")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
             server_socket.bind((socket.gethostname(), port))
             server_socket.listen()
             sockets = [server_socket]
