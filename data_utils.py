@@ -200,8 +200,7 @@ class TextAudioSpeakerCollate:
         text_padded = torch.LongTensor(len(batch), max_text_len)
         tone_padded = torch.LongTensor(len(batch), max_text_len)
         language_padded = torch.LongTensor(len(batch), max_text_len)
-        bert_padded = torch.FloatTensor(len(batch), 2048, max_text_len)
-        # en_bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
+        bert_padded = torch.FloatTensor(len(batch), 1024, max_text_len)
         emo = torch.FloatTensor(len(batch), 512)
 
         spec_padded = torch.FloatTensor(len(batch), batch[0][1].size(0), max_spec_len)
@@ -212,7 +211,6 @@ class TextAudioSpeakerCollate:
         spec_padded.zero_()
         wav_padded.zero_()
         bert_padded.zero_()
-        # en_bert_padded.zero_()
         emo.zero_()
 
         for i in range(len(ids_sorted_decreasing)):
@@ -240,9 +238,6 @@ class TextAudioSpeakerCollate:
 
             bert = row[6]
             bert_padded[i, :, : bert.size(1)] = bert
-
-            # en_bert = row[7]
-            # en_bert_padded[i, :, : en_bert.size(1)] = en_bert
 
             emo[i, :] = row[7]
 
