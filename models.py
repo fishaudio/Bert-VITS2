@@ -424,7 +424,7 @@ class TextEncoder(nn.Module):
         
         m, logs = torch.split(stats, self.out_channels, dim=1)
         z = m + torch.randn_like(m) * torch.exp(logs) * x_mask
-        return z, x, m, logs, x_mask, loss_commit
+        return z, m, logs, x, x_mask, loss_commit
 
 
 class ResidualCouplingBlock(nn.Module):
@@ -1076,6 +1076,7 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
+        z_p_text, m_p_text, logs_p_text, h_text, x_mask = self.enc_p(x, x_lengths, g=g)
         x, m_p, logs_p, x_mask, _ = self.enc_p(
             x, x_lengths, tone, language, bert, emo, g=g
         )
