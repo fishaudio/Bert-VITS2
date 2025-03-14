@@ -1,10 +1,10 @@
 import sys
 import torch
 from config import config
-from transformers import MegatronBertModel, BertTokenizer
+from transformers import AutoTokenizer, AutoModel
 
-LOCAL_PATH = "./bert/Erlangshen-MegatronBert-1.3B-Chinese"
-tokenizer = BertTokenizer.from_pretrained(LOCAL_PATH)
+LOCAL_PATH = "./bert/bge-large-zh-v1.5"
+tokenizer = AutoTokenizer.from_pretrained(LOCAL_PATH)
 
 models = dict()
 
@@ -26,11 +26,11 @@ def get_bert_feature(
         device = "cuda"
     if device not in models.keys():
         if config.webui_config.fp16_run:
-            models[device] = MegatronBertModel.from_pretrained(
+            models[device] = AutoModel.from_pretrained(
                 LOCAL_PATH, torch_dtype=torch.float16
             ).to(device)
         else:
-            models[device] = MegatronBertModel.from_pretrained(LOCAL_PATH).to(device)
+            models[device] = AutoModel.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:
