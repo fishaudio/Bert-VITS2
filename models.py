@@ -362,8 +362,6 @@ class TextEncoder(nn.Module):
         self.language_emb = nn.Embedding(num_languages, hidden_channels)
         nn.init.normal_(self.language_emb.weight, 0.0, hidden_channels**-0.5)
         self.bert_proj = nn.Conv1d(1024, hidden_channels, 1)
-        self.bert_pre_proj = nn.Conv1d(2048, 1024, 1)
-        # self.en_bert_proj = nn.Conv1d(1024, hidden_channels, 1)
         self.in_feature_net = nn.Sequential(
             # input is assumed to an already normalized embedding
             nn.Linear(512, 1028, bias=False),
@@ -372,8 +370,8 @@ class TextEncoder(nn.Module):
             *[Block(1028, 512) for _ in range(1)],
             nn.Linear(1028, 512, bias=False),
             # normalize before passing to VQ?
-            # nn.GELU(),
-            # nn.LayerNorm(512),
+            nn.GELU(),
+            nn.LayerNorm(512),
         )
         self.emo_vq = VectorQuantize(
             dim=512,
@@ -402,8 +400,7 @@ class TextEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, tone, language, bert, emo, g=None):
-        bert_emb = self.bert_proj(self.bert_pre_proj(bert)).transpose(1, 2)
-        # en_bert_emb = self.en_bert_proj(en_bert).transpose(1, 2)
+        bert_emb = self.bert_proj(bert).transpose(1, 2)
         emo_emb = self.in_feature_net(emo)
         emo_emb, _, loss_commit = self.emo_vq(emo_emb.unsqueeze(1))
         loss_commit = loss_commit.mean()
@@ -413,9 +410,8 @@ class TextEncoder(nn.Module):
             + self.tone_emb(tone)
             + self.language_emb(language)
             + bert_emb
-            # + en_bert_emb
             + emo_emb
-        ) * math.sqrt(
+        ).mT * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
@@ -423,11 +419,12 @@ class TextEncoder(nn.Module):
             x.dtype
         )
 
-        x = self.encoder(x * x_mask, x_mask, g=g)
-        stats = self.proj(x) * x_mask
-
+        x = self.encoder(x * x_mask, x_mask, g=g, lang=lang)
+        stats = self.proj(x.mT).mT * x_mask
+        
         m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x, m, logs, x_mask, loss_commit
+        z = m + torch.randn_like(m) * torch.exp(logs) * x_mask
+        return z, x, m, logs, x_mask, loss_commit
 
 
 class ResidualCouplingBlock(nn.Module):
