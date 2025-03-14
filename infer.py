@@ -5,7 +5,7 @@
     2. 请在模型的config.json中显示声明版本号，添加一个字段"version" : "你的版本号"
 特殊版本说明：
     1.1.1-fix： 1.1.1版本训练的模型，但是在推理时使用dev的日语修复
-    2.2：当前版本
+    2.5：当前版本
 """
 import torch
 import commons
@@ -21,7 +21,7 @@ from text.symbols import symbols
 
 
 # 当前版本信息
-latest_version = "2.4"
+latest_version = "2.5"
 
 
 # def get_emo_(reference_audio, emotion, sid):
