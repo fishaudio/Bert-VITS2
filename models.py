@@ -977,7 +977,7 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        z_p_text, m_p_text, logs_p_text, h_text, x_mask = self.enc_p(x, x_lengths, g=g)
+        z_p_text, m_p_text, logs_p_text, h_text, x_mask, loss_commit = self.enc_p(x, x_lengths, tone, language, bert, emo, g=g)
         z_q_audio, m_q_audio, logs_q_audio, y_mask = self.enc_q(y, y_lengths, g=g)
         z_q_dur, m_q_dur, logs_q_dur = self.flow(z_q_audio, m_q_audio, logs_q_audio, y_mask, g=g)
 
@@ -1076,13 +1076,10 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        z_p_text, m_p_text, logs_p_text, h_text, x_mask = self.enc_p(x, x_lengths, g=g)
-        x, m_p, logs_p, x_mask, _ = self.enc_p(
-            x, x_lengths, tone, language, bert, emo, g=g
-        )
-        logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
+        z_p_text, m_p_text, logs_p_text, h_text, x_mask, _ = self.enc_p(x, x_lengths, tone, language, bert, emo, g=g)
+        logw = self.sdp(h_text, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
             sdp_ratio
-        ) + self.dp(x, x_mask, g=g) * (1 - sdp_ratio)
+        ) + self.dp(h_text, x_mask, g=g) * (1 - sdp_ratio)
         w = torch.exp(logw) * x_mask * length_scale
         w_ceil = torch.ceil(w)
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
@@ -1099,7 +1096,10 @@ class SynthesizerTrn(nn.Module):
             1, 2
         )  # [b, t', t], [b, t, d] -> [b, d, t']
 
-        z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
-        z = self.flow(z_p, y_mask, g=g, reverse=True)
-        o = self.dec((z * y_mask)[:, :, :max_len], g=g)
-        return o, attn, y_mask, (z, z_p, m_p, logs_p)
+        m_p_dur = torch.matmul(attn.squeeze(1), m_p_text.mT).mT  # [b, t', t], [b, t, d] -> [b, d, t']
+        logs_p_dur = torch.matmul(attn.squeeze(1), logs_p_text.mT).mT  # [b, t', t], [b, t, d] -> [b, d, t']
+        z_p_dur = m_p_dur + torch.randn_like(m_p_dur) * torch.exp(logs_p_dur) * noise_scale
+
+        z_p_audio, m_p_audio, logs_p_audio = self.flow(z_p_dur, m_p_dur, logs_p_dur, y_mask, g=g, reverse=True)
+        o = self.dec((z_p_audio * y_mask)[:, :, :max_len], g=g)
+        return o, attn, y_mask, (z_p_dur, m_p_dur, logs_p_dur), (z_p_audio, m_p_audio, logs_p_audio)
