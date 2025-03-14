@@ -475,8 +475,9 @@ def train_and_evaluate(
                 ids_slice,
                 x_mask,
                 z_mask,
-                (z, z_p, m_p, logs_p, m_q, logs_q),
-                (hidden_x, logw, logw_),  # , logw_sdp),
+                (m_p_text, logs_p_text),
+                (m_p_dur, logs_p_dur, z_q_dur, logs_q_dur),
+                (m_p_audio, logs_p_audio, m_q_audio, logs_q_audio),
                 g,
                 loss_commit,
             ) = net_g(
@@ -582,7 +583,7 @@ def train_and_evaluate(
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
                 # loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl  # Old implement
-                # loss_kl_text = kl_loss_normal(m_q_text, logs_q_text, m_p_text, logs_p_text, x_mask) * hps.train.c_kl_text
+                loss_kl_text = kl_loss_normal(m_q_text, logs_q_text, m_p_text, logs_p_text, x_mask) * hps.train.c_kl_text
                 loss_kl_dur = kl_loss(z_q_dur, logs_q_dur, m_p_dur, logs_p_dur, z_mask) * hps.train.c_kl_dur
                 loss_kl_audio = kl_loss_normal(m_p_audio, logs_p_audio, m_q_audio, logs_q_audio, z_mask) * hps.train.c_kl_audio
 
@@ -594,7 +595,9 @@ def train_and_evaluate(
                     + loss_fm
                     + loss_mel
                     + loss_dur
-                    + loss_kl
+                    + loss_kl_text
+                    + loss_kl_dur 
+                    + loss_kl_audio
                     + loss_commit * hps.train.c_commit
                 )
                 if net_dur_disc is not None:
