@@ -558,9 +558,15 @@ class TransformerCouplingLayer(nn.Module):
         self.post.weight.data.zero_()
         self.post.bias.data.zero_()
 
-    def forward(self, x, x_mask, g=None, reverse=False):
+    def forward(self, x, m, logs, x_mask, g=None, reverse=False):
         x0, x1 = torch.split(x, [self.half_channels] * 2, 1)
-        h = self.pre(x0) * x_mask
+        m0, m1 = torch.split(m, [self.half_channels] * 2, 1)
+        logs0, logs1 = torch.split(logs, [self.half_channels] * 2, 1)
+        x0_ = x0
+        if self.pre_transformer is not None:
+            x0_ = self.pre_transformer(x0 * x_mask, x_mask)
+            x0_ = x0_ + x0  # residual connection
+        h = self.pre(x0.mT).mT * x_mask
         h = self.enc(h, x_mask, g=g)
         stats = self.post(h) * x_mask
         if not self.mean_only:
@@ -571,10 +577,19 @@ class TransformerCouplingLayer(nn.Module):
 
         if not reverse:
             x1 = m + x1 * torch.exp(logs) * x_mask
+            m1 = (m1 - m_flow) * torch.exp(-logs_flow) * x_mask
+            logs1 = logs1 - logs_flow
+            
             x = torch.cat([x0, x1], 1)
-            logdet = torch.sum(logs, [1, 2])
-            return x, logdet
+            m = torch.cat([m0, m1], 1)
+            logs = torch.cat([logs0, logs1], 1)
+            return x, m, logs
         else:
             x1 = (x1 - m) * torch.exp(-logs) * x_mask
+            m1 = m_flow + m1 * torch.exp(logs_flow) * x_mask
+            logs1 = logs1 + logs_flow
+            
             x = torch.cat([x0, x1], 1)
-            return x
+            m = torch.cat([m0, m1], 1)
+            logs = torch.cat([logs0, logs1], 1)
+            return x, m, logs
