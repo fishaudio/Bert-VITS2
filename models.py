@@ -951,26 +951,24 @@ class SynthesizerTrn(nn.Module):
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, en_bert, g=g
-        )
-        z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
-        z_p = self.flow(z, y_mask, g=g)
+        z_p_text, m_p_text, logs_p_text, h_text, x_mask = self.enc_p(x, x_lengths, g=g)
+        z_q_audio, m_q_audio, logs_q_audio, y_mask = self.enc_q(y, y_lengths, g=g)
+        z_q_dur, m_q_dur, logs_q_dur = self.flow(z_q_audio, m_q_audio, logs_q_audio, y_mask, g=g)
 
         with torch.no_grad():
             # negative cross-entropy
-            s_p_sq_r = torch.exp(-2 * logs_p)  # [b, d, t]
+            s_p_sq_r = torch.exp(-2 * logs_p_text)  # [b, d, t]
             neg_cent1 = torch.sum(
-                -0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim=True
+                -0.5 * math.log(2 * math.pi) - logs_p_text, [1], keepdim=True
             )  # [b, 1, t_s]
             neg_cent2 = torch.matmul(
-                -0.5 * (z_p**2).transpose(1, 2), s_p_sq_r
+                -0.5 * (z_q_dur**2).transpose(1, 2), s_p_sq_r
             )  # [b, t_t, d] x [b, d, t_s] = [b, t_t, t_s]
             neg_cent3 = torch.matmul(
-                z_p.transpose(1, 2), (m_p * s_p_sq_r)
+                z_p.transpose(1, 2), (m_p_text * s_p_sq_r)
             )  # [b, t_t, d] x [b, d, t_s] = [b, t_t, t_s]
             neg_cent4 = torch.sum(
-                -0.5 * (m_p**2) * s_p_sq_r, [1], keepdim=True
+                -0.5 * (m_p_text**2) * s_p_sq_r, [1], keepdim=True
             )  # [b, 1, t_s]
             neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
             if self.use_noise_scaled_mas:
@@ -989,13 +987,16 @@ class SynthesizerTrn(nn.Module):
             )
 
         w = attn.sum(2)
+        attn_inv = attn.squeeze(1) * (1 / (w + 1e-9))
+        m_q_text = torch.matmul(attn_inv.mT, m_q_dur.mT).mT
+        logs_q_text = torch.matmul(attn_inv.mT, logs_q_dur.mT).mT
 
-        l_length_sdp = self.sdp(x, x_mask, w, g=g)
+        l_length_sdp = self.sdp(h_text, x_mask, w, g=g)
         l_length_sdp = l_length_sdp / torch.sum(x_mask)
 
         logw_ = torch.log(w + 1e-6) * x_mask
-        logw = self.dp(x, x_mask, g=g)
-        logw_sdp = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=1.0)
+        logw = self.dp(h_text, x_mask, g=g)
+        logw_sdp = self.sdp(h_text, x_mask, g=g, reverse=True, noise_scale=1.0)
         l_length_dp = torch.sum((logw - logw_) ** 2, [1, 2]) / torch.sum(
             x_mask
         )  # for averaging
@@ -1004,8 +1005,10 @@ class SynthesizerTrn(nn.Module):
         l_length = l_length_dp + l_length_sdp
 
         # expand prior
-        m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
-        logs_p = torch.matmul(attn.squeeze(1), logs_p.transpose(1, 2)).transpose(1, 2)
+        m_p_dur = torch.matmul(attn.squeeze(1), m_p_text.mT).mT
+        logs_p_dur = torch.matmul(attn.squeeze(1), logs_p_text.mT).mT
+        z_p_dur = m_p_dur + torch.randn_like(m_p_dur) * torch.exp(logs_p_dur) * y_mask
+        z_p_audio, m_p_audio, logs_p_audio = self.flow(z_p_dur, m_p_dur, logs_p_dur, y_mask, g=g, reverse=True)
 
         z_slice, ids_slice = commons.rand_slice_segments(
             z, y_lengths, self.segment_size
@@ -1018,8 +1021,9 @@ class SynthesizerTrn(nn.Module):
             ids_slice,
             x_mask,
             y_mask,
-            (z, z_p, m_p, logs_p, m_q, logs_q),
-            (x, logw, logw_, logw_sdp),
+            (m_p_text, logs_p_text),
+            (m_p_dur, logs_p_dur, z_q_dur, logs_q_dur),
+            (m_p_audio, logs_p_audio, m_q_audio, logs_q_audio),
             g,
         )
 
