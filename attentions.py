@@ -56,9 +56,9 @@ class Encoder(nn.Module):
         self.window_size = window_size
         if isflow:
             cond_layer = torch.nn.Conv1d(256, 2*hidden_channels*n_layers, 1)
-           self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
-           self.cond_layer = weight_norm(cond_layer, name='weight')
-           self.gin_channels = 256
+            self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
+            self.cond_layer = weight_norm(cond_layer, name='weight')
+            self.gin_channels = 256
         self.cond_layer_idx = self.n_layers
         if "gin_channels" in kwargs:
             self.gin_channels = kwargs["gin_channels"]
