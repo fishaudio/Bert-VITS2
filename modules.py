@@ -563,7 +563,7 @@ class TransformerCouplingLayer(nn.Module):
         m0, m1 = torch.split(m, [self.half_channels] * 2, 1)
         logs0, logs1 = torch.split(logs, [self.half_channels] * 2, 1)
         x0_ = x0
-        h = self.pre(x0.mT).mT * x_mask
+        h = self.pre(x0) * x_mask
         h = self.enc(h, x_mask, g=g)
         stats = self.post(h) * x_mask
         if not self.mean_only:
