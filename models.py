@@ -1053,7 +1053,7 @@ class SynthesizerTrn(nn.Module):
             ids_slice,
             x_mask,
             y_mask,
-            (m_p_text, logs_p_text),
+            (m_p_text, logs_p_text, m_q_text, logs_q_text),
             (m_p_dur, logs_p_dur, z_q_dur, logs_q_dur),
             (m_p_audio, logs_p_audio, m_q_audio, logs_q_audio),
             g,
