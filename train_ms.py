@@ -622,7 +622,7 @@ def train_and_evaluate(
         if rank == 0:
             if global_step % hps.train.log_interval == 0:
                 lr = optim_g.param_groups[0]["lr"]
-                losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl]
+                losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl_dur, loss_kl_audio, loss_kl_text]
                 logger.info(
                     "Train Epoch: {} [{:.0f}%]".format(
                         epoch, 100.0 * batch_idx / len(train_loader)
@@ -642,7 +642,9 @@ def train_and_evaluate(
                         "loss/g/fm": loss_fm,
                         "loss/g/mel": loss_mel,
                         "loss/g/dur": loss_dur,
-                        "loss/g/kl": loss_kl,
+                        "loss/g/kl_text": loss_kl_text,
+                        "loss/g/kl_dur": loss_kl_dur,
+                        "loss/g/kl_audio": loss_kl_audio,
                         "loss/commit": loss_commit,
                     }
                 )
