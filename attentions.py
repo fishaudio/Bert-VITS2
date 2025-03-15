@@ -99,8 +99,8 @@ class Encoder(nn.Module):
                 )
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
-
-      def forward(self, x, x_mask, g = None):
+            
+    def forward(self, x, x_mask, g = None):
         """
         x: decoder input
         h: encoder output
