@@ -574,8 +574,8 @@ class TransformerCouplingLayer(nn.Module):
 
         if not reverse:
             x1 = m + x1 * torch.exp(logs) * x_mask
-            m1 = (m1 - m) * torch.exp(-logs_flow) * x_mask
-            logs1 = logs1 - logs_flow
+            m1 = m1 + m * torch.exp(logs) * x_mask
+            logs1 = logs1 - logs
             
             x = torch.cat([x0, x1], 1)
             m = torch.cat([m0, m1], 1)
@@ -583,8 +583,8 @@ class TransformerCouplingLayer(nn.Module):
             return x, m, logs
         else:
             x1 = (x1 - m) * torch.exp(-logs) * x_mask
-            m1 = m_flow + m1 * torch.exp(logs_flow) * x_mask
-            logs1 = logs1 + logs_flow
+            m1 = (m1 - m) * torch.exp(-logs) * x_mask
+            logs1 = logs1 + logs
             
             x = torch.cat([x0, x1], 1)
             m = torch.cat([m0, m1], 1)
