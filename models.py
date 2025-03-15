@@ -1043,7 +1043,7 @@ class SynthesizerTrn(nn.Module):
         z_p_audio, m_p_audio, logs_p_audio = self.flow(z_p_dur, m_p_dur, logs_p_dur, y_mask, g=g, reverse=True)
  
         z_slice, ids_slice = commons.rand_slice_segments(
-            z, y_lengths, self.segment_size
+            z_q_audio, y_lengths, self.segment_size
         )
         o = self.dec(z_slice, g=g)
         return (
