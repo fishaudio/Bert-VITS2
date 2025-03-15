@@ -54,7 +54,11 @@ class Encoder(nn.Module):
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
         self.window_size = window_size
-        self.gin_channels = 256
+        # if isflow:
+        #  cond_layer = torch.nn.Conv1d(256, 2*hidden_channels*n_layers, 1)
+        #  self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
+        #  self.cond_layer = weight_norm(cond_layer, name='weight')
+        #  self.gin_channels = 256
         self.cond_layer_idx = self.n_layers
         if "gin_channels" in kwargs:
             self.gin_channels = kwargs["gin_channels"]
@@ -94,7 +98,7 @@ class Encoder(nn.Module):
                 )
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
-            
+
     def forward(self, x, x_mask, g=None):
         attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
         x = x * x_mask
@@ -113,7 +117,6 @@ class Encoder(nn.Module):
             x = self.norm_layers_2[i](x + y)
         x = x * x_mask
         return x
-
 
 class Decoder(nn.Module):
     def __init__(
