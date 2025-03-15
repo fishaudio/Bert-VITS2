@@ -2,12 +2,11 @@ import math
 import torch
 from torch import nn
 from torch.nn import functional as F
-
+from torch.nn.utils import remove_weight_norm, weight_norm
 import commons
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class LayerNorm(nn.Module):
     def __init__(self, channels, eps=1e-5):
