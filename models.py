@@ -137,14 +137,14 @@ class TransformerCouplingBlock(nn.Module):
             )
             self.flows.append(modules.Flip())
 
-    def forward(self, x, x_mask, g=None, reverse=False):
+    def forward(self, x, m, logs, x_mask, g=None, reverse=False):
         if not reverse:
             for flow in self.flows:
-                x, _ = flow(x, x_mask, g=g, reverse=reverse)
+                x, m, logs = flow(x, m, logs, x_mask, g=g, reverse=reverse)
         else:
             for flow in reversed(self.flows):
-                x = flow(x, x_mask, g=g, reverse=reverse)
-        return x
+                x, m, logs = flow(x, m, logs, x_mask, g=g, reverse=reverse)
+        return x, m, logs
 
 
 class StochasticDurationPredictor(nn.Module):
