@@ -997,7 +997,7 @@ class SynthesizerTrn(nn.Module):
                 -0.5 * (z_q_dur**2).transpose(1, 2), s_p_sq_r
             )  # [b, t_t, d] x [b, d, t_s] = [b, t_t, t_s]
             neg_cent3 = torch.matmul(
-                z_p.transpose(1, 2), (m_p_text * s_p_sq_r)
+                z_q_dur.transpose(1, 2), (m_p_text * s_p_sq_r)
             )  # [b, t_t, d] x [b, d, t_s] = [b, t_t, t_s]
             neg_cent4 = torch.sum(
                 -0.5 * (m_p_text**2) * s_p_sq_r, [1], keepdim=True
