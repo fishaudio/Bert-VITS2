@@ -411,7 +411,7 @@ class TextEncoder(nn.Module):
             + self.language_emb(language)
             + bert_emb
             + emo_emb
-        ).mT * math.sqrt(
+        ) * math.sqrt(
             self.hidden_channels
         )  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
@@ -420,7 +420,7 @@ class TextEncoder(nn.Module):
         )
 
         x = self.encoder(x * x_mask, x_mask, g=g)
-        stats = self.proj(x.mT).mT * x_mask
+        stats = self.proj(x) * x_mask
         
         m, logs = torch.split(stats, self.out_channels, dim=1)
         z = m + torch.randn_like(m) * torch.exp(logs) * x_mask
