@@ -80,7 +80,13 @@ class DurationDiscriminator(nn.Module):  # vits2
 
         return output_probs
 
-
+class Flip(nn.Module):
+    def forward(self, x, m, logs, *args, reverse=False, **kwargs):
+        x = torch.flip(x, [1])
+        m = torch.flip(m, [1])
+        logs = torch.flip(logs, [1])
+        return x, m, logs
+        
 class TransformerCouplingBlock(nn.Module):
     def __init__(
         self,
@@ -135,7 +141,7 @@ class TransformerCouplingBlock(nn.Module):
                     gin_channels=self.gin_channels,
                 )
             )
-            self.flows.append(modules.Flip())
+            self.flows.append(Flip())
 
     def forward(self, x, m, logs, x_mask, g=None, reverse=False):
         if not reverse:
