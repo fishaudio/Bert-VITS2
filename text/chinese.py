@@ -9,7 +9,9 @@ from text.tone_sandhi import ToneSandhi
 try:
     from tn.chinese.normalizer import Normalizer
 
-    normalizer = Normalizer(remove_interjections=False, remove_erhua=False, overwrite_cache=True).normalize
+    normalizer = Normalizer(
+        remove_interjections=False, remove_erhua=False, overwrite_cache=True
+    ).normalize
 except ImportError:
     import cn2an
 
