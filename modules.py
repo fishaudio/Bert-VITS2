@@ -563,9 +563,6 @@ class TransformerCouplingLayer(nn.Module):
         m0, m1 = torch.split(m, [self.half_channels] * 2, 1)
         logs0, logs1 = torch.split(logs, [self.half_channels] * 2, 1)
         x0_ = x0
-        if self.pre_transformer is not None:
-            x0_ = self.pre_transformer(x0 * x_mask, x_mask)
-            x0_ = x0_ + x0  # residual connection
         h = self.pre(x0.mT).mT * x_mask
         h = self.enc(h, x_mask, g=g)
         stats = self.post(h) * x_mask
