@@ -419,7 +419,7 @@ class TextEncoder(nn.Module):
             x.dtype
         )
 
-        x = self.encoder(x * x_mask, x_mask, g=g, lang=lang)
+        x = self.encoder(x * x_mask, x_mask, g=g)
         stats = self.proj(x.mT).mT * x_mask
         
         m, logs = torch.split(stats, self.out_channels, dim=1)
