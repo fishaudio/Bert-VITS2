@@ -54,11 +54,6 @@ class Encoder(nn.Module):
         self.kernel_size = kernel_size
         self.p_dropout = p_dropout
         self.window_size = window_size
-        if isflow:
-            cond_layer = torch.nn.Conv1d(256, 2*hidden_channels*n_layers, 1)
-            self.cond_pre = torch.nn.Conv1d(hidden_channels, 2*hidden_channels, 1)
-            self.cond_layer = weight_norm(cond_layer, name='weight')
-            self.gin_channels = 256
         self.cond_layer_idx = self.n_layers
         if "gin_channels" in kwargs:
             self.gin_channels = kwargs["gin_channels"]
@@ -99,34 +94,25 @@ class Encoder(nn.Module):
             )
             self.norm_layers_2.append(LayerNorm(hidden_channels))
 
-    def forward(self, x, x_mask, g = None):
-        """
-        x: decoder input
-        h: encoder output
-        """
-        if g is not None:
-          g = self.cond_layer(g)
-
-        self_attn_mask = commons.subsequent_mask(x_mask.size(2)).to(device=x.device, dtype=x.dtype)
+    def forward(self, x, x_mask, g=None):
+        attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
         x = x * x_mask
         for i in range(self.n_layers):
-          if g is not None:
-            x = self.cond_pre(x)
-            cond_offset = i * 2 * self.hidden_channels
-            g_l = g[:,cond_offset:cond_offset+2*self.hidden_channels,:]
-            x = commons.fused_add_tanh_sigmoid_multiply(
-              x,
-              g_l,
-              torch.IntTensor([self.hidden_channels]))
-          y = self.self_attn_layers[i](x, x, self_attn_mask)
-          y = self.drop(y)
-          x = self.norm_layers_0[i](x + y)
-    
-          y = self.ffn_layers[i](x, x_mask)
-          y = self.drop(y)
-          x = self.norm_layers_1[i](x + y)
+            if i == self.cond_layer_idx and g is not None:
+                g = self.spk_emb_linear(g.transpose(1, 2))
+                g = g.transpose(1, 2)
+                x = x + g
+                x = x * x_mask
+            y = self.attn_layers[i](x, x, attn_mask)
+            y = self.drop(y)
+            x = self.norm_layers_1[i](x + y)
+
+            y = self.ffn_layers[i](x, x_mask)
+            y = self.drop(y)
+            x = self.norm_layers_2[i](x + y)
         x = x * x_mask
         return x
+        
 class Decoder(nn.Module):
     def __init__(
         self,
