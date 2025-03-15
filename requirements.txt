@@ -1,5 +1,5 @@
 librosa==0.9.2
-matplotlib
+matplotlib==3.9.0
 numpy
 numba
 phonemizer
