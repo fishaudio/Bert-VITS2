@@ -1095,7 +1095,7 @@ class SynthesizerTrn(nn.Module):
         attn_mask = torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
         attn = commons.generate_path(w_ceil, attn_mask)
 
-        m_p_dur = torch.matmul(attn.squeeze(1), m_p_dur.transpose(1, 2)).transpose(
+        m_p_dur = torch.matmul(attn.squeeze(1), m_p_text.transpose(1, 2)).transpose(
             1, 2
         )  # [b, t', t], [b, t, d] -> [b, d, t']
         logs_p_dur = torch.matmul(attn.squeeze(1), logs_p_text.transpose(1, 2)).transpose(
