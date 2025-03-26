@@ -1,4 +1,5 @@
-from typing import Any, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 import numpy as np
 import onnxruntime

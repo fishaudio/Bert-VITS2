@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import gc
 import time
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import onnxruntime

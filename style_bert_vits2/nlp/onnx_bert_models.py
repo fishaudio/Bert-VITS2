@@ -11,8 +11,9 @@ Style-Bert-VITS2 の ONNX 推論に必要な各言語ごとの ONNX 版 BERT モ
 
 import gc
 import time
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 import onnxruntime
 from huggingface_hub import hf_hub_download

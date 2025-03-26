@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import onnxruntime
