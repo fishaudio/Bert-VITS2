@@ -1,5 +1,26 @@
 # Usage: .venv/bin/python convert_bert_onnx.py --language JP
-# ref: https://github.com/tuna2134/sbv2-api/blob/main/convert/convert_deberta.py
+# https://github.com/tuna2134/sbv2-api/blob/main/scripts/convert/convert_deberta.py を参考に実装した
+
+# MIT License
+# Copyright (c) 2024 tuna2134
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 import time
 from argparse import ArgumentParser
@@ -216,9 +237,9 @@ if __name__ == "__main__":
     # モデルの入出力先ファイルパスを取得
     language = Languages(args.language)
     pretrained_model_name_or_path = DEFAULT_BERT_MODEL_PATHS[language]
-    onnx_temp_model_path = Path(pretrained_model_name_or_path) / f"model_temp.onnx"
-    onnx_fp32_model_path = Path(pretrained_model_name_or_path) / f"model.onnx"
-    onnx_fp16_model_path = Path(pretrained_model_name_or_path) / f"model_fp16.onnx"
+    onnx_temp_model_path = Path(pretrained_model_name_or_path) / "model_temp.onnx"
+    onnx_fp32_model_path = Path(pretrained_model_name_or_path) / "model.onnx"
+    onnx_fp16_model_path = Path(pretrained_model_name_or_path) / "model_fp16.onnx"
     tokenizer_json_path = Path(pretrained_model_name_or_path) / "tokenizer.json"
 
     print(Rule(characters="=", style=Style(color="blue")))
@@ -274,7 +295,7 @@ if __name__ == "__main__":
 
     # モデルを ONNX に変換
     print(Rule(characters="=", style=Style(color="blue")))
-    print(f"[bold cyan]Exporting ONNX model...[/bold cyan]")
+    print("[bold cyan]Exporting ONNX model...[/bold cyan]")
     print(Rule(characters="=", style=Style(color="blue")))
     export_start_time = time.time()
     torch.onnx.export(
@@ -304,7 +325,7 @@ if __name__ == "__main__":
 
     # ONNX モデルを最適化
     print(Rule(characters="=", style=Style(color="blue")))
-    print(f"[bold cyan]Optimizing ONNX model...[/bold cyan]")
+    print("[bold cyan]Optimizing ONNX model...[/bold cyan]")
     print(Rule(characters="=", style=Style(color="blue")))
     optimize_start_time = time.time()
     onnx_model = onnx.load(onnx_temp_model_path)
@@ -321,7 +342,7 @@ if __name__ == "__main__":
 
     # FP32 モデルの検証
     print(Rule(characters="=", style=Style(color="blue")))
-    print(f"[bold cyan]Validating FP32 model...[/bold cyan]")
+    print("[bold cyan]Validating FP32 model...[/bold cyan]")
     session = InferenceSession(
         str(onnx_fp32_model_path),
         providers=["CPUExecutionProvider"],
@@ -333,7 +354,7 @@ if __name__ == "__main__":
     if is_valid:
         # FP16 への変換
         print(Rule(characters="=", style=Style(color="blue")))
-        print(f"[bold cyan]Converting to FP16...[/bold cyan]")
+        print("[bold cyan]Converting to FP16...[/bold cyan]")
         print(Rule(characters="=", style=Style(color="blue")))
         fp16_start_time = time.time()
         fp16_model = float16_converter.convert_float_to_float16(
@@ -348,7 +369,7 @@ if __name__ == "__main__":
 
         # FP16 モデルの検証
         print(Rule(characters="=", style=Style(color="blue")))
-        print(f"[bold cyan]Validating FP16 model...[/bold cyan]")
+        print("[bold cyan]Validating FP16 model...[/bold cyan]")
         session = InferenceSession(
             str(onnx_fp16_model_path),
             providers=["CPUExecutionProvider"],

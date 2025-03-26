@@ -106,9 +106,7 @@ def load_model(
     # 推論時に一番優先される ExecutionProvider の名前を取得
     assert len(onnx_providers) > 0
     first_provider_name = (
-        onnx_providers[0]
-        if type(onnx_providers[0]) is str
-        else onnx_providers[0][0]
+        onnx_providers[0] if type(onnx_providers[0]) is str else onnx_providers[0][0]
     )
 
     # 推論セッションの設定
