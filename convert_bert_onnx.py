@@ -1,8 +1,10 @@
 # Usage: .venv/bin/python convert_bert_onnx.py --language JP
-# https://github.com/tuna2134/sbv2-api/blob/main/scripts/convert/convert_deberta.py を参考に実装した
 
+# https://github.com/tuna2134/sbv2-api/blob/main/scripts/convert/convert_deberta.py を参考に実装した
+#
 # MIT License
 # Copyright (c) 2024 tuna2134
+# Copyright (c) 2024-2025 tsukumi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -10,7 +12,7 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 #
