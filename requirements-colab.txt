@@ -10,6 +10,7 @@ nltk<=3.8.1
 num2words
 numpy<2
 onnx
+onnxconverter-common
 onnxruntime
 onnxruntime-gpu
 onnxsim

@@ -11,8 +11,10 @@ import torch
 from numpy.typing import NDArray
 
 from style_bert_vits2.logging import logger
-from style_bert_vits2.models.utils import checkpoints  # type: ignore
-from style_bert_vits2.models.utils import safetensors  # type: ignore
+from style_bert_vits2.models.utils import (
+    checkpoints,  # type: ignore # noqa: F401
+    safetensors,  # type: ignore # noqa: F401
+)
 
 
 if TYPE_CHECKING:

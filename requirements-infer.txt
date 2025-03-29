@@ -12,6 +12,7 @@ nltk<=3.8.1
 num2words
 numpy<2
 onnx
+onnxconverter-common
 onnxruntime
 onnxruntime-directml; sys_platform == 'win32'
 onnxruntime-gpu; sys_platform != 'darwin'
