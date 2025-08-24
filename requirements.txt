@@ -16,7 +16,7 @@ onnxconverter-common
 onnxruntime
 onnxruntime-directml; sys_platform == 'win32'
 onnxruntime-gpu; sys_platform != 'darwin'
-onnxsim
+onnxsim-prebuilt
 protobuf==4.25
 psutil
 punctuators

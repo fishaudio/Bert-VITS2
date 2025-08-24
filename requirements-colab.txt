@@ -13,7 +13,7 @@ onnx
 onnxconverter-common
 onnxruntime
 onnxruntime-gpu
-onnxsim
+onnxsim-prebuilt
 pyannote.audio>=3.1.0
 pyloudnorm
 pyopenjtalk-dict
