@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.7.0 (2025-08-24)
+
+- [AivisProject](https://aivis-project.com/) 等との連携のため、ONNX変換のGUI追加 (Gradioタブの一つとして)
+- また音声認識モデルとして `litagin/anime-whisper` の追加
+- その他軽微な修正等
+
 ## v2.6.1 (2024-09-09)
 
 - Google colabで、torchのバージョン由来でエラーが発生する不具合の修正（たぶん）

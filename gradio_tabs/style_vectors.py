@@ -322,6 +322,7 @@ def save_style_vectors_by_dirs(model_name: str, audio_dir_str: str):
                 total=len(audio_files),
                 file=SAFE_STDOUT,
                 desc="Generating style vectors",
+                dynamic_ncols=True,
             )
         )
 

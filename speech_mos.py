@@ -70,7 +70,7 @@ safetensors_files = list(safetensors_files)
 
 logger.info(f"There are {len(safetensors_files)} models.")
 
-for model_file in tqdm(safetensors_files):
+for model_file in tqdm(safetensors_files, dynamic_ncols=True):
     # `test_e10_s1000.safetensors`` -> 1000を取り出す
     match = re.search(r"_s(\d+)\.safetensors$", model_file.name)
     if match:

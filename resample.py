@@ -140,7 +140,7 @@ if __name__ == "__main__":
             for file in original_files
         ]
         for future in tqdm(
-            as_completed(futures), total=len(original_files), file=SAFE_STDOUT
+            as_completed(futures), total=len(original_files), file=SAFE_STDOUT, dynamic_ncols=True
         ):
             pass
 

@@ -68,7 +68,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         skipped = 0
         logger.info("Init dataset...")
         for _id, spk, language, text, phones, tone, word2ph in tqdm(
-            self.audiopaths_sid_text, file=sys.stdout
+            self.audiopaths_sid_text, file=sys.stdout, dynamic_ncols=True
         ):
             audiopath = f"{_id}"
             # if self.min_text_len <= len(phones) and len(phones) <= self.max_text_len:

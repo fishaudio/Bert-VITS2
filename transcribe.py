@@ -73,8 +73,8 @@ def transcribe_files_with_hf_whisper(
         max_new_tokens=128,
         chunk_length_s=30,
         batch_size=batch_size,
-        torch_dtype=torch.float16,
-        device="cuda",
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        device=device,
         trust_remote_code=True,
         # generate_kwargs=generate_kwargs,
     )
@@ -154,6 +154,10 @@ if __name__ == "__main__":
 
     wav_files = [f for f in input_dir.rglob("*.wav") if f.is_file()]
     wav_files = sorted(wav_files, key=lambda x: str(x))
+    logger.info(f"Found {len(wav_files)} WAV files")
+    if len(wav_files) == 0:
+        logger.warning(f"No WAV files found in {input_dir}")
+        sys.exit(1)
 
     if output_file.exists():
         logger.warning(f"{output_file} exists, backing up to {output_file}.bak")
@@ -183,7 +187,7 @@ if __name__ == "__main__":
         except ValueError as e:
             logger.warning(f"Failed to load model, so use `auto` compute_type: {e}")
             model = WhisperModel(args.model, device=device)
-        for wav_file in tqdm(wav_files, file=SAFE_STDOUT):
+        for wav_file in tqdm(wav_files, file=SAFE_STDOUT, dynamic_ncols=True):
             text = transcribe_with_faster_whisper(
                 model=model,
                 audio_file=wav_file,
@@ -198,7 +202,7 @@ if __name__ == "__main__":
     else:
         model_id = args.hf_repo_id
         logger.info(f"Loading HF Whisper model ({model_id})")
-        pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT)
+        pbar = tqdm(total=len(wav_files), file=SAFE_STDOUT, dynamic_ncols=True)
         results = transcribe_files_with_hf_whisper(
             audio_files=wav_files,
             model_id=model_id,

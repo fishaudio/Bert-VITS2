@@ -5,6 +5,7 @@ import gradio as gr
 import torch
 
 from config import get_path_config
+from gradio_tabs.convert_onnx import create_onnx_app
 from gradio_tabs.dataset import create_dataset_app
 from gradio_tabs.inference import create_inference_app
 from gradio_tabs.merge import create_merge_app
@@ -42,7 +43,10 @@ if device == "cuda" and not torch.cuda.is_available():
 
 path_config = get_path_config()
 model_holder = TTSModelHolder(
-    Path(path_config.assets_root), device, torch_device_to_onnx_providers(device)
+    Path(path_config.assets_root),
+    device,
+    torch_device_to_onnx_providers(device),
+    ignore_onnx=True,
 )
 
 with gr.Blocks(theme=GRADIO_THEME) as app:
@@ -58,6 +62,8 @@ with gr.Blocks(theme=GRADIO_THEME) as app:
             create_style_vectors_app()
         with gr.Tab("マージ"):
             create_merge_app(model_holder=model_holder)
+        with gr.Tab("ONNX変換"):
+            create_onnx_app(model_holder=model_holder)
 
 app.launch(
     server_name=args.host,

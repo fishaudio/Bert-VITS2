@@ -80,6 +80,7 @@ if __name__ == "__main__":
                 executor.map(process_line, training_lines),
                 total=len(training_lines),
                 file=SAFE_STDOUT,
+                dynamic_ncols=True,
             )
         )
     ok_training_lines = [line for line, error in training_results if error is None]
@@ -102,6 +103,7 @@ if __name__ == "__main__":
                 executor.map(process_line, val_lines),
                 total=len(val_lines),
                 file=SAFE_STDOUT,
+                dynamic_ncols=True,
             )
         )
     ok_val_lines = [line for line, error in val_results if error is None]

@@ -485,6 +485,7 @@ def run():
             initial=global_step,
             smoothing=0.05,
             file=SAFE_STDOUT,
+            dynamic_ncols=True,
         )
     initial_step = global_step
 

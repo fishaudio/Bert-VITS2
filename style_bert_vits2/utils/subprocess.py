@@ -41,7 +41,7 @@ def run_script_with_log(
 
 
 def second_elem_of(
-    original_function: Callable[..., tuple[Any, Any]]
+    original_function: Callable[..., tuple[Any, Any]],
 ) -> Callable[..., Any]:
     """
     与えられた関数をラップし、その戻り値の 2 番目の要素のみを返す関数を生成する。

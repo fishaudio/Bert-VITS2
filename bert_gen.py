@@ -90,6 +90,7 @@ if __name__ == "__main__":
                     executor.map(process_line, zip(lines, add_blank)),
                     total=len(lines),
                     file=SAFE_STDOUT,
+                    dynamic_ncols=True,
                 )
             )
 

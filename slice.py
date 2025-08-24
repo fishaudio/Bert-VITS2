@@ -230,7 +230,7 @@ if __name__ == "__main__":
     for t in threads:
         t.start()
 
-    pbar = tqdm(total=len(audio_files), file=SAFE_STDOUT)
+    pbar = tqdm(total=len(audio_files), file=SAFE_STDOUT, dynamic_ncols=True)
     for file in audio_files:
         q.put(file)
 
