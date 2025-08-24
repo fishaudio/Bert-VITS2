@@ -645,7 +645,10 @@ class TTSModelHolder:
                     for f in model_dir.iterdir()
                     # 上記 suffixes にマッチするファイルのみを取得し、. から始まるファイルは除外
                     if f.suffix in suffixes and not f.name.startswith(".")
-                ]
+                ],
+                # 更新日時が新しい順にソート
+                key=lambda f: f.stat().st_mtime,
+                reverse=True,
             )
             if len(model_files) == 0:
                 logger.warning(f"No model files found in {model_dir}, so skip it")
