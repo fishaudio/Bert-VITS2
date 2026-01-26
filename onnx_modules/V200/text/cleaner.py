@@ -1,6 +1,5 @@
 from . import chinese, japanese, english, cleaned_text_to_sequence
 
-
 language_module_map = {"ZH": chinese, "JP": japanese, "EN": english}
 
 

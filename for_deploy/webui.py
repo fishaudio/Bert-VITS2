@@ -26,7 +26,6 @@ from tools.translate import translate
 import librosa
 from infer_utils import BertFeature, ClapFeature
 
-
 net_g = None
 
 device = config.webui_config.device

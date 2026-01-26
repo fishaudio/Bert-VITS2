@@ -12,7 +12,6 @@ from num2words import num2words
 import pyopenjtalk
 import jaconv
 
-
 # Mapping of hiragana to phonetic representation
 hiragana_map = {
     "う゛ぁ": " v a",
