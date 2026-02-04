@@ -4,7 +4,6 @@ from huggingface_hub import hf_hub_download
 
 from config import config
 
-
 MIRROR: str = config.mirror
 
 

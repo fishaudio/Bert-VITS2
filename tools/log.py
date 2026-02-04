@@ -5,7 +5,6 @@ logger封装
 from loguru import logger
 import sys
 
-
 # 移除所有默认的处理器
 logger.remove()
 

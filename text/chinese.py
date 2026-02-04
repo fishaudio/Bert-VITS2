@@ -26,7 +26,6 @@ pinyin_to_symbol_map = {
 
 import jieba.posseg as psg
 
-
 rep_map = {
     "：": ",",
     "；": ",",
