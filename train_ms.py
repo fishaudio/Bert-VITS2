@@ -7,7 +7,19 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.cuda.amp import autocast, GradScaler
+
+if hasattr(torch.amp, "autocast") and hasattr(torch.amp, "GradScaler"):
+    from torch.amp import autocast as _amp_autocast
+    from torch.amp import GradScaler
+
+    def autocast(*args, **kwargs):
+        """torch.amp.autocast with device_type defaulting to "cuda"."""
+        if not args and "device_type" not in kwargs:
+            kwargs["device_type"] = "cuda"
+        return _amp_autocast(*args, **kwargs)
+
+else:
+    from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import logging
 from config import config
