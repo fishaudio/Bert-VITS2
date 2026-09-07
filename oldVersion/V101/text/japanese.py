@@ -57,7 +57,7 @@ def post_replace_ph(ph):
         "...": "…",
         "v": "V",
     }
-    if ph in rep_map.keys():
+    if ph in rep_map:
         ph = rep_map[ph]
     if ph in symbols:
         return ph
@@ -103,7 +103,7 @@ def g2p(norm_text):
 
 
 if __name__ == "__main__":
-    for line in open("../../../Downloads/transcript_utf8.txt").readlines():
+    for line in open("../../../Downloads/transcript_utf8.txt"):
         text = line.split(":")[1]
         phones, tones, word2ph = g2p(text)
         for p in phones:

@@ -1,11 +1,12 @@
+import os
 from collections import OrderedDict
-from text.symbols import symbols
+
 import torch
 
-from tools.log import logger
 import utils
 from models import SynthesizerTrn
-import os
+from text.symbols import symbols
+from tools.log import logger
 
 
 def copyStateDict(state_dict):
@@ -43,7 +44,7 @@ def removeOptimizer(config: str, input_model: str, ishalf: bool, output_model: s
     keys = []
     for k, v in new_dict_g["model"].items():
         if "enc_q" in k:
-            continue  # noqa: E701
+            continue
         keys.append(k)
 
     new_dict_g = (

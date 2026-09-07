@@ -1,5 +1,6 @@
-from onnx_modules import export_onnx
 import os
+
+from onnx_modules import export_onnx
 
 if __name__ == "__main__":
     export_path = "BertVits2.2PT"

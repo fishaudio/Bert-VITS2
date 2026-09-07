@@ -1,6 +1,7 @@
-import torch
 import sys
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+
+import torch
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/chinese-roberta-wwm-ext-large")
 
@@ -16,7 +17,7 @@ def get_bert_feature(text, word2ph, device=None):
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = AutoModelForMaskedLM.from_pretrained(
             "./bert/chinese-roberta-wwm-ext-large"
         ).to(device)
