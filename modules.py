@@ -1,15 +1,15 @@
 import math
+
 import torch
 from torch import nn
-from torch.nn import functional as F
-
 from torch.nn import Conv1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 import commons
-from commons import init_weights, get_padding
-from transforms import piecewise_rational_quadratic_transform
 from attentions import Encoder
+from commons import get_padding, init_weights
+from transforms import piecewise_rational_quadratic_transform
 
 LRELU_SLOPE = 0.1
 
@@ -140,7 +140,7 @@ class WN(torch.nn.Module):
         gin_channels=0,
         p_dropout=0,
     ):
-        super(WN, self).__init__()
+        super().__init__()
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
         self.kernel_size = (kernel_size,)
@@ -220,7 +220,7 @@ class WN(torch.nn.Module):
 
 class ResBlock1(torch.nn.Module):
     def __init__(self, channels, kernel_size=3, dilation=(1, 3, 5)):
-        super(ResBlock1, self).__init__()
+        super().__init__()
         self.convs1 = nn.ModuleList(
             [
                 weight_norm(
@@ -317,7 +317,7 @@ class ResBlock1(torch.nn.Module):
 
 class ResBlock2(torch.nn.Module):
     def __init__(self, channels, kernel_size=3, dilation=(1, 3)):
-        super(ResBlock2, self).__init__()
+        super().__init__()
         self.convs = nn.ModuleList(
             [
                 weight_norm(

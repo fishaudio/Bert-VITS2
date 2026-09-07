@@ -4,10 +4,12 @@ https://github.com/fishaudio/Bert-VITS2/releases/tag/1.1
 """
 
 import torch
+
 import commons
-from .text.cleaner import clean_text
-from .text import cleaned_text_to_sequence
 from oldVersion.V111.text import get_bert
+
+from .text import cleaned_text_to_sequence
+from .text.cleaner import clean_text
 
 
 def get_text(text, language_str, hps, device):

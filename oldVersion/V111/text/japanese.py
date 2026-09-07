@@ -510,7 +510,7 @@ rep_map = {
 
 
 def replace_punctuation(text):
-    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map))
 
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 

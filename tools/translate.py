@@ -2,11 +2,12 @@
 翻译api
 """
 
-from config import config
-
-import random
 import hashlib
+import random
+
 import requests
+
+from config import config
 
 
 def translate(Sentence: str, to_Language: str = "jp", from_Language: str = ""):
