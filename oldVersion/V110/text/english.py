@@ -1,6 +1,7 @@
-import pickle
 import os
+import pickle
 import re
+
 from g2p_en import G2p
 
 from . import symbols
@@ -99,7 +100,7 @@ def post_replace_ph(ph):
         "...": "…",
         "v": "V",
     }
-    if ph in rep_map.keys():
+    if ph in rep_map:
         ph = rep_map[ph]
     if ph in symbols:
         return ph

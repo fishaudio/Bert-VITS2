@@ -8,32 +8,29 @@
     2.3：当前版本
 """
 
-import torch
-import commons
-from text import cleaned_text_to_sequence, get_bert
-
 # from clap_wrapper import get_clap_audio_feature, get_clap_text_feature
-from typing import Union
-from text.cleaner import clean_text
+
+import torch
+
+import commons
 import utils
-
 from models import SynthesizerTrn
-from text.symbols import symbols
-
-from oldVersion.V220.models import SynthesizerTrn as V220SynthesizerTrn
-from oldVersion.V220.text import symbols as V220symbols
-from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
-from oldVersion.V210.text import symbols as V210symbols
-from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
-from oldVersion.V200.text import symbols as V200symbols
-from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
-from oldVersion.V111.text import symbols as V111symbols
-from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
-from oldVersion.V110.text import symbols as V110symbols
+from oldVersion import V101, V110, V111, V200, V210, V220
 from oldVersion.V101.models import SynthesizerTrn as V101SynthesizerTrn
 from oldVersion.V101.text import symbols as V101symbols
-
-from oldVersion import V111, V110, V101, V200, V210, V220
+from oldVersion.V110.models import SynthesizerTrn as V110SynthesizerTrn
+from oldVersion.V110.text import symbols as V110symbols
+from oldVersion.V111.models import SynthesizerTrn as V111SynthesizerTrn
+from oldVersion.V111.text import symbols as V111symbols
+from oldVersion.V200.models import SynthesizerTrn as V200SynthesizerTrn
+from oldVersion.V200.text import symbols as V200symbols
+from oldVersion.V210.models import SynthesizerTrn as V210SynthesizerTrn
+from oldVersion.V210.text import symbols as V210symbols
+from oldVersion.V220.models import SynthesizerTrn as V220SynthesizerTrn
+from oldVersion.V220.text import symbols as V220symbols
+from text import cleaned_text_to_sequence, get_bert
+from text.cleaner import clean_text
+from text.symbols import symbols
 
 # 当前版本信息
 latest_version = "2.3"
@@ -150,7 +147,7 @@ def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7)
 
 def infer(
     text,
-    emotion: Union[int, str],
+    emotion: int | str,
     sdp_ratio,
     noise_scale,
     noise_scale_w,
@@ -194,7 +191,7 @@ def infer(
     version = hps.version if hasattr(hps, "version") else latest_version
     # 非当前版本，根据版本号选择合适的infer
     if version != latest_version:
-        if version in inferMap_V4.keys():
+        if version in inferMap_V4:
             return inferMap_V4[version](
                 text,
                 emotion,
@@ -213,7 +210,7 @@ def infer(
                 style_text,
                 style_weight,
             )
-        if version in inferMap_V3.keys():
+        if version in inferMap_V3:
             return inferMap_V3[version](
                 text,
                 sdp_ratio,
@@ -232,7 +229,7 @@ def infer(
                 style_text,
                 style_weight,
             )
-        if version in inferMap_V2.keys():
+        if version in inferMap_V2:
             return inferMap_V2[version](
                 text,
                 sdp_ratio,
@@ -245,7 +242,7 @@ def infer(
                 net_g,
                 device,
             )
-        if version in inferMap_V1.keys():
+        if version in inferMap_V1:
             return inferMap_V1[version](
                 text,
                 sdp_ratio,
