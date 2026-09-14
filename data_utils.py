@@ -1,14 +1,16 @@
 import os
 import random
+
 import torch
 import torch.utils.data
 from tqdm import tqdm
-from tools.log import logger
+
 import commons
-from mel_processing import spectrogram_torch, mel_spectrogram_torch
-from utils import load_wav_to_torch, load_filepaths_and_text
-from text import cleaned_text_to_sequence
 from config import config
+from mel_processing import mel_spectrogram_torch, spectrogram_torch
+from text import cleaned_text_to_sequence
+from tools.log import logger
+from utils import load_filepaths_and_text, load_wav_to_torch
 
 """Multi speaker version"""
 
@@ -99,9 +101,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
             raise ValueError(
-                "{} {} SR doesn't match target {} SR".format(
-                    filename, sampling_rate, self.sampling_rate
-                )
+                f"{filename} {sampling_rate} SR doesn't match target {self.sampling_rate} SR"
             )
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
@@ -391,7 +391,7 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
 
         if hi > lo:
             mid = (hi + lo) // 2
-            if self.boundaries[mid] < x and x <= self.boundaries[mid + 1]:
+            if self.boundaries[mid] < x <= self.boundaries[mid + 1]:
                 return mid
             elif x <= self.boundaries[mid]:
                 return self._bisect(x, lo, mid)

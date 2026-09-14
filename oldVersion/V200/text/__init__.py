@@ -33,6 +33,7 @@ def check_bert_models():
     from pathlib import Path
 
     from config import config
+
     from .bert_utils import _check_bert
 
     if config.mirror.lower() == "openi":

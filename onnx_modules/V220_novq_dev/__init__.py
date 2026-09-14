@@ -1,4 +1,4 @@
-from .text.symbols import symbols
 from .models_onnx import SynthesizerTrn
+from .text.symbols import symbols
 
-__all__ = ["symbols", "SynthesizerTrn"]
+__all__ = ["SynthesizerTrn", "symbols"]

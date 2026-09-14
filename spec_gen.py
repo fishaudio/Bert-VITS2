@@ -1,7 +1,9 @@
+from multiprocessing import Pool
+
 import torch
 from tqdm import tqdm
-from multiprocessing import Pool
-from mel_processing import spectrogram_torch, mel_spectrogram_torch
+
+from mel_processing import mel_spectrogram_torch, spectrogram_torch
 from utils import load_wav_to_torch
 
 
