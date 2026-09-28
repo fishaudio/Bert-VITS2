@@ -1,9 +1,10 @@
-import gradio as gr
-import webbrowser
-import os
 import json
-import subprocess
+import os
 import shutil
+import subprocess
+import webbrowser
+
+import gradio as gr
 
 
 def get_path(data_dir):

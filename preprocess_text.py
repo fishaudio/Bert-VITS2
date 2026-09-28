@@ -1,14 +1,14 @@
 import json
+import os
 from collections import defaultdict
 from random import shuffle
-from typing import Optional
-import os
 
-from tqdm import tqdm
 import click
-from text.cleaner import clean_text
+from tqdm import tqdm
+
 from config import config
 from infer import latest_version
+from text.cleaner import clean_text
 
 preprocess_text_config = config.preprocess_text_config
 
@@ -33,7 +33,7 @@ preprocess_text_config = config.preprocess_text_config
 @click.option("-y", "--yml_config")
 def preprocess(
     transcription_path: str,
-    cleaned_path: Optional[str],
+    cleaned_path: str | None,
     train_path: str,
     val_path: str,
     config_path: str,
@@ -81,7 +81,7 @@ def preprocess(
         audioPaths = set()
         countSame = 0
         countNotFound = 0
-        for line in f.readlines():
+        for line in f:
             utt, spk, language, text, phones, tones, word2ph = line.strip().split("|")
             if utt in audioPaths:
                 # 过滤数据集错误：相同的音频匹配多个文本，导致后续bert出问题
@@ -95,7 +95,7 @@ def preprocess(
                 continue
             audioPaths.add(utt)
             spk_utt_map[language].append(line)
-            if spk not in spk_id_map.keys():
+            if spk not in spk_id_map:
                 spk_id_map[spk] = current_sid
                 current_sid += 1
         print(f"总重复音频数：{countSame}，总未找到的音频数:{countNotFound}")
