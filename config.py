@@ -3,11 +3,11 @@
 """
 
 import argparse
-import yaml
-from typing import Dict, List
 import os
 import shutil
 import sys
+
+import yaml
 
 
 class Resample_config:
@@ -19,7 +19,7 @@ class Resample_config:
         self.out_dir: str = out_dir  # 重采样输出路径
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         """从字典中生成实例"""
 
         # 不检查路径是否有效，此逻辑在resample.py中处理
@@ -63,7 +63,7 @@ class Preprocess_text_config:
         self.clean: bool = clean  # 是否进行数据清洗
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         """从字典中生成实例"""
 
         data["transcription_path"] = os.path.join(
@@ -96,7 +96,7 @@ class Bert_gen_config:
         self.use_multi_device = use_multi_device
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
 
         return cls(**data)
@@ -118,7 +118,7 @@ class Emo_gen_config:
         self.use_multi_device = use_multi_device
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
 
         return cls(**data)
@@ -130,8 +130,8 @@ class Train_ms_config:
     def __init__(
         self,
         config_path: str,
-        env: Dict[str, any],
-        base: Dict[str, any],
+        env: dict[str, any],
+        base: dict[str, any],
         model: str,
         num_workers: int,
         spec_cache: bool,
@@ -148,7 +148,7 @@ class Train_ms_config:
         self.keep_ckpts = keep_ckpts  # ckpt数量
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         # data["model"] = os.path.join(dataset_path, data["model"])
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
 
@@ -179,7 +179,7 @@ class Webui_config:
         )
 
     @classmethod
-    def from_dict(cls, dataset_path: str, data: Dict[str, any]):
+    def from_dict(cls, dataset_path: str, data: dict[str, any]):
         data["config_path"] = os.path.join(dataset_path, data["config_path"])
         data["model"] = os.path.join(dataset_path, data["model"])
         return cls(**data)
@@ -187,14 +187,14 @@ class Webui_config:
 
 class Server_config:
     def __init__(
-        self, models: List[Dict[str, any]], port: int = 5000, device: str = "cuda"
+        self, models: list[dict[str, any]], port: int = 5000, device: str = "cuda"
     ):
-        self.models: List[Dict[str, any]] = models  # 需要加载的所有模型的配置
+        self.models: list[dict[str, any]] = models  # 需要加载的所有模型的配置
         self.port: int = port  # 端口号
         self.device: str = device  # 模型默认使用设备
 
     @classmethod
-    def from_dict(cls, data: Dict[str, any]):
+    def from_dict(cls, data: dict[str, any]):
         return cls(**data)
 
 
@@ -206,7 +206,7 @@ class Translate_config:
         self.secret_key = secret_key
 
     @classmethod
-    def from_dict(cls, data: Dict[str, any]):
+    def from_dict(cls, data: dict[str, any]):
         return cls(**data)
 
 
@@ -220,7 +220,7 @@ class Config:
             print("如无特殊需求，请勿修改default_config.yml或备份该文件。")
             sys.exit(0)
         with open(file=config_path, mode="r", encoding="utf-8") as file:
-            yaml_config: Dict[str, any] = yaml.safe_load(file.read())
+            yaml_config: dict[str, any] = yaml.safe_load(file.read())
             dataset_path: str = yaml_config["dataset_path"]
             openi_token: str = yaml_config["openi_token"]
             self.dataset_path: str = dataset_path

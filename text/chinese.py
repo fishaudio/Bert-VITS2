@@ -1,7 +1,7 @@
 import os
 import re
 
-from pypinyin import lazy_pinyin, Style
+from pypinyin import Style, lazy_pinyin
 
 from text.symbols import punctuation
 from text.tone_sandhi import ToneSandhi
@@ -21,7 +21,7 @@ except ImportError:
 current_file_path = os.path.dirname(__file__)
 pinyin_to_symbol_map = {
     line.split("\t")[0]: line.strip().split("\t")[1]
-    for line in open(os.path.join(current_file_path, "opencpop-strict.txt")).readlines()
+    for line in open(os.path.join(current_file_path, "opencpop-strict.txt"))
 }
 
 import jieba.posseg as psg
@@ -65,7 +65,7 @@ tone_modifier = ToneSandhi()
 
 def replace_punctuation(text):
     text = text.replace("嗯", "恩").replace("呣", "母")
-    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map))
 
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
@@ -123,7 +123,6 @@ def _g2p(segments):
             # assert len(sub_initials) == len(sub_finals) == len(word)
         initials = sum(initials, [])
         finals = sum(finals, [])
-        #
         for c, v in zip(initials, finals):
             raw_pinyin = c + v
             # NOTE: post process for pypinyin outputs
@@ -147,7 +146,7 @@ def _g2p(segments):
                         "iou": "iu",
                         "uen": "un",
                     }
-                    if v_without_tone in v_rep_map.keys():
+                    if v_without_tone in v_rep_map:
                         pinyin = c + v_rep_map[v_without_tone]
                 else:
                     # 单音节
@@ -157,7 +156,7 @@ def _g2p(segments):
                         "in": "yin",
                         "u": "wu",
                     }
-                    if pinyin in pinyin_rep_map.keys():
+                    if pinyin in pinyin_rep_map:
                         pinyin = pinyin_rep_map[pinyin]
                     else:
                         single_rep_map = {
@@ -166,10 +165,10 @@ def _g2p(segments):
                             "i": "y",
                             "u": "w",
                         }
-                        if pinyin[0] in single_rep_map.keys():
+                        if pinyin[0] in single_rep_map:
                             pinyin = single_rep_map[pinyin[0]] + pinyin[1:]
 
-                assert pinyin in pinyin_to_symbol_map.keys(), (pinyin, seg, raw_pinyin)
+                assert pinyin in pinyin_to_symbol_map, (pinyin, seg, raw_pinyin)
                 phone = pinyin_to_symbol_map[pinyin].split(" ")
                 word2ph.append(len(phone))
 
@@ -193,7 +192,7 @@ def get_bert_feature(text, word2ph):
 if __name__ == "__main__":
     from text.chinese_bert import get_bert_feature
 
-    text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
+    text = r"啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
     text = text_normalize(text)
     print(text)
     phones, tones, word2ph = g2p(text)

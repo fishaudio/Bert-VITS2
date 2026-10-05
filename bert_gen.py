@@ -1,12 +1,14 @@
-import torch
+import argparse
 from multiprocessing import Pool
+
+import torch
+import torch.multiprocessing as mp
+from tqdm import tqdm
+
 import commons
 import utils
-from tqdm import tqdm
-from text import check_bert_models, cleaned_text_to_sequence, get_bert
-import argparse
-import torch.multiprocessing as mp
 from config import config
+from text import check_bert_models, cleaned_text_to_sequence, get_bert
 
 
 def process_line(x):
