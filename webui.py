@@ -1,7 +1,7 @@
-# flake8: noqa: E402
 import gc
-import os
 import logging
+import os
+
 import re_matching
 from tools.sentence import split_by_language
 
@@ -16,15 +16,17 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-import torch
-import utils
-from infer import infer, latest_version, get_net_g, infer_multilang
-import gradio as gr
 import webbrowser
-import numpy as np
-from config import config
-from tools.translate import translate
+
+import gradio as gr
 import librosa
+import numpy as np
+import torch
+
+import utils
+from config import config
+from infer import get_net_g, infer, infer_multilang, latest_version
+from tools.translate import translate
 
 net_g = None
 
@@ -472,26 +474,25 @@ if __name__ == "__main__":
                         label="Weight",
                         info="主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本",
                     )
-                with gr.Row():
-                    with gr.Column():
-                        interval_between_sent = gr.Slider(
-                            minimum=0,
-                            maximum=5,
-                            value=0.2,
-                            step=0.1,
-                            label="句间停顿(秒)，勾选按句切分才生效",
-                        )
-                        interval_between_para = gr.Slider(
-                            minimum=0,
-                            maximum=10,
-                            value=1,
-                            step=0.1,
-                            label="段间停顿(秒)，需要大于句间停顿才有效",
-                        )
-                        opt_cut_by_sent = gr.Checkbox(
-                            label="按句切分    在按段落切分的基础上再按句子切分文本"
-                        )
-                        slicer = gr.Button("切分生成", variant="primary")
+                with gr.Row(), gr.Column():
+                    interval_between_sent = gr.Slider(
+                        minimum=0,
+                        maximum=5,
+                        value=0.2,
+                        step=0.1,
+                        label="句间停顿(秒)，勾选按句切分才生效",
+                    )
+                    interval_between_para = gr.Slider(
+                        minimum=0,
+                        maximum=10,
+                        value=1,
+                        step=0.1,
+                        label="段间停顿(秒)，需要大于句间停顿才有效",
+                    )
+                    opt_cut_by_sent = gr.Checkbox(
+                        label="按句切分    在按段落切分的基础上再按句子切分文本"
+                    )
+                    slicer = gr.Button("切分生成", variant="primary")
                 text_output = gr.Textbox(label="状态信息")
                 audio_output = gr.Audio(label="输出音频")
                 # explain_image = gr.Image(
