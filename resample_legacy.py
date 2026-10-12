@@ -1,8 +1,8 @@
-import os
 import argparse
-import librosa
+import os
 from multiprocessing import Pool, cpu_count
 
+import librosa
 import soundfile
 from tqdm import tqdm
 
