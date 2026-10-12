@@ -1,4 +1,4 @@
-from numpy import zeros, int32, float32
+from numpy import float32, int32, zeros
 from torch import from_numpy
 
 from .core import maximum_path_jit

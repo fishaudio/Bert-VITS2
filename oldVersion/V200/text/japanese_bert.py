@@ -4,6 +4,7 @@ import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from config import config
+
 from .japanese import text2sep_kata
 
 LOCAL_PATH = "./bert/deberta-v2-large-japanese"
@@ -30,7 +31,7 @@ def get_bert_feature_with_token(tokens, word2ph, device=config.bert_gen_config.d
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = torch.tensor(tokens).to(device).unsqueeze(0)
