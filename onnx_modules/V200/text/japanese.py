@@ -3,14 +3,12 @@
 import re
 import unicodedata
 
+import jaconv
+import pyopenjtalk
+from num2words import num2words
 from transformers import AutoTokenizer
 
 from . import punctuation, symbols
-
-from num2words import num2words
-
-import pyopenjtalk
-import jaconv
 
 
 def kata2phoneme(text: str) -> str:
@@ -65,7 +63,7 @@ def text2kata(text: str) -> str:
                     res += yomi
                     sep += word
                     continue
-                elif word not in rep_map.keys() and word not in rep_map.values():
+                elif word not in rep_map and word not in rep_map.values():
                     word = ","
                 yomi = word
             res.append(yomi)
@@ -98,7 +96,7 @@ def text2sep_kata(text: str) -> (list, list):
                     res += yomi
                     sep += word
                     continue
-                elif word not in rep_map.keys() and word not in rep_map.values():
+                elif word not in rep_map and word not in rep_map.values():
                     word = ","
                 yomi = word
             res.append(yomi)
@@ -297,7 +295,7 @@ rep_map = {
 
 
 def replace_punctuation(text):
-    pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+    pattern = re.compile("|".join(re.escape(p) for p in rep_map))
 
     replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
 
