@@ -18,7 +18,7 @@ def get_clap_audio_feature(audio_data, device=config.bert_gen_config.device):
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = ClapModel.from_pretrained("./emotional/clap-htsat-fused").to(
             device
         )
@@ -39,7 +39,7 @@ def get_clap_text_feature(text, device=config.bert_gen_config.device):
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = ClapModel.from_pretrained("./emotional/clap-htsat-fused").to(
             device
         )

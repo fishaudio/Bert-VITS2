@@ -1,6 +1,7 @@
-import torch
 import sys
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+
+import torch
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 device = torch.device(
     "cuda"
