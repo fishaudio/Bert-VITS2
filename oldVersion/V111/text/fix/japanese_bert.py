@@ -1,8 +1,11 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM
 import sys
-from .japanese import text2sep_kata
+
+import torch
+from transformers import AutoModelForMaskedLM, AutoTokenizer
+
 from config import config
+
+from .japanese import text2sep_kata
 
 tokenizer = AutoTokenizer.from_pretrained("./bert/bert-base-japanese-v3")
 
@@ -26,7 +29,7 @@ def get_bert_feature_with_token(tokens, word2ph, device=config.bert_gen_config.d
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = AutoModelForMaskedLM.from_pretrained(
             "./bert/bert-base-japanese-v3"
         ).to(device)

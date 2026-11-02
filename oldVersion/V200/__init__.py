@@ -3,7 +3,9 @@
 """
 
 import torch
+
 import commons
+
 from .text import cleaned_text_to_sequence, get_bert
 from .text.cleaner import clean_text
 

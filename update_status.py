@@ -1,4 +1,5 @@
 import os
+
 import gradio as gr
 
 lang_dict = {"EN(英文)": "_en", "ZH(中文)": "_zh", "JP(日语)": "_jp"}
