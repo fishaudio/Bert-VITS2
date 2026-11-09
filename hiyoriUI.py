@@ -3,35 +3,33 @@ api服务，网页后端 多版本多模型 fastapi实现
 原 server_fastapi
 """
 
-import logging
 import gc
-import random
-import librosa
-import gradio
-import numpy as np
-import utils
-from fastapi import FastAPI, Query, Request, File, UploadFile, Form
-from fastapi.responses import Response, FileResponse
-from fastapi.staticfiles import StaticFiles
-from io import BytesIO
-from scipy.io import wavfile
-import uvicorn
-import torch
-import webbrowser
-import psutil
-import GPUtil
-from typing import Dict, Optional, List, Set, Union, Tuple
+import logging
 import os
-from tools.log import logger
+import random
+import webbrowser
+from io import BytesIO
 from urllib.parse import unquote
 
-from infer import infer, get_net_g, latest_version
+import GPUtil
+import gradio
+import librosa
+import numpy as np
+import psutil
+import torch
+import uvicorn
+from fastapi import FastAPI, File, Form, Query, Request, UploadFile
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
+from scipy.io import wavfile
+
 import tools.translate as trans
-from tools.sentence import split_by_language
-from re_matching import cut_sent
-
-
+import utils
 from config import config
+from infer import get_net_g, infer, latest_version
+from re_matching import cut_sent
+from tools.log import logger
+from tools.sentence import split_by_language
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -45,8 +43,8 @@ class Model:
         self.device: str = device
         self.language: str = language
         self.hps = utils.get_hparams_from_file(config_path)
-        self.spk2id: Dict[str, int] = self.hps.data.spk2id  # spk - id 映射字典
-        self.id2spk: Dict[int, str] = dict()  # id - spk 映射字典
+        self.spk2id: dict[str, int] = self.hps.data.spk2id  # spk - id 映射字典
+        self.id2spk: dict[int, str] = dict()  # id - spk 映射字典
         for speaker, speaker_id in self.hps.data.spk2id.items():
             self.id2spk[speaker_id] = speaker
         self.version: str = (
@@ -59,7 +57,7 @@ class Model:
             hps=self.hps,
         )
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> dict[str, any]:
         return {
             "config_path": self.config_path,
             "model_path": self.model_path,
@@ -73,11 +71,11 @@ class Model:
 
 class Models:
     def __init__(self):
-        self.models: Dict[int, Model] = dict()
+        self.models: dict[int, Model] = dict()
         self.num = 0
         # spkInfo[角色名][模型id] = 角色id
-        self.spk_info: Dict[str, Dict[int, int]] = dict()
-        self.path2ids: Dict[str, Set[int]] = dict()  # 路径指向的model的id
+        self.spk_info: dict[str, dict[int, int]] = dict()
+        self.path2ids: dict[str, set[int]] = dict()  # 路径指向的model的id
 
     def init_model(
         self, config_path: str, model_path: str, device: str, language: str
@@ -129,7 +127,7 @@ class Models:
         self.num += 1
         return self.num - 1
 
-    def del_model(self, index: int) -> Optional[int]:
+    def del_model(self, index: int) -> int | None:
         """删除对应序号的模型，若不存在则返回None"""
         if index not in self.models.keys():
             return None
@@ -206,11 +204,11 @@ if __name__ == "__main__":
         language: str,
         auto_translate: bool,
         auto_split: bool,
-        emotion: Optional[Union[int, str]] = None,
+        emotion: int | str | None = None,
         reference_audio=None,
-        style_text: Optional[str] = None,
+        style_text: str | None = None,
         style_weight: float = 0.7,
-    ) -> Union[Response, Dict[str, any]]:
+    ) -> Response | dict[str, any]:
         """TTS实现函数"""
 
         # 检查
@@ -257,11 +255,11 @@ if __name__ == "__main__":
         # 改动：增加使用 || 对文本进行主动切分
         # 切分优先级： || → auto/mix → auto_split
         text2 = text.replace("\n", "").lstrip()
-        texts: List[str] = text2.split("||")
+        texts: list[str] = text2.split("||")
 
         # 对于mix和auto的说明：出于版本兼容性的考虑，暂时无法使用multilang的方式进行推理
         if language == "MIX":
-            text_language_speakers: List[Tuple[str, str, str]] = []
+            text_language_speakers: list[tuple[str, str, str]] = []
             for _text in texts:
                 speaker_pieces = _text.split("[")  # 按说话人分割多块
                 for speaker_piece in speaker_pieces:
@@ -294,7 +292,7 @@ if __name__ == "__main__":
                         text_language_speakers.append((t, lang.upper(), speaker))
 
         elif language == "AUTO":
-            text_language_speakers: List[Tuple[str, str, str]] = [
+            text_language_speakers: list[tuple[str, str, str]] = [
                 (final_text, language.upper().replace("JA", "JP"), speaker_name)
                 for sub_list in [
                     split_by_language(_text, target_languages=["zh", "ja", "en"])
@@ -305,12 +303,12 @@ if __name__ == "__main__":
                 if final_text != ""
             ]
         else:
-            text_language_speakers: List[Tuple[str, str, str]] = [
+            text_language_speakers: list[tuple[str, str, str]] = [
                 (_text, language, speaker_name) for _text in texts if _text != ""
             ]
 
         if auto_split:
-            text_language_speakers: List[Tuple[str, str, str]] = [
+            text_language_speakers: list[tuple[str, str, str]] = [
                 (final_text, lang, speaker)
                 for _text, lang, speaker in text_language_speakers
                 for final_text in cut_sent(_text)
@@ -364,9 +362,9 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
-        emotion: Optional[Union[int, str]] = Query(None, description="emo"),
+        emotion: int | str | None = Query(None, description="emo"),
         reference_audio: UploadFile = File(None),
-        style_text: Optional[str] = Form(None, description="风格文本"),
+        style_text: str | None = Form(None, description="风格文本"),
         style_weight: float = Query(0.7, description="风格权重"),
     ):
         """语音接口，若需要上传参考音频请仅使用post请求"""
@@ -407,8 +405,8 @@ if __name__ == "__main__":
         language: str = Query(None, description="语言"),  # 若不指定使用语言则使用默认值
         auto_translate: bool = Query(False, description="自动翻译"),
         auto_split: bool = Query(False, description="自动切分"),
-        emotion: Optional[Union[int, str]] = Query(None, description="emo"),
-        style_text: Optional[str] = Query(None, description="风格文本"),
+        emotion: int | str | None = Query(None, description="emo"),
+        style_text: str | None = Query(None, description="风格文本"),
         style_weight: float = Query(0.7, description="风格权重"),
     ):
         """语音接口，不建议使用"""
@@ -436,7 +434,7 @@ if __name__ == "__main__":
     def get_loaded_models_info(request: Request):
         """获取已加载模型信息"""
 
-        result: Dict[str, Dict] = dict()
+        result: dict[str, dict] = dict()
         for key, model in loaded_models.models.items():
             result[str(key)] = model.to_dict()
         return result
@@ -509,7 +507,7 @@ if __name__ == "__main__":
 
     def _get_all_models(root_dir: str = "Data", only_unloaded: bool = False):
         """从root_dir搜索获取所有可用模型"""
-        result: Dict[str, List[str]] = dict()
+        result: dict[str, list[str]] = dict()
         files = os.listdir(root_dir) + ["."]
         for file in files:
             if os.path.isdir(os.path.join(root_dir, file)):
@@ -629,7 +627,7 @@ if __name__ == "__main__":
         )
         return {"texts": trans.translate(Sentence=texts, to_Language=to_language)}
 
-    all_examples: Dict[str, Dict[str, List]] = dict()  # 存放示例
+    all_examples: dict[str, dict[str, list]] = dict()  # 存放示例
 
     @app.get("/tools/random_example")
     def random_example(
@@ -645,7 +643,7 @@ if __name__ == "__main__":
         )
         global all_examples
         # 数据初始化
-        if root_dir not in all_examples.keys():
+        if root_dir not in all_examples:
             all_examples[root_dir] = {"ZH": [], "JP": [], "EN": []}
 
             examples = all_examples[root_dir]
