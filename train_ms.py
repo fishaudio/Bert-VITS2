@@ -1,41 +1,42 @@
-# flake8: noqa: E402
-import platform
-import os
-import torch
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.cuda.amp import autocast, GradScaler
-from tqdm import tqdm
-import logging
-from config import config
 import argparse
 import datetime
+import logging
+import os
+import platform
+
+import torch
+import torch.distributed as dist
+from torch.cuda.amp import GradScaler, autocast
+from torch.nn import functional as F
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
+
+from config import config
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
 import utils
 from data_utils import (
-    TextAudioSpeakerLoader,
-    TextAudioSpeakerCollate,
     DistributedBucketSampler,
-)
-from models import (
-    SynthesizerTrn,
-    MultiPeriodDiscriminator,
-    DurationDiscriminator,
-    WavLMDiscriminator,
+    TextAudioSpeakerCollate,
+    TextAudioSpeakerLoader,
 )
 from losses import (
-    generator_loss,
+    WavLMLoss,
     discriminator_loss,
     feature_loss,
+    generator_loss,
     kl_loss,
-    WavLMLoss,
 )
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
+from models import (
+    DurationDiscriminator,
+    MultiPeriodDiscriminator,
+    SynthesizerTrn,
+    WavLMDiscriminator,
+)
 from text.symbols import symbols
 
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -56,7 +57,7 @@ def run():
     envs = config.train_ms_config.env
     for env_name, env_value in envs.items():
         if env_name not in os.environ.keys():
-            print("加载config中的配置{}".format(str(env_value)))
+            print(f"加载config中的配置{env_value!s}")
             os.environ[env_name] = str(env_value)
     print(
         "加载环境变量 \nMASTER_ADDR: {},\nMASTER_PORT: {},\nWORLD_SIZE: {},\nRANK: {},\nLOCAL_RANK: {}".format(
@@ -611,9 +612,7 @@ def train_and_evaluate(
                 lr = optim_g.param_groups[0]["lr"]
                 losses = [loss_disc, loss_gen, loss_fm, loss_mel, loss_dur, loss_kl]
                 logger.info(
-                    "Train Epoch: {} [{:.0f}%]".format(
-                        epoch, 100.0 * batch_idx / len(train_loader)
-                    )
+                    f"Train Epoch: {epoch} [{100.0 * batch_idx / len(train_loader):.0f}%]"
                 )
                 logger.info([x.item() for x in losses] + [global_step, lr])
 
@@ -637,14 +636,12 @@ def train_and_evaluate(
                         "loss/g/lm_gen": loss_lm_gen,
                     }
                 )
+                scalar_dict.update({f"loss/g/{i}": v for i, v in enumerate(losses_gen)})
                 scalar_dict.update(
-                    {"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)}
+                    {f"loss/d_r/{i}": v for i, v in enumerate(losses_disc_r)}
                 )
                 scalar_dict.update(
-                    {"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)}
-                )
-                scalar_dict.update(
-                    {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
+                    {f"loss/d_g/{i}": v for i, v in enumerate(losses_disc_g)}
                 )
 
                 if net_dur_disc is not None:
@@ -652,23 +649,20 @@ def train_and_evaluate(
 
                     scalar_dict.update(
                         {
-                            "loss/dur_disc_g/{}".format(i): v
+                            f"loss/dur_disc_g/{i}": v
                             for i, v in enumerate(losses_dur_disc_g)
                         }
                     )
                     scalar_dict.update(
                         {
-                            "loss/dur_disc_r/{}".format(i): v
+                            f"loss/dur_disc_r/{i}": v
                             for i, v in enumerate(losses_dur_disc_r)
                         }
                     )
 
                     scalar_dict.update({"loss/g/dur_gen": loss_dur_gen})
                     scalar_dict.update(
-                        {
-                            "loss/g/dur_gen_{}".format(i): v
-                            for i, v in enumerate(losses_dur_gen)
-                        }
+                        {f"loss/g/dur_gen_{i}": v for i, v in enumerate(losses_dur_gen)}
                     )
 
                 image_dict = {
@@ -699,21 +693,21 @@ def train_and_evaluate(
                     optim_g,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
+                    os.path.join(hps.model_dir, f"G_{global_step}.pth"),
                 )
                 utils.save_checkpoint(
                     net_d,
                     optim_d,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
+                    os.path.join(hps.model_dir, f"D_{global_step}.pth"),
                 )
                 utils.save_checkpoint(
                     net_wd,
                     optim_wd,
                     hps.train.learning_rate,
                     epoch,
-                    os.path.join(hps.model_dir, "WD_{}.pth".format(global_step)),
+                    os.path.join(hps.model_dir, f"WD_{global_step}.pth"),
                 )
                 if net_dur_disc is not None:
                     utils.save_checkpoint(
@@ -721,7 +715,7 @@ def train_and_evaluate(
                         optim_dur_disc,
                         hps.train.learning_rate,
                         epoch,
-                        os.path.join(hps.model_dir, "DUR_{}.pth".format(global_step)),
+                        os.path.join(hps.model_dir, f"DUR_{global_step}.pth"),
                     )
                 keep_ckpts = config.train_ms_config.keep_ckpts
                 if keep_ckpts > 0:
@@ -736,7 +730,7 @@ def train_and_evaluate(
     # gc.collect()
     # torch.cuda.empty_cache()
     if rank == 0:
-        logger.info("====> Epoch: {}".format(epoch))
+        logger.info(f"====> Epoch: {epoch}")
 
 
 def evaluate(hps, generator, eval_loader, writer_eval):
