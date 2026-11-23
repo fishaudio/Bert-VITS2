@@ -1,5 +1,6 @@
-﻿from onnx_modules.V220_OnnxInference import OnnxInferenceSession
-import numpy as np
+﻿import numpy as np
+
+from onnx_modules.V220_OnnxInference import OnnxInferenceSession
 
 Session = OnnxInferenceSession(
     {
