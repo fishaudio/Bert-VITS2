@@ -1,5 +1,6 @@
-﻿from utils import get_hparams_from_file, load_checkpoint
-import json
+﻿import json
+
+from utils import get_hparams_from_file, load_checkpoint
 
 
 def export_onnx(export_path, model_path, config_path, novq, dev, Extra):

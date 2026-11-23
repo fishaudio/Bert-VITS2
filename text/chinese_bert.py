@@ -27,7 +27,7 @@ def get_bert_feature(
         device = "mps"
     if not device:
         device = "cuda"
-    if device not in models.keys():
+    if device not in models:
         models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")

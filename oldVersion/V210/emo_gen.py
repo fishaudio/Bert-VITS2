@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.utils.data import Dataset
 from transformers import Wav2Vec2Processor
 from transformers.models.wav2vec2.modeling_wav2vec2 import (
